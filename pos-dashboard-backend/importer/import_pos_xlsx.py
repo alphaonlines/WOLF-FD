@@ -232,12 +232,48 @@ CLEAN_COLS = [
     "raw_source_file",
 ]
 
+ITEM_COLMAP = {
+    "Sale #": "sale_id",
+    "Sales#": "sale_id",
+    "Sales Date": "sale_date",
+    "Sale Location": "location",
+    "Manufacturer": "manufacturer",
+    "Category": "category",
+    "Item #": "item_no",
+    "Item Description": "item_description",
+    "Qty Sold": "qty_sold",
+    "Total Cost": "total_cost",
+    "Total Sale Price": "total_sale_price",
+    "Total Profit": "total_profit",
+    "Weighted Gross Margin": "gross_margin",
+    "Date Deliv Confirmed": "delivery_confirmed_date",
+}
+
+ITEM_COLS = [
+    "sale_id",
+    "sale_date",
+    "location",
+    "manufacturer",
+    "category",
+    "item_no",
+    "item_description",
+    "qty_sold",
+    "total_cost",
+    "total_sale_price",
+    "total_profit",
+    "gross_margin",
+    "delivery_confirmed_date",
+    "is_pro1st",
+    "raw_source_file",
+]
+
 UPSERT_RAW = """
-INSERT INTO pos_sales_raw (sale_id, sale_date, raw_source_file, row_json)
+INSERT INTO pos_sales_raw (sale_id, sale_date, raw_source_file, import_batch_id, row_json)
 VALUES %s
 ON CONFLICT (sale_id) DO UPDATE SET
   sale_date = EXCLUDED.sale_date,
   raw_source_file = EXCLUDED.raw_source_file,
+  import_batch_id = EXCLUDED.import_batch_id,
   row_json = EXCLUDED.row_json;
 """
 
@@ -249,7 +285,7 @@ INSERT INTO pos_sales (
   total_finance_amt, finance_fee, finance_balance, lwy_balance,
   cost, profit, gross_margin,
   customer_name, phone, print_letter, delivery, note, sale_type, sale_status, city, state, zip,
-  raw_source_file
+  raw_source_file, last_import_batch_id
 )
 VALUES %s
 ON CONFLICT (sale_id) DO UPDATE SET
@@ -285,7 +321,46 @@ ON CONFLICT (sale_id) DO UPDATE SET
   city = EXCLUDED.city,
   state = EXCLUDED.state,
   zip = EXCLUDED.zip,
-  raw_source_file = EXCLUDED.raw_source_file;
+  raw_source_file = EXCLUDED.raw_source_file,
+  last_import_batch_id = EXCLUDED.last_import_batch_id;
+"""
+
+UPSERT_ITEMS_RAW = """
+INSERT INTO pos_sale_items_raw (row_hash, sale_id, sale_date, raw_source_file, import_batch_id, row_json)
+VALUES %s
+ON CONFLICT (row_hash) DO UPDATE SET
+  sale_id = EXCLUDED.sale_id,
+  sale_date = EXCLUDED.sale_date,
+  raw_source_file = EXCLUDED.raw_source_file,
+  import_batch_id = EXCLUDED.import_batch_id,
+  row_json = EXCLUDED.row_json;
+"""
+
+UPSERT_ITEMS = """
+INSERT INTO pos_sale_items (
+  row_hash, sale_id, sale_date, location, manufacturer, category, item_no, item_description,
+  qty_sold, total_cost, total_sale_price, total_profit, gross_margin, delivery_confirmed_date,
+  is_pro1st,
+  raw_source_file, import_batch_id
+)
+VALUES %s
+ON CONFLICT (row_hash) DO UPDATE SET
+  sale_id = EXCLUDED.sale_id,
+  sale_date = EXCLUDED.sale_date,
+  location = EXCLUDED.location,
+  manufacturer = EXCLUDED.manufacturer,
+  category = EXCLUDED.category,
+  item_no = EXCLUDED.item_no,
+  item_description = EXCLUDED.item_description,
+  qty_sold = EXCLUDED.qty_sold,
+  total_cost = EXCLUDED.total_cost,
+  total_sale_price = EXCLUDED.total_sale_price,
+  total_profit = EXCLUDED.total_profit,
+  gross_margin = EXCLUDED.gross_margin,
+  delivery_confirmed_date = EXCLUDED.delivery_confirmed_date,
+  is_pro1st = EXCLUDED.is_pro1st,
+  raw_source_file = EXCLUDED.raw_source_file,
+  import_batch_id = EXCLUDED.import_batch_id;
 """
 
 def to_date(s):
@@ -406,6 +481,20 @@ def clean_row(df: pd.DataFrame, source_file: str) -> pd.DataFrame:
 
     return df
 
+def compute_sales_date_range(df: pd.DataFrame) -> tuple[str, str, str]:
+    # Prefer delivery_confirmed_date range; fallback to sale_date.
+    delivery_dates = df["delivery_confirmed_date"].dropna().tolist()
+    if delivery_dates:
+        start = min(delivery_dates).isoformat()
+        end = max(delivery_dates).isoformat()
+        return ("delivery_confirmed_date", start, end)
+    sale_dates = df["sale_date"].dropna().tolist()
+    if sale_dates:
+        start = min(sale_dates).isoformat()
+        end = max(sale_dates).isoformat()
+        return ("sale_date", start, end)
+    return ("sale_date", "1900-01-01", "1900-01-01")
+
 def is_sales_report(df: pd.DataFrame) -> bool:
     cols = {str(c).strip().lower() for c in df.columns}
     required = {"sales#", "date of sale", "sales person", "sales location", "grand total"}
@@ -413,6 +502,91 @@ def is_sales_report(df: pd.DataFrame) -> bool:
     if "sales#" not in cols and "sale #" in cols:
         cols.add("sales#")
     return required.issubset(cols)
+
+def is_item_export(df: pd.DataFrame) -> bool:
+    cols = {str(c).strip().lower() for c in df.columns}
+    required = {"sale #", "sales date", "item #", "item description", "qty sold", "total sale price"}
+    if "sales#" in cols and "sale #" not in cols:
+        cols.add("sale #")
+    return required.issubset(cols)
+
+def batch_key_from_filename(name: str) -> str | None:
+    import re
+    m = re.match(r"^(sales_report|topitems_report)(\d+)\.(xlsx|xls)$", name, re.IGNORECASE)
+    if not m:
+        return None
+    return m.group(2)
+
+def upsert_batch(cur, batch_key: str, sales_file: str | None, items_file: str | None, warnings: str) -> int:
+    cur.execute(
+        """
+        INSERT INTO pos_import_batch (batch_key, sales_file, items_file, warnings, updated_at)
+        VALUES (%s, %s, %s, %s, now())
+        ON CONFLICT (batch_key) DO UPDATE SET
+          sales_file = EXCLUDED.sales_file,
+          items_file = EXCLUDED.items_file,
+          warnings = EXCLUDED.warnings,
+          updated_at = now()
+        RETURNING id;
+        """,
+        (batch_key, sales_file, items_file, warnings),
+    )
+    return int(cur.fetchone()[0])
+
+def clean_item_rows(df: pd.DataFrame, source_file: str) -> pd.DataFrame:
+    df.columns = [str(c).strip() for c in df.columns]
+    present = {k:v for k,v in ITEM_COLMAP.items() if k in df.columns}
+    df = df.rename(columns=present)
+
+    if "sale_id" not in df.columns:
+        raise ValueError("Missing required column: 'Sale #' (mapped to sale_id)")
+
+    df["raw_source_file"] = source_file
+
+    for c in ITEM_COLS:
+        if c not in df.columns:
+            df[c] = None
+
+    df = df[ITEM_COLS].copy()
+
+    df["sale_id"] = df["sale_id"].astype(str).str.strip()
+    df = df[df["sale_id"].notna() & (df["sale_id"] != "")]
+
+    df["sale_date"] = df["sale_date"].apply(to_date)
+    df["delivery_confirmed_date"] = df["delivery_confirmed_date"].apply(to_date)
+
+    for c in [
+        "qty_sold",
+        "total_cost",
+        "total_sale_price",
+        "total_profit",
+        "gross_margin",
+    ]:
+        df[c] = df[c].apply(to_num)
+
+    def is_pro1st_row(row) -> bool:
+        fields = [
+            row.get("item_description"),
+            row.get("category"),
+            row.get("item_no"),
+            row.get("manufacturer"),
+        ]
+        for val in fields:
+            if not val:
+                continue
+            s = str(val).lower()
+            if "pro1st" in s or "pro 1st" in s or "pro-1st" in s:
+                return True
+        return False
+
+    df["is_pro1st"] = df.apply(is_pro1st_row, axis=1)
+
+    return df
+
+def row_hash_from_values(values: list, source_file: str, row_index: int, batch_key: str) -> str:
+    import hashlib, json as _json
+    payload = _json.dumps([batch_key, source_file, row_index, values], default=str, sort_keys=False)
+    return hashlib.md5(payload.encode("utf-8")).hexdigest()
 
 def main():
     ap = argparse.ArgumentParser(description="Import POS export XLSX files into Postgres (upsert by sale_id).")
@@ -441,72 +615,181 @@ def main():
     conn = psycopg2.connect(**PG)
     try:
         with conn, conn.cursor() as cur:
+            batches = {}
             for path in files:
                 source = os.path.basename(path)
-                print(f"\n=== Importing {source} ===")
-                df = read_pos_excel(path)
-                if not is_sales_report(df):
-                    print("Skipped: not a sales report export (line-item exports are ignored for now).")
-                    continue
-                df2 = clean_row(df, source)
+                key = batch_key_from_filename(source) or f"file:{source}"
+                entry = batches.setdefault(key, {"files": [], "sales_file": None, "items_file": None, "warnings": []})
+                entry["files"].append(path)
+                if source.lower().startswith("sales_report"):
+                    entry["sales_file"] = source
+                if source.lower().startswith("topitems_report"):
+                    entry["items_file"] = source
 
-                # RAW rows: sale_id + sale_date + json of entire original row
-                # Build json from original df (not renamed), but ensure same row alignment
-                raw_df = df.copy()
-                raw_df.columns = [str(c).strip() for c in raw_df.columns]
-                # sale_id / sale_date pulled from cleaned df2
-                raw_rows = []
-                clean_rows = []
+            for batch_key, entry in batches.items():
+                warnings = []
+                if not entry["sales_file"] or not entry["items_file"]:
+                    warnings.append("Expected sales_report and topitems_report pair for batch.")
+                warnings.extend(entry["warnings"])
+                warning_text = "; ".join(warnings)
+                batch_id = upsert_batch(cur, batch_key, entry["sales_file"], entry["items_file"], warning_text)
 
-                # Safety: detect sale_id collisions (common if Sales# resets each year)
-                sale_ids = list({str(x).strip() for x in df2["sale_id"].tolist() if str(x).strip()})
-                if sale_ids:
-                    cur.execute(
-                        "SELECT sale_id, sale_date FROM pos_sales WHERE sale_id = ANY(%s)",
-                        (sale_ids,),
-                    )
-                    existing = {r[0]: (r[1].isoformat() if r[1] else None) for r in cur.fetchall()}
-                    collisions = []
-                    for _, row in df2.iterrows():
-                        sid = row["sale_id"]
-                        if sid in existing and existing[sid] and row["sale_date"] and existing[sid] != row["sale_date"].isoformat():
-                            collisions.append((sid, existing[sid], row["sale_date"].isoformat()))
-                    if collisions and not args.allow_id_collisions:
-                        print("\n❌ Detected sale_id collisions with different sale_date. This usually means Sales# is not globally unique.")
-                        for sid, prev, nxt in collisions[:25]:
-                            print(f"  sale_id={sid} existing={prev} incoming={nxt}")
-                        if len(collisions) > 25:
-                            print(f"  ... and {len(collisions) - 25} more")
-                        print("\nFix: choose a unique key strategy (e.g. include year) or rerun with --allow-id-collisions to overwrite.")
-                        raise SystemExit(2)
+                for path in entry["files"]:
+                    source = os.path.basename(path)
+                    print(f"\n=== Importing {source} (batch {batch_key}) ===")
+                    df = read_pos_excel(path)
+                    if is_sales_report(df):
+                        df2 = clean_row(df, source)
+                        date_field, range_start, range_end = compute_sales_date_range(df2)
+                        if range_start <= range_end:
+                            print(f"Clearing existing data for {date_field} between {range_start} and {range_end}...")
+                            cur.execute(
+                                f"""
+                                WITH target_sales AS (
+                                  SELECT sale_id
+                                  FROM pos_sales
+                                  WHERE {date_field} >= %s
+                                    AND {date_field} <= %s
+                                )
+                                DELETE FROM pos_sale_items WHERE sale_id IN (SELECT sale_id FROM target_sales);
+                                """,
+                                (range_start, range_end),
+                            )
+                            cur.execute(
+                                f"""
+                                WITH target_sales AS (
+                                  SELECT sale_id
+                                  FROM pos_sales
+                                  WHERE {date_field} >= %s
+                                    AND {date_field} <= %s
+                                )
+                                DELETE FROM pos_sale_items_raw WHERE sale_id IN (SELECT sale_id FROM target_sales);
+                                """,
+                                (range_start, range_end),
+                            )
+                            cur.execute(
+                                f"""
+                                WITH target_sales AS (
+                                  SELECT sale_id
+                                  FROM pos_sales
+                                  WHERE {date_field} >= %s
+                                    AND {date_field} <= %s
+                                )
+                                DELETE FROM pos_sales_raw WHERE sale_id IN (SELECT sale_id FROM target_sales);
+                                """,
+                                (range_start, range_end),
+                            )
+                            cur.execute(
+                                f"""
+                                WITH target_sales AS (
+                                  SELECT sale_id
+                                  FROM pos_sales
+                                  WHERE {date_field} >= %s
+                                    AND {date_field} <= %s
+                                )
+                                DELETE FROM pos_sales WHERE sale_id IN (SELECT sale_id FROM target_sales);
+                                """,
+                                (range_start, range_end),
+                            )
+                        raw_df = df.copy()
+                        raw_df.columns = [str(c).strip() for c in raw_df.columns]
+                        raw_rows = []
+                        clean_rows = []
 
-                # For raw JSON: iterate original rows, but need the matching sale_id.
-                # simplest: rebuild a dict per row from cleaned and raw together
-                for idx, row in df2.iterrows():
-                    # idx corresponds to original df row index
-                    raw_json = {k: json_safe(v) for k, v in (raw_df.loc[idx].to_dict() if idx in raw_df.index else {}).items()}
-                    raw_rows.append((
-                        row["sale_id"],
-                        row["sale_date"],
-                        source,
-                        Json(raw_json),
-                    ))
-                    clean_rows.append(tuple(row[c] for c in CLEAN_COLS))
+                        # Safety: detect sale_id collisions (common if Sales# resets each year)
+                        sale_ids = list({str(x).strip() for x in df2["sale_id"].tolist() if str(x).strip()})
+                        if sale_ids:
+                            cur.execute(
+                                "SELECT sale_id, sale_date FROM pos_sales WHERE sale_id = ANY(%s)",
+                                (sale_ids,),
+                            )
+                            existing = {r[0]: (r[1].isoformat() if r[1] else None) for r in cur.fetchall()}
+                            collisions = []
+                            for _, row in df2.iterrows():
+                                sid = row["sale_id"]
+                                if sid in existing and existing[sid] and row["sale_date"] and existing[sid] != row["sale_date"].isoformat():
+                                    collisions.append((sid, existing[sid], row["sale_date"].isoformat()))
+                            if collisions and not args.allow_id_collisions:
+                                print("\n❌ Detected sale_id collisions with different sale_date. This usually means Sales# is not globally unique.")
+                                for sid, prev, nxt in collisions[:25]:
+                                    print(f"  sale_id={sid} existing={prev} incoming={nxt}")
+                                if len(collisions) > 25:
+                                    print(f"  ... and {len(collisions) - 25} more")
+                                print("\nFix: choose a unique key strategy (e.g. include year) or rerun with --allow-id-collisions to overwrite.")
+                                raise SystemExit(2)
 
-                execute_values(cur, UPSERT_RAW, raw_rows, page_size=2000)
-                execute_values(cur, UPSERT_CLEAN, clean_rows, page_size=2000)
+                        for idx, row in df2.iterrows():
+                            raw_json = {k: json_safe(v) for k, v in (raw_df.loc[idx].to_dict() if idx in raw_df.index else {}).items()}
+                            raw_rows.append((
+                                row["sale_id"],
+                                row["sale_date"],
+                                source,
+                                batch_id,
+                                Json(raw_json),
+                            ))
+                            clean_rows.append(tuple(row[c] for c in CLEAN_COLS) + (batch_id,))
 
-                print(f"Upserted: {len(clean_rows)} rows (clean) + {len(raw_rows)} rows (raw)")
+                        execute_values(cur, UPSERT_RAW, raw_rows, page_size=2000)
+                        execute_values(cur, UPSERT_CLEAN, clean_rows, page_size=2000)
 
-                if args.no_move:
-                    print("Skipped moving file (--no-move).")
-                else:
-                    dest = os.path.join(processed_dir, source)
-                    if os.path.abspath(path) != os.path.abspath(dest):
-                        shutil.move(path, dest)
-                        print(f"Moved to processed: {dest}")
+                        print(f"Upserted: {len(clean_rows)} rows (clean) + {len(raw_rows)} rows (raw)")
+                    elif is_item_export(df):
+                        df2 = clean_item_rows(df, source)
+                        date_field, range_start, range_end = compute_sales_date_range(df2)
+                        if range_start <= range_end:
+                            print(f"Clearing existing item data for {date_field} between {range_start} and {range_end}...")
+                            cur.execute(
+                                f"""
+                                DELETE FROM pos_sale_items_raw
+                                WHERE {date_field} >= %s
+                                  AND {date_field} <= %s;
+                                """,
+                                (range_start, range_end),
+                            )
+                            cur.execute(
+                                f"""
+                                DELETE FROM pos_sale_items
+                                WHERE {date_field} >= %s
+                                  AND {date_field} <= %s;
+                                """,
+                                (range_start, range_end),
+                            )
+                        raw_df = df.copy()
+                        raw_df.columns = [str(c).strip() for c in raw_df.columns]
+                        raw_rows = []
+                        clean_rows = []
+
+                        for idx, row in df2.iterrows():
+                            raw_json = {k: json_safe(v) for k, v in (raw_df.loc[idx].to_dict() if idx in raw_df.index else {}).items()}
+                            values = [row[c] for c in ITEM_COLS]
+                            row_hash = row_hash_from_values(values, source, int(idx) if isinstance(idx, (int, float)) else 0, batch_key)
+                            raw_rows.append((
+                                row_hash,
+                                row["sale_id"],
+                                row["sale_date"],
+                                source,
+                                batch_id,
+                                Json(raw_json),
+                            ))
+                            clean_rows.append((row_hash,) + tuple(row[c] for c in ITEM_COLS) + (batch_id,))
+
+                        execute_values(cur, UPSERT_ITEMS_RAW, raw_rows, page_size=2000)
+                        execute_values(cur, UPSERT_ITEMS, clean_rows, page_size=2000)
+
+                        print(f"Upserted: {len(clean_rows)} item rows")
                     else:
-                        print("File already in processed folder.")
+                        print("Skipped: unrecognized export type.")
+                        continue
+
+                    if args.no_move:
+                        print("Skipped moving file (--no-move).")
+                    else:
+                        dest = os.path.join(processed_dir, source)
+                        if os.path.abspath(path) != os.path.abspath(dest):
+                            shutil.move(path, dest)
+                            print(f"Moved to processed: {dest}")
+                        else:
+                            print("File already in processed folder.")
 
         print("\n✅ Done.")
     finally:

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -11,19 +11,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ref, uploadBytes } from "firebase/storage";
+import { Database, Loader2, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
 import {
-  CheckCircle,
-  Database,
-  FileSpreadsheet,
-  Loader2,
-  ShoppingBag,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
-import { isConfigured, storage } from "../services/firebase";
-import {
-  checkPosBackendHealthy,
   fetchAvailableYears,
   fetchLeaderboard,
   fetchFinanceSummary,
@@ -31,10 +20,14 @@ import {
   fetchSalesByLocation,
   fetchSalesDaily,
   fetchSummary,
-  getPosApiBaseUrl,
-  uploadPosExports,
+  fetchBestSellers,
+  fetchTopCategories,
+  fetchTopManufacturers,
+  fetchPro1stAttachRate,
+  fetchSalespersonTickets,
 } from "../services/posBackendApi";
 import { SalesData, StoreData } from "../types";
+import UpdateDatabase from "./UpdateDatabase";
 
 type CompareMode = "TWO_DAYS" | "TWO_WEEKS" | "TWO_MONTHS" | "TWO_YEARS";
 
@@ -156,13 +149,8 @@ const generateDayOptions = () => {
 
 const yearFromYm = (ym: string) => ym.split('-')[0];
 const monthFromYm = (ym: string) => ym.split('-')[1];
-const yearOptions = ['2023', '2024', '2025'];
 const monthOptions = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
 const dayOptions = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
-
-const yearFromYmd = (ymd: string) => ymd.split('-')[0];
-const monthFromYmd = (ymd: string) => ymd.split('-')[1];
-const dayFromYmd = (ymd: string) => ymd.split('-')[2];
 
 const isValidYm = (v: string) => /^\d{4}-\d{2}$/.test(v);
 const isValidIsoWeek = (v: string) => /^\d{4}-W\d{2}$/.test(v);
@@ -201,21 +189,10 @@ const SalesDashboard: React.FC = () => {
   const [compareWeek, setCompareWeek] = useState<string>("");
   const [selectedDay, setSelectedDay] = useState<string>(ymd(new Date()));
   const [compareDay, setCompareDay] = useState<string>("");
-  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
-    const now = new Date();
-    const d = new Date(now.getFullYear(), now.getMonth() - 6, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-  });
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => "2026-01");
   const [compareMonth, setCompareMonth] = useState<string>("");
   const [salespersonQuery, setSalespersonQuery] = useState("");
-  const [trendStart, setTrendStart] = useState<string>(() => {
-    const now = new Date();
-    return ymd(new Date(Date.UTC(now.getFullYear(), now.getMonth() - 6, 1)));
-  });
-  const [trendEnd, setTrendEnd] = useState<string>(() => ymd(new Date()));
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [finance, setFinance] = useState({
     financedLines: 0,
@@ -229,7 +206,6 @@ const SalesDashboard: React.FC = () => {
     financeFee: 0,
     financeBalance: 0,
   });
-  const [posBackendOk, setPosBackendOk] = useState<boolean | null>(null);
   const [lowMarginData, setLowMarginData] = useState<Array<{
     saleId: string;
     saleDate: string;
@@ -239,6 +215,56 @@ const SalesDashboard: React.FC = () => {
     marginPct: number | null;
   }>>([]);
   const [lowMarginSort, setLowMarginSort] = useState<{ column: string; direction: 'asc' | 'desc' }>({ column: 'marginPct', direction: 'asc' });
+  const [bestSellers, setBestSellers] = useState<Array<{
+    itemDescription: string;
+    category: string;
+    manufacturer: string;
+    itemNo: string;
+    qty: number;
+    sales: number;
+    saleIds: string[];
+  }>>([]);
+  const [itemSortMetric, setItemSortMetric] = useState<"sales" | "qty">("sales");
+  const [salespersonTickets, setSalespersonTickets] = useState<Array<{
+    saleId: string;
+    saleDate: string;
+    salesperson: string;
+    location: string;
+    receiptNo: string;
+    customerName: string;
+    grandTotal: number;
+    profit: number;
+    marginPct: number | null;
+  }>>([]);
+  const [topCategories, setTopCategories] = useState<Array<{ category: string; qty: number; sales: number }>>([]);
+  const [topManufacturers, setTopManufacturers] = useState<Array<{ manufacturer: string; qty: number; sales: number }>>([]);
+  const [pro1stStats, setPro1stStats] = useState<{
+    totalSales: number;
+    proSales: number;
+    attachRate: number;
+    saleIds: string[];
+    saleIdsLow: string[];
+    saleIdsMid: string[];
+    saleIdsHigh: string[];
+  }>({
+    totalSales: 0,
+    proSales: 0,
+    attachRate: 0,
+    saleIds: [],
+    saleIdsLow: [],
+    saleIdsMid: [],
+    saleIdsHigh: [],
+  });
+
+  const yearOptions = useMemo(() => {
+    const years = new Set<number>(availableYears);
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= currentYear - 5; y -= 1) {
+      years.add(y);
+    }
+    years.add(2023);
+    return Array.from(years).sort((a, b) => a - b).map(String);
+  }, [availableYears]);
 
   const sortedLowMarginData = useMemo(() => {
     return [...lowMarginData].sort((a, b) => {
@@ -256,21 +282,6 @@ const SalesDashboard: React.FC = () => {
     });
   }, [lowMarginData, lowMarginSort]);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    let stopped = false;
-    const run = async () => {
-      const ok = await checkPosBackendHealthy();
-      if (!stopped) setPosBackendOk(ok);
-    };
-    void run();
-    const id = window.setInterval(run, 10000);
-    return () => {
-      stopped = true;
-      window.clearInterval(id);
-    };
-  }, []);
 
 
 
@@ -338,7 +349,20 @@ const SalesDashboard: React.FC = () => {
         }
       }
 
-      const [leaderRows, locationRows, curSummary, financeSummary, prevSummary, prevFinanceSummary, lowMarginRows] = await Promise.all([
+      const [
+        leaderRows,
+        locationRows,
+        curSummary,
+        financeSummary,
+        prevSummary,
+        prevFinanceSummary,
+        lowMarginRows,
+        bestSellerRows,
+        categoryRows,
+        manufacturerRows,
+        pro1stSummary,
+        salespersonTicketsRows,
+      ] = await Promise.all([
         fetchLeaderboard({
           start: currentRange.start,
           end: currentRange.endExclusive,
@@ -354,7 +378,19 @@ const SalesDashboard: React.FC = () => {
         compareRange
           ? fetchFinanceSummary({ start: compareRange.start, end: compareRange.endExclusive, salesperson })
           : Promise.resolve(null),
-        fetchLowMargin({ start: trendStart, end: addDaysYmd(trendEnd, 1), limitPer: 5, limitTotal: 50, salesperson }),
+        fetchLowMargin({ start: currentRange.start, end: currentRange.endExclusive, limitPer: 10, limitTotal: 200, salesperson }),
+        fetchBestSellers({ start: currentRange.start, end: currentRange.endExclusive, limit: 10 }),
+        fetchTopCategories({ start: currentRange.start, end: currentRange.endExclusive, limit: 8 }),
+        fetchTopManufacturers({ start: currentRange.start, end: currentRange.endExclusive, limit: 8 }),
+        fetchPro1stAttachRate({ start: currentRange.start, end: currentRange.endExclusive }),
+        salesperson
+          ? fetchSalespersonTickets({
+              start: currentRange.start,
+              end: currentRange.endExclusive,
+              salesperson,
+              limit: 5000,
+            })
+          : Promise.resolve([]),
       ]);
 
       setSalesData(
@@ -419,6 +455,11 @@ const SalesDashboard: React.FC = () => {
       }
 
       setLowMarginData(lowMarginRows.rows);
+      setBestSellers(bestSellerRows);
+      setTopCategories(categoryRows);
+      setTopManufacturers(manufacturerRows);
+      setPro1stStats(pro1stSummary);
+      setSalespersonTickets(salespersonTicketsRows);
     } catch (e) {
       console.error(e);
       setError("Couldn’t load POS data. Confirm the backend API is running on http://127.0.0.1:5055.");
@@ -440,6 +481,19 @@ const SalesDashboard: React.FC = () => {
         financeBalance: 0,
       });
       setLowMarginData([]);
+      setBestSellers([]);
+      setTopCategories([]);
+      setTopManufacturers([]);
+      setPro1stStats({
+        totalSales: 0,
+        proSales: 0,
+        attachRate: 0,
+        saleIds: [],
+        saleIdsLow: [],
+        saleIdsMid: [],
+        saleIdsHigh: [],
+      });
+      setSalespersonTickets([]);
     } finally {
       setLoading(false);
     }
@@ -447,81 +501,54 @@ const SalesDashboard: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [compareMode, selectedDay, compareDay, selectedWeek, compareWeek, selectedMonth, compareMonth, yearA, yearB, salespersonQuery, trendStart, trendEnd]);
-
-  const loadTrend = async () => {
-    const salesperson = salespersonQuery.trim() ? salespersonQuery.trim() : undefined;
-
-    if (!trendStart || !trendEnd) return;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(trendStart) || !/^\d{4}-\d{2}-\d{2}$/.test(trendEnd)) return;
-
-    // API treats `end` as exclusive; date input is inclusive.
-    const endExclusive = addDaysYmd(trendEnd, 1);
-
-    try {
-      const dailyRows = await fetchSalesDaily({ start: trendStart, end: endExclusive, salesperson });
-      setTrendData(
-        dailyRows
-          .filter((r) => r.day)
-          .map((r) => ({
-            day: String(r.day).includes("T") ? String(r.day).slice(0, 10) : String(r.day),
-            sales: Number.isFinite(r.sales) ? r.sales : 0,
-          }))
-      );
-    } catch (e) {
-      console.error(e);
-      setTrendData([]);
-    }
-  };
+  }, [compareMode, selectedDay, compareDay, selectedWeek, compareWeek, selectedMonth, compareMonth, yearA, yearB, salespersonQuery]);
 
   useEffect(() => {
-    loadTrend();
-  }, [trendStart, trendEnd, salespersonQuery]);
+    const salesperson = salespersonQuery.trim() ? salespersonQuery.trim() : undefined;
+    let start = "1900-01-01";
+    let endExclusive = "2100-01-01";
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.name.endsWith(".xlsx") && !file.name.endsWith(".xls")) {
-      alert("Please upload a valid Excel file (.xlsx or .xls)");
+    try {
+      if (compareMode === "TWO_WEEKS") {
+        const weekA = getIsoWeekStart(selectedWeek);
+        if (weekA) {
+          start = weekA;
+          endExclusive = addDaysYmd(weekA, 7);
+        }
+      } else if (compareMode === "TWO_DAYS") {
+        if (selectedDay) {
+          start = selectedDay;
+          endExclusive = addDaysYmd(selectedDay, 1);
+        }
+      } else if (compareMode === "TWO_YEARS") {
+        const range = getYearRange(yearA);
+        start = range.start;
+        endExclusive = range.endExclusive;
+      } else if (isValidYm(selectedMonth)) {
+        const range = getMonthRange(selectedMonth);
+        start = range.start;
+        endExclusive = range.endExclusive;
+      }
+    } catch {
       return;
     }
 
-    setUploading(true);
-    setUploadSuccess(false);
-
-    try {
-      if (posBackendOk) {
-        const result = await uploadPosExports([file]);
-        if (result?.import?.stderr) {
-          alert(`Import error: ${result.import.stderr}`);
-        }
-      } else if (storage) {
-        const storageRef = ref(storage, `sales/${Date.now()}_${file.name}`);
-        await uploadBytes(storageRef, file);
-      } else {
-        throw new Error("No upload target available.");
-      }
-
-      setUploadSuccess(true);
-      setTimeout(() => setUploadSuccess(false), 5000);
-      if (posBackendOk) {
-        fetchAvailableYears()
-          .then((years) => {
-            if (!years.length) return;
-            setAvailableYears(years);
-          })
-          .catch(() => null);
-        void loadData();
-      }
-    } catch (uploadError) {
-      console.error("Upload failed", uploadError);
-      alert("Failed to upload file. Check console for details.");
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
+    fetchSalesDaily({ start, end: endExclusive, salesperson })
+      .then((dailyRows) => {
+        setTrendData(
+          dailyRows
+            .filter((r) => r.day)
+            .map((r) => ({
+              day: String(r.day).includes("T") ? String(r.day).slice(0, 10) : String(r.day),
+              sales: Number.isFinite(r.sales) ? r.sales : 0,
+            }))
+        );
+      })
+      .catch((e) => {
+        console.error(e);
+        setTrendData([]);
+      });
+  }, [compareMode, selectedDay, selectedWeek, selectedMonth, yearA, salespersonQuery]);
 
   const revenuePct = pctChange(summary.sales, summaryCompare.sales);
   const linesPct = pctChange(summary.lines, summaryCompare.lines);
@@ -546,6 +573,12 @@ const SalesDashboard: React.FC = () => {
   const avgTicketPct = pctChange(avgTicket, avgTicketCompare);
 
   const avgTicketUp = avgTicketPct >= 0;
+  const saleLink = (saleId: string) =>
+    `https://www.gimmethebest.net/furnituredistributors/online/sale_rec_502.asp?saleid=${saleId.padStart(5, "0")}&type=1`;
+  const limitSaleLinks = (ids: string[], max = 6) => {
+    const unique = Array.from(new Set(ids.filter(Boolean).map(String)));
+    return { ids: unique.slice(0, max), remaining: Math.max(0, unique.length - max) };
+  };
 
   if (loading && salesData.length === 0) {
     return (
@@ -558,84 +591,9 @@ const SalesDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in relative">
-      {/* Configuration & Action Area */}
-      {isConfigured && (
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-          <div className="flex items-center gap-3">
-            {uploadSuccess && (
-              <span className="text-xs text-green-600 font-medium flex items-center animate-fade-in">
-                <CheckCircle size={14} className="mr-1" />
-                Sent to Cloud Processor
-              </span>
-            )}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept=".xlsx, .xls"
-              className="hidden"
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg flex items-center text-sm font-medium shadow-sm transition-colors disabled:opacity-50"
-            >
-              {uploading ? <Loader2 size={18} className="animate-spin mr-2" /> : <FileSpreadsheet size={18} className="mr-2" />}
-              {uploading ? "Uploading..." : "Upload POS Data"}
-            </button>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-700 shadow-sm">
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center gap-2 text-xs font-semibold px-2 py-1 rounded-full ${
-                  posBackendOk === null
-                    ? "bg-slate-100 text-slate-600"
-                    : posBackendOk
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-current opacity-60" />
-                POS Backend {posBackendOk === null ? "Checking" : posBackendOk ? "Connected" : "Offline"}
-              </span>
-              <span className="text-xs text-slate-500">{getPosApiBaseUrl()}</span>
-            </div>
-            <div className="text-xs text-slate-500 mt-1">
-              Tasks storage: {posBackendOk ? "Postgres (shared)" : "Browser-only fallback"}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {!isConfigured && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3 text-sm text-amber-800">
-          <Database size={16} />
-          <span>
-            <strong>Demo Mode:</strong> Firebase is not configured; dashboard uses the local POS backend if available.
-          </span>
-        </div>
-      )}
-
-      {!isConfigured && (
-        <div className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-700 shadow-sm">
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-flex items-center gap-2 text-xs font-semibold px-2 py-1 rounded-full ${
-                posBackendOk === null
-                  ? "bg-slate-100 text-slate-600"
-                  : posBackendOk
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
-              }`}
-            >
-              <span className="w-2 h-2 rounded-full bg-current opacity-60" />
-              POS Backend {posBackendOk === null ? "Checking" : posBackendOk ? "Connected" : "Offline"}
-            </span>
-            <span className="text-xs text-slate-500">{getPosApiBaseUrl()}</span>
-          </div>
-          <div className="text-xs text-slate-500 mt-1">Tasks storage: {posBackendOk ? "Postgres (shared)" : "Browser-only fallback"}</div>
-        </div>
-      )}
+      <UpdateDatabase onUploadComplete={() => {
+        void loadData();
+      }} />
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">
@@ -865,7 +823,7 @@ const SalesDashboard: React.FC = () => {
       </div>
 
       {/* Finance */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
           <p className="text-sm font-medium text-slate-500">Financed Amount</p>
           <h3 className="text-2xl font-bold text-slate-800">${finance.financedAmount.toLocaleString()}</h3>
@@ -874,30 +832,6 @@ const SalesDashboard: React.FC = () => {
             <div className={`flex items-center text-sm mt-2 ${financedAmountUp ? "text-green-600" : "text-red-500"}`}>
               {financedAmountUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
               <span className="font-medium">{Math.abs(financedAmountPct).toFixed(1)}%</span>
-              <span className="text-slate-400 ml-1">{compareHint}</span>
-            </div>
-          )}
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <p className="text-sm font-medium text-slate-500">Finance Fees</p>
-          <h3 className="text-2xl font-bold text-slate-800">${finance.financeFee.toLocaleString()}</h3>
-          <p className="text-sm text-slate-400 mt-1">Sum of Finance Fee</p>
-          {hasCompare && (
-            <div className={`flex items-center text-sm mt-2 ${financeFeeUp ? "text-green-600" : "text-red-500"}`}>
-              {financeFeeUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-              <span className="font-medium">{Math.abs(financeFeePct).toFixed(1)}%</span>
-              <span className="text-slate-400 ml-1">{compareHint}</span>
-            </div>
-          )}
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <p className="text-sm font-medium text-slate-500">Finance Balance</p>
-          <h3 className="text-2xl font-bold text-slate-800">${finance.financeBalance.toLocaleString()}</h3>
-          <p className="text-sm text-slate-400 mt-1">Sum of Finance Balance</p>
-          {hasCompare && (
-            <div className={`flex items-center text-sm mt-2 ${financeBalanceUp ? "text-green-600" : "text-red-500"}`}>
-              {financeBalanceUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-              <span className="font-medium">{Math.abs(financeBalancePct).toFixed(1)}%</span>
               <span className="text-slate-400 ml-1">{compareHint}</span>
             </div>
           )}
@@ -928,6 +862,212 @@ const SalesDashboard: React.FC = () => {
               <span className="font-medium">{Math.abs(avgTicketPct).toFixed(1)}%</span>
               <span className="text-slate-400 ml-1">{compareHint}</span>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Item Analytics */}
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-slate-800">Item Rankings</div>
+          <div className="text-xs text-slate-500">Sort Best Sellers, Categories, and Manufacturers together.</div>
+        </div>
+        <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1 text-xs">
+          <button
+            onClick={() => setItemSortMetric("sales")}
+            className={`px-3 py-1 rounded-full font-semibold ${
+              itemSortMetric === "sales"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Sales $
+          </button>
+          <button
+            onClick={() => setItemSortMetric("qty")}
+            className={`px-3 py-1 rounded-full font-semibold ${
+              itemSortMetric === "qty"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Qty
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-slate-800">Best Sellers</h3>
+            <p className="text-sm text-slate-500">
+              Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"} for the selected range.
+            </p>
+          </div>
+          {bestSellers.length ? (
+            <div className="space-y-4">
+              {[...bestSellers]
+                .sort((a, b) => {
+                  const aVal = itemSortMetric === "qty" ? a.qty : a.sales;
+                  const bVal = itemSortMetric === "qty" ? b.qty : b.sales;
+                  return bVal - aVal;
+                })
+                .map((item, idx) => {
+                const { ids, remaining } = limitSaleLinks(item.saleIds);
+                return (
+                  <div key={`${item.itemDescription}-${idx}`} className="flex flex-col gap-2">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">{item.itemDescription || "Unnamed Item"}</div>
+                        <div className="text-xs text-slate-500">
+                          {(item.category || "Uncategorized").toUpperCase()}
+                          {item.manufacturer ? ` · ${item.manufacturer}` : ""}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold text-slate-800">{item.qty.toLocaleString()} qty</div>
+                        <div className="text-xs text-slate-500">${item.sales.toLocaleString()}</div>
+                      </div>
+                    </div>
+                    {ids.length > 0 && (
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {ids.map((sid) => (
+                          <a
+                            key={sid}
+                            href={saleLink(sid)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          >
+                            {sid}
+                          </a>
+                        ))}
+                        {remaining > 0 && (
+                          <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-500">
+                            +{remaining} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No item data available for this range.</p>
+          )}
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-slate-800">Top Categories</h3>
+            <p className="text-sm text-slate-500">
+              Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"}.
+            </p>
+          </div>
+          {topCategories.length ? (
+            <div className="space-y-4">
+              {[...topCategories]
+                .sort((a, b) => {
+                  const aVal = itemSortMetric === "qty" ? a.qty : a.sales;
+                  const bVal = itemSortMetric === "qty" ? b.qty : b.sales;
+                  return bVal - aVal;
+                })
+                .map((row) => (
+                <div key={row.category} className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-800">{row.category}</div>
+                    <div className="text-xs text-slate-500">{row.qty.toLocaleString()} qty</div>
+                  </div>
+                  <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No category data available for this range.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-slate-800">Top Manufacturers</h3>
+            <p className="text-sm text-slate-500">
+              Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"}.
+            </p>
+          </div>
+          {topManufacturers.length ? (
+            <div className="space-y-4">
+              {[...topManufacturers]
+                .sort((a, b) => {
+                  const aVal = itemSortMetric === "qty" ? a.qty : a.sales;
+                  const bVal = itemSortMetric === "qty" ? b.qty : b.sales;
+                  return bVal - aVal;
+                })
+                .map((row) => (
+                <div key={row.manufacturer} className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-800">{row.manufacturer}</div>
+                    <div className="text-xs text-slate-500">{row.qty.toLocaleString()} qty</div>
+                  </div>
+                  <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No manufacturer data available for this range.</p>
+          )}
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-slate-800">Pro1st Attach Rate</h3>
+            <p className="text-sm text-slate-500">Sales orders that include Pro1st</p>
+          </div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="text-2xl font-bold text-slate-800">{pro1stStats.attachRate.toFixed(1)}%</div>
+              <div className="text-xs text-slate-500">{pro1stStats.proSales} of {pro1stStats.totalSales} sales</div>
+            </div>
+          </div>
+          {pro1stStats.saleIds.length ? (
+            (() => {
+              const tier = (label: string, ids: string[]) => {
+                const unique = Array.from(new Set(ids.filter(Boolean).map(String)));
+                return (
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold text-slate-500">{label}</div>
+                    {unique.length ? (
+                      <div className="flex flex-wrap gap-2 text-xs max-h-32 overflow-y-auto pr-1">
+                        {unique.map((sid) => (
+                          <a
+                            key={sid}
+                            href={saleLink(sid)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          >
+                            {sid}
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-400">No tickets in this tier.</div>
+                    )}
+                  </div>
+                );
+              };
+              return (
+                <div className="space-y-4">
+                  {tier("200+ profit", pro1stStats.saleIdsHigh)}
+                  {tier("100-200 profit", pro1stStats.saleIdsMid)}
+                  {tier("Below 100 profit", pro1stStats.saleIdsLow)}
+                </div>
+              );
+            })()
+          ) : (
+            <p className="text-sm text-slate-500">No Pro1st sales detected for this range.</p>
           )}
         </div>
       </div>
@@ -1008,125 +1148,11 @@ const SalesDashboard: React.FC = () => {
 
       {/* Trend */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="mb-6">
            <div>
              <h3 className="text-lg font-bold text-slate-800">Sales Trend</h3>
-             <p className="text-sm text-slate-500">Pick a date range (independent of compare)</p>
-             <div className="flex flex-wrap gap-2 mt-2">
-               {[
-                 { label: "Last 7 Days", days: 7 },
-                 { label: "Last 30 Days", days: 30 },
-                 { label: "Last 3 Months", days: 90 },
-                 { label: "Last 6 Months", days: 180 },
-                 { label: "Last Year", days: 365 },
-               ].map((preset) => (
-                 <button
-                   key={preset.label}
-                   onClick={() => {
-                     if (preset.days) {
-                       const end = new Date();
-                       const start = new Date(end.getTime() - preset.days * 24 * 60 * 60 * 1000);
-                       setTrendStart(ymd(start));
-                       setTrendEnd(ymd(end));
-                     }
-                   }}
-                   className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors"
-                 >
-                   {preset.label}
-                 </button>
-               ))}
-             </div>
+             <p className="text-sm text-slate-500">Trend mirrors the selected date range.</p>
            </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Start Year</label>
-                <select
-                  value={yearFromYmd(trendStart)}
-                  onChange={(e) => setTrendStart(`${e.target.value}-${monthFromYmd(trendStart)}-${dayFromYmd(trendStart)}`)}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Month</label>
-                <select
-                  value={monthFromYmd(trendStart)}
-                  onChange={(e) => setTrendStart(`${yearFromYmd(trendStart)}-${e.target.value}-${dayFromYmd(trendStart)}`)}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  {monthOptions.map((m) => (
-                    <option key={m} value={m}>
-                      {new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "short" })}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Day</label>
-                <select
-                  value={dayFromYmd(trendStart)}
-                  onChange={(e) => setTrendStart(`${yearFromYmd(trendStart)}-${monthFromYmd(trendStart)}-${e.target.value}`)}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  {dayOptions.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">End Year</label>
-                <select
-                  value={yearFromYmd(trendEnd)}
-                  onChange={(e) => setTrendEnd(`${e.target.value}-${monthFromYmd(trendEnd)}-${dayFromYmd(trendEnd)}`)}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Month</label>
-                <select
-                  value={monthFromYmd(trendEnd)}
-                  onChange={(e) => setTrendEnd(`${yearFromYmd(trendEnd)}-${e.target.value}-${dayFromYmd(trendEnd)}`)}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  {monthOptions.map((m) => (
-                    <option key={m} value={m}>
-                      {new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "short" })}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Day</label>
-                <select
-                  value={dayFromYmd(trendEnd)}
-                  onChange={(e) => setTrendEnd(`${yearFromYmd(trendEnd)}-${monthFromYmd(trendEnd)}-${e.target.value}`)}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  {dayOptions.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
         </div>
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -1165,7 +1191,7 @@ const SalesDashboard: React.FC = () => {
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
         <div className="mb-6">
           <h3 className="text-lg font-bold text-slate-800">Lowest Margins per Salesperson (Trend Dates)</h3>
-          <p className="text-sm text-slate-500">Top 5 lowest margin sales per associate (by selected period) - Click headers to sort</p>
+          <p className="text-sm text-slate-500">Lowest 10 margin sales per associate (by selected period) - Click headers to sort</p>
         </div>
         {sortedLowMarginData.length > 0 ? (
           <div className="overflow-x-auto">
@@ -1212,6 +1238,55 @@ const SalesDashboard: React.FC = () => {
           <p className="text-sm text-slate-500">No low margin data available.</p>
         )}
       </div>
+
+      {salespersonQuery.trim() && (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-slate-800">Salesperson Detail: {salespersonQuery.trim()}</h3>
+            <p className="text-sm text-slate-500">All tickets for the selected date range</p>
+          </div>
+          {salespersonTickets.length ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Sale ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Location</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Profit</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Margin %</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {salespersonTickets.map((row, idx) => (
+                    <tr key={`${row.saleId}-${idx}`}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:text-blue-800">
+                        <a
+                          href={saleLink(row.saleId)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {row.saleId}
+                        </a>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.saleDate}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.location || "(unknown)"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.grandTotal.toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.profit.toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        {row.marginPct !== null ? `${row.marginPct.toFixed(1)}%` : "N/A"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No tickets found for this salesperson and range.</p>
+          )}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">

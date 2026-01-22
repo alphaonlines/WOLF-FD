@@ -132,6 +132,8 @@ const SAFE_FINANCE_BALANCE = `
   END
 `;
 
+const ITEM_DATE_FIELD = "COALESCE(delivery_confirmed_date, sale_date)";
+
 // Health
 app.get("/health", async (_req, res) => {
   const r = await pool.query("SELECT 1 AS ok");
@@ -363,6 +365,62 @@ app.get("/api/low-margin", async (req, res) => {
   res.json({ start, end, limit_per: limitPer, limit_total: limitTotal, total_count: totalCount, rows });
 });
 
+// All tickets for a salesperson within a date range (for detail drill-down)
+app.get("/api/salesperson-tickets", async (req, res) => {
+  const start = parseDateParam(req.query.start, "1900-01-01");
+  const end = parseDateParam(req.query.end, "2100-01-01");
+  const salespersonQ = parseTextParam(req.query.salesperson);
+  const limit = Math.min(Number(req.query.limit || 2000), 10000);
+  if (!salespersonQ) {
+    return res.status(400).json({ error: "salesperson is required" });
+  }
+
+  const sql = `
+    SELECT
+      p.sale_id,
+      p.sale_date,
+      p.salesperson,
+      COALESCE(p.location, s.location) AS location,
+      s.receipt_no,
+      s.customer_name,
+      p.grand_total_split::numeric AS grand_total,
+      (CASE WHEN p.profit_split IS NULL OR p.profit_split <> p.profit_split THEN 0 ELSE p.profit_split END)::numeric AS profit,
+      (
+        CASE
+          WHEN p.grand_total_split IS NULL OR p.grand_total_split = 0 OR p.grand_total_split <> p.grand_total_split THEN NULL
+          ELSE ((CASE WHEN p.profit_split IS NULL OR p.profit_split <> p.profit_split THEN 0 ELSE p.profit_split END) / p.grand_total_split) * 100
+        END
+      )::numeric AS margin_pct,
+      s.raw_source_file
+    FROM pos_sales_people p
+    JOIN pos_sales s ON s.sale_id = p.sale_id
+    WHERE p.sale_date >= $1
+      AND p.sale_date < $2
+      AND p.salesperson ILIKE ('%' || $3 || '%')
+    ORDER BY p.sale_date DESC, p.sale_id DESC
+    LIMIT $4;
+  `;
+
+  const r = await pool.query(sql, [start, end, salespersonQ, limit]);
+  res.json({
+    start,
+    end,
+    limit,
+    rows: r.rows.map((x: any) => ({
+      sale_id: x.sale_id,
+      sale_date: x.sale_date,
+      salesperson: x.salesperson,
+      location: x.location,
+      receipt_no: x.receipt_no,
+      customer_name: x.customer_name,
+      grand_total: x.grand_total,
+      profit: x.profit,
+      margin_pct: x.margin_pct,
+      raw_source_file: x.raw_source_file,
+    })),
+  });
+});
+
 // Summary totals for a date range
 // Note: `end` is treated as exclusive to match common analytics behavior.
 app.get("/api/summary", async (req, res) => {
@@ -429,6 +487,256 @@ app.get("/api/finance-summary", async (req, res) => {
 
   const r = salespersonQ ? await pool.query(sql, [start, end, salespersonQ]) : await pool.query(sql, [start, end]);
   res.json({ start, end, ...r.rows[0] });
+});
+
+// Best sellers (items)
+app.get("/api/items/best-sellers", async (req, res) => {
+  const start = parseDateParam(req.query.start, "1900-01-01");
+  const end = parseDateParam(req.query.end, "2100-01-01");
+  const limit = Math.min(Number(req.query.limit || 15), 100);
+
+  const sql = `
+    SELECT
+      item_description,
+      category,
+      manufacturer,
+      item_no,
+      ROUND(SUM(CASE WHEN qty_sold IS NULL OR qty_sold <> qty_sold THEN 0 ELSE qty_sold END)::numeric, 2) AS qty,
+      ROUND(SUM(CASE WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0 ELSE total_sale_price END)::numeric, 2) AS sales,
+      ARRAY_AGG(DISTINCT sale_id) FILTER (WHERE sale_id IS NOT NULL AND sale_id <> '') AS sale_ids
+    FROM pos_sale_items
+    WHERE ${ITEM_DATE_FIELD} >= $1
+      AND ${ITEM_DATE_FIELD} < $2
+      AND item_description IS NOT NULL
+      AND item_description <> ''
+    GROUP BY item_description, category, manufacturer, item_no
+    ORDER BY sales DESC NULLS LAST
+    LIMIT $3;
+  `;
+
+  const r = await pool.query(sql, [start, end, limit]);
+  res.json({
+    start,
+    end,
+    limit,
+    rows: r.rows.map((x: any) => ({
+      item_description: x.item_description,
+      category: x.category,
+      manufacturer: x.manufacturer,
+      item_no: x.item_no,
+      qty: Number(x.qty ?? 0),
+      sales: Number(x.sales ?? 0),
+      sale_ids: Array.isArray(x.sale_ids) ? x.sale_ids : [],
+    })),
+  });
+});
+
+// Top categories (items)
+app.get("/api/items/by-category", async (req, res) => {
+  const start = parseDateParam(req.query.start, "1900-01-01");
+  const end = parseDateParam(req.query.end, "2100-01-01");
+  const limit = Math.min(Number(req.query.limit || 10), 50);
+
+  const sql = `
+    SELECT
+      category,
+      ROUND(SUM(CASE WHEN qty_sold IS NULL OR qty_sold <> qty_sold THEN 0 ELSE qty_sold END)::numeric, 2) AS qty,
+      ROUND(SUM(CASE WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0 ELSE total_sale_price END)::numeric, 2) AS sales
+    FROM pos_sale_items
+    WHERE ${ITEM_DATE_FIELD} >= $1
+      AND ${ITEM_DATE_FIELD} < $2
+      AND category IS NOT NULL
+      AND category <> ''
+    GROUP BY category
+    ORDER BY sales DESC NULLS LAST
+    LIMIT $3;
+  `;
+
+  const r = await pool.query(sql, [start, end, limit]);
+  res.json({
+    start,
+    end,
+    limit,
+    rows: r.rows.map((x: any) => ({
+      category: x.category,
+      qty: Number(x.qty ?? 0),
+      sales: Number(x.sales ?? 0),
+    })),
+  });
+});
+
+// Top manufacturers (items)
+app.get("/api/items/by-manufacturer", async (req, res) => {
+  const start = parseDateParam(req.query.start, "1900-01-01");
+  const end = parseDateParam(req.query.end, "2100-01-01");
+  const limit = Math.min(Number(req.query.limit || 10), 50);
+
+  const sql = `
+    SELECT
+      manufacturer,
+      ROUND(SUM(CASE WHEN qty_sold IS NULL OR qty_sold <> qty_sold THEN 0 ELSE qty_sold END)::numeric, 2) AS qty,
+      ROUND(SUM(CASE WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0 ELSE total_sale_price END)::numeric, 2) AS sales
+    FROM pos_sale_items
+    WHERE ${ITEM_DATE_FIELD} >= $1
+      AND ${ITEM_DATE_FIELD} < $2
+      AND manufacturer IS NOT NULL
+      AND manufacturer <> ''
+    GROUP BY manufacturer
+    ORDER BY sales DESC NULLS LAST
+    LIMIT $3;
+  `;
+
+  const r = await pool.query(sql, [start, end, limit]);
+  res.json({
+    start,
+    end,
+    limit,
+    rows: r.rows.map((x: any) => ({
+      manufacturer: x.manufacturer,
+      qty: Number(x.qty ?? 0),
+      sales: Number(x.sales ?? 0),
+    })),
+  });
+});
+
+// Pro1st attach rate + sale ids
+app.get("/api/pro1st/attach-rate", async (req, res) => {
+  const start = parseDateParam(req.query.start, "1900-01-01");
+  const end = parseDateParam(req.query.end, "2100-01-01");
+
+  const totalSql = `
+    SELECT COUNT(DISTINCT sale_id)::int AS total_sales
+    FROM pos_sales
+    WHERE COALESCE(delivery_confirmed_date, sale_date) >= $1
+      AND COALESCE(delivery_confirmed_date, sale_date) < $2
+      AND sale_id IS NOT NULL
+      AND sale_id <> '';
+  `;
+  const proSql = `
+    WITH pro_items AS (
+      SELECT
+        sale_id,
+        COALESCE(total_profit, 0)::numeric AS item_profit
+      FROM pos_sale_items
+      WHERE ${ITEM_DATE_FIELD} >= $1
+        AND ${ITEM_DATE_FIELD} < $2
+        AND (
+          is_pro1st = TRUE
+          OR item_description ILIKE '%pro1st%'
+          OR item_description ILIKE '%pro 1st%'
+          OR item_description ILIKE '%pro-1st%'
+          OR category ILIKE '%pro1st%'
+          OR category ILIKE '%pro 1st%'
+          OR category ILIKE '%pro-1st%'
+          OR item_no ILIKE '%pro1st%'
+          OR item_no ILIKE '%pro 1st%'
+          OR item_no ILIKE '%pro-1st%'
+          OR manufacturer ILIKE '%pro1st%'
+          OR manufacturer ILIKE '%pro 1st%'
+          OR manufacturer ILIKE '%pro-1st%'
+        )
+        AND sale_id IS NOT NULL
+        AND sale_id <> ''
+    ),
+    sales_with_profit AS (
+      SELECT sale_id, SUM(item_profit)::numeric AS pro_profit
+      FROM pro_items
+      GROUP BY sale_id
+    )
+    SELECT
+      COUNT(*)::int AS pro_sales,
+      ARRAY_AGG(sale_id) AS sale_ids,
+      ARRAY_AGG(sale_id) FILTER (WHERE pro_profit < 100) AS sale_ids_low,
+      ARRAY_AGG(sale_id) FILTER (WHERE pro_profit >= 100 AND pro_profit < 200) AS sale_ids_mid,
+      ARRAY_AGG(sale_id) FILTER (WHERE pro_profit >= 200) AS sale_ids_high
+    FROM sales_with_profit;
+  `;
+
+  const [totalRes, proRes] = await Promise.all([
+    pool.query(totalSql, [start, end]),
+    pool.query(proSql, [start, end]),
+  ]);
+  const totalSales = Number(totalRes.rows[0]?.total_sales ?? 0);
+  const proSales = Number(proRes.rows[0]?.pro_sales ?? 0);
+  const saleIds = Array.isArray(proRes.rows[0]?.sale_ids) ? proRes.rows[0]?.sale_ids : [];
+  const saleIdsLow = Array.isArray(proRes.rows[0]?.sale_ids_low) ? proRes.rows[0]?.sale_ids_low : [];
+  const saleIdsMid = Array.isArray(proRes.rows[0]?.sale_ids_mid) ? proRes.rows[0]?.sale_ids_mid : [];
+  const saleIdsHigh = Array.isArray(proRes.rows[0]?.sale_ids_high) ? proRes.rows[0]?.sale_ids_high : [];
+  const attachRate = totalSales > 0 ? (proSales / totalSales) * 100 : 0;
+
+  res.json({
+    start,
+    end,
+    total_sales: totalSales,
+    pro_sales: proSales,
+    attach_rate: attachRate,
+    sale_ids: saleIds,
+    sale_ids_low: saleIdsLow,
+    sale_ids_mid: saleIdsMid,
+    sale_ids_high: saleIdsHigh,
+  });
+});
+
+// Coverage check: missing months for sales vs items (delivery months)
+app.get("/api/import/coverage-months", async (_req, res) => {
+  const startFloor = "2024-01-01";
+  const salesSql = `
+    WITH bounds AS (
+      SELECT
+        GREATEST(MIN(COALESCE(delivery_confirmed_date, sale_date)), $1::date) AS min_date,
+        MAX(COALESCE(delivery_confirmed_date, sale_date)) AS max_date
+      FROM pos_sales
+    ),
+    months AS (
+      SELECT generate_series(date_trunc('month', min_date), date_trunc('month', max_date), interval '1 month') AS month_start
+      FROM bounds
+      WHERE min_date IS NOT NULL AND max_date IS NOT NULL
+    ),
+    present AS (
+      SELECT DISTINCT date_trunc('month', COALESCE(delivery_confirmed_date, sale_date)) AS month_start
+      FROM pos_sales
+      WHERE COALESCE(delivery_confirmed_date, sale_date) >= $1
+    )
+    SELECT to_char(m.month_start, 'YYYY-MM') AS month
+    FROM months m
+    LEFT JOIN present p USING (month_start)
+    WHERE p.month_start IS NULL
+    ORDER BY m.month_start;
+  `;
+
+  const itemsSql = `
+    WITH bounds AS (
+      SELECT
+        GREATEST(MIN(${ITEM_DATE_FIELD}), $1::date) AS min_date,
+        MAX(${ITEM_DATE_FIELD}) AS max_date
+      FROM pos_sale_items
+    ),
+    months AS (
+      SELECT generate_series(date_trunc('month', min_date), date_trunc('month', max_date), interval '1 month') AS month_start
+      FROM bounds
+      WHERE min_date IS NOT NULL AND max_date IS NOT NULL
+    ),
+    present AS (
+      SELECT DISTINCT date_trunc('month', ${ITEM_DATE_FIELD}) AS month_start
+      FROM pos_sale_items
+      WHERE ${ITEM_DATE_FIELD} >= $1
+    )
+    SELECT to_char(m.month_start, 'YYYY-MM') AS month
+    FROM months m
+    LEFT JOIN present p USING (month_start)
+    WHERE p.month_start IS NULL
+    ORDER BY m.month_start;
+  `;
+
+  const [salesRows, itemRows] = await Promise.all([
+    pool.query(salesSql, [startFloor]),
+    pool.query(itemsSql, [startFloor]),
+  ]);
+
+  res.json({
+    missingSalesMonths: salesRows.rows.map((r: any) => r.month).filter(Boolean),
+    missingItemMonths: itemRows.rows.map((r: any) => r.month).filter(Boolean),
+  });
 });
 
 // Leaderboard (uses your split view)

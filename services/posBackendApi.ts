@@ -61,6 +61,17 @@ export async function uploadPosExports(files: File[]): Promise<{ import?: { ok?:
   return (await res.json()) as any;
 }
 
+export async function fetchCoverageMonths(): Promise<{
+  missingSalesMonths: string[];
+  missingItemMonths: string[];
+}> {
+  const json = await fetchJson("/api/import/coverage-months");
+  return {
+    missingSalesMonths: Array.isArray((json as any)?.missingSalesMonths) ? (json as any).missingSalesMonths : [],
+    missingItemMonths: Array.isArray((json as any)?.missingItemMonths) ? (json as any).missingItemMonths : [],
+  };
+}
+
 export async function fetchOutliers(params: {
   start: string;
   end: string;
@@ -165,6 +176,48 @@ export async function fetchLowMargin(params: {
       rawSourceFile: String(r.raw_source_file ?? ""),
     })),
   };
+}
+
+export async function fetchSalespersonTickets(params: {
+  start: string;
+  end: string;
+  salesperson: string;
+  limit?: number;
+}): Promise<
+  Array<{
+    saleId: string;
+    saleDate: string;
+    salesperson: string;
+    location: string;
+    receiptNo: string;
+    customerName: string;
+    grandTotal: number;
+    profit: number;
+    marginPct: number | null;
+    rawSourceFile: string;
+  }>
+> {
+  const qs = new URLSearchParams({
+    start: params.start,
+    end: params.end,
+    salesperson: params.salesperson,
+    limit: String(params.limit ?? 2000),
+  });
+  const json = await fetchJson(`/api/salesperson-tickets?${qs.toString()}`);
+  const rows = (json as any)?.rows;
+  if (!Array.isArray(rows)) return [];
+  return rows.map((r: any) => ({
+    saleId: String(r.sale_id ?? ""),
+    saleDate: String(r.sale_date ?? ""),
+    salesperson: String(r.salesperson ?? ""),
+    location: String(r.location ?? ""),
+    receiptNo: String(r.receipt_no ?? ""),
+    customerName: String(r.customer_name ?? ""),
+    grandTotal: Number(r.grand_total ?? 0),
+    profit: Number(r.profit ?? 0),
+    marginPct: r.margin_pct === null || r.margin_pct === undefined ? null : Number(r.margin_pct),
+    rawSourceFile: String(r.raw_source_file ?? ""),
+  }));
 }
 
 export async function fetchLeaderboard(params: {
@@ -304,5 +357,116 @@ export async function fetchFinanceSummary(params: {
     financedAmount: Number((json as any)?.financed_amount ?? 0),
     financeFee: Number((json as any)?.finance_fee ?? 0),
     financeBalance: Number((json as any)?.finance_balance ?? 0),
+  };
+}
+
+export async function fetchBestSellers(params: {
+  start: string;
+  end: string;
+  limit?: number;
+}): Promise<
+  Array<{
+    itemDescription: string;
+    category: string;
+    manufacturer: string;
+    itemNo: string;
+    qty: number;
+    sales: number;
+    saleIds: string[];
+  }>
+> {
+  const qs = new URLSearchParams({
+    start: params.start,
+    end: params.end,
+    limit: String(params.limit ?? 12),
+  });
+  const json = await fetchJson(`/api/items/best-sellers?${qs.toString()}`);
+  const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
+  return rows.map((r: any) => ({
+    itemDescription: String(r.item_description ?? ""),
+    category: String(r.category ?? ""),
+    manufacturer: String(r.manufacturer ?? ""),
+    itemNo: String(r.item_no ?? ""),
+    qty: Number(r.qty ?? 0),
+    sales: Number(r.sales ?? 0),
+    saleIds: Array.isArray(r.sale_ids) ? r.sale_ids.map((x: any) => String(x)) : [],
+  }));
+}
+
+export async function fetchTopCategories(params: {
+  start: string;
+  end: string;
+  limit?: number;
+}): Promise<
+  Array<{
+    category: string;
+    qty: number;
+    sales: number;
+  }>
+> {
+  const qs = new URLSearchParams({
+    start: params.start,
+    end: params.end,
+    limit: String(params.limit ?? 8),
+  });
+  const json = await fetchJson(`/api/items/by-category?${qs.toString()}`);
+  const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
+  return rows.map((r: any) => ({
+    category: String(r.category ?? ""),
+    qty: Number(r.qty ?? 0),
+    sales: Number(r.sales ?? 0),
+  }));
+}
+
+export async function fetchTopManufacturers(params: {
+  start: string;
+  end: string;
+  limit?: number;
+}): Promise<
+  Array<{
+    manufacturer: string;
+    qty: number;
+    sales: number;
+  }>
+> {
+  const qs = new URLSearchParams({
+    start: params.start,
+    end: params.end,
+    limit: String(params.limit ?? 8),
+  });
+  const json = await fetchJson(`/api/items/by-manufacturer?${qs.toString()}`);
+  const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
+  return rows.map((r: any) => ({
+    manufacturer: String(r.manufacturer ?? ""),
+    qty: Number(r.qty ?? 0),
+    sales: Number(r.sales ?? 0),
+  }));
+}
+
+export async function fetchPro1stAttachRate(params: {
+  start: string;
+  end: string;
+}): Promise<{
+  totalSales: number;
+  proSales: number;
+  attachRate: number;
+  saleIds: string[];
+  saleIdsLow: string[];
+  saleIdsMid: string[];
+  saleIdsHigh: string[];
+}> {
+  const qs = new URLSearchParams({
+    start: params.start,
+    end: params.end,
+  });
+  const json = await fetchJson(`/api/pro1st/attach-rate?${qs.toString()}`);
+  return {
+    totalSales: Number((json as any)?.total_sales ?? 0),
+    proSales: Number((json as any)?.pro_sales ?? 0),
+    attachRate: Number((json as any)?.attach_rate ?? 0),
+    saleIds: Array.isArray((json as any)?.sale_ids) ? (json as any).sale_ids.map((x: any) => String(x)) : [],
+    saleIdsLow: Array.isArray((json as any)?.sale_ids_low) ? (json as any).sale_ids_low.map((x: any) => String(x)) : [],
+    saleIdsMid: Array.isArray((json as any)?.sale_ids_mid) ? (json as any).sale_ids_mid.map((x: any) => String(x)) : [],
+    saleIdsHigh: Array.isArray((json as any)?.sale_ids_high) ? (json as any).sale_ids_high.map((x: any) => String(x)) : [],
   };
 }

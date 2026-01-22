@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS pos_sales_raw (
   sale_id         TEXT PRIMARY KEY,
   sale_date       DATE,
   raw_source_file TEXT,
+  import_batch_id BIGINT,
   row_json        JSONB NOT NULL,
   imported_at     TIMESTAMPTZ DEFAULT now()
 );
@@ -50,8 +51,65 @@ CREATE TABLE IF NOT EXISTS pos_sales (
   zip                     TEXT,
 
   raw_source_file         TEXT,
+  last_import_batch_id    BIGINT,
   imported_at             TIMESTAMPTZ DEFAULT now()
 );
+
+-- Import batches (pair of files per update)
+CREATE TABLE IF NOT EXISTS pos_import_batch (
+  id            BIGSERIAL PRIMARY KEY,
+  batch_key     TEXT UNIQUE NOT NULL,
+  sales_file    TEXT,
+  items_file    TEXT,
+  warnings      TEXT,
+  imported_at   TIMESTAMPTZ DEFAULT now(),
+  updated_at    TIMESTAMPTZ DEFAULT now()
+);
+
+-- Line items (from topitems / items exports)
+CREATE TABLE IF NOT EXISTS pos_sale_items_raw (
+  row_hash        TEXT PRIMARY KEY,
+  sale_id         TEXT,
+  sale_date       DATE,
+  raw_source_file TEXT,
+  import_batch_id BIGINT,
+  row_json        JSONB NOT NULL,
+  imported_at     TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS pos_sale_items (
+  row_hash            TEXT PRIMARY KEY,
+  sale_id             TEXT,
+  sale_date           DATE,
+  location            TEXT,
+  manufacturer        TEXT,
+  category            TEXT,
+  item_no             TEXT,
+  item_description    TEXT,
+  qty_sold            NUMERIC,
+  total_cost          NUMERIC,
+  total_sale_price    NUMERIC,
+  total_profit        NUMERIC,
+  gross_margin        NUMERIC,
+  delivery_confirmed_date DATE,
+  is_pro1st           BOOLEAN DEFAULT FALSE,
+  raw_source_file     TEXT,
+  import_batch_id     BIGINT,
+  imported_at         TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE pos_sales_raw ADD COLUMN IF NOT EXISTS import_batch_id BIGINT;
+ALTER TABLE pos_sales ADD COLUMN IF NOT EXISTS last_import_batch_id BIGINT;
+ALTER TABLE pos_sale_items_raw ADD COLUMN IF NOT EXISTS import_batch_id BIGINT;
+ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS import_batch_id BIGINT;
+ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS is_pro1st BOOLEAN DEFAULT FALSE;
+
+CREATE INDEX IF NOT EXISTS idx_pos_sale_items_sale_id ON pos_sale_items(sale_id);
+CREATE INDEX IF NOT EXISTS idx_pos_sale_items_category ON pos_sale_items(category);
+CREATE INDEX IF NOT EXISTS idx_pos_sale_items_item_no ON pos_sale_items(item_no);
+CREATE INDEX IF NOT EXISTS idx_pos_sale_items_batch ON pos_sale_items(import_batch_id);
+CREATE INDEX IF NOT EXISTS idx_pos_sale_items_pro1st ON pos_sale_items(is_pro1st);
+CREATE INDEX IF NOT EXISTS idx_pos_sales_batch ON pos_sales(last_import_batch_id);
 
 -- Ensure columns exist for older DB volumes (safe no-ops when already present)
 ALTER TABLE pos_sales ADD COLUMN IF NOT EXISTS adjustments NUMERIC;

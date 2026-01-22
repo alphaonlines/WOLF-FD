@@ -9,7 +9,14 @@ Changes applied in this repo (summary):
 - Hardened Postgres env defaults in backend (PG* fallbacks).
 - Updated available-years API to include sale/delivery/payment years (now shows 2026+).
 - Updated sales dashboard upload to use backend when available and refresh data after upload.
-- Importer now skips non–sales report exports to avoid duplicate sale_id conflicts.
+- Importer now handles sales reports + item exports, with date-range replacement on import to prevent duplicates.
+- Added item analytics endpoints (best sellers, category, manufacturer) and Pro1st attach rate with sale links.
+- Added monthly missing-coverage audit (sales vs items) in Update Database panel.
+- Added upload retry UI and simplified error/warning handling for file name warnings.
+- Reverted experimental sticky filter/compare employees UI back to prior behavior.
+- Reintroduced Pro1st/best-seller/category/manufacturer analytics and sale links in the dashboard.
+- Embedded Update Database at the top of the dashboard (removed the old one-off upload button).
+- Added Pro1st tagging to item imports and item-date-range deletes on import.
 
 Key files touched:
 - App.tsx

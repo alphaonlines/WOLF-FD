@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { CheckCircle, AlertTriangle, UploadCloud, FileSpreadsheet } from "lucide-react";
-import { uploadPosExports } from "../services/posBackendApi";
+import { fetchCoverageMonths, uploadPosExports } from "../services/posBackendApi";
 
 type FileCheckStatus = "ready" | "invalid" | "uploading" | "uploaded" | "error";
 
@@ -52,13 +52,29 @@ const detectType = (columns: string[]) => {
   return null;
 };
 
-const UpdateDatabase: React.FC = () => {
+type UpdateDatabaseProps = {
+  onUploadComplete?: () => void;
+};
+
+const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => {
   const [checks, setChecks] = useState<FileCheck[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [uploadWarnings, setUploadWarnings] = useState<string[]>([]);
+  const [missingSalesMonths, setMissingSalesMonths] = useState<string[]>([]);
+  const [missingItemMonths, setMissingItemMonths] = useState<string[]>([]);
 
   const validChecks = useMemo(() => checks.filter((c) => c.status === "ready"), [checks]);
   const hasErrors = checks.some((c) => c.status === "invalid" || c.status === "error");
+
+  const isFilenameWarning = (msg: string) =>
+    msg.includes("Unrecognized filename") ||
+    msg.includes("Expected exactly 2 files per update") ||
+    msg.includes("Expected both sales_report") ||
+    msg.includes("Filename suffixes do not match");
+
+  const filterDisplayWarnings = (warnings: string[]) =>
+    warnings.filter((w) => !isFilenameWarning(w));
 
   const runValidation = async (files: File[]) => {
     const nextChecks: FileCheck[] = [];
@@ -111,7 +127,24 @@ const UpdateDatabase: React.FC = () => {
     setChecks(nextChecks);
     setUploadError(null);
     setUploadSuccess(null);
+    setUploadWarnings([]);
   };
+
+  const refreshCoverage = () => {
+    fetchCoverageMonths()
+      .then((data) => {
+        setMissingSalesMonths(data.missingSalesMonths || []);
+        setMissingItemMonths(data.missingItemMonths || []);
+      })
+      .catch(() => {
+        setMissingSalesMonths([]);
+        setMissingItemMonths([]);
+      });
+  };
+
+  useEffect(() => {
+    refreshCoverage();
+  }, []);
 
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -119,15 +152,73 @@ const UpdateDatabase: React.FC = () => {
     runValidation(files);
   };
 
+  const setFileStatus = (fileName: string, status: FileCheckStatus, clearErrors = false) => {
+    setChecks((prev) =>
+      prev.map((c) => {
+        if (c.file.name !== fileName) return c;
+        return {
+          ...c,
+          status,
+          errors: clearErrors ? undefined : c.errors,
+        };
+      })
+    );
+  };
+
+  const handleRetry = async (fileName: string) => {
+    const target = checks.find((c) => c.file.name === fileName);
+    if (!target) return;
+    setUploadError(null);
+    setUploadWarnings([]);
+    setFileStatus(fileName, "uploading");
+    try {
+      const result = await uploadPosExports([target.file]);
+      if (Array.isArray(result?.warnings) && result.warnings.length) {
+        const displayWarnings = filterDisplayWarnings(result.warnings);
+        setUploadWarnings(displayWarnings);
+      }
+      if (result?.import?.stderr) {
+        setUploadError(`Import error: ${result.import.stderr}`);
+        setFileStatus(fileName, "error");
+        return;
+      }
+      setFileStatus(fileName, "uploaded", true);
+      setUploadSuccess("File uploaded and imported.");
+      setUploadError(null);
+      refreshCoverage();
+      if (onUploadComplete) onUploadComplete();
+    } catch {
+      setUploadError("Upload failed. Check the POS backend and try again.");
+      setFileStatus(fileName, "error");
+    }
+  };
+
   const handleUpload = async () => {
     if (!validChecks.length) return;
     setUploadError(null);
     setUploadSuccess(null);
+    setUploadWarnings([]);
     setChecks((prev) => prev.map((c) => (c.status === "ready" ? { ...c, status: "uploading" } : c)));
     try {
-      await uploadPosExports(validChecks.map((c) => c.file));
-      setChecks((prev) => prev.map((c) => (c.status === "uploading" ? { ...c, status: "uploaded" } : c)));
-      setUploadSuccess("Files uploaded. Run the importer to update the database.");
+      const result = await uploadPosExports(validChecks.map((c) => c.file));
+      if (Array.isArray(result?.warnings) && result.warnings.length) {
+        const displayWarnings = filterDisplayWarnings(result.warnings);
+        setUploadWarnings(displayWarnings);
+      }
+      if (result?.import?.stderr) {
+        setUploadError(`Import error: ${result.import.stderr}`);
+        setChecks((prev) => prev.map((c) => (c.status === "uploading" ? { ...c, status: "error" } : c)));
+        return;
+      }
+      setChecks((prev) =>
+        prev.map((c) =>
+          c.status === "uploading" ? { ...c, status: "uploaded", errors: undefined } : c
+        )
+      );
+      setUploadSuccess("Files uploaded and imported.");
+      setUploadError(null);
+      refreshCoverage();
+      if (onUploadComplete) onUploadComplete();
     } catch (err) {
       setChecks((prev) => prev.map((c) => (c.status === "uploading" ? { ...c, status: "error" } : c)));
       setUploadError("Upload failed. Check the POS backend and try again.");
@@ -142,7 +233,9 @@ const UpdateDatabase: React.FC = () => {
           <div>
             <h2 className="text-lg font-semibold text-slate-800">Update Database</h2>
             <p className="text-sm text-slate-500">
-              Upload monthly or weekly exports. We validate headers before saving the files.
+              Upload monthly or weekly exports here. Use matching file pairs like{" "}
+              <span className="font-semibold">sales_report#.xls</span> +{" "}
+              <span className="font-semibold">topitems_report#.xls</span>.
             </p>
           </div>
         </div>
@@ -179,27 +272,41 @@ const UpdateDatabase: React.FC = () => {
               {uploadError}
             </span>
           )}
+          {uploadWarnings.length > 0 && (
+            <span className="text-xs text-amber-700 font-medium flex items-center gap-1">
+              <AlertTriangle size={14} />
+              {uploadWarnings.join(" ")}
+            </span>
+          )}
         </div>
 
         {checks.length > 0 && (
           <div className="mt-4 space-y-2 text-sm">
             {checks.map((c) => (
-              <div key={c.file.name} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+              <div key={c.file.name} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 gap-4">
                 <div>
                   <div className="font-medium text-slate-800">{c.file.name}</div>
                   <div className="text-xs text-slate-500">
                     {c.typeLabel || "Unrecognized export"} · {(c.file.size / 1024).toFixed(1)} KB
                   </div>
-                  {c.errors?.length ? (
+                  {c.errors?.length && (c.status === "invalid" || c.status === "error") ? (
                     <div className="text-xs text-red-600 mt-1">{c.errors.join(" ")}</div>
                   ) : null}
                 </div>
-                <div className="text-xs font-semibold">
+                <div className="text-xs font-semibold flex items-center gap-3">
                   {c.status === "ready" && <span className="text-emerald-600">Ready</span>}
                   {c.status === "invalid" && <span className="text-red-600">Invalid</span>}
                   {c.status === "uploading" && <span className="text-blue-600">Uploading</span>}
                   {c.status === "uploaded" && <span className="text-green-600">Uploaded</span>}
                   {c.status === "error" && <span className="text-red-600">Error</span>}
+                  {c.status === "error" && (
+                    <button
+                      onClick={() => handleRetry(c.file.name)}
+                      className="text-xs text-blue-600 hover:text-blue-700"
+                    >
+                      Retry
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -208,18 +315,33 @@ const UpdateDatabase: React.FC = () => {
 
         {hasErrors && (
           <div className="mt-4 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            Expected headers match the standard POS exports. If a file fails, re-export with headers enabled.
+            Expected headers match the standard POS exports.
           </div>
         )}
-      </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h3 className="text-base font-semibold text-slate-800 mb-2">What Gets Updated</h3>
-        <ul className="text-sm text-slate-600 space-y-2">
-          <li>Sales report exports update the core sale headers (sale totals, status, dates, customer fields).</li>
-          <li>Items exports update line-item analytics (best sellers, category revenue, manufacturer performance).</li>
-          <li>Pro1st items are flagged for attach-rate tracking and highlighted in the dashboard.</li>
-        </ul>
+        <div className="mt-4 text-xs text-slate-600">
+          <div className="font-semibold text-slate-700 mb-1">Export Instructions</div>
+          <div>Sales report: select all fields, including Light, Medium, and Heavy calculations.</div>
+          <div className="mt-2">Item report: Manufacturer = All, Delivered = All for both exports. Let it fully load before exporting.</div>
+        </div>
+
+        {(missingSalesMonths.length > 0 || missingItemMonths.length > 0) && (
+          <div className="mt-4 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <div className="font-semibold mb-1">Missing Coverage (Delivery Months, 2024+)</div>
+            {missingSalesMonths.length > 0 ? (
+              <div className="mb-1">
+                <span className="font-semibold">Missing Sales Report:</span>{" "}
+                {missingSalesMonths.join(", ")}
+              </div>
+            ) : null}
+            {missingItemMonths.length > 0 ? (
+              <div>
+                <span className="font-semibold">Missing Item Report:</span>{" "}
+                {missingItemMonths.join(", ")}
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
     </div>
   );

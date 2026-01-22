@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { LayoutDashboard, CheckSquare, MessageSquare, Menu, Bell, Sofa, Search, Activity, Star, UploadCloud } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, MessageSquare, Menu, Bell, Sofa, Search, Activity, Star } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import TaskManager from './components/TaskManager';
 import WorkAdvertising from './components/WorkAdvertising';
-import UpdateDatabase from './components/UpdateDatabase';
 
 enum Tab {
   OVERVIEW = 'OVERVIEW',
   TASKS = 'TASKS',
   SOCIAL = 'SOCIAL',
-  UPDATE = 'UPDATE',
 }
 
 const PASSWORD = "1111";
@@ -17,7 +15,7 @@ const STORAGE_KEY = "fd_app_unlocked";
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.OVERVIEW);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(() => {
     try {
@@ -56,7 +54,6 @@ const App: React.FC = () => {
       case Tab.OVERVIEW: return <SalesDashboard />;
       case Tab.TASKS: return <TaskManager />;
       case Tab.SOCIAL: return <WorkAdvertising />;
-      case Tab.UPDATE: return <UpdateDatabase />;
       default: return <SalesDashboard />;
     }
   };
@@ -73,9 +70,12 @@ const App: React.FC = () => {
       >
         <div className="h-20 flex items-center justify-center border-b border-slate-800">
            {sidebarOpen ? (
-             <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
+             <div className="flex items-center gap-3">
                <Sofa className="text-blue-400" />
-               <span>Furniture<span className="text-slate-400">Dist</span></span>
+               <div className="leading-tight">
+                 <div className="font-bold text-xl tracking-tight">WOLF FD</div>
+                 <div className="text-xs text-slate-400">Work Online. Live Free. Furniture Distributors</div>
+               </div>
              </div>
            ) : (
              <Sofa className="text-blue-400" size={28} />
@@ -102,13 +102,6 @@ const App: React.FC = () => {
             label="Work Advertising" 
             isActive={activeTab === Tab.SOCIAL} 
             onClick={() => setActiveTab(Tab.SOCIAL)}
-            isOpen={sidebarOpen}
-          />
-          <NavItem 
-            icon={<UploadCloud size={20} />} 
-            label="Update Database" 
-            isActive={activeTab === Tab.UPDATE} 
-            onClick={() => setActiveTab(Tab.UPDATE)}
             isOpen={sidebarOpen}
           />
           <div className="pt-4 mt-4 border-t border-slate-800" />
@@ -163,7 +156,6 @@ const App: React.FC = () => {
               {activeTab === Tab.OVERVIEW && 'Business Overview'}
               {activeTab === Tab.TASKS && 'Team Tasks'}
               {activeTab === Tab.SOCIAL && 'Work Advertising'}
-              {activeTab === Tab.UPDATE && 'Update Database'}
             </h1>
           </div>
 
@@ -197,7 +189,11 @@ const App: React.FC = () => {
 const LoadingOverlay: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-800/70 backdrop-blur-md" />
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-28 -left-24 h-64 w-64 rounded-full bg-blue-500/25 blur-3xl animate-[floatY_7s_ease-in-out_infinite]" />
+        <div className="absolute -bottom-28 -right-24 h-64 w-64 rounded-full bg-indigo-400/20 blur-3xl animate-[floatY_6s_ease-in-out_infinite_reverse]" />
+      </div>
       <div className="relative z-10 flex flex-col items-center gap-5 text-white">
         <style>
           {`
@@ -205,15 +201,33 @@ const LoadingOverlay: React.FC = () => {
               0% { transform: translateX(-100%); }
               100% { transform: translateX(100%); }
             }
+            @keyframes floatY {
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(16px); }
+            }
+            @keyframes halo {
+              0%, 100% { opacity: 0.35; transform: scale(0.96); }
+              50% { opacity: 0.7; transform: scale(1.04); }
+            }
+            @keyframes sweep {
+              0% { transform: translateX(-60%); opacity: 0; }
+              30% { opacity: 0.6; }
+              100% { transform: translateX(60%); opacity: 0; }
+            }
           `}
         </style>
-        <div className="w-20 h-20 rounded-2xl bg-slate-900/80 border border-slate-700 flex items-center justify-center shadow-xl text-4xl">
-          🐺
+        <div className="relative">
+          <div className="absolute inset-0 rounded-3xl border border-blue-300/40 shadow-[0_0_30px_rgba(59,130,246,0.45)] animate-[halo_2.6s_ease-in-out_infinite]" />
+          <div className="w-24 h-24 rounded-3xl bg-slate-900/80 border border-slate-700 flex items-center justify-center shadow-xl text-4xl">
+            🐺
+          </div>
         </div>
         <div className="text-sm uppercase tracking-[0.3em] text-slate-200">Wolf FD</div>
-        <div className="w-64 h-2 rounded-full bg-slate-700 overflow-hidden">
+        <div className="w-64 h-2 rounded-full bg-slate-700/80 overflow-hidden relative">
           <div className="h-full w-1/2 bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-200 animate-[loadbar_2s_linear_infinite]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[sweep_2s_ease-in-out_infinite]" />
         </div>
+        <div className="text-xs text-slate-300/80 tracking-[0.25em] uppercase">Loading Dashboard</div>
       </div>
     </div>
   );
@@ -240,7 +254,13 @@ const LockScreen: React.FC<LockScreenProps> = ({ passwordInput, setPasswordInput
             <p className="text-sm text-slate-500">Enter the passcode to continue.</p>
           </div>
         </div>
-        <div className="flex flex-col gap-3">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            onUnlock();
+          }}
+          className="flex flex-col gap-3"
+        >
           <input
             type="password"
             value={passwordInput}
@@ -249,13 +269,13 @@ const LockScreen: React.FC<LockScreenProps> = ({ passwordInput, setPasswordInput
             className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
           />
           <button
-            onClick={onUnlock}
+            type="submit"
             className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium"
           >
             Unlock
           </button>
           {passwordError && <div className="text-xs text-red-600">{passwordError}</div>}
-        </div>
+        </form>
       </div>
     </div>
   );
