@@ -276,12 +276,12 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-base">
         <div className="flex items-center gap-3 mb-4">
           <UploadCloud className="text-blue-600" />
           <div>
             <h2 className="text-lg font-semibold text-slate-800">Update Database</h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-base text-slate-500">
               Upload monthly or weekly exports here. Use matching file pairs like{" "}
               <span className="font-semibold">sales_report#.xls</span> +{" "}
               <span className="font-semibold">topitems_report#.xls</span>.
@@ -290,7 +290,7 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
         </div>
 
         <div className="flex flex-col md:flex-row gap-3 md:items-center">
-          <label className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium cursor-pointer hover:bg-slate-800">
+          <label className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-base font-medium cursor-pointer hover:bg-slate-800">
             <FileSpreadsheet size={16} />
             Choose Files
             <input
@@ -304,25 +304,25 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
           <button
             onClick={handleUpload}
             disabled={!validChecks.length || checks.some((c) => c.status === "uploading")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-base font-medium disabled:opacity-50"
           >
             <UploadCloud size={16} />
             Upload to Backend
           </button>
           {uploadSuccess && (
-            <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+            <span className="text-sm text-green-600 font-medium flex items-center gap-1">
               <CheckCircle size={14} />
               {uploadSuccess}
             </span>
           )}
           {uploadError && (
-            <span className="text-xs text-red-600 font-medium flex items-center gap-1">
+            <span className="text-sm text-red-600 font-medium flex items-center gap-1">
               <AlertTriangle size={14} />
               {uploadError}
             </span>
           )}
           {uploadWarnings.length > 0 && (
-            <span className="text-xs text-amber-700 font-medium flex items-center gap-1">
+            <span className="text-sm text-amber-700 font-medium flex items-center gap-1">
               <AlertTriangle size={14} />
               {uploadWarnings.join(" ")}
             </span>
@@ -330,19 +330,19 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
         </div>
 
         {checks.length > 0 && (
-          <div className="mt-4 space-y-2 text-sm">
+          <div className="mt-4 space-y-2 text-base">
             {checks.map((c) => (
               <div key={c.file.name} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 gap-4">
                 <div>
                   <div className="font-medium text-slate-800">{c.file.name}</div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-sm text-slate-500">
                     {c.typeLabel || "Unrecognized export"} · {(c.file.size / 1024).toFixed(1)} KB
                   </div>
                   {c.errors?.length && (c.status === "invalid" || c.status === "error") ? (
-                    <div className="text-xs text-red-600 mt-1">{c.errors.join(" ")}</div>
+                    <div className="text-sm text-red-600 mt-1">{c.errors.join(" ")}</div>
                   ) : null}
                 </div>
-                <div className="text-xs font-semibold flex items-center gap-3">
+                <div className="text-sm font-semibold flex items-center gap-3">
                   {c.status === "ready" && <span className="text-emerald-600">Ready</span>}
                   {c.status === "invalid" && <span className="text-red-600">Invalid</span>}
                   {c.status === "uploading" && <span className="text-blue-600">Uploading</span>}
@@ -351,7 +351,7 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
                   {c.status === "error" && (
                     <button
                       onClick={() => handleRetry(c.file.name)}
-                      className="text-xs text-blue-600 hover:text-blue-700"
+                      className="text-sm text-blue-600 hover:text-blue-700"
                     >
                       Retry
                     </button>
@@ -363,52 +363,23 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
         )}
 
         {hasErrors && (
-          <div className="mt-4 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          <div className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
             Expected headers match the standard POS exports.
           </div>
         )}
 
-        <div className="mt-4 text-xs text-slate-600">
+        <div className="mt-4 text-sm text-slate-600">
           <div className="font-semibold text-slate-700 mb-1">Export Instructions</div>
-          <div>Sales report: select all fields, including Light, Medium, and Heavy calculations.</div>
-          <div className="mt-2">Item report: Manufacturer = All, Delivered = All for both exports. Let it fully load before exporting.</div>
-        </div>
-
-        {(missingSalesMonths.length > 0 || missingItemMonths.length > 0) && (
-          <div className="mt-4 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            <div className="font-semibold mb-2">Missing Date Ranges (Delivery Months, 2024+)</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="bg-white/70 border border-amber-100 rounded-lg p-2">
-                <div className="font-semibold text-amber-700 mb-1">Missing Sales Report (items present)</div>
-                {missingSalesMonths.length ? (
-                  <div className="flex flex-wrap gap-1">
-                    {compressMonths(missingSalesMonths).map((m) => (
-                      <span key={m} className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                        {m}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-amber-600">No missing sales ranges.</div>
-                )}
-              </div>
-              <div className="bg-white/70 border border-amber-100 rounded-lg p-2">
-                <div className="font-semibold text-amber-700 mb-1">Missing Items Report (sales present)</div>
-                {missingItemMonths.length ? (
-                  <div className="flex flex-wrap gap-1">
-                    {compressMonths(missingItemMonths).map((m) => (
-                      <span key={m} className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                        {m}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-amber-600">No missing item ranges.</div>
-                )}
-              </div>
-            </div>
+          <div className="mt-2">
+            <div className="font-semibold text-slate-700">Sales report</div>
+            <div>Select all fields, including Light, Medium, and Heavy calculations.</div>
           </div>
-        )}
+          <div className="mt-3">
+            <div className="font-semibold text-slate-700">Item report</div>
+            <div>Manufacturer = All and Delivered = All for both exports.</div>
+            <div>Let the report fully load before exporting.</div>
+          </div>
+        </div>
       </div>
     </div>
   );

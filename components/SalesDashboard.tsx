@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import {
+  Area,
   Bar,
   BarChart,
   CartesianGrid,
@@ -19,6 +20,7 @@ import {
   fetchLowMargin,
   fetchSalesByLocation,
   fetchSalesDaily,
+  fetchPro1stTrend,
   fetchSummary,
   fetchBestSellers,
   fetchTopCategories,
@@ -30,7 +32,6 @@ import {
   fetchSalespeopleBySaleIds,
 } from "../services/posBackendApi";
 import { SalesData, StoreData } from "../types";
-import UpdateDatabase from "./UpdateDatabase";
 
 type CompareMode = "TWO_DAYS" | "TWO_WEEKS" | "TWO_MONTHS" | "TWO_YEARS";
 
@@ -125,13 +126,22 @@ const generateMonthOptions = () => {
 const generateWeekOptions = () => {
   const options = [];
   const now = new Date();
-  for (let i = 0; i < 12; i++) {
+  const toIsoWeek = (date: Date) => {
+    const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - ((d.getUTCDay() + 6) % 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const week = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+  };
+  const seen = new Set<string>();
+  for (let i = 0; i < 104; i++) {
     const d = new Date(now);
-    d.setDate(now.getDate() - i * 7);
-    const year = d.getFullYear();
-    const weekNum = Math.ceil((d.getTime() - new Date(year, 0, 1).getTime()) / 604800000);
-    const isoWeek = `${year}-W${String(weekNum).padStart(2, '0')}`;
-    const label = `Week of ${d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+    d.setUTCDate(now.getUTCDate() - i * 7);
+    const isoWeek = toIsoWeek(d);
+    if (seen.has(isoWeek)) continue;
+    seen.add(isoWeek);
+    const start = getIsoWeekStart(isoWeek) || ymd(d);
+    const label = `Week of ${new Date(`${start}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}`;
     options.push({ value: isoWeek, label });
   }
   return options;
@@ -176,7 +186,7 @@ const formatMonthLabel = (ym: string) => {
   const [y, m] = ym.split("-").map(Number);
   if (!y || !m) return ym;
   const d = new Date(Date.UTC(y, m - 1, 1));
-  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
 };
 
 const salespersonLabel = (fullName: string) => {
@@ -196,10 +206,15 @@ const salespersonLabel = (fullName: string) => {
   return initials || "UNK";
 };
 
-const SalesDashboard: React.FC = () => {
+type SalesDashboardProps = {
+  itemSortMetric: "sales" | "qty";
+  onItemSortMetricChange: (metric: "sales" | "qty") => void;
+};
+
+const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemSortMetricChange }) => {
   const [salesData, setSalesData] = useState<SalespersonPoint[]>([]);
   const [storeData, setStoreData] = useState<StoreData[]>([]);
-  const [trendData, setTrendData] = useState<Array<{ day: string; sales: number }>>([]);
+  const [trendData, setTrendData] = useState<Array<{ day: string; sales: number; pro1stSales: number }>>([]);
   const [summary, setSummary] = useState<Summary>({ sales: 0, lines: 0 });
   const [summaryCompare, setSummaryCompare] = useState<Summary>({ sales: 0, lines: 0 });
   const [compareMode, setCompareMode] = useState<CompareMode>("TWO_MONTHS");
@@ -252,7 +267,6 @@ const SalesDashboard: React.FC = () => {
     sales: number;
     saleIds: string[];
   }>>([]);
-  const [itemSortMetric, setItemSortMetric] = useState<"sales" | "qty">("sales");
   const [salespersonTickets, setSalespersonTickets] = useState<Array<{
     saleId: string;
     saleDate: string;
@@ -430,10 +444,10 @@ const SalesDashboard: React.FC = () => {
           ? fetchFinanceSummary({ start: compareRange.start, end: compareRange.endExclusive, salesperson, location })
           : Promise.resolve(null),
         fetchLowMargin({ start: currentRange.start, end: currentRange.endExclusive, limitPer: 10, limitTotal: 200, salesperson, location }),
-        fetchBestSellers({ start: currentRange.start, end: currentRange.endExclusive, limit: 10, sort: itemSortMetric, location }),
-        fetchTopCategories({ start: currentRange.start, end: currentRange.endExclusive, limit: 8, sort: itemSortMetric, location }),
-        fetchTopManufacturers({ start: currentRange.start, end: currentRange.endExclusive, limit: 8, sort: itemSortMetric, location }),
-        fetchPro1stAttachRate({ start: currentRange.start, end: currentRange.endExclusive, location }),
+        fetchBestSellers({ start: currentRange.start, end: currentRange.endExclusive, limit: 15, sort: itemSortMetric, location, salesperson }),
+        fetchTopCategories({ start: currentRange.start, end: currentRange.endExclusive, limit: 8, sort: itemSortMetric, location, salesperson }),
+        fetchTopManufacturers({ start: currentRange.start, end: currentRange.endExclusive, limit: 8, sort: itemSortMetric, location, salesperson }),
+        fetchPro1stAttachRate({ start: currentRange.start, end: currentRange.endExclusive, location, salesperson }),
         salesperson
           ? fetchSalespersonTickets({
               start: currentRange.start,
@@ -607,16 +621,38 @@ const SalesDashboard: React.FC = () => {
       return;
     }
 
-    fetchSalesDaily({ start, end: endExclusive, salesperson, location })
-      .then((dailyRows) => {
-        setTrendData(
-          dailyRows
-            .filter((r) => r.day)
-            .map((r) => ({
-              day: String(r.day).includes("T") ? String(r.day).slice(0, 10) : String(r.day),
+    Promise.all([
+      fetchSalesDaily({ start, end: endExclusive, salesperson, location }),
+      fetchPro1stTrend({ start, end: endExclusive, salesperson, location }),
+    ])
+      .then(([dailyRows, proRows]) => {
+        const map = new Map<string, { day: string; sales: number; pro1stSales: number }>();
+        dailyRows
+          .filter((r) => r.day)
+          .forEach((r) => {
+            const day = String(r.day).includes("T") ? String(r.day).slice(0, 10) : String(r.day);
+            map.set(day, {
+              day,
               sales: Number.isFinite(r.sales) ? r.sales : 0,
-            }))
-        );
+              pro1stSales: 0,
+            });
+          });
+        proRows
+          .filter((r) => r.day)
+          .forEach((r) => {
+            const day = String(r.day).includes("T") ? String(r.day).slice(0, 10) : String(r.day);
+            const existing = map.get(day);
+            if (existing) {
+              existing.pro1stSales = Number.isFinite(r.sales) ? r.sales : 0;
+            } else {
+              map.set(day, {
+                day,
+                sales: 0,
+                pro1stSales: Number.isFinite(r.sales) ? r.sales : 0,
+              });
+            }
+          });
+        setTrendData(Array.from(map.values()).sort((a, b) => a.day.localeCompare(b.day)));
       })
       .catch((e) => {
         console.error(e);
@@ -742,6 +778,7 @@ const SalesDashboard: React.FC = () => {
         limit: 10,
         sort: itemSortMetric,
         location: selectedStore || undefined,
+        salesperson: selectedSalesperson || undefined,
       });
       setManufacturerItems((prev) => ({ ...prev, [name]: list }));
       const ids = list.flatMap((item) => item.saleIds || []);
@@ -765,6 +802,7 @@ const SalesDashboard: React.FC = () => {
         limit: 10,
         sort: itemSortMetric,
         location: selectedStore || undefined,
+        salesperson: selectedSalesperson || undefined,
       });
       setCategoryItems((prev) => ({ ...prev, [name]: list }));
       const ids = list.flatMap((item) => item.saleIds || []);
@@ -775,6 +813,44 @@ const SalesDashboard: React.FC = () => {
       setCategoryLoading((prev) => ({ ...prev, [name]: false }));
     }
   };
+
+  useEffect(() => {
+    const handler = () => {
+      void loadData();
+    };
+    window.addEventListener("fd-refresh-data", handler);
+    return () => window.removeEventListener("fd-refresh-data", handler);
+  }, [compareMode, selectedDay, compareDay, selectedWeek, compareWeek, selectedMonth, compareMonth, yearA, yearB, selectedSalesperson, selectedStore, itemSortMetric]);
+
+  const hasItemData = pro1stStats.totalSales > 0;
+  const missingItemData = summary.lines > 0 && !hasItemData;
+  const missingSalesData = summary.lines === 0 || summary.sales === 0;
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("fd-items-missing", { detail: { missing: missingItemData } }));
+  }, [missingItemData]);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("fd-sales-missing", { detail: { missing: missingSalesData } }));
+  }, [missingSalesData]);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("fd-filter", {
+        detail: { salesperson: selectedSalesperson || "", store: selectedStore || "" },
+      })
+    );
+  }, [selectedSalesperson, selectedStore]);
+
+  useEffect(() => {
+    const handler = () => {
+      setSelectedSalesperson(null);
+      setSelectedStore(null);
+      setSearchHint(null);
+    };
+    window.addEventListener("fd-clear-filters", handler as EventListener);
+    return () => window.removeEventListener("fd-clear-filters", handler as EventListener);
+  }, []);
 
   if (loading && salesData.length === 0) {
     return (
@@ -787,10 +863,6 @@ const SalesDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in relative">
-      <UpdateDatabase onUploadComplete={() => {
-        void loadData();
-      }} />
-
       {(selectedSalesperson || selectedStore || searchHint) && (
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center">
           <div className="text-sm font-semibold text-slate-800">Active Filters</div>
@@ -1050,8 +1122,8 @@ const SalesDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Finance */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Finance + Avg Ticket */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
           <p className="text-sm font-medium text-slate-500">Financed Amount</p>
           <h3 className="text-2xl font-bold text-slate-800">${finance.financedAmount.toLocaleString()}</h3>
@@ -1076,10 +1148,6 @@ const SalesDashboard: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Extra KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
           <p className="text-sm font-medium text-slate-500">Average Ticket</p>
           <h3 className="text-2xl font-bold text-slate-800">${avgTicket.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
@@ -1091,36 +1159,6 @@ const SalesDashboard: React.FC = () => {
               <span className="text-slate-400 ml-1">{compareHint}</span>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Item Analytics */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="text-sm font-semibold text-slate-800">Item Rankings</div>
-          <div className="text-xs text-slate-500">Sort Best Sellers, Categories, and Manufacturers together.</div>
-        </div>
-        <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1 text-xs">
-          <button
-            onClick={() => setItemSortMetric("sales")}
-            className={`px-3 py-1 rounded-full font-semibold ${
-              itemSortMetric === "sales"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            Sales $
-          </button>
-          <button
-            onClick={() => setItemSortMetric("qty")}
-            className={`px-3 py-1 rounded-full font-semibold ${
-              itemSortMetric === "qty"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            Qty
-          </button>
         </div>
       </div>
 
@@ -1375,8 +1413,12 @@ const SalesDashboard: React.FC = () => {
           </div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-2xl font-bold text-slate-800">{pro1stStats.attachRate.toFixed(1)}%</div>
-              <div className="text-xs text-slate-500">{pro1stStats.proSales} of {pro1stStats.totalSales} sales</div>
+              <div className="text-2xl font-bold text-slate-800">
+                {hasItemData ? `${pro1stStats.attachRate.toFixed(1)}%` : "—"}
+              </div>
+              <div className="text-xs text-slate-500">
+                {hasItemData ? `${pro1stStats.proSales} of ${pro1stStats.totalSales} sales` : "No item data in this range"}
+              </div>
             </div>
           </div>
           {pro1stStats.saleIds.length ? (
@@ -1524,7 +1566,26 @@ const SalesDashboard: React.FC = () => {
           </div>
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={trendData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+            <ComposedChart
+              data={trendData}
+              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+              onClick={(evt: any) => {
+                const label = evt?.activeLabel;
+                if (!label) return;
+                const day = String(label).includes("T") ? String(label).slice(0, 10) : String(label);
+                if (!day) return;
+                setCompareMode("TWO_DAYS");
+                setSelectedDay(day);
+                setCompareDay("");
+                window.dispatchEvent(new Event("fd-open-range"));
+              }}
+            >
+              <defs>
+                <linearGradient id="pro1stFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid stroke="#f1f5f9" vertical={false} />
               <XAxis
                 dataKey="day"
@@ -1548,9 +1609,13 @@ const SalesDashboard: React.FC = () => {
                 labelFormatter={(label: string) =>
                   formatShortDate(String(label).includes("T") ? String(label).slice(0, 10) : String(label))
                 }
-                formatter={(value: number) => [`$${Number(value).toLocaleString()}`, undefined]}
+                formatter={(value: number, name: string) => {
+                  const label = name === "pro1stSales" ? "Pro1st" : "Sales";
+                  return [`$${Number(value).toLocaleString()}`, label];
+                }}
               />
               <Legend iconType="circle" />
+              <Area type="monotone" dataKey="pro1stSales" name="Pro1st" stroke="#f59e0b" fill="url(#pro1stFill)" strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="sales" name="Sales" stroke="#3b82f6" strokeWidth={3} dot={false} />
             </ComposedChart>
           </ResponsiveContainer>

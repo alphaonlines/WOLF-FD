@@ -362,6 +362,34 @@ export async function fetchSalesDaily(params: {
   }));
 }
 
+export async function fetchPro1stTrend(params: {
+  start: string;
+  end: string;
+  salesperson?: string;
+  location?: string;
+}): Promise<
+  Array<{
+    day: string;
+    sales: number;
+  }>
+> {
+  const qs = new URLSearchParams({
+    start: params.start,
+    end: params.end,
+  });
+  if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
+  if (params.location && params.location.trim()) qs.set("location", params.location.trim());
+  const json = await fetchJson(`/api/pro1st/trend?${qs.toString()}`);
+
+  const rows = (json as any)?.rows;
+  if (!Array.isArray(rows)) return [];
+
+  return rows.map((r: any) => ({
+    day: String(r.day ?? ""),
+    sales: Number(r.sales ?? 0),
+  }));
+}
+
 export async function fetchFinanceSummary(params: {
   start: string;
   end: string;
@@ -397,6 +425,7 @@ export async function fetchBestSellers(params: {
   limit?: number;
   sort?: "sales" | "qty";
   location?: string;
+  salesperson?: string;
 }): Promise<
   Array<{
     itemDescription: string;
@@ -415,6 +444,7 @@ export async function fetchBestSellers(params: {
   });
   if (params.sort) qs.set("sort", params.sort);
   if (params.location && params.location.trim()) qs.set("location", params.location.trim());
+  if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
   const json = await fetchJson(`/api/items/best-sellers?${qs.toString()}`);
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
   return rows.map((r: any) => ({
@@ -434,6 +464,7 @@ export async function fetchTopCategories(params: {
   limit?: number;
   sort?: "sales" | "qty";
   location?: string;
+  salesperson?: string;
 }): Promise<
   Array<{
     category: string;
@@ -448,6 +479,7 @@ export async function fetchTopCategories(params: {
   });
   if (params.sort) qs.set("sort", params.sort);
   if (params.location && params.location.trim()) qs.set("location", params.location.trim());
+  if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
   const json = await fetchJson(`/api/items/by-category?${qs.toString()}`);
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
   return rows.map((r: any) => ({
@@ -464,6 +496,7 @@ export async function fetchCategoryTopItems(params: {
   limit?: number;
   sort?: "sales" | "qty";
   location?: string;
+  salesperson?: string;
 }): Promise<
   Array<{
     itemDescription: string;
@@ -482,6 +515,7 @@ export async function fetchCategoryTopItems(params: {
   });
   if (params.sort) qs.set("sort", params.sort);
   if (params.location && params.location.trim()) qs.set("location", params.location.trim());
+  if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
   const json = await fetchJson(`/api/items/category-top-items?${qs.toString()}`);
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
   return rows.map((r: any) => ({
@@ -500,6 +534,7 @@ export async function fetchTopManufacturers(params: {
   limit?: number;
   sort?: "sales" | "qty";
   location?: string;
+  salesperson?: string;
 }): Promise<
   Array<{
     manufacturer: string;
@@ -514,6 +549,7 @@ export async function fetchTopManufacturers(params: {
   });
   if (params.sort) qs.set("sort", params.sort);
   if (params.location && params.location.trim()) qs.set("location", params.location.trim());
+  if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
   const json = await fetchJson(`/api/items/by-manufacturer?${qs.toString()}`);
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
   return rows.map((r: any) => ({
@@ -530,6 +566,7 @@ export async function fetchManufacturerTopItems(params: {
   limit?: number;
   sort?: "sales" | "qty";
   location?: string;
+  salesperson?: string;
 }): Promise<
   Array<{
     itemDescription: string;
@@ -548,6 +585,7 @@ export async function fetchManufacturerTopItems(params: {
   });
   if (params.sort) qs.set("sort", params.sort);
   if (params.location && params.location.trim()) qs.set("location", params.location.trim());
+  if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
   const json = await fetchJson(`/api/items/manufacturer-top-items?${qs.toString()}`);
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
   return rows.map((r: any) => ({
@@ -564,6 +602,7 @@ export async function fetchPro1stAttachRate(params: {
   start: string;
   end: string;
   location?: string;
+  salesperson?: string;
 }): Promise<{
   totalSales: number;
   proSales: number;
@@ -578,6 +617,7 @@ export async function fetchPro1stAttachRate(params: {
     end: params.end,
   });
   if (params.location && params.location.trim()) qs.set("location", params.location.trim());
+  if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
   const json = await fetchJson(`/api/pro1st/attach-rate?${qs.toString()}`);
   return {
     totalSales: Number((json as any)?.total_sales ?? 0),

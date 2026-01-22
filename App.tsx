@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { LayoutDashboard, CheckSquare, MessageSquare, Menu, Sofa, Search, Activity, Star, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, MessageSquare, Menu, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import TaskManager from './components/TaskManager';
 import WorkAdvertising from './components/WorkAdvertising';
+import UpdateDatabase from './components/UpdateDatabase';
 
 enum Tab {
   OVERVIEW = 'OVERVIEW',
@@ -18,6 +19,7 @@ const App: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
+  const [loadingDarkness, setLoadingDarkness] = useState(0.6);
   const [isUnlocked, setIsUnlocked] = useState(() => {
     try {
       return sessionStorage.getItem(STORAGE_KEY) === "true";
@@ -30,10 +32,16 @@ const App: React.FC = () => {
   const [headerSearch, setHeaderSearch] = useState("");
   const [rangeLabel, setRangeLabel] = useState<string | null>(null);
   const [showRange, setShowRange] = useState(false);
+  const [itemSortMetric, setItemSortMetric] = useState<"sales" | "qty">("sales");
+  const [updatePanelOpen, setUpdatePanelOpen] = useState(false);
+  const [updatePanelClosing, setUpdatePanelClosing] = useState(false);
+  const [missingItemData, setMissingItemData] = useState(false);
+  const [missingSalesData, setMissingSalesData] = useState(false);
+  const [activeFilterLabel, setActiveFilterLabel] = useState<string | null>(null);
 
   useEffect(() => {
     if (!showLoading) return;
-    const t = window.setTimeout(() => setShowLoading(false), 2000);
+    const t = window.setTimeout(() => setShowLoading(false), 6500);
     return () => window.clearTimeout(t);
   }, [showLoading]);
 
@@ -55,8 +63,45 @@ const App: React.FC = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { missing?: boolean } | undefined;
+      setMissingItemData(Boolean(detail?.missing));
+    };
+    window.addEventListener("fd-items-missing", handler as EventListener);
+    return () => window.removeEventListener("fd-items-missing", handler as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { missing?: boolean } | undefined;
+      setMissingSalesData(Boolean(detail?.missing));
+    };
+    window.addEventListener("fd-sales-missing", handler as EventListener);
+    return () => window.removeEventListener("fd-sales-missing", handler as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { salesperson?: string; store?: string } | undefined;
+      const salesperson = detail?.salesperson?.trim() || "";
+      const store = detail?.store?.trim() || "";
+      const label = salesperson && store
+        ? `Salesperson: ${salesperson} · Store: ${store}`
+        : salesperson
+          ? `Salesperson: ${salesperson}`
+          : store
+            ? `Store: ${store}`
+            : "";
+      setActiveFilterLabel(label || null);
+    };
+    window.addEventListener("fd-filter", handler as EventListener);
+    return () => window.removeEventListener("fd-filter", handler as EventListener);
+  }, []);
+
   const handleUnlock = () => {
     if (passwordInput === PASSWORD) {
+      setLoadingDarkness(Math.min(0.6 + passwordInput.length * 0.06, 0.96));
       setIsUnlocked(true);
       setPasswordInput("");
       setPasswordError(null);
@@ -71,9 +116,22 @@ const App: React.FC = () => {
     setPasswordError("Incorrect password.");
   };
 
+  const closeUpdatePanel = () => {
+    setUpdatePanelClosing(true);
+    window.setTimeout(() => {
+      setUpdatePanelOpen(false);
+      setUpdatePanelClosing(false);
+    }, 220);
+  };
+
   const renderContent = () => {
     switch(activeTab) {
-      case Tab.OVERVIEW: return <SalesDashboard />;
+      case Tab.OVERVIEW: return (
+        <SalesDashboard
+          itemSortMetric={itemSortMetric}
+          onItemSortMetricChange={setItemSortMetric}
+        />
+      );
       case Tab.TASKS: return <TaskManager />;
       case Tab.SOCIAL: return <WorkAdvertising />;
       default: return <SalesDashboard />;
@@ -131,29 +189,37 @@ const App: React.FC = () => {
           .dark .bg-slate-100 { background-color: rgba(30, 41, 59, 0.8) !important; }
           .dark .border-slate-100 { border-color: rgba(51, 65, 85, 0.8) !important; }
           .dark .border-slate-200 { border-color: rgba(51, 65, 85, 0.8) !important; }
+          @keyframes overlayDarken {
+            0% { background-color: rgba(2, 6, 23, 0.15); }
+            100% { background-color: rgba(2, 6, 23, 0.55); }
+          }
         `}
       </style>
       {!isUnlocked && <LockScreen passwordInput={passwordInput} setPasswordInput={setPasswordInput} passwordError={passwordError} onUnlock={handleUnlock} />}
-      {showLoading && <LoadingOverlay />}
+      {showLoading && <LoadingOverlay darkness={loadingDarkness} />}
       <div className={`flex ${!isUnlocked || showLoading ? 'blur-md' : ''} transition-[filter] duration-500`}>
       
       {/* Sidebar */}
       <aside 
         className={`${sidebarOpen ? 'w-64' : 'w-20'} fixed h-screen bg-slate-900 text-white transition-all duration-300 ease-in-out z-20 flex flex-col`}
       >
-        <div className="h-20 flex items-center justify-center border-b border-slate-800">
-           {sidebarOpen ? (
-             <div className="flex items-center gap-3">
-               <Sofa className="text-blue-400" />
-               <div className="leading-tight">
-                 <div className="font-bold text-xl tracking-tight">WOLF FD</div>
-                 <div className="text-xs text-slate-400">Work Online. Live Free. Furniture Distributors</div>
-               </div>
-             </div>
-           ) : (
-             <Sofa className="text-blue-400" size={28} />
-           )}
-        </div>
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="h-20 w-full flex items-center justify-center border-b border-slate-800 hover:bg-slate-800/60 transition-colors"
+          aria-label="Toggle sidebar"
+        >
+          {sidebarOpen ? (
+            <div className="flex items-center gap-3">
+              <Sofa className="text-blue-400" />
+              <div className="leading-tight text-left">
+                <div className="font-bold text-xl tracking-tight">WOLF FD</div>
+                <div className="text-xs text-slate-400">Work Online. Live Free. Furniture Distributors</div>
+              </div>
+            </div>
+          ) : (
+            <Sofa className="text-blue-400" size={28} />
+          )}
+        </button>
 
         <nav className="flex-1 py-8 px-4 space-y-2">
           <NavItem 
@@ -199,17 +265,26 @@ const App: React.FC = () => {
         </nav>
 
         <div className="p-4 border-t border-slate-800">
-          <div className={`flex items-center gap-3 ${!sidebarOpen && 'justify-center'}`}>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
-              OD
-            </div>
+          <button
+            onClick={() => {
+              if (updatePanelOpen) {
+                closeUpdatePanel();
+              } else {
+                setUpdatePanelOpen(true);
+              }
+            }}
+            className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+              updatePanelOpen
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+            } ${!sidebarOpen ? 'justify-center' : ''}`}
+            title="Update database"
+          >
+            <UploadCloud size={20} />
             {sidebarOpen && (
-              <div className="overflow-hidden">
-                <p className="text-sm font-medium truncate">Owner Dashboard</p>
-                <p className="text-xs text-slate-400 truncate">admin@furnituredist.com</p>
-              </div>
+              <div className="text-sm font-medium">Update DB</div>
             )}
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -219,14 +294,8 @@ const App: React.FC = () => {
         {/* Top Header */}
         <header className="h-20 bg-white border-b border-slate-200 sticky top-0 z-10 px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-slate-100 rounded-lg text-slate-500"
-            >
-              <Menu size={20} />
-            </button>
             <h1 className="text-xl font-semibold text-slate-800">
-              {activeTab === Tab.OVERVIEW && 'Business Overview'}
+              {activeTab === Tab.OVERVIEW && 'WOLF FD Dashboard'}
               {activeTab === Tab.TASKS && 'Team Tasks'}
               {activeTab === Tab.SOCIAL && 'Work Advertising'}
             </h1>
@@ -262,6 +331,52 @@ const App: React.FC = () => {
                 <span className="text-slate-400">Edit</span>
               </button>
             )}
+            {activeTab === Tab.OVERVIEW && activeFilterLabel && (
+              <div className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full bg-white/70 border border-slate-200 text-slate-600">
+                {activeFilterLabel}
+                <button
+                  onClick={() => window.dispatchEvent(new Event("fd-clear-filters"))}
+                  className="ml-1 text-slate-400 hover:text-slate-600"
+                  title="Clear filters"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            {activeTab === Tab.OVERVIEW && missingItemData && (
+              <div className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                Missing data for items for this date range
+              </div>
+            )}
+            {activeTab === Tab.OVERVIEW && missingSalesData && (
+              <div className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                Missing sales data for this date range
+              </div>
+            )}
+            {activeTab === Tab.OVERVIEW && (
+              <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1 text-xs">
+                <button
+                  onClick={() => setItemSortMetric("sales")}
+                  className={`px-3 py-1 rounded-full font-semibold ${
+                    itemSortMetric === "sales"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Sales $
+                </button>
+                <button
+                  onClick={() => setItemSortMetric("qty")}
+                  className={`px-3 py-1 rounded-full font-semibold ${
+                    itemSortMetric === "qty"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Qty
+                </button>
+              </div>
+            )}
             <button
               onClick={() => setIsDarkMode((prev) => !prev)}
               className="p-2 rounded-full bg-white/70 hover:bg-white shadow-sm border border-slate-200 text-slate-600"
@@ -278,15 +393,43 @@ const App: React.FC = () => {
         </div>
 
       </main>
+      {updatePanelOpen && (
+        <>
+          <div
+            className={`fixed inset-0 z-20 backdrop-blur-sm animate-[overlayDarken_1.6s_ease_forwards] ${
+              updatePanelClosing ? "opacity-0 transition-opacity duration-200" : ""
+            }`}
+            onClick={closeUpdatePanel}
+          />
+          <div
+            className={`fixed bottom-6 z-30 w-[320px] sm:w-[420px] max-h-[70vh] overflow-y-auto transition-transform duration-200 ${
+              sidebarOpen ? 'left-72' : 'left-24'
+            } ${updatePanelClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <UpdateDatabase
+              onUploadComplete={() => {
+                window.dispatchEvent(new Event("fd-refresh-data"));
+              }}
+            />
+          </div>
+        </>
+      )}
       </div>
     </div>
   );
 };
 
-const LoadingOverlay: React.FC = () => {
+const LoadingOverlay: React.FC<{ darkness: number }> = ({ darkness }) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center animate-[loadingExit_6.5s_ease-in-out_forwards] [transform-origin:left_bottom]">
       <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-800/70 backdrop-blur-md" />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at center, rgba(2,6,23,0) 0px, rgba(2,6,23,0) 140px, rgba(2,6,23,${darkness}) 260px)`,
+        }}
+      />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-28 -left-24 h-64 w-64 rounded-full bg-blue-500/25 blur-3xl animate-[floatY_7s_ease-in-out_infinite]" />
         <div className="absolute -bottom-28 -right-24 h-64 w-64 rounded-full bg-indigo-400/20 blur-3xl animate-[floatY_6s_ease-in-out_infinite_reverse]" />
@@ -321,6 +464,24 @@ const LoadingOverlay: React.FC = () => {
               0% { opacity: 0; transform: translateY(8px); }
               100% { opacity: 1; transform: translateY(0); }
             }
+            @keyframes loadingExit {
+              0% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+              85% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+              100% { opacity: 0; transform: translate3d(-36vw, 32vh, 0) scale(0.25); }
+            }
+            @keyframes pulseRing {
+              0% { transform: scale(0.92); opacity: 0.35; }
+              70% { transform: scale(1.05); opacity: 0.6; }
+              100% { transform: scale(1.15); opacity: 0; }
+            }
+            @keyframes glowText {
+              0%, 100% { text-shadow: 0 0 12px rgba(59, 130, 246, 0.2); }
+              50% { text-shadow: 0 0 22px rgba(96, 165, 250, 0.65); }
+            }
+            @keyframes floatHint {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(6px); }
+            }
           `}
         </style>
         <div className="relative">
@@ -335,7 +496,26 @@ const LoadingOverlay: React.FC = () => {
           <div className="h-full w-1/2 bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-200 animate-[loadbar_2s_linear_infinite]" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[sweep_2s_ease-in-out_infinite]" />
         </div>
-        <div className="text-xs text-slate-300/80 tracking-[0.25em] uppercase">Loading Dashboard</div>
+        <div className="mt-2 text-center text-sm text-slate-200/90 animate-[floatHint_3s_ease-in-out_infinite]">
+          <div className="font-semibold animate-[glowText_2.4s_ease-in-out_infinite]">
+            Need to update data?
+          </div>
+          <div className="text-slate-300/80">
+            Click the upload icon in the bottom-left menu to add new files.
+          </div>
+        </div>
+      </div>
+      <div className="absolute left-8 bottom-8 flex items-center gap-3 text-slate-100">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full border border-blue-400/70 animate-[pulseRing_2s_ease-out_infinite]" />
+          <div className="w-12 h-12 rounded-full bg-slate-900/80 border border-slate-700 flex items-center justify-center shadow-lg">
+            <UploadCloud size={20} />
+          </div>
+        </div>
+        <div className="text-sm font-medium">
+          Click this to upload new files
+          <div className="text-xs text-slate-400">Bottom-left menu</div>
+        </div>
       </div>
     </div>
   );
@@ -349,40 +529,72 @@ type LockScreenProps = {
 };
 
 const LockScreen: React.FC<LockScreenProps> = ({ passwordInput, setPasswordInput, passwordError, onUnlock }) => {
+  const darkness = Math.min(0.6 + passwordInput.length * 0.06, 0.96);
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center">
-      <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" />
-      <div className="relative z-10 w-full max-w-sm bg-white/95 border border-slate-200 rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center text-2xl">
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-800/70 backdrop-blur-md" />
+      <div
+        className="absolute inset-0 transition-colors duration-300 pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at center, rgba(2,6,23,0) 0px, rgba(2,6,23,0) 140px, rgba(2,6,23,${darkness}) 260px)`,
+        }}
+      />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <style>
+          {`
+            @keyframes breatheGlow {
+              0%, 100% { opacity: 0.35; transform: scale(0.98); }
+              50% { opacity: 0.8; transform: scale(1.02); }
+            }
+            @keyframes orbitA {
+              0%, 100% { transform: translate(-50%, -50%) rotate(0deg) translateX(10px); opacity: 0.6; }
+              50% { transform: translate(-50%, -50%) rotate(180deg) translateX(22px); opacity: 0.35; }
+            }
+            @keyframes orbitB {
+              0%, 100% { transform: translate(-50%, -50%) rotate(0deg) translateX(-14px); opacity: 0.45; }
+              50% { transform: translate(-50%, -50%) rotate(-180deg) translateX(-26px); opacity: 0.7; }
+            }
+          `}
+        </style>
+        <div className="absolute -top-28 -left-24 h-64 w-64 rounded-full bg-blue-500/25 blur-3xl animate-[floatY_7s_ease-in-out_infinite]" />
+        <div className="absolute -bottom-28 -right-24 h-64 w-64 rounded-full bg-indigo-400/20 blur-3xl animate-[floatY_6s_ease-in-out_infinite_reverse]" />
+        <div className="absolute top-1/2 left-1/2 h-[520px] w-[520px] rounded-full border border-blue-400/20 animate-[orbitA_14s_ease-in-out_infinite]" />
+        <div className="absolute top-1/2 left-1/2 h-[360px] w-[360px] rounded-full border border-indigo-300/25 animate-[orbitB_12s_ease-in-out_infinite]" />
+      </div>
+      <div className="relative z-10 w-full max-w-sm rounded-3xl border border-slate-700/70 bg-slate-900/80 p-6 shadow-2xl text-slate-100">
+        <div className="absolute -inset-2 rounded-[28px] bg-blue-500/20 blur-2xl animate-[breatheGlow_3.8s_ease-in-out_infinite] pointer-events-none" />
+        <div className="absolute -inset-1 rounded-[26px] border border-blue-400/30 animate-[breatheGlow_3.8s_ease-in-out_infinite] pointer-events-none" />
+        <div className="relative z-10 flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-xl bg-slate-950/90 border border-slate-700 text-white flex items-center justify-center text-2xl shadow-lg">
             🐺
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-slate-800">Wolf FD Locked</h2>
-            <p className="text-sm text-slate-500">Enter the passcode to continue.</p>
+            <h2 className="text-lg font-semibold text-slate-100">Wolf FD Locked</h2>
+            <p className="text-sm text-slate-400">Enter the passcode to continue.</p>
           </div>
         </div>
         <form
+          className="relative z-10 flex flex-col gap-3"
           onSubmit={(event) => {
             event.preventDefault();
             onUnlock();
           }}
-          className="flex flex-col gap-3"
         >
           <input
             type="password"
             value={passwordInput}
             onChange={(event) => setPasswordInput(event.target.value)}
             placeholder="Passcode"
-            className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
+            autoFocus
+            className="px-3 py-2 rounded-lg text-sm bg-slate-950/70 border border-slate-700 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium"
+            className="px-4 py-2 bg-white text-slate-900 rounded-lg text-sm font-semibold hover:bg-slate-100"
           >
             Unlock
           </button>
-          {passwordError && <div className="text-xs text-red-600">{passwordError}</div>}
+          {passwordError && <div className="text-xs text-rose-300">{passwordError}</div>}
         </form>
       </div>
     </div>
