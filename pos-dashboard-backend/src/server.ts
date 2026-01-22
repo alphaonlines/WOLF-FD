@@ -229,8 +229,8 @@ app.get("/api/outliers", async (req, res) => {
         ${SAFE_FINANCE_FEE}::numeric AS finance_fee,
         raw_source_file
       FROM pos_sales
-      WHERE sale_date >= $1
-        AND sale_date < $2
+    WHERE sale_date >= $1
+      AND sale_date < $2
         AND ($4::text IS NULL OR salesperson ILIKE ('%' || $4 || '%'))
     ),
     stats AS (
@@ -293,6 +293,7 @@ app.get("/api/low-margin", async (req, res) => {
   const limitPer = Math.min(Number(req.query.limit_per || 5), 50);
   const limitTotal = Math.min(Number(req.query.limit_total || 200), 2000);
   const salespersonQ = parseTextParam(req.query.salesperson);
+  const locationQ = parseTextParam(req.query.location);
 
   const sql = `
     WITH s AS (
@@ -324,6 +325,7 @@ app.get("/api/low-margin", async (req, res) => {
         AND p.salesperson <> ''
         AND p.salesperson <> 'Sales, Store'
         AND ($3::text IS NULL OR p.salesperson ILIKE ('%' || $3 || '%'))
+        AND ($4::text IS NULL OR COALESCE(p.location, s.location) ILIKE ('%' || $4 || '%'))
     ),
         ranked AS (
           SELECT
@@ -337,14 +339,14 @@ app.get("/api/low-margin", async (req, res) => {
             ranked.*,
             COUNT(*) OVER ()::int AS total_count
           FROM ranked
-          WHERE rn <= $4
+          WHERE rn <= $5
           ORDER BY margin_pct ASC NULLS LAST, profit ASC, grand_total DESC
-          LIMIT $5
+          LIMIT $6
         )
     SELECT * FROM filtered;
   `;
 
-  const r = await pool.query(sql, [start, end, salespersonQ, limitPer, limitTotal]);
+  const r = await pool.query(sql, [start, end, salespersonQ, locationQ, limitPer, limitTotal]);
   const totalCount = r.rows.length ? Number(r.rows[0].total_count ?? r.rows.length) : 0;
   const rows = r.rows.map((x: any) => ({
     sale_id: x.sale_id,
@@ -370,6 +372,7 @@ app.get("/api/salesperson-tickets", async (req, res) => {
   const start = parseDateParam(req.query.start, "1900-01-01");
   const end = parseDateParam(req.query.end, "2100-01-01");
   const salespersonQ = parseTextParam(req.query.salesperson);
+  const locationQ = parseTextParam(req.query.location);
   const limit = Math.min(Number(req.query.limit || 2000), 10000);
   if (!salespersonQ) {
     return res.status(400).json({ error: "salesperson is required" });
@@ -397,11 +400,12 @@ app.get("/api/salesperson-tickets", async (req, res) => {
     WHERE p.sale_date >= $1
       AND p.sale_date < $2
       AND p.salesperson ILIKE ('%' || $3 || '%')
+      AND ($4::text IS NULL OR COALESCE(p.location, s.location) ILIKE ('%' || $4 || '%'))
     ORDER BY p.sale_date DESC, p.sale_id DESC
-    LIMIT $4;
+    LIMIT $5;
   `;
 
-  const r = await pool.query(sql, [start, end, salespersonQ, limit]);
+  const r = await pool.query(sql, [start, end, salespersonQ, locationQ, limit]);
   res.json({
     start,
     end,
@@ -421,12 +425,38 @@ app.get("/api/salesperson-tickets", async (req, res) => {
   });
 });
 
+// Bulk lookup salespeople by sale_id
+app.post("/api/sales/by-ids", async (req, res) => {
+  const ids = Array.isArray(req.body?.sale_ids) ? req.body.sale_ids : [];
+  const clean = ids
+    .map((x: any) => String(x || "").trim())
+    .filter((x: string) => x);
+  if (!clean.length) {
+    return res.json({ rows: [] });
+  }
+  const r = await pool.query(
+    `
+    SELECT sale_id, salesperson
+    FROM pos_sales
+    WHERE sale_id = ANY($1);
+    `,
+    [clean]
+  );
+  res.json({
+    rows: r.rows.map((x: any) => ({
+      sale_id: x.sale_id,
+      salesperson: x.salesperson,
+    })),
+  });
+});
+
 // Summary totals for a date range
 // Note: `end` is treated as exclusive to match common analytics behavior.
 app.get("/api/summary", async (req, res) => {
   const start = parseDateParam(req.query.start, "1900-01-01");
   const end = parseDateParam(req.query.end, "2100-01-01");
   const salespersonQ = parseTextParam(req.query.salesperson);
+  const locationQ = parseTextParam(req.query.location);
 
   const sql = salespersonQ
     ? `
@@ -437,7 +467,8 @@ app.get("/api/summary", async (req, res) => {
       FROM pos_sales_people
       WHERE sale_date >= $1
         AND sale_date < $2
-        AND salesperson ILIKE ('%' || $3 || '%');
+        AND salesperson ILIKE ('%' || $3 || '%')
+        AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'));
     `
     : `
       SELECT
@@ -446,10 +477,13 @@ app.get("/api/summary", async (req, res) => {
         ROUND(SUM(${SAFE_PROFIT})::numeric, 2) AS profit
       FROM pos_sales
       WHERE sale_date >= $1
-        AND sale_date < $2;
+        AND sale_date < $2
+        AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'));
     `;
 
-  const r = salespersonQ ? await pool.query(sql, [start, end, salespersonQ]) : await pool.query(sql, [start, end]);
+  const r = salespersonQ
+    ? await pool.query(sql, [start, end, salespersonQ, locationQ])
+    : await pool.query(sql, [start, end, locationQ]);
   res.json({ start, end, ...r.rows[0] });
 });
 
@@ -459,6 +493,7 @@ app.get("/api/finance-summary", async (req, res) => {
   const start = parseDateParam(req.query.start, "1900-01-01");
   const end = parseDateParam(req.query.end, "2100-01-01");
   const salespersonQ = parseTextParam(req.query.salesperson);
+  const locationQ = parseTextParam(req.query.location);
 
   const sql = salespersonQ
     ? `
@@ -471,7 +506,8 @@ app.get("/api/finance-summary", async (req, res) => {
       FROM pos_sales_people
       WHERE sale_date >= $1
         AND sale_date < $2
-        AND salesperson ILIKE ('%' || $3 || '%');
+        AND salesperson ILIKE ('%' || $3 || '%')
+        AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'));
     `
     : `
       SELECT
@@ -482,10 +518,13 @@ app.get("/api/finance-summary", async (req, res) => {
         ROUND(SUM(${SAFE_FINANCE_BALANCE})::numeric, 2) AS finance_balance
       FROM pos_sales
       WHERE sale_date >= $1
-        AND sale_date < $2;
+        AND sale_date < $2
+        AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'));
     `;
 
-  const r = salespersonQ ? await pool.query(sql, [start, end, salespersonQ]) : await pool.query(sql, [start, end]);
+  const r = salespersonQ
+    ? await pool.query(sql, [start, end, salespersonQ, locationQ])
+    : await pool.query(sql, [start, end, locationQ]);
   res.json({ start, end, ...r.rows[0] });
 });
 
@@ -494,27 +533,179 @@ app.get("/api/items/best-sellers", async (req, res) => {
   const start = parseDateParam(req.query.start, "1900-01-01");
   const end = parseDateParam(req.query.end, "2100-01-01");
   const limit = Math.min(Number(req.query.limit || 15), 100);
+  const sort = String(req.query.sort || "sales").toLowerCase() === "qty" ? "qty" : "sales";
+  const locationQ = parseTextParam(req.query.location);
 
+  const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
   const sql = `
     SELECT
-      item_description,
-      category,
-      manufacturer,
-      item_no,
+      CASE
+        WHEN (
+          is_pro1st = TRUE
+          OR item_description ILIKE '%pro1st%'
+          OR item_description ILIKE '%pro 1st%'
+          OR item_description ILIKE '%pro-1st%'
+          OR category ILIKE '%pro1st%'
+          OR category ILIKE '%pro 1st%'
+          OR category ILIKE '%pro-1st%'
+          OR item_no ILIKE '%pro1st%'
+          OR item_no ILIKE '%pro 1st%'
+          OR item_no ILIKE '%pro-1st%'
+          OR manufacturer ILIKE '%pro1st%'
+          OR manufacturer ILIKE '%pro 1st%'
+          OR manufacturer ILIKE '%pro-1st%'
+        )
+        THEN 'Pro1st'
+        ELSE item_description
+      END AS item_description,
+      CASE
+        WHEN (
+          is_pro1st = TRUE
+          OR item_description ILIKE '%pro1st%'
+          OR item_description ILIKE '%pro 1st%'
+          OR item_description ILIKE '%pro-1st%'
+          OR category ILIKE '%pro1st%'
+          OR category ILIKE '%pro 1st%'
+          OR category ILIKE '%pro-1st%'
+          OR item_no ILIKE '%pro1st%'
+          OR item_no ILIKE '%pro 1st%'
+          OR item_no ILIKE '%pro-1st%'
+          OR manufacturer ILIKE '%pro1st%'
+          OR manufacturer ILIKE '%pro 1st%'
+          OR manufacturer ILIKE '%pro-1st%'
+        )
+        THEN NULL
+        ELSE category
+      END AS category,
+      CASE
+        WHEN (
+          is_pro1st = TRUE
+          OR item_description ILIKE '%pro1st%'
+          OR item_description ILIKE '%pro 1st%'
+          OR item_description ILIKE '%pro-1st%'
+          OR category ILIKE '%pro1st%'
+          OR category ILIKE '%pro 1st%'
+          OR category ILIKE '%pro-1st%'
+          OR item_no ILIKE '%pro1st%'
+          OR item_no ILIKE '%pro 1st%'
+          OR item_no ILIKE '%pro-1st%'
+          OR manufacturer ILIKE '%pro1st%'
+          OR manufacturer ILIKE '%pro 1st%'
+          OR manufacturer ILIKE '%pro-1st%'
+        )
+        THEN NULL
+        ELSE manufacturer
+      END AS manufacturer,
+      CASE
+        WHEN (
+          is_pro1st = TRUE
+          OR item_description ILIKE '%pro1st%'
+          OR item_description ILIKE '%pro 1st%'
+          OR item_description ILIKE '%pro-1st%'
+          OR category ILIKE '%pro1st%'
+          OR category ILIKE '%pro 1st%'
+          OR category ILIKE '%pro-1st%'
+          OR item_no ILIKE '%pro1st%'
+          OR item_no ILIKE '%pro 1st%'
+          OR item_no ILIKE '%pro-1st%'
+          OR manufacturer ILIKE '%pro1st%'
+          OR manufacturer ILIKE '%pro 1st%'
+          OR manufacturer ILIKE '%pro-1st%'
+        )
+        THEN NULL
+        ELSE item_no
+      END AS item_no,
       ROUND(SUM(CASE WHEN qty_sold IS NULL OR qty_sold <> qty_sold THEN 0 ELSE qty_sold END)::numeric, 2) AS qty,
       ROUND(SUM(CASE WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0 ELSE total_sale_price END)::numeric, 2) AS sales,
       ARRAY_AGG(DISTINCT sale_id) FILTER (WHERE sale_id IS NOT NULL AND sale_id <> '') AS sale_ids
     FROM pos_sale_items
     WHERE ${ITEM_DATE_FIELD} >= $1
       AND ${ITEM_DATE_FIELD} < $2
+      AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
       AND item_description IS NOT NULL
       AND item_description <> ''
-    GROUP BY item_description, category, manufacturer, item_no
-    ORDER BY sales DESC NULLS LAST
+    GROUP BY
+      CASE
+        WHEN (
+          is_pro1st = TRUE
+          OR item_description ILIKE '%pro1st%'
+          OR item_description ILIKE '%pro 1st%'
+          OR item_description ILIKE '%pro-1st%'
+          OR category ILIKE '%pro1st%'
+          OR category ILIKE '%pro 1st%'
+          OR category ILIKE '%pro-1st%'
+          OR item_no ILIKE '%pro1st%'
+          OR item_no ILIKE '%pro 1st%'
+          OR item_no ILIKE '%pro-1st%'
+          OR manufacturer ILIKE '%pro1st%'
+          OR manufacturer ILIKE '%pro 1st%'
+          OR manufacturer ILIKE '%pro-1st%'
+        )
+        THEN 'Pro1st'
+        ELSE item_description
+      END,
+      CASE
+        WHEN (
+          is_pro1st = TRUE
+          OR item_description ILIKE '%pro1st%'
+          OR item_description ILIKE '%pro 1st%'
+          OR item_description ILIKE '%pro-1st%'
+          OR category ILIKE '%pro1st%'
+          OR category ILIKE '%pro 1st%'
+          OR category ILIKE '%pro-1st%'
+          OR item_no ILIKE '%pro1st%'
+          OR item_no ILIKE '%pro 1st%'
+          OR item_no ILIKE '%pro-1st%'
+          OR manufacturer ILIKE '%pro1st%'
+          OR manufacturer ILIKE '%pro 1st%'
+          OR manufacturer ILIKE '%pro-1st%'
+        )
+        THEN NULL
+        ELSE category
+      END,
+      CASE
+        WHEN (
+          is_pro1st = TRUE
+          OR item_description ILIKE '%pro1st%'
+          OR item_description ILIKE '%pro 1st%'
+          OR item_description ILIKE '%pro-1st%'
+          OR category ILIKE '%pro1st%'
+          OR category ILIKE '%pro 1st%'
+          OR category ILIKE '%pro-1st%'
+          OR item_no ILIKE '%pro1st%'
+          OR item_no ILIKE '%pro 1st%'
+          OR item_no ILIKE '%pro-1st%'
+          OR manufacturer ILIKE '%pro1st%'
+          OR manufacturer ILIKE '%pro 1st%'
+          OR manufacturer ILIKE '%pro-1st%'
+        )
+        THEN NULL
+        ELSE manufacturer
+      END,
+      CASE
+        WHEN (
+          is_pro1st = TRUE
+          OR item_description ILIKE '%pro1st%'
+          OR item_description ILIKE '%pro 1st%'
+          OR item_description ILIKE '%pro-1st%'
+          OR category ILIKE '%pro1st%'
+          OR category ILIKE '%pro 1st%'
+          OR category ILIKE '%pro-1st%'
+          OR item_no ILIKE '%pro1st%'
+          OR item_no ILIKE '%pro 1st%'
+          OR item_no ILIKE '%pro-1st%'
+          OR manufacturer ILIKE '%pro1st%'
+          OR manufacturer ILIKE '%pro 1st%'
+          OR manufacturer ILIKE '%pro-1st%'
+        )
+        THEN NULL
+        ELSE item_no
+      END
+    ORDER BY ${orderBy}
     LIMIT $3;
   `;
 
-  const r = await pool.query(sql, [start, end, limit]);
+  const r = await pool.query(sql, [start, end, limit, locationQ]);
   res.json({
     start,
     end,
@@ -536,6 +727,9 @@ app.get("/api/items/by-category", async (req, res) => {
   const start = parseDateParam(req.query.start, "1900-01-01");
   const end = parseDateParam(req.query.end, "2100-01-01");
   const limit = Math.min(Number(req.query.limit || 10), 50);
+  const sort = String(req.query.sort || "sales").toLowerCase() === "qty" ? "qty" : "sales";
+  const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
+  const locationQ = parseTextParam(req.query.location);
 
   const sql = `
     SELECT
@@ -545,14 +739,15 @@ app.get("/api/items/by-category", async (req, res) => {
     FROM pos_sale_items
     WHERE ${ITEM_DATE_FIELD} >= $1
       AND ${ITEM_DATE_FIELD} < $2
+      AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
       AND category IS NOT NULL
       AND category <> ''
     GROUP BY category
-    ORDER BY sales DESC NULLS LAST
+    ORDER BY ${orderBy}
     LIMIT $3;
   `;
 
-  const r = await pool.query(sql, [start, end, limit]);
+  const r = await pool.query(sql, [start, end, limit, locationQ]);
   res.json({
     start,
     end,
@@ -570,6 +765,9 @@ app.get("/api/items/by-manufacturer", async (req, res) => {
   const start = parseDateParam(req.query.start, "1900-01-01");
   const end = parseDateParam(req.query.end, "2100-01-01");
   const limit = Math.min(Number(req.query.limit || 10), 50);
+  const sort = String(req.query.sort || "sales").toLowerCase() === "qty" ? "qty" : "sales";
+  const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
+  const locationQ = parseTextParam(req.query.location);
 
   const sql = `
     SELECT
@@ -579,14 +777,15 @@ app.get("/api/items/by-manufacturer", async (req, res) => {
     FROM pos_sale_items
     WHERE ${ITEM_DATE_FIELD} >= $1
       AND ${ITEM_DATE_FIELD} < $2
+      AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
       AND manufacturer IS NOT NULL
       AND manufacturer <> ''
     GROUP BY manufacturer
-    ORDER BY sales DESC NULLS LAST
+    ORDER BY ${orderBy}
     LIMIT $3;
   `;
 
-  const r = await pool.query(sql, [start, end, limit]);
+  const r = await pool.query(sql, [start, end, limit, locationQ]);
   res.json({
     start,
     end,
@@ -599,16 +798,114 @@ app.get("/api/items/by-manufacturer", async (req, res) => {
   });
 });
 
+// Top items for a specific category
+app.get("/api/items/category-top-items", async (req, res) => {
+  const start = parseDateParam(req.query.start, "1900-01-01");
+  const end = parseDateParam(req.query.end, "2100-01-01");
+  const limit = Math.min(Number(req.query.limit || 10), 50);
+  const category = parseTextParam(req.query.category);
+  const locationQ = parseTextParam(req.query.location);
+  if (!category) {
+    return res.status(400).json({ error: "category is required" });
+  }
+  const sort = String(req.query.sort || "sales").toLowerCase() === "qty" ? "qty" : "sales";
+  const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
+
+  const sql = `
+    SELECT
+      item_description,
+      manufacturer,
+      item_no,
+      ROUND(SUM(CASE WHEN qty_sold IS NULL OR qty_sold <> qty_sold THEN 0 ELSE qty_sold END)::numeric, 2) AS qty,
+      ROUND(SUM(CASE WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0 ELSE total_sale_price END)::numeric, 2) AS sales,
+      ARRAY_AGG(DISTINCT sale_id) FILTER (WHERE sale_id IS NOT NULL AND sale_id <> '') AS sale_ids
+    FROM pos_sale_items
+    WHERE ${ITEM_DATE_FIELD} >= $1
+      AND ${ITEM_DATE_FIELD} < $2
+      AND category ILIKE $3
+      AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
+    GROUP BY item_description, manufacturer, item_no
+    ORDER BY ${orderBy}
+    LIMIT $5;
+  `;
+
+  const r = await pool.query(sql, [start, end, category, locationQ, limit]);
+  res.json({
+    start,
+    end,
+    limit,
+    category,
+    rows: r.rows.map((x: any) => ({
+      item_description: x.item_description,
+      manufacturer: x.manufacturer,
+      item_no: x.item_no,
+      qty: Number(x.qty ?? 0),
+      sales: Number(x.sales ?? 0),
+      sale_ids: Array.isArray(x.sale_ids) ? x.sale_ids : [],
+    })),
+  });
+});
+
+// Top items for a specific manufacturer
+app.get("/api/items/manufacturer-top-items", async (req, res) => {
+  const start = parseDateParam(req.query.start, "1900-01-01");
+  const end = parseDateParam(req.query.end, "2100-01-01");
+  const limit = Math.min(Number(req.query.limit || 10), 50);
+  const manufacturer = parseTextParam(req.query.manufacturer);
+  const locationQ = parseTextParam(req.query.location);
+  if (!manufacturer) {
+    return res.status(400).json({ error: "manufacturer is required" });
+  }
+  const sort = String(req.query.sort || "sales").toLowerCase() === "qty" ? "qty" : "sales";
+  const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
+
+  const sql = `
+    SELECT
+      item_description,
+      category,
+      item_no,
+      ROUND(SUM(CASE WHEN qty_sold IS NULL OR qty_sold <> qty_sold THEN 0 ELSE qty_sold END)::numeric, 2) AS qty,
+      ROUND(SUM(CASE WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0 ELSE total_sale_price END)::numeric, 2) AS sales,
+      ARRAY_AGG(DISTINCT sale_id) FILTER (WHERE sale_id IS NOT NULL AND sale_id <> '') AS sale_ids
+    FROM pos_sale_items
+    WHERE ${ITEM_DATE_FIELD} >= $1
+      AND ${ITEM_DATE_FIELD} < $2
+      AND manufacturer ILIKE $3
+      AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
+    GROUP BY item_description, category, item_no
+    ORDER BY ${orderBy}
+    LIMIT $5;
+  `;
+
+  const r = await pool.query(sql, [start, end, manufacturer, locationQ, limit]);
+  res.json({
+    start,
+    end,
+    limit,
+    manufacturer,
+    rows: r.rows.map((x: any) => ({
+      item_description: x.item_description,
+      category: x.category,
+      item_no: x.item_no,
+      qty: Number(x.qty ?? 0),
+      sales: Number(x.sales ?? 0),
+      sale_ids: Array.isArray(x.sale_ids) ? x.sale_ids : [],
+    })),
+  });
+});
+
 // Pro1st attach rate + sale ids
 app.get("/api/pro1st/attach-rate", async (req, res) => {
   const start = parseDateParam(req.query.start, "1900-01-01");
   const end = parseDateParam(req.query.end, "2100-01-01");
+  const locationQ = parseTextParam(req.query.location);
 
   const totalSql = `
     SELECT COUNT(DISTINCT sale_id)::int AS total_sales
-    FROM pos_sales
-    WHERE COALESCE(delivery_confirmed_date, sale_date) >= $1
-      AND COALESCE(delivery_confirmed_date, sale_date) < $2
+    FROM pos_sale_items
+    WHERE ${ITEM_DATE_FIELD} >= $1
+      AND ${ITEM_DATE_FIELD} < $2
+      AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
       AND sale_id IS NOT NULL
       AND sale_id <> '';
   `;
@@ -620,6 +917,7 @@ app.get("/api/pro1st/attach-rate", async (req, res) => {
       FROM pos_sale_items
       WHERE ${ITEM_DATE_FIELD} >= $1
         AND ${ITEM_DATE_FIELD} < $2
+        AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
         AND (
           is_pro1st = TRUE
           OR item_description ILIKE '%pro1st%'
@@ -653,8 +951,8 @@ app.get("/api/pro1st/attach-rate", async (req, res) => {
   `;
 
   const [totalRes, proRes] = await Promise.all([
-    pool.query(totalSql, [start, end]),
-    pool.query(proSql, [start, end]),
+    pool.query(totalSql, [start, end, locationQ]),
+    pool.query(proSql, [start, end, locationQ]),
   ]);
   const totalSales = Number(totalRes.rows[0]?.total_sales ?? 0);
   const proSales = Number(proRes.rows[0]?.pro_sales ?? 0);
@@ -680,62 +978,48 @@ app.get("/api/pro1st/attach-rate", async (req, res) => {
 // Coverage check: missing months for sales vs items (delivery months)
 app.get("/api/import/coverage-months", async (_req, res) => {
   const startFloor = "2024-01-01";
-  const salesSql = `
-    WITH bounds AS (
-      SELECT
-        GREATEST(MIN(COALESCE(delivery_confirmed_date, sale_date)), $1::date) AS min_date,
-        MAX(COALESCE(delivery_confirmed_date, sale_date)) AS max_date
+  const sql = `
+    WITH sales AS (
+      SELECT sale_id, COALESCE(delivery_confirmed_date, est_delivery_date, sale_date) AS dt
       FROM pos_sales
+      WHERE sale_id IS NOT NULL AND sale_id <> '' AND COALESCE(delivery_confirmed_date, est_delivery_date, sale_date) >= $1
     ),
-    months AS (
-      SELECT generate_series(date_trunc('month', min_date), date_trunc('month', max_date), interval '1 month') AS month_start
-      FROM bounds
-      WHERE min_date IS NOT NULL AND max_date IS NOT NULL
+    items AS (
+      SELECT sale_id, COALESCE(delivery_confirmed_date, sale_date) AS dt
+      FROM pos_sale_items
+      WHERE sale_id IS NOT NULL AND sale_id <> '' AND COALESCE(delivery_confirmed_date, sale_date) >= $1
     ),
-    present AS (
-      SELECT DISTINCT date_trunc('month', COALESCE(delivery_confirmed_date, sale_date)) AS month_start
-      FROM pos_sales
-      WHERE COALESCE(delivery_confirmed_date, sale_date) >= $1
+    sales_only AS (
+      SELECT s.sale_id, s.dt
+      FROM sales s
+      LEFT JOIN items i ON i.sale_id = s.sale_id
+      WHERE i.sale_id IS NULL AND s.dt IS NOT NULL
+    ),
+    items_only AS (
+      SELECT i.sale_id, i.dt
+      FROM items i
+      LEFT JOIN sales s ON s.sale_id = i.sale_id
+      WHERE s.sale_id IS NULL AND i.dt IS NOT NULL
     )
-    SELECT to_char(m.month_start, 'YYYY-MM') AS month
-    FROM months m
-    LEFT JOIN present p USING (month_start)
-    WHERE p.month_start IS NULL
-    ORDER BY m.month_start;
+    SELECT
+      ARRAY(
+        SELECT DISTINCT to_char(date_trunc('month', dt), 'YYYY-MM')
+        FROM sales_only
+        ORDER BY 1
+      ) AS missing_items_months,
+      ARRAY(
+        SELECT DISTINCT to_char(date_trunc('month', dt), 'YYYY-MM')
+        FROM items_only
+        ORDER BY 1
+      ) AS missing_sales_months;
   `;
 
-  const itemsSql = `
-    WITH bounds AS (
-      SELECT
-        GREATEST(MIN(${ITEM_DATE_FIELD}), $1::date) AS min_date,
-        MAX(${ITEM_DATE_FIELD}) AS max_date
-      FROM pos_sale_items
-    ),
-    months AS (
-      SELECT generate_series(date_trunc('month', min_date), date_trunc('month', max_date), interval '1 month') AS month_start
-      FROM bounds
-      WHERE min_date IS NOT NULL AND max_date IS NOT NULL
-    ),
-    present AS (
-      SELECT DISTINCT date_trunc('month', ${ITEM_DATE_FIELD}) AS month_start
-      FROM pos_sale_items
-      WHERE ${ITEM_DATE_FIELD} >= $1
-    )
-    SELECT to_char(m.month_start, 'YYYY-MM') AS month
-    FROM months m
-    LEFT JOIN present p USING (month_start)
-    WHERE p.month_start IS NULL
-    ORDER BY m.month_start;
-  `;
-
-  const [salesRows, itemRows] = await Promise.all([
-    pool.query(salesSql, [startFloor]),
-    pool.query(itemsSql, [startFloor]),
-  ]);
+  const r = await pool.query(sql, [startFloor]);
+  const row = r.rows[0] || {};
 
   res.json({
-    missingSalesMonths: salesRows.rows.map((r: any) => r.month).filter(Boolean),
-    missingItemMonths: itemRows.rows.map((r: any) => r.month).filter(Boolean),
+    missingSalesMonths: Array.isArray(row.missing_sales_months) ? row.missing_sales_months : [],
+    missingItemMonths: Array.isArray(row.missing_items_months) ? row.missing_items_months : [],
   });
 });
 
@@ -745,6 +1029,7 @@ app.get("/api/leaderboard", async (req, res) => {
   const end = parseDateParam(req.query.end, "2100-01-01");
   const limit = Math.min(Number(req.query.limit || 20), 100);
   const salespersonQ = parseTextParam(req.query.salesperson);
+  const locationQ = parseTextParam(req.query.location);
 
   const sql = `
     SELECT
@@ -758,12 +1043,13 @@ app.get("/api/leaderboard", async (req, res) => {
       AND salesperson IS NOT NULL
       AND salesperson <> 'Sales, Store'
       AND ($4::text IS NULL OR salesperson ILIKE ('%' || $4 || '%'))
+      AND ($5::text IS NULL OR location ILIKE ('%' || $5 || '%'))
     GROUP BY 1
     ORDER BY sales DESC
     LIMIT $3;
   `;
 
-  const r = await pool.query(sql, [start, end, limit, salespersonQ]);
+  const r = await pool.query(sql, [start, end, limit, salespersonQ, locationQ]);
   res.json({ start, end, limit, rows: r.rows });
 });
 
@@ -771,6 +1057,7 @@ app.get("/api/leaderboard", async (req, res) => {
 app.get("/api/sales-weekly", async (req, res) => {
   const start = parseDateParam(req.query.start, "1900-01-01");
   const end = parseDateParam(req.query.end, "2100-01-01");
+  const locationQ = parseTextParam(req.query.location);
 
   const sql = `
     SELECT
@@ -780,11 +1067,12 @@ app.get("/api/sales-weekly", async (req, res) => {
     FROM pos_sales
     WHERE sale_date >= $1
       AND sale_date < $2
+      AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
     GROUP BY 1
     ORDER BY 1;
   `;
 
-  const r = await pool.query(sql, [start, end]);
+  const r = await pool.query(sql, [start, end, locationQ]);
   res.json({ start, end, rows: r.rows });
 });
 
@@ -793,6 +1081,7 @@ app.get("/api/sales-daily", async (req, res) => {
   const start = parseDateParam(req.query.start, "1900-01-01");
   const end = parseDateParam(req.query.end, "2100-01-01");
   const salespersonQ = parseTextParam(req.query.salesperson);
+  const locationQ = parseTextParam(req.query.location);
 
   const sql = salespersonQ
     ? `
@@ -805,6 +1094,7 @@ app.get("/api/sales-daily", async (req, res) => {
       WHERE sale_date >= $1
         AND sale_date < $2
         AND salesperson ILIKE ('%' || $3 || '%')
+        AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
       GROUP BY 1
       ORDER BY 1;
     `
@@ -817,11 +1107,14 @@ app.get("/api/sales-daily", async (req, res) => {
       FROM pos_sales
       WHERE sale_date >= $1
         AND sale_date < $2
+        AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
       GROUP BY 1
       ORDER BY 1;
     `;
 
-  const r = salespersonQ ? await pool.query(sql, [start, end, salespersonQ]) : await pool.query(sql, [start, end]);
+  const r = salespersonQ
+    ? await pool.query(sql, [start, end, salespersonQ, locationQ])
+    : await pool.query(sql, [start, end, locationQ]);
   res.json({ start, end, rows: r.rows });
 });
 
@@ -830,6 +1123,7 @@ app.get("/api/sales-by-location", async (req, res) => {
   const start = parseDateParam(req.query.start, "1900-01-01");
   const end = parseDateParam(req.query.end, "2100-01-01");
   const salespersonQ = parseTextParam(req.query.salesperson);
+  const locationQ = parseTextParam(req.query.location);
 
   const sql = salespersonQ
     ? `
@@ -841,6 +1135,7 @@ app.get("/api/sales-by-location", async (req, res) => {
       WHERE sale_date >= $1
         AND sale_date < $2
         AND salesperson ILIKE ('%' || $3 || '%')
+        AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
       GROUP BY 1
       ORDER BY sales DESC;
     `
@@ -852,11 +1147,14 @@ app.get("/api/sales-by-location", async (req, res) => {
       FROM pos_sales
       WHERE sale_date >= $1
         AND sale_date < $2
+        AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
       GROUP BY 1
       ORDER BY sales DESC;
     `;
 
-  const r = salespersonQ ? await pool.query(sql, [start, end, salespersonQ]) : await pool.query(sql, [start, end]);
+  const r = salespersonQ
+    ? await pool.query(sql, [start, end, salespersonQ, locationQ])
+    : await pool.query(sql, [start, end, locationQ]);
   res.json({ start, end, rows: r.rows });
 });
 

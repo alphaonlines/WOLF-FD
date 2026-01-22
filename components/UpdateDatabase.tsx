@@ -37,6 +37,55 @@ const hasAllRequired = (columns: string[], required: Array<string[]>) => {
   return required.every((group) => group.some((col) => set.has(col)));
 };
 
+const compressMonths = (months: string[]) => {
+  const sorted = Array.from(new Set(months))
+    .filter((m) => /^\d{4}-\d{2}$/.test(m))
+    .sort();
+  const ranges: string[] = [];
+  let start = "";
+  let prev = "";
+
+  const formatMonth = (ym: string) => {
+    const [y, m] = ym.split("-").map(Number);
+    const d = new Date(Date.UTC(y, m - 1, 1));
+    return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  };
+
+  const pushRange = () => {
+    if (!start) return;
+    if (start === prev) {
+      ranges.push(formatMonth(start));
+    } else {
+      ranges.push(`${formatMonth(start)}–${formatMonth(prev)}`);
+    }
+  };
+
+  const nextMonth = (ym: string) => {
+    const [y, m] = ym.split("-").map(Number);
+    const d = new Date(Date.UTC(y, m - 1, 1));
+    d.setUTCMonth(d.getUTCMonth() + 1);
+    return d.toISOString().slice(0, 7);
+  };
+
+  for (const m of sorted) {
+    if (!start) {
+      start = m;
+      prev = m;
+      continue;
+    }
+    if (nextMonth(prev) === m) {
+      prev = m;
+      continue;
+    }
+    pushRange();
+    start = m;
+    prev = m;
+  }
+  pushRange();
+
+  return ranges;
+};
+
 const extractHeaders = (sheet: XLSX.WorkSheet): string[] => {
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" }) as Array<Array<string>>;
   for (const row of rows.slice(0, 10)) {
@@ -327,19 +376,37 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
 
         {(missingSalesMonths.length > 0 || missingItemMonths.length > 0) && (
           <div className="mt-4 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            <div className="font-semibold mb-1">Missing Coverage (Delivery Months, 2024+)</div>
-            {missingSalesMonths.length > 0 ? (
-              <div className="mb-1">
-                <span className="font-semibold">Missing Sales Report:</span>{" "}
-                {missingSalesMonths.join(", ")}
+            <div className="font-semibold mb-2">Missing Date Ranges (Delivery Months, 2024+)</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="bg-white/70 border border-amber-100 rounded-lg p-2">
+                <div className="font-semibold text-amber-700 mb-1">Missing Sales Report (items present)</div>
+                {missingSalesMonths.length ? (
+                  <div className="flex flex-wrap gap-1">
+                    {compressMonths(missingSalesMonths).map((m) => (
+                      <span key={m} className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-amber-600">No missing sales ranges.</div>
+                )}
               </div>
-            ) : null}
-            {missingItemMonths.length > 0 ? (
-              <div>
-                <span className="font-semibold">Missing Item Report:</span>{" "}
-                {missingItemMonths.join(", ")}
+              <div className="bg-white/70 border border-amber-100 rounded-lg p-2">
+                <div className="font-semibold text-amber-700 mb-1">Missing Items Report (sales present)</div>
+                {missingItemMonths.length ? (
+                  <div className="flex flex-wrap gap-1">
+                    {compressMonths(missingItemMonths).map((m) => (
+                      <span key={m} className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-amber-600">No missing item ranges.</div>
+                )}
               </div>
-            ) : null}
+            </div>
           </div>
         )}
       </div>

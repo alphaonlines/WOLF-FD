@@ -25,6 +25,9 @@ import {
   fetchTopManufacturers,
   fetchPro1stAttachRate,
   fetchSalespersonTickets,
+  fetchManufacturerTopItems,
+  fetchCategoryTopItems,
+  fetchSalespeopleBySaleIds,
 } from "../services/posBackendApi";
 import { SalesData, StoreData } from "../types";
 import UpdateDatabase from "./UpdateDatabase";
@@ -157,6 +160,25 @@ const isValidIsoWeek = (v: string) => /^\d{4}-W\d{2}$/.test(v);
 
 const safeDiv = (n: number, d: number) => (Number.isFinite(n) && Number.isFinite(d) && d !== 0 ? n / d : 0);
 
+const formatShortDate = (value: string) => {
+  if (!value) return "";
+  const raw = String(value).slice(0, 10);
+  const d = new Date(`${raw}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return raw;
+  const day = d.getUTCDate();
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const month = months[d.getUTCMonth()];
+  const year = String(d.getUTCFullYear() % 100).padStart(2, "0");
+  return `${day} ${month} ${year}'`;
+};
+
+const formatMonthLabel = (ym: string) => {
+  const [y, m] = ym.split("-").map(Number);
+  if (!y || !m) return ym;
+  const d = new Date(Date.UTC(y, m - 1, 1));
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+};
+
 const salespersonLabel = (fullName: string) => {
   const s = String(fullName || "").trim();
   if (!s) return "UNK";
@@ -191,8 +213,14 @@ const SalesDashboard: React.FC = () => {
   const [compareDay, setCompareDay] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<string>(() => "2026-01");
   const [compareMonth, setCompareMonth] = useState<string>("");
-  const [salespersonQuery, setSalespersonQuery] = useState("");
+  const [selectedSalesperson, setSelectedSalesperson] = useState<string | null>(null);
+  const [selectedStore, setSelectedStore] = useState<string | null>(null);
+  const [searchHint, setSearchHint] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentRange, setCurrentRange] = useState<{ start: string; endExclusive: string }>({
+    start: "1900-01-01",
+    endExclusive: "2100-01-01",
+  });
   const [error, setError] = useState<string | null>(null);
   const [finance, setFinance] = useState({
     financedLines: 0,
@@ -238,6 +266,26 @@ const SalesDashboard: React.FC = () => {
   }>>([]);
   const [topCategories, setTopCategories] = useState<Array<{ category: string; qty: number; sales: number }>>([]);
   const [topManufacturers, setTopManufacturers] = useState<Array<{ manufacturer: string; qty: number; sales: number }>>([]);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [categoryItems, setCategoryItems] = useState<Record<string, Array<{
+    itemDescription: string;
+    manufacturer: string;
+    itemNo: string;
+    qty: number;
+    sales: number;
+    saleIds: string[];
+  }>>>({});
+  const [categoryLoading, setCategoryLoading] = useState<Record<string, boolean>>({});
+  const [expandedManufacturers, setExpandedManufacturers] = useState<Record<string, boolean>>({});
+  const [manufacturerItems, setManufacturerItems] = useState<Record<string, Array<{
+    itemDescription: string;
+    category: string;
+    itemNo: string;
+    qty: number;
+    sales: number;
+    saleIds: string[];
+  }>>>({});
+  const [manufacturerLoading, setManufacturerLoading] = useState<Record<string, boolean>>({});
   const [pro1stStats, setPro1stStats] = useState<{
     totalSales: number;
     proSales: number;
@@ -255,6 +303,7 @@ const SalesDashboard: React.FC = () => {
     saleIdsMid: [],
     saleIdsHigh: [],
   });
+  const [salePeopleMap, setSalePeopleMap] = useState<Record<string, string>>({});
 
   const yearOptions = useMemo(() => {
     const years = new Set<number>(availableYears);
@@ -307,7 +356,8 @@ const SalesDashboard: React.FC = () => {
       let currentRange: { start: string; endExclusive: string };
       let compareRange: { start: string; endExclusive: string } | null = null;
 
-      const salesperson = salespersonQuery.trim() ? salespersonQuery.trim() : undefined;
+      const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
+      const location = selectedStore ? selectedStore : undefined;
 
       if (compareMode === "TWO_WEEKS") {
         const weekA = getIsoWeekStart(selectedWeek);
@@ -368,31 +418,34 @@ const SalesDashboard: React.FC = () => {
           end: currentRange.endExclusive,
           limit: salesperson ? 100 : 20,
           salesperson,
+          location,
         }),
-        fetchSalesByLocation({ start: currentRange.start, end: currentRange.endExclusive, salesperson }),
-        fetchSummary({ start: currentRange.start, end: currentRange.endExclusive, salesperson }),
-        fetchFinanceSummary({ start: currentRange.start, end: currentRange.endExclusive, salesperson }),
+        fetchSalesByLocation({ start: currentRange.start, end: currentRange.endExclusive, salesperson, location }),
+        fetchSummary({ start: currentRange.start, end: currentRange.endExclusive, salesperson, location }),
+        fetchFinanceSummary({ start: currentRange.start, end: currentRange.endExclusive, salesperson, location }),
         compareRange
-          ? fetchSummary({ start: compareRange.start, end: compareRange.endExclusive, salesperson })
+          ? fetchSummary({ start: compareRange.start, end: compareRange.endExclusive, salesperson, location })
           : Promise.resolve(null),
         compareRange
-          ? fetchFinanceSummary({ start: compareRange.start, end: compareRange.endExclusive, salesperson })
+          ? fetchFinanceSummary({ start: compareRange.start, end: compareRange.endExclusive, salesperson, location })
           : Promise.resolve(null),
-        fetchLowMargin({ start: currentRange.start, end: currentRange.endExclusive, limitPer: 10, limitTotal: 200, salesperson }),
-        fetchBestSellers({ start: currentRange.start, end: currentRange.endExclusive, limit: 10 }),
-        fetchTopCategories({ start: currentRange.start, end: currentRange.endExclusive, limit: 8 }),
-        fetchTopManufacturers({ start: currentRange.start, end: currentRange.endExclusive, limit: 8 }),
-        fetchPro1stAttachRate({ start: currentRange.start, end: currentRange.endExclusive }),
+        fetchLowMargin({ start: currentRange.start, end: currentRange.endExclusive, limitPer: 10, limitTotal: 200, salesperson, location }),
+        fetchBestSellers({ start: currentRange.start, end: currentRange.endExclusive, limit: 10, sort: itemSortMetric, location }),
+        fetchTopCategories({ start: currentRange.start, end: currentRange.endExclusive, limit: 8, sort: itemSortMetric, location }),
+        fetchTopManufacturers({ start: currentRange.start, end: currentRange.endExclusive, limit: 8, sort: itemSortMetric, location }),
+        fetchPro1stAttachRate({ start: currentRange.start, end: currentRange.endExclusive, location }),
         salesperson
           ? fetchSalespersonTickets({
               start: currentRange.start,
               end: currentRange.endExclusive,
               salesperson,
               limit: 5000,
+              location,
             })
           : Promise.resolve([]),
       ]);
 
+      setCurrentRange(currentRange);
       setSalesData(
         leaderRows
           .map((r) => ({
@@ -460,6 +513,19 @@ const SalesDashboard: React.FC = () => {
       setTopManufacturers(manufacturerRows);
       setPro1stStats(pro1stSummary);
       setSalespersonTickets(salespersonTicketsRows);
+      setExpandedManufacturers({});
+      setManufacturerItems({});
+      setManufacturerLoading({});
+      setExpandedCategories({});
+      setCategoryItems({});
+      setCategoryLoading({});
+      const proIds = [
+        ...pro1stSummary.saleIdsLow,
+        ...pro1stSummary.saleIdsMid,
+        ...pro1stSummary.saleIdsHigh,
+      ];
+      const bestIds = bestSellerRows.flatMap((b) => b.saleIds || []);
+      void syncSalePeople([...proIds, ...bestIds]);
     } catch (e) {
       console.error(e);
       setError("Couldn’t load POS data. Confirm the backend API is running on http://127.0.0.1:5055.");
@@ -494,6 +560,13 @@ const SalesDashboard: React.FC = () => {
         saleIdsHigh: [],
       });
       setSalespersonTickets([]);
+      setExpandedManufacturers({});
+      setManufacturerItems({});
+      setManufacturerLoading({});
+      setExpandedCategories({});
+      setCategoryItems({});
+      setCategoryLoading({});
+      setSalePeopleMap({});
     } finally {
       setLoading(false);
     }
@@ -501,10 +574,11 @@ const SalesDashboard: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [compareMode, selectedDay, compareDay, selectedWeek, compareWeek, selectedMonth, compareMonth, yearA, yearB, salespersonQuery]);
+  }, [compareMode, selectedDay, compareDay, selectedWeek, compareWeek, selectedMonth, compareMonth, yearA, yearB, selectedSalesperson, selectedStore, itemSortMetric]);
 
   useEffect(() => {
-    const salesperson = salespersonQuery.trim() ? salespersonQuery.trim() : undefined;
+    const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
+    const location = selectedStore ? selectedStore : undefined;
     let start = "1900-01-01";
     let endExclusive = "2100-01-01";
 
@@ -533,7 +607,7 @@ const SalesDashboard: React.FC = () => {
       return;
     }
 
-    fetchSalesDaily({ start, end: endExclusive, salesperson })
+    fetchSalesDaily({ start, end: endExclusive, salesperson, location })
       .then((dailyRows) => {
         setTrendData(
           dailyRows
@@ -548,7 +622,7 @@ const SalesDashboard: React.FC = () => {
         console.error(e);
         setTrendData([]);
       });
-  }, [compareMode, selectedDay, selectedWeek, selectedMonth, yearA, salespersonQuery]);
+  }, [compareMode, selectedDay, selectedWeek, selectedMonth, yearA, selectedSalesperson, selectedStore]);
 
   const revenuePct = pctChange(summary.sales, summaryCompare.sales);
   const linesPct = pctChange(summary.lines, summaryCompare.lines);
@@ -573,11 +647,133 @@ const SalesDashboard: React.FC = () => {
   const avgTicketPct = pctChange(avgTicket, avgTicketCompare);
 
   const avgTicketUp = avgTicketPct >= 0;
+  const rangeLabel = useMemo(() => {
+    const start = currentRange.start || "1900-01-01";
+    if (compareMode === "TWO_DAYS") {
+      return formatShortDate(start);
+    }
+    if (compareMode === "TWO_WEEKS") {
+      return `Week of ${formatShortDate(start)}`;
+    }
+    if (compareMode === "TWO_YEARS") {
+      return String(start.slice(0, 4));
+    }
+    return formatMonthLabel(start.slice(0, 7));
+  }, [compareMode, currentRange.start]);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("fd-range", { detail: { label: rangeLabel } }));
+  }, [rangeLabel]);
+
+  useEffect(() => {
+    const handler = () => {
+      const el = document.getElementById("fd-range-selector");
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      (el as HTMLSelectElement).focus?.();
+    };
+    window.addEventListener("fd-open-range", handler as EventListener);
+    return () => window.removeEventListener("fd-open-range", handler as EventListener);
+  }, []);
   const saleLink = (saleId: string) =>
     `https://www.gimmethebest.net/furnituredistributors/online/sale_rec_502.asp?saleid=${saleId.padStart(5, "0")}&type=1`;
   const limitSaleLinks = (ids: string[], max = 6) => {
     const unique = Array.from(new Set(ids.filter(Boolean).map(String)));
     return { ids: unique.slice(0, max), remaining: Math.max(0, unique.length - max) };
+  };
+  const saleLabel = (saleId: string, salesperson?: string) => {
+    const name = salesperson ?? salePeopleMap[saleId] ?? "";
+    const initials = name ? salespersonLabel(name) : "";
+    return initials ? `${saleId} · ${initials}` : saleId;
+  };
+  const syncSalePeople = async (ids: string[]) => {
+    const unique = Array.from(new Set(ids.filter(Boolean)));
+    const missing = unique.filter((id) => !(id in salePeopleMap));
+    if (!missing.length) return;
+    try {
+      const map = await fetchSalespeopleBySaleIds(missing);
+      setSalePeopleMap((prev) => ({ ...prev, ...map }));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+  const selectSalesperson = (name: string) => {
+    setSelectedSalesperson((prev) => (prev === name ? null : name));
+    setSelectedStore(null);
+    setSearchHint(null);
+  };
+  const selectStore = (name: string) => {
+    setSelectedStore((prev) => (prev === name ? null : name));
+    setSelectedSalesperson(null);
+    setSearchHint(null);
+  };
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { query?: string } | undefined;
+      const query = detail?.query?.trim();
+      if (!query) return;
+      const q = query.toLowerCase();
+      const salespersonMatch = salesData.find((s) => s.fullName.toLowerCase().includes(q));
+      if (salespersonMatch) {
+        selectSalesperson(salespersonMatch.fullName);
+        return;
+      }
+      const storeMatch = storeData.find((s) => s.storeName.toLowerCase().includes(q));
+      if (storeMatch) {
+        selectStore(storeMatch.storeName);
+        return;
+      }
+      setSearchHint(`No salesperson or store matched "${query}".`);
+    };
+    window.addEventListener("fd-search", handler as EventListener);
+    return () => window.removeEventListener("fd-search", handler as EventListener);
+  }, [salesData, storeData]);
+  const toggleManufacturer = async (name: string) => {
+    if (!name) return;
+    setExpandedManufacturers((prev) => ({ ...prev, [name]: !prev[name] }));
+    if (manufacturerItems[name]) return;
+    setManufacturerLoading((prev) => ({ ...prev, [name]: true }));
+    try {
+      const list = await fetchManufacturerTopItems({
+        start: currentRange.start,
+        end: currentRange.endExclusive,
+        manufacturer: name,
+        limit: 10,
+        sort: itemSortMetric,
+        location: selectedStore || undefined,
+      });
+      setManufacturerItems((prev) => ({ ...prev, [name]: list }));
+      const ids = list.flatMap((item) => item.saleIds || []);
+      void syncSalePeople(ids);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setManufacturerLoading((prev) => ({ ...prev, [name]: false }));
+    }
+  };
+  const toggleCategory = async (name: string) => {
+    if (!name) return;
+    setExpandedCategories((prev) => ({ ...prev, [name]: !prev[name] }));
+    if (categoryItems[name]) return;
+    setCategoryLoading((prev) => ({ ...prev, [name]: true }));
+    try {
+      const list = await fetchCategoryTopItems({
+        start: currentRange.start,
+        end: currentRange.endExclusive,
+        category: name,
+        limit: 10,
+        sort: itemSortMetric,
+        location: selectedStore || undefined,
+      });
+      setCategoryItems((prev) => ({ ...prev, [name]: list }));
+      const ids = list.flatMap((item) => item.saleIds || []);
+      void syncSalePeople(ids);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCategoryLoading((prev) => ({ ...prev, [name]: false }));
+    }
   };
 
   if (loading && salesData.length === 0) {
@@ -594,6 +790,37 @@ const SalesDashboard: React.FC = () => {
       <UpdateDatabase onUploadComplete={() => {
         void loadData();
       }} />
+
+      {(selectedSalesperson || selectedStore || searchHint) && (
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center">
+          <div className="text-sm font-semibold text-slate-800">Active Filters</div>
+          {selectedSalesperson && (
+            <span className="px-3 py-1 text-xs rounded-full bg-blue-50 text-blue-700">
+              Salesperson: {selectedSalesperson}
+            </span>
+          )}
+          {selectedStore && (
+            <span className="px-3 py-1 text-xs rounded-full bg-indigo-50 text-indigo-700">
+              Store: {selectedStore}
+            </span>
+          )}
+          {searchHint && (
+            <span className="text-xs text-amber-600">{searchHint}</span>
+          )}
+          {(selectedSalesperson || selectedStore || searchHint) && (
+            <button
+              onClick={() => {
+                setSelectedSalesperson(null);
+                setSelectedStore(null);
+                setSearchHint(null);
+              }}
+              className="ml-auto text-xs text-slate-500 hover:text-slate-700"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">
@@ -640,6 +867,7 @@ const SalesDashboard: React.FC = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center">
           <label className="text-sm font-medium text-slate-500 mb-2">Compare</label>
           <select
+            id="fd-range-selector"
             value={compareMode}
             onChange={(e) => setCompareMode(e.target.value as CompareMode)}
             className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
@@ -906,13 +1134,7 @@ const SalesDashboard: React.FC = () => {
           </div>
           {bestSellers.length ? (
             <div className="space-y-4">
-              {[...bestSellers]
-                .sort((a, b) => {
-                  const aVal = itemSortMetric === "qty" ? a.qty : a.sales;
-                  const bVal = itemSortMetric === "qty" ? b.qty : b.sales;
-                  return bVal - aVal;
-                })
-                .map((item, idx) => {
+              {bestSellers.map((item, idx) => {
                 const { ids, remaining } = limitSaleLinks(item.saleIds);
                 return (
                   <div key={`${item.itemDescription}-${idx}`} className="flex flex-col gap-2">
@@ -939,7 +1161,7 @@ const SalesDashboard: React.FC = () => {
                             rel="noreferrer"
                             className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
                           >
-                            {sid}
+                            {saleLabel(sid)}
                           </a>
                         ))}
                         {remaining > 0 && (
@@ -967,21 +1189,84 @@ const SalesDashboard: React.FC = () => {
           </div>
           {topCategories.length ? (
             <div className="space-y-4">
-              {[...topCategories]
-                .sort((a, b) => {
-                  const aVal = itemSortMetric === "qty" ? a.qty : a.sales;
-                  const bVal = itemSortMetric === "qty" ? b.qty : b.sales;
-                  return bVal - aVal;
-                })
-                .map((row) => (
-                <div key={row.category} className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-800">{row.category}</div>
-                    <div className="text-xs text-slate-500">{row.qty.toLocaleString()} qty</div>
+              {topCategories.map((row) => {
+                const isOpen = !!expandedCategories[row.category];
+                const items = categoryItems[row.category] || [];
+                const loading = categoryLoading[row.category];
+                return (
+                  <div
+                    key={row.category}
+                    className={`border rounded-lg transition-colors ${
+                      isOpen ? "border-blue-200 bg-blue-50/60" : "border-slate-100"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(row.category)}
+                      className={`w-full flex items-center justify-between px-4 py-3 text-left ${
+                        isOpen ? "hover:bg-blue-50" : "hover:bg-slate-50"
+                      }`}
+                    >
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">{row.category}</div>
+                        <div className="text-xs text-slate-500">{row.qty.toLocaleString()} qty</div>
+                      </div>
+                      <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
+                    </button>
+                    {isOpen && (
+                      <div className="px-4 pb-4">
+                        {loading ? (
+                          <div className="text-xs text-slate-500">Loading top items…</div>
+                        ) : items.length ? (
+                          <div className="space-y-3">
+                            {items.map((item) => {
+                              const { ids, remaining } = limitSaleLinks(item.saleIds);
+                              return (
+                                <div key={`${row.category}-${item.itemNo}-${item.itemDescription}`} className="flex flex-col gap-1">
+                                  <div className="flex items-start justify-between gap-4 text-sm">
+                                    <div>
+                                      <div className="font-semibold text-slate-800">{item.itemDescription || "Unnamed Item"}</div>
+                                      <div className="text-xs text-slate-500">
+                                        {item.manufacturer ? item.manufacturer : "Unknown brand"}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="font-semibold text-slate-800">{item.qty.toLocaleString()} qty</div>
+                                      <div className="text-xs text-slate-500">${item.sales.toLocaleString()}</div>
+                                    </div>
+                                  </div>
+                                  {ids.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 text-xs">
+                                      {ids.map((sid) => (
+                                        <a
+                                          key={sid}
+                                          href={saleLink(sid)}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                        >
+                                        {saleLabel(sid)}
+                                        </a>
+                                      ))}
+                                      {remaining > 0 && (
+                                        <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-500">
+                                          +{remaining} more
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-slate-500">No items for this category.</div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-slate-500">No category data available for this range.</p>
@@ -999,21 +1284,84 @@ const SalesDashboard: React.FC = () => {
           </div>
           {topManufacturers.length ? (
             <div className="space-y-4">
-              {[...topManufacturers]
-                .sort((a, b) => {
-                  const aVal = itemSortMetric === "qty" ? a.qty : a.sales;
-                  const bVal = itemSortMetric === "qty" ? b.qty : b.sales;
-                  return bVal - aVal;
-                })
-                .map((row) => (
-                <div key={row.manufacturer} className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-800">{row.manufacturer}</div>
-                    <div className="text-xs text-slate-500">{row.qty.toLocaleString()} qty</div>
+              {topManufacturers.map((row) => {
+                const isOpen = !!expandedManufacturers[row.manufacturer];
+                const items = manufacturerItems[row.manufacturer] || [];
+                const loading = manufacturerLoading[row.manufacturer];
+                return (
+                  <div
+                    key={row.manufacturer}
+                    className={`border rounded-lg transition-colors ${
+                      isOpen ? "border-blue-200 bg-blue-50/60" : "border-slate-100"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleManufacturer(row.manufacturer)}
+                      className={`w-full flex items-center justify-between px-4 py-3 text-left ${
+                        isOpen ? "hover:bg-blue-50" : "hover:bg-slate-50"
+                      }`}
+                    >
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">{row.manufacturer}</div>
+                        <div className="text-xs text-slate-500">{row.qty.toLocaleString()} qty</div>
+                      </div>
+                      <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
+                    </button>
+                    {isOpen && (
+                      <div className="px-4 pb-4">
+                        {loading ? (
+                          <div className="text-xs text-slate-500">Loading top items…</div>
+                        ) : items.length ? (
+                          <div className="space-y-3">
+                            {items.map((item) => {
+                              const { ids, remaining } = limitSaleLinks(item.saleIds);
+                              return (
+                                <div key={`${row.manufacturer}-${item.itemNo}-${item.itemDescription}`} className="flex flex-col gap-1">
+                                  <div className="flex items-start justify-between gap-4 text-sm">
+                                    <div>
+                                      <div className="font-semibold text-slate-800">{item.itemDescription || "Unnamed Item"}</div>
+                                      <div className="text-xs text-slate-500">
+                                        {(item.category || "Uncategorized").toUpperCase()}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="font-semibold text-slate-800">{item.qty.toLocaleString()} qty</div>
+                                      <div className="text-xs text-slate-500">${item.sales.toLocaleString()}</div>
+                                    </div>
+                                  </div>
+                                  {ids.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 text-xs">
+                                      {ids.map((sid) => (
+                                        <a
+                                          key={sid}
+                                          href={saleLink(sid)}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                        >
+                                        {saleLabel(sid)}
+                                        </a>
+                                      ))}
+                                      {remaining > 0 && (
+                                        <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-500">
+                                          +{remaining} more
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-slate-500">No items for this brand.</div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-slate-500">No manufacturer data available for this range.</p>
@@ -1048,7 +1396,7 @@ const SalesDashboard: React.FC = () => {
                             rel="noreferrer"
                             className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
                           >
-                            {sid}
+                            {saleLabel(sid)}
                           </a>
                         ))}
                       </div>
@@ -1104,7 +1452,17 @@ const SalesDashboard: React.FC = () => {
                   formatter={(value: number) => [`$${Number(value).toLocaleString()}`, undefined]}
                 />
                 <Legend iconType="circle" />
-                <Bar dataKey="sales" name="Total Sales" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={30} />
+                <Bar
+                  dataKey="sales"
+                  name="Total Sales"
+                  fill="#3b82f6"
+                  radius={[4, 4, 0, 0]}
+                  barSize={30}
+                  onClick={(data: any) => {
+                    const name = data?.payload?.fullName;
+                    if (name) selectSalesperson(name);
+                  }}
+                />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -1139,7 +1497,17 @@ const SalesDashboard: React.FC = () => {
                   formatter={(value: number) => [`$${Number(value).toLocaleString()}`, undefined]}
                 />
                 <Legend />
-                <Bar dataKey="revenue" name="Revenue" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20} />
+                <Bar
+                  dataKey="revenue"
+                  name="Revenue"
+                  fill="#6366f1"
+                  radius={[0, 4, 4, 0]}
+                  barSize={20}
+                  onClick={(data: any) => {
+                    const name = data?.payload?.storeName;
+                    if (name) selectStore(name);
+                  }}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -1149,11 +1517,11 @@ const SalesDashboard: React.FC = () => {
       {/* Trend */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
           <div className="mb-6">
-           <div>
-             <h3 className="text-lg font-bold text-slate-800">Sales Trend</h3>
-             <p className="text-sm text-slate-500">Trend mirrors the selected date range.</p>
-           </div>
-        </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Sales Trend</h3>
+              <p className="text-sm text-slate-500">Trend mirrors the selected date range.</p>
+            </div>
+          </div>
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={trendData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
@@ -1163,7 +1531,7 @@ const SalesDashboard: React.FC = () => {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: "#64748b", fontSize: 12 }}
-                tickFormatter={(v: string) => (String(v).includes("T") ? String(v).slice(0, 10) : String(v))}
+                tickFormatter={(v: string) => formatShortDate(String(v).includes("T") ? String(v).slice(0, 10) : String(v))}
               />
               <YAxis
                 axisLine={false}
@@ -1177,7 +1545,9 @@ const SalesDashboard: React.FC = () => {
                   border: "none",
                   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                 }}
-                labelFormatter={(label: string) => (String(label).includes("T") ? String(label).slice(0, 10) : String(label))}
+                labelFormatter={(label: string) =>
+                  formatShortDate(String(label).includes("T") ? String(label).slice(0, 10) : String(label))
+                }
                 formatter={(value: number) => [`$${Number(value).toLocaleString()}`, undefined]}
               />
               <Legend iconType="circle" />
@@ -1216,14 +1586,16 @@ const SalesDashboard: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{row.salesperson}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:text-blue-800">
                         <a
-                          href={`https://www.gimmethebest.net/furnituredistributors/online/sale_rec_502.asp?saleid=${row.saleId.padStart(5, '0')}&type=1`}
+                          href={saleLink(row.saleId)}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {row.saleId}
+                          {saleLabel(row.saleId, row.salesperson)}
                         </a>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.saleDate}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        {formatShortDate(String(row.saleDate || ""))}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.grandTotal.toLocaleString()}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.profit.toLocaleString()}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
@@ -1239,10 +1611,10 @@ const SalesDashboard: React.FC = () => {
         )}
       </div>
 
-      {salespersonQuery.trim() && (
+      {selectedSalesperson && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
           <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Salesperson Detail: {salespersonQuery.trim()}</h3>
+            <h3 className="text-lg font-bold text-slate-800">Salesperson Detail: {selectedSalesperson}</h3>
             <p className="text-sm text-slate-500">All tickets for the selected date range</p>
           </div>
           {salespersonTickets.length ? (
@@ -1267,10 +1639,12 @@ const SalesDashboard: React.FC = () => {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {row.saleId}
+                          {saleLabel(row.saleId, row.salesperson)}
                         </a>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.saleDate}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        {formatShortDate(String(row.saleDate || ""))}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.location || "(unknown)"}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.grandTotal.toLocaleString()}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.profit.toLocaleString()}</td>
@@ -1288,19 +1662,7 @@ const SalesDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-        <div className="text-sm font-semibold text-slate-800">Filters</div>
-        <div className="flex-1 max-w-xl">
-          <input
-            value={salespersonQuery}
-            onChange={(e) => setSalespersonQuery(e.target.value)}
-            placeholder="Search salesperson (e.g. Lynn, Underwood)…"
-            className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
-          />
-          <div className="mt-1 text-xs text-slate-500">Applies to totals, charts, and trend.</div>
-        </div>
-      </div>
+
     </div>
   );
 };

@@ -735,24 +735,22 @@ def main():
                         print(f"Upserted: {len(clean_rows)} rows (clean) + {len(raw_rows)} rows (raw)")
                     elif is_item_export(df):
                         df2 = clean_item_rows(df, source)
-                        date_field, range_start, range_end = compute_sales_date_range(df2)
-                        if range_start <= range_end:
-                            print(f"Clearing existing item data for {date_field} between {range_start} and {range_end}...")
+                        sale_ids = list({str(x).strip() for x in df2["sale_id"].tolist() if str(x).strip()})
+                        if sale_ids:
+                            print(f"Clearing existing item data for {len(sale_ids)} sales...")
                             cur.execute(
-                                f"""
+                                """
                                 DELETE FROM pos_sale_items_raw
-                                WHERE {date_field} >= %s
-                                  AND {date_field} <= %s;
+                                WHERE sale_id = ANY(%s);
                                 """,
-                                (range_start, range_end),
+                                (sale_ids,),
                             )
                             cur.execute(
-                                f"""
+                                """
                                 DELETE FROM pos_sale_items
-                                WHERE {date_field} >= %s
-                                  AND {date_field} <= %s;
+                                WHERE sale_id = ANY(%s);
                                 """,
-                                (range_start, range_end),
+                                (sale_ids,),
                             )
                         raw_df = df.copy()
                         raw_df.columns = [str(c).strip() for c in raw_df.columns]
