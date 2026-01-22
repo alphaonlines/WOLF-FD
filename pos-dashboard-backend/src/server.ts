@@ -1,18 +1,48 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import fs from "fs";
+import path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import multer from "multer";
 import { Pool } from "pg";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+const uploadsDir = path.resolve(__dirname, "..", "incoming");
+fs.mkdirSync(uploadsDir, { recursive: true });
+const execFileAsync = promisify(execFile);
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadsDir),
+    filename: (_req, file, cb) => {
+      const safeName = file.originalname.replace(/[^\w.\- ()]/g, "_");
+      cb(null, `${Date.now()}_${safeName}`);
+    },
+  }),
+  fileFilter: (_req, file, cb) => {
+    const ok = /\.(xlsx|xls)$/i.test(file.originalname);
+    cb(ok ? null : new Error("Only .xlsx or .xls files are accepted"), ok);
+  },
+  limits: { fileSize: 50 * 1024 * 1024 },
+});
+
+const envString = (key: string, fallback?: string) => {
+  const v = process.env[key];
+  if (typeof v === "string" && v.trim()) return v.trim();
+  return fallback;
+};
+
 const pool = new Pool({
-  host: process.env.PGHOST,
-  port: Number(process.env.PGPORT || 5432),
-  database: process.env.PGDATABASE,
-  user: process.env.PGUSER,
-  password: process.env.PGPASSWORD,
+  host: envString("PGHOST", "127.0.0.1"),
+  port: Number(envString("PGPORT", "5432")),
+  database: envString("PGDATABASE", "salesdb"),
+  user: envString("PGUSER", "salesapp"),
+  password: envString("PGPASSWORD", "dev_password_change_me"),
 });
 
 function parseDateParam(v: any, fallback: string) {
@@ -108,13 +138,65 @@ app.get("/health", async (_req, res) => {
   res.json({ ok: true, db: r.rows[0].ok });
 });
 
+app.post("/api/import/upload", upload.array("files", 25), async (req, res) => {
+  const files = (req.files || []) as Express.Multer.File[];
+  if (!files.length) {
+    res.status(400).json({ ok: false, error: "No files uploaded" });
+    return;
+  }
+  const importerPath = path.resolve(__dirname, "..", "importer", "import_pos_xlsx.py");
+  const pythonBin = process.env.POS_IMPORT_PYTHON || "python";
+  let importOutput = "";
+  let importError = "";
+  try {
+    const { stdout, stderr } = await execFileAsync(
+      pythonBin,
+      [importerPath, "--incoming", uploadsDir, "--no-move"],
+      { timeout: 5 * 60 * 1000 }
+    );
+    importOutput = stdout?.toString() || "";
+    importError = stderr?.toString() || "";
+  } catch (err: any) {
+    importError = err?.stderr?.toString?.() || String(err?.message || err);
+  }
+
+  res.json({
+    ok: true,
+    saved_to: uploadsDir,
+    files: files.map((f) => ({
+      original_name: f.originalname,
+      stored_name: f.filename,
+      size: f.size,
+    })),
+    import: {
+      ok: importError ? false : true,
+      stdout: importOutput,
+      stderr: importError,
+    },
+  });
+});
+
 // Available years present in data (for UI pickers)
 app.get("/api/available-years", async (_req, res) => {
   const sql = `
-    SELECT DISTINCT EXTRACT(YEAR FROM sale_date)::int AS year
-    FROM pos_sales
-    WHERE sale_date IS NOT NULL
-    ORDER BY 1;
+    SELECT DISTINCT year FROM (
+      SELECT EXTRACT(YEAR FROM sale_date)::int AS year
+      FROM pos_sales
+      WHERE sale_date IS NOT NULL
+      UNION
+      SELECT EXTRACT(YEAR FROM delivery_confirmed_date)::int AS year
+      FROM pos_sales
+      WHERE delivery_confirmed_date IS NOT NULL
+      UNION
+      SELECT EXTRACT(YEAR FROM est_delivery_date)::int AS year
+      FROM pos_sales
+      WHERE est_delivery_date IS NOT NULL
+      UNION
+      SELECT EXTRACT(YEAR FROM last_payment_date)::int AS year
+      FROM pos_sales
+      WHERE last_payment_date IS NOT NULL
+    ) years
+    ORDER BY year;
   `;
   const r = await pool.query(sql);
   res.json({ years: r.rows.map((x) => x.year) });

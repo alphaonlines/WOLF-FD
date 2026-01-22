@@ -1,0 +1,5720 @@
+<html><body>
+<table border="1">
+<tr>
+<th>Sales Date</th>
+<th>Sale Location</th>
+<th>Sale #</th>
+<th>Manufacturer</th>
+<th>Category</th>
+<th>Item #</th>
+<th>Item Description</th>
+<th>Qty Sold</th>
+<th>Total Cost</th>
+<th>Total Sale Price</th>
+<th>Total Profit</th>
+<th>Weighted Gross Margin</th>
+<th>Date Deliv Confirmed</th>
+</tr>
+<tr>
+<td nowrap>1/21/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10081</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>2246-10-GENS-17248</td>
+<td nowrap style='mso-number-format:"\@"'>* Endurance Denim Loveseat</td>
+<td nowrap>1</td>
+<td nowrap>240.00</td>
+<td nowrap>299.99</td>
+<td nowrap>59.99</td>
+<td nowrap>0.20</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10056</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>496-37-GENS-25086</td>
+<td nowrap style='mso-number-format:"\@"'>PUCCINI SADDLE COCKTAIL OTTOMAN</td>
+<td nowrap>1</td>
+<td nowrap>175.00</td>
+<td nowrap>467.28</td>
+<td nowrap>292.28</td>
+<td nowrap>0.63</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9939</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>496-51-GENS-25086</td>
+<td nowrap style='mso-number-format:"\@"'>PUCCINI SADDLE LAF LOVESEEAT</td>
+<td nowrap>1</td>
+<td nowrap>280.00</td>
+<td nowrap>654.39</td>
+<td nowrap>374.39</td>
+<td nowrap>0.57</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10026</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>496-51-GENS-25086</td>
+<td nowrap style='mso-number-format:"\@"'>PUCCINI SADDLE LAF LOVESEEAT</td>
+<td nowrap>1</td>
+<td nowrap>280.00</td>
+<td nowrap>742.42</td>
+<td nowrap>462.42</td>
+<td nowrap>0.62</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10056</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>496-51-GENS-25086</td>
+<td nowrap style='mso-number-format:"\@"'>PUCCINI SADDLE LAF LOVESEEAT</td>
+<td nowrap>1</td>
+<td nowrap>280.00</td>
+<td nowrap>747.65</td>
+<td nowrap>467.65</td>
+<td nowrap>0.63</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9939</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>496-61-GENS-25086</td>
+<td nowrap style='mso-number-format:"\@"'>PUCCINI SADDLE RAF CHAISE</td>
+<td nowrap>1</td>
+<td nowrap>265.00</td>
+<td nowrap>654.39</td>
+<td nowrap>389.39</td>
+<td nowrap>0.60</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10026</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>496-61-GENS-25086</td>
+<td nowrap style='mso-number-format:"\@"'>PUCCINI SADDLE RAF CHAISE</td>
+<td nowrap>1</td>
+<td nowrap>265.00</td>
+<td nowrap>742.42</td>
+<td nowrap>477.42</td>
+<td nowrap>0.64</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10056</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>496-61-GENS-25086</td>
+<td nowrap style='mso-number-format:"\@"'>PUCCINI SADDLE RAF CHAISE</td>
+<td nowrap>1</td>
+<td nowrap>265.00</td>
+<td nowrap>747.65</td>
+<td nowrap>482.65</td>
+<td nowrap>0.65</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9939</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>496-73-GENS-25086</td>
+<td nowrap style='mso-number-format:"\@"'>PUCCINI SADDLE LAF BUMP SOFA</td>
+<td nowrap>1</td>
+<td nowrap>350.00</td>
+<td nowrap>817.99</td>
+<td nowrap>467.99</td>
+<td nowrap>0.57</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10026</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>496-73-GENS-25086</td>
+<td nowrap style='mso-number-format:"\@"'>PUCCINI SADDLE LAF BUMP SOFA</td>
+<td nowrap>1</td>
+<td nowrap>350.00</td>
+<td nowrap>928.03</td>
+<td nowrap>578.03</td>
+<td nowrap>0.62</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10056</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>496-73-GENS-25086</td>
+<td nowrap style='mso-number-format:"\@"'>PUCCINI SADDLE LAF BUMP SOFA</td>
+<td nowrap>1</td>
+<td nowrap>350.00</td>
+<td nowrap>934.57</td>
+<td nowrap>584.57</td>
+<td nowrap>0.63</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>10059</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>8642-27-GENS-35292</td>
+<td nowrap style='mso-number-format:"\@"'>Groovy Smoke Swivel Chair</td>
+<td nowrap>1</td>
+<td nowrap>360.00</td>
+<td nowrap>843.08</td>
+<td nowrap>483.08</td>
+<td nowrap>0.57</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9856</td>
+<td nowrap>Albany Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>8645-30-GENS-20548</td>
+<td nowrap style='mso-number-format:"\@"'>*OTTOMAN</td>
+<td nowrap>1</td>
+<td nowrap>140.00</td>
+<td nowrap>349.61</td>
+<td nowrap>209.61</td>
+<td nowrap>0.60</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9463</td>
+<td nowrap>Archbold Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>62161</td>
+<td nowrap style='mso-number-format:"\@"'>6 Drawer Chest</td>
+<td nowrap>1</td>
+<td nowrap>580.00</td>
+<td nowrap>1065.00</td>
+<td nowrap>485.00</td>
+<td nowrap>0.46</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9923</td>
+<td nowrap>Ashley</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>1080329</td>
+<td nowrap style='mso-number-format:"\@"'>Nerviano Recliner</td>
+<td nowrap>1</td>
+<td nowrap>128.40</td>
+<td nowrap>373.83</td>
+<td nowrap>245.43</td>
+<td nowrap>0.66</td>
+<td nowrap>1/5/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9934</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>1960408</td>
+<td nowrap style='mso-number-format:"\@"'>Rawcliffe Oversized Accent Ottoman</td>
+<td nowrap>1</td>
+<td nowrap>178.76</td>
+<td nowrap>424.23</td>
+<td nowrap>245.47</td>
+<td nowrap>0.58</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9934</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>1960466</td>
+<td nowrap style='mso-number-format:"\@"'>Rawcliffe Left-Arm Facing Sofa</td>
+<td nowrap>1</td>
+<td nowrap>300.33</td>
+<td nowrap>848.48</td>
+<td nowrap>548.15</td>
+<td nowrap>0.65</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9934</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>1960467</td>
+<td nowrap style='mso-number-format:"\@"'>Rawcliffe Right-Arm Facing Sofa</td>
+<td nowrap>1</td>
+<td nowrap>286.26</td>
+<td nowrap>848.48</td>
+<td nowrap>562.22</td>
+<td nowrap>0.66</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9934</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>1960477</td>
+<td nowrap style='mso-number-format:"\@"'>Rawcliffe Wedge</td>
+<td nowrap>1</td>
+<td nowrap>207.75</td>
+<td nowrap>424.23</td>
+<td nowrap>216.48</td>
+<td nowrap>0.51</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9940</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>2050202</td>
+<td nowrap style='mso-number-format:"\@"'>Calnita Left-Arm Facing Sofa Chaise</td>
+<td nowrap>1</td>
+<td nowrap>375.72</td>
+<td nowrap>817.08</td>
+<td nowrap>441.36</td>
+<td nowrap>0.54</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9940</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>2050211</td>
+<td nowrap style='mso-number-format:"\@"'>Calnita Ottoman With Storage</td>
+<td nowrap>1</td>
+<td nowrap>157.22</td>
+<td nowrap>367.22</td>
+<td nowrap>210.00</td>
+<td nowrap>0.57</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9940</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>2050217</td>
+<td nowrap style='mso-number-format:"\@"'>Calnita Right-Arm Facing Corner Chaise</td>
+<td nowrap>1</td>
+<td nowrap>333.92</td>
+<td nowrap>743.62</td>
+<td nowrap>409.70</td>
+<td nowrap>0.55</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>12/26/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9806</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>2200313</td>
+<td nowrap style='mso-number-format:"\@"'>Next-Gen Durapella Power Recliner</td>
+<td nowrap>1</td>
+<td nowrap>893.67</td>
+<td nowrap>1483.24</td>
+<td nowrap>589.57</td>
+<td nowrap>0.40</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>12/26/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9806</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>2200315</td>
+<td nowrap style='mso-number-format:"\@"'>Next-Gen Durapella Power Reclining Sofa</td>
+<td nowrap>1</td>
+<td nowrap>832.15</td>
+<td nowrap>2006.75</td>
+<td nowrap>1174.60</td>
+<td nowrap>0.59</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>1/21/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>10078</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>2200415</td>
+<td nowrap style='mso-number-format:"\@"'>Next-Gen Durapella Power Reclining Sofa</td>
+<td nowrap>1</td>
+<td nowrap>772.82</td>
+<td nowrap>2149.63</td>
+<td nowrap>1376.81</td>
+<td nowrap>0.64</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>10042</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>2200415</td>
+<td nowrap style='mso-number-format:"\@"'>Next-Gen Durapella Power Reclining Sofa</td>
+<td nowrap>1</td>
+<td nowrap>772.82</td>
+<td nowrap>2299.99</td>
+<td nowrap>1527.17</td>
+<td nowrap>0.66</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>12/5/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9621</td>
+<td nowrap>Ashley</td>
+<td nowrap>Unassigned,LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>2420338</td>
+<td nowrap style='mso-number-format:"\@"'>SimpleJoy Sofa</td>
+<td nowrap>1</td>
+<td nowrap>208.52</td>
+<td nowrap>480.00</td>
+<td nowrap>271.48</td>
+<td nowrap>0.57</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9998</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>2820186</td>
+<td nowrap style='mso-number-format:"\@"'>Alphons Reclining Loveseat</td>
+<td nowrap>1</td>
+<td nowrap>271.15</td>
+<td nowrap>879.99</td>
+<td nowrap>608.84</td>
+<td nowrap>0.69</td>
+<td nowrap>1/14/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10009</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>2850235</td>
+<td nowrap style='mso-number-format:"\@"'>Stairatt Loveseat</td>
+<td nowrap>1</td>
+<td nowrap>215.65</td>
+<td nowrap>423.21</td>
+<td nowrap>207.56</td>
+<td nowrap>0.49</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10009</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>2850238</td>
+<td nowrap style='mso-number-format:"\@"'>Stairatt Sofa</td>
+<td nowrap>1</td>
+<td nowrap>239.87</td>
+<td nowrap>437.81</td>
+<td nowrap>197.94</td>
+<td nowrap>0.45</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9928</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>2850238</td>
+<td nowrap style='mso-number-format:"\@"'>Stairatt Sofa</td>
+<td nowrap>1</td>
+<td nowrap>239.87</td>
+<td nowrap>479.99</td>
+<td nowrap>240.12</td>
+<td nowrap>0.50</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9883</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>3990488</td>
+<td nowrap style='mso-number-format:"\@"'>Stoneland Reclining Sofa</td>
+<td nowrap>1</td>
+<td nowrap>391.40</td>
+<td nowrap>748.60</td>
+<td nowrap>357.20</td>
+<td nowrap>0.48</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9932</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>4060535</td>
+<td nowrap style='mso-number-format:"\@"'>Cashton Loveseat</td>
+<td nowrap>1</td>
+<td nowrap>234.15</td>
+<td nowrap>528.43</td>
+<td nowrap>294.28</td>
+<td nowrap>0.56</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9932</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>4060538</td>
+<td nowrap style='mso-number-format:"\@"'>Cashton Sofa</td>
+<td nowrap>1</td>
+<td nowrap>265.52</td>
+<td nowrap>546.66</td>
+<td nowrap>281.14</td>
+<td nowrap>0.51</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>1/14/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>10012</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SLEEPERS</td>
+<td nowrap style='mso-number-format:"\@"'>5360237</td>
+<td nowrap style='mso-number-format:"\@"'>Rannis Twin Sofa Sleeper</td>
+<td nowrap>1</td>
+<td nowrap>325.50</td>
+<td nowrap>710.99</td>
+<td nowrap>385.49</td>
+<td nowrap>0.54</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>12/27/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9830</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SLEEPERS</td>
+<td nowrap style='mso-number-format:"\@"'>5360336</td>
+<td nowrap style='mso-number-format:"\@"'>Rannis Full Sofa Sleeper</td>
+<td nowrap>1</td>
+<td nowrap>361.95</td>
+<td nowrap>749.40</td>
+<td nowrap>387.45</td>
+<td nowrap>0.52</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9965</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>5930118</td>
+<td nowrap style='mso-number-format:"\@"'>Next-Gen Durapella Power Reclining Loveseat with Console</td>
+<td nowrap>1</td>
+<td nowrap>538.65</td>
+<td nowrap>1914.25</td>
+<td nowrap>1375.60</td>
+<td nowrap>0.72</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9965</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>5930147</td>
+<td nowrap style='mso-number-format:"\@"'>Next-Gen Durapella Power Reclining Sofa</td>
+<td nowrap>1</td>
+<td nowrap>734.35</td>
+<td nowrap>1914.25</td>
+<td nowrap>1179.90</td>
+<td nowrap>0.62</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9899</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>5950518</td>
+<td nowrap style='mso-number-format:"\@"'>Stonemeade Sofa Chaise</td>
+<td nowrap>1</td>
+<td nowrap>313.02</td>
+<td nowrap>719.99</td>
+<td nowrap>406.97</td>
+<td nowrap>0.57</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9937</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>5950518</td>
+<td nowrap style='mso-number-format:"\@"'>Stonemeade Sofa Chaise</td>
+<td nowrap>1</td>
+<td nowrap>313.02</td>
+<td nowrap>725.32</td>
+<td nowrap>412.30</td>
+<td nowrap>0.57</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9960</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>6100431</td>
+<td nowrap style='mso-number-format:"\@"'>Next-Gen Durapella Power Armless Recliner</td>
+<td nowrap>1</td>
+<td nowrap>180.50</td>
+<td nowrap>550.63</td>
+<td nowrap>370.13</td>
+<td nowrap>0.67</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9960</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>6100446</td>
+<td nowrap style='mso-number-format:"\@"'>Next-Gen DuraPella Armless Chair</td>
+<td nowrap>1</td>
+<td nowrap>142.80</td>
+<td nowrap>364.38</td>
+<td nowrap>221.58</td>
+<td nowrap>0.61</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9960</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>6100457</td>
+<td nowrap style='mso-number-format:"\@"'>Next-Gen DuraPella Console with Storage</td>
+<td nowrap>2</td>
+<td nowrap>175.20</td>
+<td nowrap>453.45</td>
+<td nowrap>278.25</td>
+<td nowrap>0.61</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9960</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>6100458</td>
+<td nowrap style='mso-number-format:"\@"'>Next-Gen Durapella Left-Arm Facing Power Recliner</td>
+<td nowrap>1</td>
+<td nowrap>284.60</td>
+<td nowrap>720.68</td>
+<td nowrap>436.08</td>
+<td nowrap>0.61</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9960</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>6100462</td>
+<td nowrap style='mso-number-format:"\@"'>Next-Gen Durapella Right-Arm Facing Power Recliner</td>
+<td nowrap>1</td>
+<td nowrap>284.60</td>
+<td nowrap>720.68</td>
+<td nowrap>436.08</td>
+<td nowrap>0.61</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9960</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>6100477</td>
+<td nowrap style='mso-number-format:"\@"'>Next-Gen DuraPella Wedge</td>
+<td nowrap>1</td>
+<td nowrap>304.55</td>
+<td nowrap>769.26</td>
+<td nowrap>464.71</td>
+<td nowrap>0.60</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/13/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9680</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>8721320</td>
+<td nowrap style='mso-number-format:"\@"'>Altari Chair</td>
+<td nowrap>1</td>
+<td nowrap>173.25</td>
+<td nowrap>463.09</td>
+<td nowrap>289.84</td>
+<td nowrap>0.63</td>
+<td nowrap>1/14/2026</td>
+</tr>
+<tr>
+<td nowrap>12/13/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9680</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>8721325</td>
+<td nowrap style='mso-number-format:"\@"'>Altari Recliner</td>
+<td nowrap>1</td>
+<td nowrap>200.45</td>
+<td nowrap>555.71</td>
+<td nowrap>355.26</td>
+<td nowrap>0.64</td>
+<td nowrap>1/14/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9441</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>8721325</td>
+<td nowrap style='mso-number-format:"\@"'>Altari Recliner</td>
+<td nowrap>1</td>
+<td nowrap>200.45</td>
+<td nowrap>449.99</td>
+<td nowrap>249.54</td>
+<td nowrap>0.55</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9868</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>8721335</td>
+<td nowrap style='mso-number-format:"\@"'>Altari Loveseat</td>
+<td nowrap>1</td>
+<td nowrap>205.20</td>
+<td nowrap>521.01</td>
+<td nowrap>315.81</td>
+<td nowrap>0.61</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>12/13/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9680</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>8721338</td>
+<td nowrap style='mso-number-format:"\@"'>Altari Sofa</td>
+<td nowrap>1</td>
+<td nowrap>220.00</td>
+<td nowrap>555.71</td>
+<td nowrap>335.71</td>
+<td nowrap>0.60</td>
+<td nowrap>1/14/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9868</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>8721338</td>
+<td nowrap style='mso-number-format:"\@"'>Altari Sofa</td>
+<td nowrap>1</td>
+<td nowrap>209.00</td>
+<td nowrap>538.98</td>
+<td nowrap>329.98</td>
+<td nowrap>0.61</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10022</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>8721417</td>
+<td nowrap style='mso-number-format:"\@"'>Altari Right-Arm Facing Corner Chaise</td>
+<td nowrap>1</td>
+<td nowrap>240.00</td>
+<td nowrap>654.20</td>
+<td nowrap>414.20</td>
+<td nowrap>0.63</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9497</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>8721425</td>
+<td nowrap style='mso-number-format:"\@"'>Altari Recliner</td>
+<td nowrap>1</td>
+<td nowrap>149.15</td>
+<td nowrap>450.00</td>
+<td nowrap>300.85</td>
+<td nowrap>0.67</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9497</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>8721438</td>
+<td nowrap style='mso-number-format:"\@"'>Altari Sofa</td>
+<td nowrap>1</td>
+<td nowrap>192.95</td>
+<td nowrap>450.00</td>
+<td nowrap>257.05</td>
+<td nowrap>0.57</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10022</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>8721466</td>
+<td nowrap style='mso-number-format:"\@"'>Altari Left-Arm Facing Sofa</td>
+<td nowrap>1</td>
+<td nowrap>235.00</td>
+<td nowrap>654.20</td>
+<td nowrap>419.20</td>
+<td nowrap>0.64</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10027</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>9050315</td>
+<td nowrap style='mso-number-format:"\@"'>Biscoe Power Reclining Sofa</td>
+<td nowrap>1</td>
+<td nowrap>445.04</td>
+<td nowrap>1581.36</td>
+<td nowrap>1136.32</td>
+<td nowrap>0.72</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10027</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>9050318</td>
+<td nowrap style='mso-number-format:"\@"'>Biscoe Power Reclining Loveseat with Console</td>
+<td nowrap>1</td>
+<td nowrap>445.04</td>
+<td nowrap>1581.36</td>
+<td nowrap>1136.32</td>
+<td nowrap>0.72</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9919</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>9050318</td>
+<td nowrap style='mso-number-format:"\@"'>Biscoe Power Reclining Loveseat with Console</td>
+<td nowrap>1</td>
+<td nowrap>374.30</td>
+<td nowrap>1359.91</td>
+<td nowrap>985.61</td>
+<td nowrap>0.72</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>12/22/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9776</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>9810317</td>
+<td nowrap style='mso-number-format:"\@"'>Midnight-Madness Right-Arm Facing Corner Chaise</td>
+<td nowrap>1</td>
+<td nowrap>286.42</td>
+<td nowrap>661.61</td>
+<td nowrap>375.19</td>
+<td nowrap>0.57</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>12/22/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9776</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>9810334</td>
+<td nowrap style='mso-number-format:"\@"'>Midnight-Madness Armless Loveseat</td>
+<td nowrap>1</td>
+<td nowrap>255.10</td>
+<td nowrap>600.77</td>
+<td nowrap>345.67</td>
+<td nowrap>0.58</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>12/22/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9776</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>9810366</td>
+<td nowrap style='mso-number-format:"\@"'>Midnight-Madness Left-Arm Facing Sofa</td>
+<td nowrap>1</td>
+<td nowrap>339.15</td>
+<td nowrap>783.28</td>
+<td nowrap>444.13</td>
+<td nowrap>0.57</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>12/22/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9776</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>9810377</td>
+<td nowrap style='mso-number-format:"\@"'>Midnight-Madness Wedge</td>
+<td nowrap>1</td>
+<td nowrap>261.25</td>
+<td nowrap>600.77</td>
+<td nowrap>339.52</td>
+<td nowrap>0.57</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>12/23/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9798</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>9860625</td>
+<td nowrap style='mso-number-format:"\@"'>Tulen Recliner</td>
+<td nowrap>1</td>
+<td nowrap>150.10</td>
+<td nowrap>524.58</td>
+<td nowrap>374.48</td>
+<td nowrap>0.71</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>12/23/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9798</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>9860688</td>
+<td nowrap style='mso-number-format:"\@"'>Tulen Reclining Sofa</td>
+<td nowrap>1</td>
+<td nowrap>320.00</td>
+<td nowrap>599.52</td>
+<td nowrap>279.52</td>
+<td nowrap>0.47</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>10/14/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9032</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B192-31</td>
+<td nowrap style='mso-number-format:"\@"'>Cambeck Dresser</td>
+<td nowrap>1</td>
+<td nowrap>137.70</td>
+<td nowrap>369.99</td>
+<td nowrap>232.29</td>
+<td nowrap>0.63</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>10/14/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9032</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B192-46</td>
+<td nowrap style='mso-number-format:"\@"'>Cambeck Chest of Drawers</td>
+<td nowrap>1</td>
+<td nowrap>142.50</td>
+<td nowrap>329.99</td>
+<td nowrap>187.49</td>
+<td nowrap>0.57</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>10/14/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9032</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B192-56</td>
+<td nowrap style='mso-number-format:"\@"'>Cambeck King Panel Footboard</td>
+<td nowrap>1</td>
+<td nowrap>24.70</td>
+<td nowrap>49.99</td>
+<td nowrap>25.29</td>
+<td nowrap>0.51</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>10/14/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9032</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B192-58</td>
+<td nowrap style='mso-number-format:"\@"'>Cambeck King Panel Headboard</td>
+<td nowrap>1</td>
+<td nowrap>179.07</td>
+<td nowrap>409.99</td>
+<td nowrap>230.92</td>
+<td nowrap>0.56</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>10/14/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9032</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B192-92</td>
+<td nowrap style='mso-number-format:"\@"'>Cambeck Nightstand</td>
+<td nowrap>2</td>
+<td nowrap>180.20</td>
+<td nowrap>499.98</td>
+<td nowrap>319.78</td>
+<td nowrap>0.64</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>10/14/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9032</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B192-97</td>
+<td nowrap style='mso-number-format:"\@"'>Cambeck King Panel Rails</td>
+<td nowrap>1</td>
+<td nowrap>46.55</td>
+<td nowrap>90.04</td>
+<td nowrap>43.49</td>
+<td nowrap>0.48</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>11/26/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9407</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B211-31</td>
+<td nowrap style='mso-number-format:"\@"'>Drystan Dresser</td>
+<td nowrap>1</td>
+<td nowrap>160.07</td>
+<td nowrap>399.58</td>
+<td nowrap>239.51</td>
+<td nowrap>0.60</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>11/26/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9407</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B211-36</td>
+<td nowrap style='mso-number-format:"\@"'>Drystan Bedroom Mirror</td>
+<td nowrap>1</td>
+<td nowrap>30.00</td>
+<td nowrap>93.51</td>
+<td nowrap>63.51</td>
+<td nowrap>0.68</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>11/26/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9407</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B211-46</td>
+<td nowrap style='mso-number-format:"\@"'>Drystan Chest of Drawers</td>
+<td nowrap>1</td>
+<td nowrap>127.50</td>
+<td nowrap>331.56</td>
+<td nowrap>204.06</td>
+<td nowrap>0.62</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>11/26/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9407</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B211-84</td>
+<td nowrap style='mso-number-format:"\@"'>Drystan Full Panel Footboard</td>
+<td nowrap>1</td>
+<td nowrap>19.00</td>
+<td nowrap>51.05</td>
+<td nowrap>32.05</td>
+<td nowrap>0.63</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>11/26/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9407</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B211-86</td>
+<td nowrap style='mso-number-format:"\@"'>Drystan Full Panel Rails</td>
+<td nowrap>1</td>
+<td nowrap>32.77</td>
+<td nowrap>85.01</td>
+<td nowrap>52.24</td>
+<td nowrap>0.61</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>11/26/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9407</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B211-87</td>
+<td nowrap style='mso-number-format:"\@"'>Drystan Full Panel Headboard</td>
+<td nowrap>1</td>
+<td nowrap>118.75</td>
+<td nowrap>229.54</td>
+<td nowrap>110.79</td>
+<td nowrap>0.48</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>11/26/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9407</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B211-92</td>
+<td nowrap style='mso-number-format:"\@"'>Drystan Nightstand</td>
+<td nowrap>2</td>
+<td nowrap>180.20</td>
+<td nowrap>510.09</td>
+<td nowrap>329.89</td>
+<td nowrap>0.65</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10009</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B221-31</td>
+<td nowrap style='mso-number-format:"\@"'>Baystorm Dresser</td>
+<td nowrap>1</td>
+<td nowrap>144.40</td>
+<td nowrap>313.76</td>
+<td nowrap>169.36</td>
+<td nowrap>0.54</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10009</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B221-35</td>
+<td nowrap style='mso-number-format:"\@"'>Baystorm Bedroom Mirror</td>
+<td nowrap>1</td>
+<td nowrap>29.45</td>
+<td nowrap>80.26</td>
+<td nowrap>50.81</td>
+<td nowrap>0.63</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10009</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B221-46</td>
+<td nowrap style='mso-number-format:"\@"'>Baystorm Chest of Drawers</td>
+<td nowrap>1</td>
+<td nowrap>129.20</td>
+<td nowrap>313.76</td>
+<td nowrap>184.56</td>
+<td nowrap>0.59</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10009</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B221-54</td>
+<td nowrap style='mso-number-format:"\@"'>Baystorm Queen Panel Footboard with Rails</td>
+<td nowrap>2</td>
+<td nowrap>126.85</td>
+<td nowrap>306.46</td>
+<td nowrap>179.61</td>
+<td nowrap>0.59</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10009</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B221-57</td>
+<td nowrap style='mso-number-format:"\@"'>Baystorm Queen Panel Headboard</td>
+<td nowrap>2</td>
+<td nowrap>197.05</td>
+<td nowrap>452.39</td>
+<td nowrap>255.34</td>
+<td nowrap>0.56</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10009</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B221-91</td>
+<td nowrap style='mso-number-format:"\@"'>Baystorm Nightstand</td>
+<td nowrap>3</td>
+<td nowrap>232.05</td>
+<td nowrap>547.25</td>
+<td nowrap>315.20</td>
+<td nowrap>0.58</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10035</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B249-92</td>
+<td nowrap style='mso-number-format:"\@"'>Brinxton Nightstand</td>
+<td nowrap>2</td>
+<td nowrap>201.40</td>
+<td nowrap>569.98</td>
+<td nowrap>368.58</td>
+<td nowrap>0.65</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9963</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B267-31</td>
+<td nowrap style='mso-number-format:"\@"'>Willowton Dresser</td>
+<td nowrap>1</td>
+<td nowrap>184.20</td>
+<td nowrap>399.99</td>
+<td nowrap>215.79</td>
+<td nowrap>0.54</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10010</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B743-31</td>
+<td nowrap style='mso-number-format:"\@"'>Realyn Dresser</td>
+<td nowrap>1</td>
+<td nowrap>400.00</td>
+<td nowrap>1108.23</td>
+<td nowrap>708.23</td>
+<td nowrap>0.64</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10010</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B743-36</td>
+<td nowrap style='mso-number-format:"\@"'>Realyn Bedroom Mirror</td>
+<td nowrap>1</td>
+<td nowrap>110.00</td>
+<td nowrap>323.23</td>
+<td nowrap>213.23</td>
+<td nowrap>0.66</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10010</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B743-46</td>
+<td nowrap style='mso-number-format:"\@"'>Realyn Chest of Drawers</td>
+<td nowrap>1</td>
+<td nowrap>430.00</td>
+<td nowrap>1200.58</td>
+<td nowrap>770.58</td>
+<td nowrap>0.64</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10010</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B743-56</td>
+<td nowrap style='mso-number-format:"\@"'>Realyn King/California King Panel Footboard</td>
+<td nowrap>1</td>
+<td nowrap>120.00</td>
+<td nowrap>341.70</td>
+<td nowrap>221.70</td>
+<td nowrap>0.65</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10010</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B743-58</td>
+<td nowrap style='mso-number-format:"\@"'>Realyn King/California King Upholstered Panel Headboard</td>
+<td nowrap>1</td>
+<td nowrap>220.00</td>
+<td nowrap>646.46</td>
+<td nowrap>426.46</td>
+<td nowrap>0.66</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10010</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B743-93</td>
+<td nowrap style='mso-number-format:"\@"'>Realyn Nightstand</td>
+<td nowrap>2</td>
+<td nowrap>320.85</td>
+<td nowrap>1015.86</td>
+<td nowrap>695.01</td>
+<td nowrap>0.68</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10010</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B743-97</td>
+<td nowrap style='mso-number-format:"\@"'>Realyn King Panel Rails</td>
+<td nowrap>1</td>
+<td nowrap>60.00</td>
+<td nowrap>175.46</td>
+<td nowrap>115.46</td>
+<td nowrap>0.66</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10028</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B751-31</td>
+<td nowrap style='mso-number-format:"\@"'>Lodenbay Dresser</td>
+<td nowrap>1</td>
+<td nowrap>400.00</td>
+<td nowrap>1016.83</td>
+<td nowrap>616.83</td>
+<td nowrap>0.61</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10028</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B751-36</td>
+<td nowrap style='mso-number-format:"\@"'>Lodenbay Bedroom Mirror</td>
+<td nowrap>1</td>
+<td nowrap>110.00</td>
+<td nowrap>296.57</td>
+<td nowrap>186.57</td>
+<td nowrap>0.63</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10028</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B751-46</td>
+<td nowrap style='mso-number-format:"\@"'>Lodenbay Chest of Drawers</td>
+<td nowrap>1</td>
+<td nowrap>430.00</td>
+<td nowrap>1101.56</td>
+<td nowrap>671.56</td>
+<td nowrap>0.61</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10028</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B751-56</td>
+<td nowrap style='mso-number-format:"\@"'>Lodenbay King/California King Panel Footboard</td>
+<td nowrap>1</td>
+<td nowrap>120.00</td>
+<td nowrap>313.52</td>
+<td nowrap>193.52</td>
+<td nowrap>0.62</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10028</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B751-58</td>
+<td nowrap style='mso-number-format:"\@"'>Lodenbay King/California King Upholstered Panel Headboard</td>
+<td nowrap>1</td>
+<td nowrap>220.00</td>
+<td nowrap>593.14</td>
+<td nowrap>373.14</td>
+<td nowrap>0.63</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10028</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B751-93</td>
+<td nowrap style='mso-number-format:"\@"'>Lodenbay Nightstand</td>
+<td nowrap>1</td>
+<td nowrap>180.00</td>
+<td nowrap>466.04</td>
+<td nowrap>286.04</td>
+<td nowrap>0.61</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10028</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B751-97</td>
+<td nowrap style='mso-number-format:"\@"'>Lodenbay King Panel Rails</td>
+<td nowrap>1</td>
+<td nowrap>60.00</td>
+<td nowrap>169.46</td>
+<td nowrap>109.46</td>
+<td nowrap>0.65</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10002</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B777-31</td>
+<td nowrap style='mso-number-format:"\@"'>Kanwyn Dresser</td>
+<td nowrap>1</td>
+<td nowrap>398.52</td>
+<td nowrap>1060.03</td>
+<td nowrap>661.51</td>
+<td nowrap>0.62</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10002</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B777-46</td>
+<td nowrap style='mso-number-format:"\@"'>Kanwyn Chest of Drawers</td>
+<td nowrap>1</td>
+<td nowrap>223.72</td>
+<td nowrap>1060.03</td>
+<td nowrap>836.31</td>
+<td nowrap>0.79</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10002</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B777-56S</td>
+<td nowrap style='mso-number-format:"\@"'>Kanwyn King/California King Storage Footboard</td>
+<td nowrap>1</td>
+<td nowrap>226.10</td>
+<td nowrap>574.18</td>
+<td nowrap>348.08</td>
+<td nowrap>0.61</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10002</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B777-58</td>
+<td nowrap style='mso-number-format:"\@"'>Kanwyn King/California King Panel Headboard</td>
+<td nowrap>1</td>
+<td nowrap>205.20</td>
+<td nowrap>530.01</td>
+<td nowrap>324.81</td>
+<td nowrap>0.61</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10002</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B777-93</td>
+<td nowrap style='mso-number-format:"\@"'>Kanwyn Nightstand</td>
+<td nowrap>2</td>
+<td nowrap>217.54</td>
+<td nowrap>883.35</td>
+<td nowrap>665.81</td>
+<td nowrap>0.75</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10002</td>
+<td nowrap>Ashley</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B777-97</td>
+<td nowrap style='mso-number-format:"\@"'>Kanwyn King Panel Rails</td>
+<td nowrap>1</td>
+<td nowrap>65.07</td>
+<td nowrap>176.66</td>
+<td nowrap>111.59</td>
+<td nowrap>0.63</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9958</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D291-01</td>
+<td nowrap style='mso-number-format:"\@"'>Parellen Dining Chair</td>
+<td nowrap>6</td>
+<td nowrap>270.72</td>
+<td nowrap>416.81</td>
+<td nowrap>146.09</td>
+<td nowrap>0.35</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9958</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D291-25</td>
+<td nowrap style='mso-number-format:"\@"'>Parellen Dining Table</td>
+<td nowrap>1</td>
+<td nowrap>114.00</td>
+<td nowrap>370.48</td>
+<td nowrap>256.48</td>
+<td nowrap>0.69</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10031</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D383-325</td>
+<td nowrap style='mso-number-format:"\@"'>Bridson Dining Table and Chairs with Bench (Set of 6)</td>
+<td nowrap>1</td>
+<td nowrap>278.10</td>
+<td nowrap>599.99</td>
+<td nowrap>321.89</td>
+<td nowrap>0.54</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9869</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D422-223</td>
+<td nowrap style='mso-number-format:"\@"'>Langwest Counter Height Dining Table and 4 Barstools (Set of 5)</td>
+<td nowrap>1</td>
+<td nowrap>210.90</td>
+<td nowrap>689.81</td>
+<td nowrap>478.91</td>
+<td nowrap>0.69</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9490</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D423-223</td>
+<td nowrap style='mso-number-format:"\@"'>Erinberg Counter Height Dining Table and 4 Barstools (Set of 5)</td>
+<td nowrap>1</td>
+<td nowrap>241.80</td>
+<td nowrap>600.00</td>
+<td nowrap>358.20</td>
+<td nowrap>0.60</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9861</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D631-01</td>
+<td nowrap style='mso-number-format:"\@"'>Moriville Dining Chair</td>
+<td nowrap>8</td>
+<td nowrap>444.56</td>
+<td nowrap>1023.94</td>
+<td nowrap>579.38</td>
+<td nowrap>0.57</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9861</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D631-45</td>
+<td nowrap style='mso-number-format:"\@"'>Moriville Dining Extension Table</td>
+<td nowrap>1</td>
+<td nowrap>293.55</td>
+<td nowrap>719.99</td>
+<td nowrap>426.44</td>
+<td nowrap>0.59</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9930</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D647-00</td>
+<td nowrap style='mso-number-format:"\@"'>Bolanburg Dining Bench</td>
+<td nowrap>1</td>
+<td nowrap>85.50</td>
+<td nowrap>263.15</td>
+<td nowrap>177.65</td>
+<td nowrap>0.68</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9930</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D647-01</td>
+<td nowrap style='mso-number-format:"\@"'>Bolanburg Dining Chair</td>
+<td nowrap>2</td>
+<td nowrap>106.40</td>
+<td nowrap>350.86</td>
+<td nowrap>244.46</td>
+<td nowrap>0.70</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9877</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D647-02</td>
+<td nowrap style='mso-number-format:"\@"'>Bolanburg Dining Chair</td>
+<td nowrap>2</td>
+<td nowrap>125.63</td>
+<td nowrap>504.66</td>
+<td nowrap>379.03</td>
+<td nowrap>0.75</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9930</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D647-02</td>
+<td nowrap style='mso-number-format:"\@"'>Bolanburg Dining Chair</td>
+<td nowrap>2</td>
+<td nowrap>125.63</td>
+<td nowrap>526.29</td>
+<td nowrap>400.66</td>
+<td nowrap>0.76</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9930</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D647-25</td>
+<td nowrap style='mso-number-format:"\@"'>Bolanburg Dining Table</td>
+<td nowrap>1</td>
+<td nowrap>156.40</td>
+<td nowrap>701.74</td>
+<td nowrap>545.34</td>
+<td nowrap>0.78</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9943</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D743-01</td>
+<td nowrap style='mso-number-format:"\@"'>Realyn Dining Chair</td>
+<td nowrap>8</td>
+<td nowrap>421.76</td>
+<td nowrap>1362.54</td>
+<td nowrap>940.78</td>
+<td nowrap>0.69</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9943</td>
+<td nowrap>Ashley</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>D743-45</td>
+<td nowrap style='mso-number-format:"\@"'>Realyn Dining Extension Table</td>
+<td nowrap>1</td>
+<td nowrap>309.55</td>
+<td nowrap>766.42</td>
+<td nowrap>456.87</td>
+<td nowrap>0.60</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/18/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10053</td>
+<td nowrap>Ashley</td>
+<td nowrap>ACCESSORIES - LIGHTING & LAMPS</td>
+<td nowrap style='mso-number-format:"\@"'>L235341</td>
+<td nowrap style='mso-number-format:"\@"'>Bernadate Floor Lamp</td>
+<td nowrap>1</td>
+<td nowrap>61.75</td>
+<td nowrap>55.33</td>
+<td nowrap>(-6.42)</td>
+<td nowrap>(-0.12)</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/14/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10016</td>
+<td nowrap>Ashley</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>M12741</td>
+<td nowrap style='mso-number-format:"\@"'>Nectar Luxe Memory Foam King Mattress</td>
+<td nowrap>1</td>
+<td nowrap>580.25</td>
+<td nowrap>1401.86</td>
+<td nowrap>821.61</td>
+<td nowrap>0.59</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>1/14/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>10017</td>
+<td nowrap>Ashley</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>M14131</td>
+<td nowrap style='mso-number-format:"\@"'>Nectar Premier Hybrid Queen Mattress</td>
+<td nowrap>1</td>
+<td nowrap>467.40</td>
+<td nowrap>1030.43</td>
+<td nowrap>563.03</td>
+<td nowrap>0.55</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9940</td>
+<td nowrap>Ashley</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>M14241</td>
+<td nowrap style='mso-number-format:"\@"'>Nectar Luxe Hybrid King Mattress</td>
+<td nowrap>1</td>
+<td nowrap>598.02</td>
+<td nowrap>1652.52</td>
+<td nowrap>1054.50</td>
+<td nowrap>0.64</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>10038</td>
+<td nowrap>Ashley</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>M20341</td>
+<td nowrap style='mso-number-format:"\@"'>Peak 2.0 12 Hybrid King Mattress</td>
+<td nowrap>1</td>
+<td nowrap>262.55</td>
+<td nowrap>899.99</td>
+<td nowrap>637.44</td>
+<td nowrap>0.71</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>12/27/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9823</td>
+<td nowrap>Ashley</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>M41031</td>
+<td nowrap style='mso-number-format:"\@"'>Limited Edition Firm Queen Mattress</td>
+<td nowrap>1</td>
+<td nowrap>235.95</td>
+<td nowrap>559.99</td>
+<td nowrap>324.04</td>
+<td nowrap>0.58</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9888</td>
+<td nowrap>Ashley</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>M41111</td>
+<td nowrap style='mso-number-format:"\@"'>Limited Edition Plush Twin Mattress</td>
+<td nowrap>1</td>
+<td nowrap>176.00</td>
+<td nowrap>479.99</td>
+<td nowrap>303.99</td>
+<td nowrap>0.63</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9991</td>
+<td nowrap>Ashley</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>M41131</td>
+<td nowrap style='mso-number-format:"\@"'>Limited Edition Plush Queen Mattress</td>
+<td nowrap>1</td>
+<td nowrap>204.85</td>
+<td nowrap>616.23</td>
+<td nowrap>411.38</td>
+<td nowrap>0.67</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10058</td>
+<td nowrap>Ashley</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>M41131</td>
+<td nowrap style='mso-number-format:"\@"'>Limited Edition Plush Queen Mattress</td>
+<td nowrap>1</td>
+<td nowrap>235.95</td>
+<td nowrap>608.89</td>
+<td nowrap>372.94</td>
+<td nowrap>0.61</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9925</td>
+<td nowrap>Ashley</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>M43011</td>
+<td nowrap style='mso-number-format:"\@"'>iKidz Ocean Twin Mattress and Pillow</td>
+<td nowrap>1</td>
+<td nowrap>123.02</td>
+<td nowrap>277.30</td>
+<td nowrap>154.28</td>
+<td nowrap>0.56</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>10038</td>
+<td nowrap>Ashley</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>M78X42</td>
+<td nowrap style='mso-number-format:"\@"'>Low Profile King Foundation</td>
+<td nowrap>1</td>
+<td nowrap>137.75</td>
+<td nowrap>399.99</td>
+<td nowrap>262.24</td>
+<td nowrap>0.66</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>12/21/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9760</td>
+<td nowrap>Ashley</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>M91X22</td>
+<td nowrap style='mso-number-format:"\@"'>Better than a Boxspring Full Foundation</td>
+<td nowrap>1</td>
+<td nowrap>70.40</td>
+<td nowrap>198.96</td>
+<td nowrap>128.56</td>
+<td nowrap>0.65</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>12/22/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9769</td>
+<td nowrap>Ashley</td>
+<td nowrap>Unassigned,BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>PCB401-82</td>
+<td nowrap style='mso-number-format:"\@"'>Brintstreet King Upholstered Bed</td>
+<td nowrap>1</td>
+<td nowrap>355.30</td>
+<td nowrap>923.45</td>
+<td nowrap>568.15</td>
+<td nowrap>0.62</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/20/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9731</td>
+<td nowrap>Ashley</td>
+<td nowrap>OCCASIONAL TABLES</td>
+<td nowrap style='mso-number-format:"\@"'>T468-00</td>
+<td nowrap style='mso-number-format:"\@"'>Valebeck Coffee Table with Lift Top</td>
+<td nowrap>1</td>
+<td nowrap>349.13</td>
+<td nowrap>561.76</td>
+<td nowrap>212.63</td>
+<td nowrap>0.38</td>
+<td nowrap>1/4/2026</td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9996</td>
+<td nowrap>Ashley</td>
+<td nowrap>OCCASIONAL TABLES</td>
+<td nowrap style='mso-number-format:"\@"'>T481-1</td>
+<td nowrap style='mso-number-format:"\@"'>Watson Coffee Table</td>
+<td nowrap>1</td>
+<td nowrap>123.50</td>
+<td nowrap>427.50</td>
+<td nowrap>304.00</td>
+<td nowrap>0.71</td>
+<td nowrap>1/11/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9930</td>
+<td nowrap>Ashley</td>
+<td nowrap>OCCASIONAL TABLES</td>
+<td nowrap style='mso-number-format:"\@"'>T637-20</td>
+<td nowrap style='mso-number-format:"\@"'>Bolanburg Coffee Table with Lift Top</td>
+<td nowrap>1</td>
+<td nowrap>285.00</td>
+<td nowrap>877.17</td>
+<td nowrap>592.17</td>
+<td nowrap>0.68</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9930</td>
+<td nowrap>Ashley</td>
+<td nowrap>OCCASIONAL TABLES</td>
+<td nowrap style='mso-number-format:"\@"'>T637-3</td>
+<td nowrap style='mso-number-format:"\@"'>Bolanburg End Table</td>
+<td nowrap>1</td>
+<td nowrap>134.30</td>
+<td nowrap>377.18</td>
+<td nowrap>242.88</td>
+<td nowrap>0.64</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9892</td>
+<td nowrap>Ashley</td>
+<td nowrap>OCCASIONAL TABLES</td>
+<td nowrap style='mso-number-format:"\@"'>T736-20</td>
+<td nowrap style='mso-number-format:"\@"'>Tyler Creek Coffee Table with Lift Top</td>
+<td nowrap>1</td>
+<td nowrap>285.07</td>
+<td nowrap>619.99</td>
+<td nowrap>334.92</td>
+<td nowrap>0.54</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>12/21/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9760</td>
+<td nowrap>Ashley</td>
+<td nowrap>OCCASIONAL TABLES</td>
+<td nowrap style='mso-number-format:"\@"'>T994-7</td>
+<td nowrap style='mso-number-format:"\@"'>Havalance Chairside End Table</td>
+<td nowrap>2</td>
+<td nowrap>188.10</td>
+<td nowrap>616.81</td>
+<td nowrap>428.71</td>
+<td nowrap>0.70</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9885</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>U2710515</td>
+<td nowrap style='mso-number-format:"\@"'>Boyington Power Reclining Sofa</td>
+<td nowrap>1</td>
+<td nowrap>1003.05</td>
+<td nowrap>2439.12</td>
+<td nowrap>1436.07</td>
+<td nowrap>0.59</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9885</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>U2710518</td>
+<td nowrap style='mso-number-format:"\@"'>Boyington Power Reclining Loveseat with Console</td>
+<td nowrap>1</td>
+<td nowrap>1127.29</td>
+<td nowrap>2439.12</td>
+<td nowrap>1311.83</td>
+<td nowrap>0.54</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>1/13/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10011</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>U2710615</td>
+<td nowrap style='mso-number-format:"\@"'>Boyington Power Reclining Sofa</td>
+<td nowrap>1</td>
+<td nowrap>1127.29</td>
+<td nowrap>3072.27</td>
+<td nowrap>1944.98</td>
+<td nowrap>0.63</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>12/9/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9645</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>U4380887</td>
+<td nowrap style='mso-number-format:"\@"'>Leesworth Power Reclining Sofa</td>
+<td nowrap>1</td>
+<td nowrap>442.00</td>
+<td nowrap>1383.17</td>
+<td nowrap>941.17</td>
+<td nowrap>0.68</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>12/9/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9645</td>
+<td nowrap>Ashley</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>U4380898</td>
+<td nowrap style='mso-number-format:"\@"'>Leesworth Power Recliner</td>
+<td nowrap>2</td>
+<td nowrap>680.00</td>
+<td nowrap>2074.75</td>
+<td nowrap>1394.75</td>
+<td nowrap>0.67</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10055</td>
+<td nowrap>Ashley</td>
+<td nowrap>HOME ENTERTAINMENT</td>
+<td nowrap style='mso-number-format:"\@"'>W100-101</td>
+<td nowrap style='mso-number-format:"\@"'>Entertainment Accessories Electric Infrared Fireplace Insert</td>
+<td nowrap>1</td>
+<td nowrap>132.05</td>
+<td nowrap>405.56</td>
+<td nowrap>273.51</td>
+<td nowrap>0.67</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10055</td>
+<td nowrap>Ashley</td>
+<td nowrap>HOME ENTERTAINMENT</td>
+<td nowrap style='mso-number-format:"\@"'>W267-68</td>
+<td nowrap style='mso-number-format:"\@"'>Willowton 64in TV Stand</td>
+<td nowrap>1</td>
+<td nowrap>152.95</td>
+<td nowrap>405.56</td>
+<td nowrap>252.61</td>
+<td nowrap>0.62</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9854</td>
+<td nowrap>Ashley</td>
+<td nowrap>HOME ENTERTAINMENT</td>
+<td nowrap style='mso-number-format:"\@"'>W440-68</td>
+<td nowrap style='mso-number-format:"\@"'>Wynnlow 63in TV Stand</td>
+<td nowrap>1</td>
+<td nowrap>151.05</td>
+<td nowrap>359.99</td>
+<td nowrap>208.94</td>
+<td nowrap>0.58</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9930</td>
+<td nowrap>Ashley</td>
+<td nowrap>HOME ENTERTAINMENT</td>
+<td nowrap style='mso-number-format:"\@"'>W647-60</td>
+<td nowrap style='mso-number-format:"\@"'>Bolanburg 74in TV Stand</td>
+<td nowrap>1</td>
+<td nowrap>248.90</td>
+<td nowrap>1052.61</td>
+<td nowrap>803.71</td>
+<td nowrap>0.76</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>12/2/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9593</td>
+<td nowrap>BEDGEAR</td>
+<td nowrap>MATTRESS CARE</td>
+<td nowrap style='mso-number-format:"\@"'>TWILIGHT_0-0</td>
+<td nowrap style='mso-number-format:"\@"'>PILLOW STANDARD</td>
+<td nowrap>1</td>
+<td nowrap>65.00</td>
+<td nowrap>106.82</td>
+<td nowrap>41.82</td>
+<td nowrap>0.39</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10002</td>
+<td nowrap>Benchmaster</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>7112J-107-27</td>
+<td nowrap style='mso-number-format:"\@"'>Pastel Blue Swivel Recliner</td>
+<td nowrap>1</td>
+<td nowrap>442.23</td>
+<td nowrap>954.04</td>
+<td nowrap>511.81</td>
+<td nowrap>0.54</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>WH - BW5-Unboxed (Liquidators)</td>
+<td nowrap>9543</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>0LP10LU</td>
+<td nowrap style='mso-number-format:"\@"'>LEATHER THREE-WAY POWER RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>849.85</td>
+<td nowrap>1149.99</td>
+<td nowrap>300.14</td>
+<td nowrap>0.26</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>11/29/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9572</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>1A05</td>
+<td nowrap style='mso-number-format:"\@"'>CODIE SWIVEL GLIDER RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>460.06</td>
+<td nowrap>960.49</td>
+<td nowrap>500.43</td>
+<td nowrap>0.52</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9492</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>1A05</td>
+<td nowrap style='mso-number-format:"\@"'>CODIE SWIVEL GLIDER RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>409.00</td>
+<td nowrap>1019.99</td>
+<td nowrap>610.99</td>
+<td nowrap>0.60</td>
+<td nowrap>1/13/2026</td>
+</tr>
+<tr>
+<td nowrap>5/13/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>7300</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>1A05</td>
+<td nowrap style='mso-number-format:"\@"'>CODIE SWIVEL GLIDER RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>393.00</td>
+<td nowrap>0.00</td>
+<td nowrap>(-393.00)</td>
+<td nowrap>0</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>10046</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>4NI95</td>
+<td nowrap style='mso-number-format:"\@"'>JOSEY Swivel Glide Recliner w/ Inside Handle</td>
+<td nowrap>1</td>
+<td nowrap>410.33</td>
+<td nowrap>949.99</td>
+<td nowrap>539.66</td>
+<td nowrap>0.57</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>11/11/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9284</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>6M57</td>
+<td nowrap style='mso-number-format:"\@"'>LUCAS ROCKER RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>383.20</td>
+<td nowrap>949.33</td>
+<td nowrap>566.13</td>
+<td nowrap>0.60</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9862</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>7N37LU</td>
+<td nowrap style='mso-number-format:"\@"'>UNITY ROCKER RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>486.41</td>
+<td nowrap>1060.83</td>
+<td nowrap>574.42</td>
+<td nowrap>0.54</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9461</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>7NW55</td>
+<td nowrap style='mso-number-format:"\@"'>MEXI SWIVEL GLIDER RECLINER</td>
+<td nowrap>2</td>
+<td nowrap>876.20</td>
+<td nowrap>1559.99</td>
+<td nowrap>683.79</td>
+<td nowrap>0.44</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9873</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>7NW55</td>
+<td nowrap style='mso-number-format:"\@"'>MEXI SWIVEL GLIDER RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>434.91</td>
+<td nowrap>832.00</td>
+<td nowrap>397.09</td>
+<td nowrap>0.48</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9500</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>7NW55</td>
+<td nowrap style='mso-number-format:"\@"'>MEXI SWIVEL GLIDER RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>438.10</td>
+<td nowrap>778.49</td>
+<td nowrap>340.39</td>
+<td nowrap>0.44</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>11/4/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9217</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>9810/2</td>
+<td nowrap style='mso-number-format:"\@"'>Dining Chairs (2 per Carton)</td>
+<td nowrap>2</td>
+<td nowrap>801.54</td>
+<td nowrap>1759.98</td>
+<td nowrap>958.44</td>
+<td nowrap>0.54</td>
+<td nowrap>1/13/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9918</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>9B14_</td>
+<td nowrap style='mso-number-format:"\@"'>RAKE BIG MANS SPACE SAVER RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>633.78</td>
+<td nowrap>1178.00</td>
+<td nowrap>544.22</td>
+<td nowrap>0.46</td>
+<td nowrap>1/5/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9511</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>9MP17-1LV</td>
+<td nowrap style='mso-number-format:"\@"'>WYNETTE POWER ROCKER RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>613.78</td>
+<td nowrap>1159.99</td>
+<td nowrap>546.21</td>
+<td nowrap>0.47</td>
+<td nowrap>1/5/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9483</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>9MW81-1</td>
+<td nowrap style='mso-number-format:"\@"'>BROSMER POWER LIFT RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>597.31</td>
+<td nowrap>1169.99</td>
+<td nowrap>572.68</td>
+<td nowrap>0.49</td>
+<td nowrap>1/13/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9483</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>9MW81-1</td>
+<td nowrap style='mso-number-format:"\@"'>BROSMER POWER LIFT RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>597.31</td>
+<td nowrap>1169.99</td>
+<td nowrap>572.68</td>
+<td nowrap>0.49</td>
+<td nowrap>1/13/2026</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9907</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>9MW87-1</td>
+<td nowrap style='mso-number-format:"\@"'>BROSMER ROCKER RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>317.90</td>
+<td nowrap>751.99</td>
+<td nowrap>434.09</td>
+<td nowrap>0.58</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>1/14/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10014</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>9MW87-1</td>
+<td nowrap style='mso-number-format:"\@"'>BROSMER ROCKER RECLINER</td>
+<td nowrap>1</td>
+<td nowrap>317.90</td>
+<td nowrap>839.99</td>
+<td nowrap>522.09</td>
+<td nowrap>0.62</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9862</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>L730CQ7</td>
+<td nowrap style='mso-number-format:"\@"'>UNITY POWER ROCKER CONSOLE L/S CHAISE</td>
+<td nowrap>1</td>
+<td nowrap>1037.60</td>
+<td nowrap>2232.00</td>
+<td nowrap>1194.40</td>
+<td nowrap>0.54</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9862</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>S730CP4</td>
+<td nowrap style='mso-number-format:"\@"'>UNITY POWER SPACE SAVER SOFA CHAISE</td>
+<td nowrap>1</td>
+<td nowrap>983.40</td>
+<td nowrap>2130.16</td>
+<td nowrap>1146.76</td>
+<td nowrap>0.54</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>11/5/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9224</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>S735CA4</td>
+<td nowrap style='mso-number-format:"\@"'>LEATHER SPACE SAVER SOFA CHAISE</td>
+<td nowrap>1</td>
+<td nowrap>1224.00</td>
+<td nowrap>1825.01</td>
+<td nowrap>601.01</td>
+<td nowrap>0.33</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9906</td>
+<td nowrap>Best Home Furnishings</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>S910RA4</td>
+<td nowrap style='mso-number-format:"\@"'>MAVERLY SPACE SAVER SOFA CHAISE</td>
+<td nowrap>1</td>
+<td nowrap>749.00</td>
+<td nowrap>1695.99</td>
+<td nowrap>946.99</td>
+<td nowrap>0.56</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9909</td>
+<td nowrap>CLIMATIC</td>
+<td nowrap>APPLIANCES & ELECTRONICS</td>
+<td nowrap style='mso-number-format:"\@"'>DVE45T3200W</td>
+<td nowrap style='mso-number-format:"\@"'>SAMSUNG-DRYER</td>
+<td nowrap>1</td>
+<td nowrap>367.28</td>
+<td nowrap>621.00</td>
+<td nowrap>253.72</td>
+<td nowrap>0.41</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9909</td>
+<td nowrap>CLIMATIC</td>
+<td nowrap>APPLIANCES & ELECTRONICS</td>
+<td nowrap style='mso-number-format:"\@"'>WA45T3200ARD</td>
+<td nowrap style='mso-number-format:"\@"'>SAMSUNG-WASHER</td>
+<td nowrap>1</td>
+<td nowrap>368.29</td>
+<td nowrap>621.00</td>
+<td nowrap>252.71</td>
+<td nowrap>0.41</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>11/26/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9407</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>4_LO_PRO_FND_4_6</td>
+<td nowrap style='mso-number-format:"\@"'>Full Low Profile Foundation - C4BK-F</td>
+<td nowrap>1</td>
+<td nowrap>70.00</td>
+<td nowrap>187.03</td>
+<td nowrap>117.03</td>
+<td nowrap>0.63</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>12/21/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9764</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>4_LO_PRO_FND_5_0</td>
+<td nowrap style='mso-number-format:"\@"'>Queen Low Profile Foundation - C4BK-Q</td>
+<td nowrap>1</td>
+<td nowrap>74.00</td>
+<td nowrap>190.63</td>
+<td nowrap>116.63</td>
+<td nowrap>0.61</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9917</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>9_BLACK_FDN_3-3</td>
+<td nowrap style='mso-number-format:"\@"'>Twin Foundation- C9BK-T</td>
+<td nowrap>1</td>
+<td nowrap>64.00</td>
+<td nowrap>181.39</td>
+<td nowrap>117.39</td>
+<td nowrap>0.65</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10028</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>9_BLACK_FDN_3-3XL</td>
+<td nowrap style='mso-number-format:"\@"'>Twin XL Foundation - C9BK-TXL</td>
+<td nowrap>2</td>
+<td nowrap>130.00</td>
+<td nowrap>372.82</td>
+<td nowrap>242.82</td>
+<td nowrap>0.65</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>10/14/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9032</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>9_BLACK_FDN_3-3XL</td>
+<td nowrap style='mso-number-format:"\@"'>Twin XL Foundation - C9BK-TXL</td>
+<td nowrap>2</td>
+<td nowrap>130.00</td>
+<td nowrap>400.00</td>
+<td nowrap>270.00</td>
+<td nowrap>0.68</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9950</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>9_BLACK_FDN_4-6</td>
+<td nowrap style='mso-number-format:"\@"'>Full Foundation- C9BK-F</td>
+<td nowrap>1</td>
+<td nowrap>70.00</td>
+<td nowrap>189.80</td>
+<td nowrap>119.80</td>
+<td nowrap>0.63</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>12/27/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9838</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>9_BLACK_FDN_5-0</td>
+<td nowrap style='mso-number-format:"\@"'>Queen Foundation- C9BK-Q</td>
+<td nowrap>1</td>
+<td nowrap>74.00</td>
+<td nowrap>196.39</td>
+<td nowrap>122.39</td>
+<td nowrap>0.62</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9991</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>9_BLACK_FDN_5-0</td>
+<td nowrap style='mso-number-format:"\@"'>Queen Foundation- C9BK-Q</td>
+<td nowrap>1</td>
+<td nowrap>74.00</td>
+<td nowrap>213.96</td>
+<td nowrap>139.96</td>
+<td nowrap>0.65</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9988</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>9_BLACK_FDN_5-0</td>
+<td nowrap style='mso-number-format:"\@"'>Queen Foundation- C9BK-Q</td>
+<td nowrap>1</td>
+<td nowrap>74.00</td>
+<td nowrap>229.99</td>
+<td nowrap>155.99</td>
+<td nowrap>0.68</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>12/2/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9593</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>DREAMSCAPE_LF_3-3XL</td>
+<td nowrap style='mso-number-format:"\@"'>TWIN XL 2 SIDED 14 IN - DSLF-TXL</td>
+<td nowrap>1</td>
+<td nowrap>280.00</td>
+<td nowrap>683.66</td>
+<td nowrap>403.66</td>
+<td nowrap>0.59</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>12/21/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9760</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>DREAMSCAPE_LF_4-6</td>
+<td nowrap style='mso-number-format:"\@"'>FULL 2 SIDED 14 IN- DSLF-FS</td>
+<td nowrap>1</td>
+<td nowrap>310.00</td>
+<td nowrap>794.88</td>
+<td nowrap>484.88</td>
+<td nowrap>0.61</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9917</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>TRANQUILITY_PL_3-3</td>
+<td nowrap style='mso-number-format:"\@"'>Tranquility PL 10 Twin Mattress - TRQ-T</td>
+<td nowrap>1</td>
+<td nowrap>125.00</td>
+<td nowrap>362.79</td>
+<td nowrap>237.79</td>
+<td nowrap>0.66</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>11/29/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9564</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>TRANQUILITY_PL_4-6</td>
+<td nowrap style='mso-number-format:"\@"'>Tranquility PL 10 Full Mattress - TRQ-F</td>
+<td nowrap>1</td>
+<td nowrap>145.00</td>
+<td nowrap>374.65</td>
+<td nowrap>229.65</td>
+<td nowrap>0.61</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>11/26/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9407</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>TRANQUILITY_PL_4-6</td>
+<td nowrap style='mso-number-format:"\@"'>Tranquility PL 10 Full Mattress - TRQ-F</td>
+<td nowrap>1</td>
+<td nowrap>145.00</td>
+<td nowrap>399.58</td>
+<td nowrap>254.58</td>
+<td nowrap>0.64</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9917</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>TRANQUILITY_PL_4-6</td>
+<td nowrap style='mso-number-format:"\@"'>Tranquility PL 10 Full Mattress - TRQ-F</td>
+<td nowrap>1</td>
+<td nowrap>145.00</td>
+<td nowrap>426.28</td>
+<td nowrap>281.28</td>
+<td nowrap>0.66</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>7/13/2024</td>
+<td nowrap>Havelock</td>
+<td nowrap>3136</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>TRANQUILITY_PL_5-0</td>
+<td nowrap style='mso-number-format:"\@"'>Tranquility PL 10 Queen Mattress - TRQ-Q</td>
+<td nowrap>1</td>
+<td nowrap>157.00</td>
+<td nowrap>499.99</td>
+<td nowrap>342.99</td>
+<td nowrap>0.69</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9957</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>TRANQUILITY_PL_5-0</td>
+<td nowrap style='mso-number-format:"\@"'>Tranquility PL 10 Queen Mattress - TRQ-Q</td>
+<td nowrap>1</td>
+<td nowrap>157.00</td>
+<td nowrap>419.99</td>
+<td nowrap>262.99</td>
+<td nowrap>0.63</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>12/27/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9838</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>TRILLIUM_PT_5-0</td>
+<td nowrap style='mso-number-format:"\@"'>Trillium PT 16 Queen Mattress - TRL-QS</td>
+<td nowrap>1</td>
+<td nowrap>399.00</td>
+<td nowrap>1021.25</td>
+<td nowrap>622.25</td>
+<td nowrap>0.61</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>1/21/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10073</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>TRILLIUM_TP_6-6</td>
+<td nowrap style='mso-number-format:"\@"'>Trillium PT 16 King Mattress - TRL-KS</td>
+<td nowrap>1</td>
+<td nowrap>499.00</td>
+<td nowrap>1699.99</td>
+<td nowrap>1200.99</td>
+<td nowrap>0.71</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>12/2/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9593</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>TROUBADOUR_PL_14_3-3XL</td>
+<td nowrap style='mso-number-format:"\@"'>Troubadour Plush 14 Twin XL Mattress - TBDP-TXL</td>
+<td nowrap>1</td>
+<td nowrap>230.00</td>
+<td nowrap>598.20</td>
+<td nowrap>368.20</td>
+<td nowrap>0.62</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9950</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>TROUBADOUR_PL_14_4-6</td>
+<td nowrap style='mso-number-format:"\@"'>Troubadour Plush 14 Full Mattress - TBDP-F</td>
+<td nowrap>1</td>
+<td nowrap>235.00</td>
+<td nowrap>603.92</td>
+<td nowrap>368.92</td>
+<td nowrap>0.61</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9968</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>TROUBADOUR_PL_14_5-0</td>
+<td nowrap style='mso-number-format:"\@"'>Troubadour Plush 14 Queen Mattress - TBDP-Q</td>
+<td nowrap>1</td>
+<td nowrap>275.00</td>
+<td nowrap>799.99</td>
+<td nowrap>524.99</td>
+<td nowrap>0.66</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9984</td>
+<td nowrap>Comfort Sleep</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>TROUBADOUR_PL_14_5-0</td>
+<td nowrap style='mso-number-format:"\@"'>Troubadour Plush 14 Queen Mattress - TBDP-Q</td>
+<td nowrap>1</td>
+<td nowrap>275.00</td>
+<td nowrap>799.99</td>
+<td nowrap>524.99</td>
+<td nowrap>0.66</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9470</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>1420S</td>
+<td nowrap style='mso-number-format:"\@"'>Vega - Side Chair (Set of 2) - Gray</td>
+<td nowrap>2</td>
+<td nowrap>230.00</td>
+<td nowrap>479.99</td>
+<td nowrap>249.99</td>
+<td nowrap>0.52</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9470</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>1420T-3972-LEG</td>
+<td nowrap style='mso-number-format:"\@"'>Vega - Faux Marble Dining Table Leg - Black</td>
+<td nowrap>1</td>
+<td nowrap>105.00</td>
+<td nowrap>217.49</td>
+<td nowrap>112.49</td>
+<td nowrap>0.52</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9470</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>1420T-3972-TOP</td>
+<td nowrap style='mso-number-format:"\@"'>Vega - Faux Marble Dining Table Top - White / Black</td>
+<td nowrap>1</td>
+<td nowrap>164.95</td>
+<td nowrap>344.99</td>
+<td nowrap>180.04</td>
+<td nowrap>0.52</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9953</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B3650-1</td>
+<td nowrap style='mso-number-format:"\@"'>Louis Philip - Dresser - White</td>
+<td nowrap>1</td>
+<td nowrap>171.56</td>
+<td nowrap>399.99</td>
+<td nowrap>228.43</td>
+<td nowrap>0.57</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9953</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B3650-11</td>
+<td nowrap style='mso-number-format:"\@"'>Louis Philip - Dresser Top - White</td>
+<td nowrap>1</td>
+<td nowrap>28.00</td>
+<td nowrap>99.99</td>
+<td nowrap>71.99</td>
+<td nowrap>0.72</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9990</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B3650-F-HBFB</td>
+<td nowrap style='mso-number-format:"\@"'>Louis Philip - Full Headboard, Footboard - White</td>
+<td nowrap>1</td>
+<td nowrap>102.07</td>
+<td nowrap>299.99</td>
+<td nowrap>197.92</td>
+<td nowrap>0.66</td>
+<td nowrap>1/13/2026</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9990</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B3650-F-RAIL</td>
+<td nowrap style='mso-number-format:"\@"'>Louis Philip - Full Rail - White</td>
+<td nowrap>1</td>
+<td nowrap>26.88</td>
+<td nowrap>99.99</td>
+<td nowrap>73.11</td>
+<td nowrap>0.73</td>
+<td nowrap>1/13/2026</td>
+</tr>
+<tr>
+<td nowrap>12/21/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9764</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B3850-1</td>
+<td nowrap style='mso-number-format:"\@"'>Louis Philip - Dresser - Cherry</td>
+<td nowrap>1</td>
+<td nowrap>174.15</td>
+<td nowrap>331.53</td>
+<td nowrap>157.38</td>
+<td nowrap>0.47</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/21/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9764</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B3850-11</td>
+<td nowrap style='mso-number-format:"\@"'>Louis Philip - Dresser Top - Cherry</td>
+<td nowrap>1</td>
+<td nowrap>29.40</td>
+<td nowrap>149.18</td>
+<td nowrap>119.78</td>
+<td nowrap>0.80</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/21/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9764</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B3850-2</td>
+<td nowrap style='mso-number-format:"\@"'>Louis Philip - Nightstand - Cherry</td>
+<td nowrap>1</td>
+<td nowrap>60.00</td>
+<td nowrap>182.34</td>
+<td nowrap>122.34</td>
+<td nowrap>0.67</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/21/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9764</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B3850-4</td>
+<td nowrap style='mso-number-format:"\@"'>Louis Philip - Chest - Cherry</td>
+<td nowrap>1</td>
+<td nowrap>136.50</td>
+<td nowrap>248.65</td>
+<td nowrap>112.15</td>
+<td nowrap>0.45</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/21/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9764</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B3850-Q-HBFB</td>
+<td nowrap style='mso-number-format:"\@"'>Louis Philip - Queen Headboard, Footboard - Cherry</td>
+<td nowrap>1</td>
+<td nowrap>99.70</td>
+<td nowrap>165.76</td>
+<td nowrap>66.06</td>
+<td nowrap>0.40</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/21/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9764</td>
+<td nowrap>Crown Mark</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>B3850-Q-RAIL</td>
+<td nowrap style='mso-number-format:"\@"'>Louis Philip - Queen Rail - Cherry</td>
+<td nowrap>1</td>
+<td nowrap>26.25</td>
+<td nowrap>82.88</td>
+<td nowrap>56.63</td>
+<td nowrap>0.68</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/26/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9820</td>
+<td nowrap>Elements International</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>LHT100101</td>
+<td nowrap style='mso-number-format:"\@"'>Hunter - Chair & Ottoman - Tobacco</td>
+<td nowrap>1</td>
+<td nowrap>289.95</td>
+<td nowrap>583.99</td>
+<td nowrap>294.04</td>
+<td nowrap>0.50</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9472</td>
+<td nowrap>England Furniture</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>4R04</td>
+<td nowrap style='mso-number-format:"\@"'>ROUSE CHAIR  </td>
+<td nowrap>1</td>
+<td nowrap>503.52</td>
+<td nowrap>929.99</td>
+<td nowrap>426.47</td>
+<td nowrap>0.46</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9472</td>
+<td nowrap>England Furniture</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>4R05</td>
+<td nowrap style='mso-number-format:"\@"'>ROUSE SOFA  </td>
+<td nowrap>1</td>
+<td nowrap>844.38</td>
+<td nowrap>1484.99</td>
+<td nowrap>640.61</td>
+<td nowrap>0.43</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9472</td>
+<td nowrap>England Furniture</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>4R07</td>
+<td nowrap style='mso-number-format:"\@"'>ROUSE OTTOMAN  </td>
+<td nowrap>1</td>
+<td nowrap>211.00</td>
+<td nowrap>532.49</td>
+<td nowrap>321.49</td>
+<td nowrap>0.60</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9937</td>
+<td nowrap>England Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>5534</td>
+<td nowrap style='mso-number-format:"\@"'>Lennie Chair</td>
+<td nowrap>1</td>
+<td nowrap>272.00</td>
+<td nowrap>634.66</td>
+<td nowrap>362.66</td>
+<td nowrap>0.57</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>12/26/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9818</td>
+<td nowrap>England Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>5630-27</td>
+<td nowrap style='mso-number-format:"\@"'>BRANTLEY RAF LOVESEAT </td>
+<td nowrap>1</td>
+<td nowrap>426.00</td>
+<td nowrap>1007.99</td>
+<td nowrap>581.99</td>
+<td nowrap>0.58</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>12/26/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9818</td>
+<td nowrap>England Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>5630-94</td>
+<td nowrap style='mso-number-format:"\@"'>BRANTLEY LAF CUDDLER </td>
+<td nowrap>1</td>
+<td nowrap>507.00</td>
+<td nowrap>1072.00</td>
+<td nowrap>565.00</td>
+<td nowrap>0.53</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9461</td>
+<td nowrap>England Furniture</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>9E05</td>
+<td nowrap style='mso-number-format:"\@"'>Emerson Sofa</td>
+<td nowrap>1</td>
+<td nowrap>717.60</td>
+<td nowrap>1274.99</td>
+<td nowrap>557.39</td>
+<td nowrap>0.44</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10064</td>
+<td nowrap>GBS ENTERPRISES, LLC</td>
+<td nowrap>MATTRESS CARE</td>
+<td nowrap style='mso-number-format:"\@"'>COPPER_PROT_Q</td>
+<td nowrap style='mso-number-format:"\@"'>*Queen Size Mattress Pad (4/CTN) - Recover & Soothe  - 10-HSPA-05/0- THERMATECH</td>
+<td nowrap>1</td>
+<td nowrap>23.36</td>
+<td nowrap>109.69</td>
+<td nowrap>86.33</td>
+<td nowrap>0.79</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9881</td>
+<td nowrap>GBS ENTERPRISES, LLC</td>
+<td nowrap>MATTRESS CARE</td>
+<td nowrap style='mso-number-format:"\@"'>GRAPHITE_LOW_PRO</td>
+<td nowrap style='mso-number-format:"\@"'>Queen Lo Pro Pillow (4/CTN) - Refresh & Chill (4/CTN) - 10-PILL-04/6 CLTLOPROBL</td>
+<td nowrap>1</td>
+<td nowrap>45.00</td>
+<td nowrap>105.81</td>
+<td nowrap>60.81</td>
+<td nowrap>0.57</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9991</td>
+<td nowrap>GBS ENTERPRISES, LLC</td>
+<td nowrap>MATTRESS CARE</td>
+<td nowrap style='mso-number-format:"\@"'>PREM_PLUS_MATT_Q</td>
+<td nowrap style='mso-number-format:"\@"'>Queen Allergy Mattress Encasement (6/CTN) - Healthy Sleep  - 10-HSEN-05/0- PREMPLUS</td>
+<td nowrap>1</td>
+<td nowrap>32.73</td>
+<td nowrap>77.02</td>
+<td nowrap>44.29</td>
+<td nowrap>0.58</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9991</td>
+<td nowrap>GBS ENTERPRISES, LLC</td>
+<td nowrap>MATTRESS CARE</td>
+<td nowrap style='mso-number-format:"\@"'>SUPREME_Q</td>
+<td nowrap style='mso-number-format:"\@"'>Queen Size Mattress Pad (10/CTN) - Rest & Protect - 10-HSPA-05/0- INTERLOCK</td>
+<td nowrap>1</td>
+<td nowrap>18.24</td>
+<td nowrap>42.79</td>
+<td nowrap>24.55</td>
+<td nowrap>0.57</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9997</td>
+<td nowrap>GUARDSMAN US LLC</td>
+<td nowrap>FURNITURE CARE</td>
+<td nowrap style='mso-number-format:"\@"'>CLEAN_RENEW-8OZ</td>
+<td nowrap style='mso-number-format:"\@"'>BOTTLE</td>
+<td nowrap>1</td>
+<td nowrap>4.85</td>
+<td nowrap>18.69</td>
+<td nowrap>13.84</td>
+<td nowrap>0.74</td>
+<td nowrap>1/11/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9922</td>
+<td nowrap>GUARDSMAN US LLC</td>
+<td nowrap>FURNITURE CARE</td>
+<td nowrap style='mso-number-format:"\@"'>FABRIC_DEFENSE_10_OZ</td>
+<td nowrap style='mso-number-format:"\@"'>AEROSOL</td>
+<td nowrap>1</td>
+<td nowrap>8.60</td>
+<td nowrap>23.99</td>
+<td nowrap>15.39</td>
+<td nowrap>0.64</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>11/4/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9217</td>
+<td nowrap>HOUSE OF SILK FLOWERS</td>
+<td nowrap>ACCESSORIES - PLANTS</td>
+<td nowrap style='mso-number-format:"\@"'>AT450FP</td>
+<td nowrap style='mso-number-format:"\@"'>6' Ficus Tree</td>
+<td nowrap>1</td>
+<td nowrap>25.00</td>
+<td nowrap>69.99</td>
+<td nowrap>44.99</td>
+<td nowrap>0.64</td>
+<td nowrap>1/13/2026</td>
+</tr>
+<tr>
+<td nowrap>10/20/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9084</td>
+<td nowrap>HOUSE OF SILK FLOWERS</td>
+<td nowrap>ACCESSORIES - PLANTS</td>
+<td nowrap style='mso-number-format:"\@"'>TOPIARY_4</td>
+<td nowrap style='mso-number-format:"\@"'>PLANT</td>
+<td nowrap>1</td>
+<td nowrap>100.00</td>
+<td nowrap>130.00</td>
+<td nowrap>30.00</td>
+<td nowrap>0.23</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9925</td>
+<td nowrap>Innovations</td>
+<td nowrap>BUNKBEDS & DAYBEDS</td>
+<td nowrap style='mso-number-format:"\@"'>457</td>
+<td nowrap style='mso-number-format:"\@"'>Twin Slats</td>
+<td nowrap>1</td>
+<td nowrap>18.00</td>
+<td nowrap>21.89</td>
+<td nowrap>3.89</td>
+<td nowrap>0.18</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>10/10/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>8986</td>
+<td nowrap>Innovations</td>
+<td nowrap>BUNKBEDS & DAYBEDS</td>
+<td nowrap style='mso-number-format:"\@"'>458B</td>
+<td nowrap style='mso-number-format:"\@"'>Ladder</td>
+<td nowrap>1</td>
+<td nowrap>30.00</td>
+<td nowrap>89.99</td>
+<td nowrap>59.99</td>
+<td nowrap>0.67</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9925</td>
+<td nowrap>Innovations</td>
+<td nowrap>BUNKBEDS & DAYBEDS</td>
+<td nowrap style='mso-number-format:"\@"'>9004G</td>
+<td nowrap style='mso-number-format:"\@"'>Ladder</td>
+<td nowrap>1</td>
+<td nowrap>29.00</td>
+<td nowrap>58.37</td>
+<td nowrap>29.37</td>
+<td nowrap>0.50</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9925</td>
+<td nowrap>Innovations</td>
+<td nowrap>BUNKBEDS & DAYBEDS</td>
+<td nowrap style='mso-number-format:"\@"'>9452G</td>
+<td nowrap style='mso-number-format:"\@"'>Guard Rail</td>
+<td nowrap>1</td>
+<td nowrap>130.00</td>
+<td nowrap>240.81</td>
+<td nowrap>110.81</td>
+<td nowrap>0.46</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9925</td>
+<td nowrap>Innovations</td>
+<td nowrap>BUNKBEDS & DAYBEDS</td>
+<td nowrap style='mso-number-format:"\@"'>9453G</td>
+<td nowrap style='mso-number-format:"\@"'>Twin Headboard/Footboard</td>
+<td nowrap>1</td>
+<td nowrap>158.00</td>
+<td nowrap>255.41</td>
+<td nowrap>97.41</td>
+<td nowrap>0.38</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9925</td>
+<td nowrap>Innovations</td>
+<td nowrap>BUNKBEDS & DAYBEDS</td>
+<td nowrap style='mso-number-format:"\@"'>9454G</td>
+<td nowrap style='mso-number-format:"\@"'>Twin Slats</td>
+<td nowrap>1</td>
+<td nowrap>18.00</td>
+<td nowrap>21.89</td>
+<td nowrap>3.89</td>
+<td nowrap>0.18</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9925</td>
+<td nowrap>Innovations</td>
+<td nowrap>BUNKBEDS & DAYBEDS</td>
+<td nowrap style='mso-number-format:"\@"'>967-467</td>
+<td nowrap style='mso-number-format:"\@"'>Stretch Kit/Full Slats</td>
+<td nowrap>1</td>
+<td nowrap>37.00</td>
+<td nowrap>80.27</td>
+<td nowrap>43.27</td>
+<td nowrap>0.54</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9925</td>
+<td nowrap>Innovations</td>
+<td nowrap>BUNKBEDS & DAYBEDS</td>
+<td nowrap style='mso-number-format:"\@"'>968G</td>
+<td nowrap style='mso-number-format:"\@"'>End Panels</td>
+<td nowrap>1</td>
+<td nowrap>42.94</td>
+<td nowrap>80.27</td>
+<td nowrap>37.33</td>
+<td nowrap>0.47</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9925</td>
+<td nowrap>Innovations</td>
+<td nowrap>BUNKBEDS & DAYBEDS</td>
+<td nowrap style='mso-number-format:"\@"'>9999G</td>
+<td nowrap style='mso-number-format:"\@"'>Gray Bed Tray</td>
+<td nowrap>1</td>
+<td nowrap>17.00</td>
+<td nowrap>43.78</td>
+<td nowrap>26.78</td>
+<td nowrap>0.61</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>10019</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>11422-1152/08-1953/38</td>
+<td nowrap style='mso-number-format:"\@"'>Felix - Rocking Reclining Loveseat</td>
+<td nowrap>1</td>
+<td nowrap>489.95</td>
+<td nowrap>1192.78</td>
+<td nowrap>702.83</td>
+<td nowrap>0.59</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>10019</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>11445-1152/08-1953/38</td>
+<td nowrap style='mso-number-format:"\@"'>Felix - Sofa With 3 Recliners & Drop Down Table</td>
+<td nowrap>1</td>
+<td nowrap>580.00</td>
+<td nowrap>1211.42</td>
+<td nowrap>631.42</td>
+<td nowrap>0.52</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9945</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>12702-1405/38</td>
+<td nowrap style='mso-number-format:"\@"'>Tosh - Rocker Recliner - Pewter</td>
+<td nowrap>1</td>
+<td nowrap>295.00</td>
+<td nowrap>721.94</td>
+<td nowrap>426.94</td>
+<td nowrap>0.59</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9945</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>1271-1405/38-2500/29</td>
+<td nowrap style='mso-number-format:"\@"'>Tosh - Reclining Sofa - Pewter</td>
+<td nowrap>1</td>
+<td nowrap>400.00</td>
+<td nowrap>902.43</td>
+<td nowrap>502.43</td>
+<td nowrap>0.56</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9986</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>144530-1273/12-3073/12</td>
+<td nowrap style='mso-number-format:"\@"'>Ciampino - Armless Sofa - Ice</td>
+<td nowrap>1</td>
+<td nowrap>450.00</td>
+<td nowrap>912.76</td>
+<td nowrap>462.76</td>
+<td nowrap>0.51</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9986</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>144562-1273/12-3073/12</td>
+<td nowrap style='mso-number-format:"\@"'>Ciampino - LSF Section - Ice</td>
+<td nowrap>1</td>
+<td nowrap>670.00</td>
+<td nowrap>1263.83</td>
+<td nowrap>593.83</td>
+<td nowrap>0.47</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9986</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>144576-1273/12-3073/12</td>
+<td nowrap style='mso-number-format:"\@"'>Ciampino - RSF Chaise - Ice</td>
+<td nowrap>1</td>
+<td nowrap>424.00</td>
+<td nowrap>912.76</td>
+<td nowrap>488.76</td>
+<td nowrap>0.54</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>11/11/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9284</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>224537-1930/35</td>
+<td nowrap style='mso-number-format:"\@"'>Remington - RSF Chair - Pine</td>
+<td nowrap>1</td>
+<td nowrap>320.00</td>
+<td nowrap>718.57</td>
+<td nowrap>398.57</td>
+<td nowrap>0.55</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>11/11/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9284</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>224575-1930/35</td>
+<td nowrap style='mso-number-format:"\@"'>Remington - LSF Chaise - Pine</td>
+<td nowrap>1</td>
+<td nowrap>425.00</td>
+<td nowrap>958.10</td>
+<td nowrap>533.10</td>
+<td nowrap>0.56</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9974</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>2256-2151/38-2152/38</td>
+<td nowrap style='mso-number-format:"\@"'>Elliott Sectional - Lay Flat Reclining LSF - Pewter</td>
+<td nowrap>1</td>
+<td nowrap>459.00</td>
+<td nowrap>815.00</td>
+<td nowrap>356.00</td>
+<td nowrap>0.44</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9974</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>2257-2151/38-2152/38</td>
+<td nowrap style='mso-number-format:"\@"'>Elliott Sectional - Lay Flat Reclining RSF - Pewter</td>
+<td nowrap>1</td>
+<td nowrap>440.00</td>
+<td nowrap>815.00</td>
+<td nowrap>375.00</td>
+<td nowrap>0.46</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9933</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>230659-1760/26-2555/01</td>
+<td nowrap style='mso-number-format:"\@"'>Bucktown - Corner - Parchment</td>
+<td nowrap>1</td>
+<td nowrap>360.00</td>
+<td nowrap>780.55</td>
+<td nowrap>420.55</td>
+<td nowrap>0.54</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9933</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>230663-1760/26-2555/01</td>
+<td nowrap style='mso-number-format:"\@"'>Bucktown - LSF Sofa - Parchment</td>
+<td nowrap>1</td>
+<td nowrap>485.00</td>
+<td nowrap>1127.47</td>
+<td nowrap>642.47</td>
+<td nowrap>0.57</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9933</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>230673-1760/26-2555/01</td>
+<td nowrap style='mso-number-format:"\@"'>Bucktown - RSF Sofa - Parchment</td>
+<td nowrap>1</td>
+<td nowrap>485.00</td>
+<td nowrap>954.01</td>
+<td nowrap>469.01</td>
+<td nowrap>0.49</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9969</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - MOTION/POWER,RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>24002-2792/28</td>
+<td nowrap style='mso-number-format:"\@"'>Reyes - Rocker Recliner - Graphite</td>
+<td nowrap>1</td>
+<td nowrap>299.00</td>
+<td nowrap>838.63</td>
+<td nowrap>539.63</td>
+<td nowrap>0.64</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9969</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>2401-2792/28</td>
+<td nowrap style='mso-number-format:"\@"'>Reyes - Lay Flat Reclining Sofa - Graphite</td>
+<td nowrap>1</td>
+<td nowrap>420.00</td>
+<td nowrap>1118.17</td>
+<td nowrap>698.17</td>
+<td nowrap>0.62</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9969</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>2409-2792/28</td>
+<td nowrap style='mso-number-format:"\@"'>Reyes - Lay Flat Reclining Console Loveseat With Storage & Cupholders - Graphite</td>
+<td nowrap>1</td>
+<td nowrap>435.00</td>
+<td nowrap>1118.17</td>
+<td nowrap>683.17</td>
+<td nowrap>0.61</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9949</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS,LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>247012-2110/33</td>
+<td nowrap style='mso-number-format:"\@"'>Polaris Modular Sectional - Fabric Cocktail Ottoman - White</td>
+<td nowrap>1</td>
+<td nowrap>210.00</td>
+<td nowrap>480.00</td>
+<td nowrap>270.00</td>
+<td nowrap>0.56</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9908</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>247030-1724/21</td>
+<td nowrap style='mso-number-format:"\@"'>Polaris Modular Sectional - Armless Sofa - Sugar</td>
+<td nowrap>1</td>
+<td nowrap>400.00</td>
+<td nowrap>880.00</td>
+<td nowrap>480.00</td>
+<td nowrap>0.55</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9946</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>2614-1561/46</td>
+<td nowrap style='mso-number-format:"\@"'>McPherson Modular Sectional - Armless Chair - Buff</td>
+<td nowrap>1</td>
+<td nowrap>165.00</td>
+<td nowrap>417.60</td>
+<td nowrap>252.60</td>
+<td nowrap>0.60</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9946</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>2615-1561/46</td>
+<td nowrap style='mso-number-format:"\@"'>McPherson Modular Sectional - Lay Flat Armless Recliner - Buff</td>
+<td nowrap>1</td>
+<td nowrap>200.00</td>
+<td nowrap>501.12</td>
+<td nowrap>301.12</td>
+<td nowrap>0.60</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9946</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>2618-1561/46-2430/38</td>
+<td nowrap style='mso-number-format:"\@"'>McPherson Modular Sectional - Wedge - Buff</td>
+<td nowrap>1</td>
+<td nowrap>260.00</td>
+<td nowrap>668.16</td>
+<td nowrap>408.16</td>
+<td nowrap>0.61</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9946</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>2619-1561/46</td>
+<td nowrap style='mso-number-format:"\@"'>McPherson Modular Sectional - Console Storage Box With Power - Buff</td>
+<td nowrap>1</td>
+<td nowrap>120.00</td>
+<td nowrap>334.08</td>
+<td nowrap>214.08</td>
+<td nowrap>0.64</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9492</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>4071-1273/56-3073/56</td>
+<td nowrap style='mso-number-format:"\@"'>Costa - Top Grain Italian Leather Lay Flat Reclining Sofa - Putty</td>
+<td nowrap>1</td>
+<td nowrap>650.00</td>
+<td nowrap>1424.99</td>
+<td nowrap>774.99</td>
+<td nowrap>0.54</td>
+<td nowrap>1/13/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9867</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>409801-1724/28-2267/28</td>
+<td nowrap style='mso-number-format:"\@"'>Lamar - Chair - Shark</td>
+<td nowrap>1</td>
+<td nowrap>350.00</td>
+<td nowrap>865.35</td>
+<td nowrap>515.35</td>
+<td nowrap>0.60</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9867</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>409803-1724/28-2267/28</td>
+<td nowrap style='mso-number-format:"\@"'>Lamar - Sofa - Shark</td>
+<td nowrap>1</td>
+<td nowrap>425.00</td>
+<td nowrap>1038.43</td>
+<td nowrap>613.43</td>
+<td nowrap>0.59</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9867</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>409810-1724/28</td>
+<td nowrap style='mso-number-format:"\@"'>Lamar - Ottoman - Shark</td>
+<td nowrap>1</td>
+<td nowrap>175.00</td>
+<td nowrap>432.67</td>
+<td nowrap>257.67</td>
+<td nowrap>0.60</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9882</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>421501-2072/18-2073/28</td>
+<td nowrap style='mso-number-format:"\@"'>Alyssa - Chair - Pebble</td>
+<td nowrap>1</td>
+<td nowrap>235.00</td>
+<td nowrap>527.80</td>
+<td nowrap>292.80</td>
+<td nowrap>0.55</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9882</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>421503-2072/18-2073/28</td>
+<td nowrap style='mso-number-format:"\@"'>Alyssa - Sofa - Pebble</td>
+<td nowrap>1</td>
+<td nowrap>299.00</td>
+<td nowrap>667.99</td>
+<td nowrap>368.99</td>
+<td nowrap>0.55</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>10/13/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9026</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>437612-1806/58</td>
+<td nowrap style='mso-number-format:"\@"'>Mammoth Modular Sectional - 40\" Cocktail Ottoman - Smoke</td>
+<td nowrap>1</td>
+<td nowrap>210.00</td>
+<td nowrap>543.32</td>
+<td nowrap>333.32</td>
+<td nowrap>0.61</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/20/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10067</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>437631-1806/49</td>
+<td nowrap style='mso-number-format:"\@"'>Mammoth Modular Sectional - Armless Chair - Chocolate</td>
+<td nowrap>1</td>
+<td nowrap>245.00</td>
+<td nowrap>699.99</td>
+<td nowrap>454.99</td>
+<td nowrap>0.65</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9884</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>47742-1506/18</td>
+<td nowrap style='mso-number-format:"\@"'>Brody - Rocker Recliner - Slate</td>
+<td nowrap>1</td>
+<td nowrap>245.00</td>
+<td nowrap>559.00</td>
+<td nowrap>314.00</td>
+<td nowrap>0.56</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/17/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9714</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>47742-1506/28</td>
+<td nowrap style='mso-number-format:"\@"'>Brody - Rocker Recliner - Otter</td>
+<td nowrap>1</td>
+<td nowrap>245.00</td>
+<td nowrap>699.99</td>
+<td nowrap>454.99</td>
+<td nowrap>0.65</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>10021</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>47742-1506/28</td>
+<td nowrap style='mso-number-format:"\@"'>Brody - Rocker Recliner - Otter</td>
+<td nowrap>1</td>
+<td nowrap>245.00</td>
+<td nowrap>699.99</td>
+<td nowrap>454.99</td>
+<td nowrap>0.65</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9912</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>4892-1792/28-2792/28</td>
+<td nowrap style='mso-number-format:"\@"'>Longevity - Fabric Power Lift Reclining With Dual Motor / Zero Gravity Trendelenburg / Xtra Comfort Extended Ottoman - Graphite</td>
+<td nowrap>1</td>
+<td nowrap>650.00</td>
+<td nowrap>1319.00</td>
+<td nowrap>669.00</td>
+<td nowrap>0.51</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10023</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>60098-2902/28</td>
+<td nowrap style='mso-number-format:"\@"'>Sploosh - Comfort Sack - Grey</td>
+<td nowrap>1</td>
+<td nowrap>149.95</td>
+<td nowrap>399.99</td>
+<td nowrap>250.04</td>
+<td nowrap>0.63</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9946</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>62613-1561/46-2430/38</td>
+<td nowrap style='mso-number-format:"\@"'>McPherson Modular Sectional - Power RSF Reclining Chaise - Buff</td>
+<td nowrap>1</td>
+<td nowrap>385.00</td>
+<td nowrap>918.73</td>
+<td nowrap>533.73</td>
+<td nowrap>0.58</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9946</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>62616-1561/46-2430/38</td>
+<td nowrap style='mso-number-format:"\@"'>McPherson Modular Sectional - Power Lay Flat LSF Recliner - Buff</td>
+<td nowrap>1</td>
+<td nowrap>325.00</td>
+<td nowrap>835.21</td>
+<td nowrap>510.21</td>
+<td nowrap>0.61</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9467</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>64071-1273/56-3073/56</td>
+<td nowrap style='mso-number-format:"\@"'>Costa - Top Grain Italian Leather Power Lay Flat Reclining Sofa - Putty</td>
+<td nowrap>2</td>
+<td nowrap>1550.00</td>
+<td nowrap>3449.99</td>
+<td nowrap>1899.99</td>
+<td nowrap>0.55</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>12/21/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9763</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - STATIONARY</td>
+<td nowrap style='mso-number-format:"\@"'>641054-1429/49</td>
+<td nowrap style='mso-number-format:"\@"'>Benny - Power Wall Hugger Recliner - Coffee</td>
+<td nowrap>1</td>
+<td nowrap>285.00</td>
+<td nowrap>560.00</td>
+<td nowrap>275.00</td>
+<td nowrap>0.49</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9852</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>761891-1300/28</td>
+<td nowrap style='mso-number-format:"\@"'>Ferrington - Power Lay Flat Reclining Sofa With Power Adjustable Headrest & Lumbar - Steel</td>
+<td nowrap>1</td>
+<td nowrap>799.00</td>
+<td nowrap>1699.99</td>
+<td nowrap>900.99</td>
+<td nowrap>0.53</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>12/27/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9827</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>761891-1300/28</td>
+<td nowrap style='mso-number-format:"\@"'>Ferrington - Power Lay Flat Reclining Sofa With Power Adjustable Headrest & Lumbar - Steel</td>
+<td nowrap>1</td>
+<td nowrap>799.00</td>
+<td nowrap>1403.58</td>
+<td nowrap>604.58</td>
+<td nowrap>0.43</td>
+<td nowrap>1/5/2026</td>
+</tr>
+<tr>
+<td nowrap>1/18/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10052</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>LIVING ROOM - MOTION/POWER</td>
+<td nowrap style='mso-number-format:"\@"'>7628207-1963/19-2940/49</td>
+<td nowrap style='mso-number-format:"\@"'>Joya - Power Lay Zero Gravity Recliner With Power Adjustable Headrest And CR3 Heat/Massage/Lumbar/ZG - Mushroom</td>
+<td nowrap>1</td>
+<td nowrap>475.00</td>
+<td nowrap>1299.99</td>
+<td nowrap>824.99</td>
+<td nowrap>0.63</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9989</td>
+<td nowrap>Jackson Furniture Industries</td>
+<td nowrap>RECLINERS & SWIVEL CHAIRS</td>
+<td nowrap style='mso-number-format:"\@"'>7641067-1276/19-1417/19</td>
+<td nowrap style='mso-number-format:"\@"'>Relaxer - Power Headrest Power Lay Flat Reclining With Heat / Massage / Lumbar / Zero Gravity - Taupe</td>
+<td nowrap>1</td>
+<td nowrap>555.00</td>
+<td nowrap>1391.24</td>
+<td nowrap>836.24</td>
+<td nowrap>0.60</td>
+<td nowrap>1/13/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9950</td>
+<td nowrap>Knickerbocker</td>
+<td nowrap>BEDDING HARDWARE</td>
+<td nowrap style='mso-number-format:"\@"'>4650-G_3-3_4-6_5-0</td>
+<td nowrap style='mso-number-format:"\@"'>Twin/Full/Queen Deluxe with Center Support - 6 Legs</td>
+<td nowrap>1</td>
+<td nowrap>39.95</td>
+<td nowrap>86.27</td>
+<td nowrap>46.32</td>
+<td nowrap>0.54</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9966</td>
+<td nowrap>Knickerbocker</td>
+<td nowrap>BEDDING HARDWARE</td>
+<td nowrap style='mso-number-format:"\@"'>4650-G_3-3_4-6_5-0</td>
+<td nowrap style='mso-number-format:"\@"'>Twin/Full/Queen Deluxe with Center Support - 6 Legs</td>
+<td nowrap>1</td>
+<td nowrap>39.95</td>
+<td nowrap>94.99</td>
+<td nowrap>55.04</td>
+<td nowrap>0.58</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9914</td>
+<td nowrap>Knickerbocker</td>
+<td nowrap>BEDDING HARDWARE</td>
+<td nowrap style='mso-number-format:"\@"'>KB2007-G_ALL_SIZE</td>
+<td nowrap style='mso-number-format:"\@"'>Heavy Duty All Size Monster Bed Frame - 7 Legs and 2in Tall Side Rails</td>
+<td nowrap>1</td>
+<td nowrap>52.00</td>
+<td nowrap>116.09</td>
+<td nowrap>64.09</td>
+<td nowrap>0.55</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>12/27/2025</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9838</td>
+<td nowrap>Knickerbocker</td>
+<td nowrap>BEDDING HARDWARE</td>
+<td nowrap style='mso-number-format:"\@"'>KB2007-G_ALL_SIZE</td>
+<td nowrap style='mso-number-format:"\@"'>Heavy Duty All Size Monster Bed Frame - 7 Legs and 2in Tall Side Rails</td>
+<td nowrap>1</td>
+<td nowrap>52.00</td>
+<td nowrap>102.12</td>
+<td nowrap>50.12</td>
+<td nowrap>0.49</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9865</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>142-C2001S</td>
+<td nowrap style='mso-number-format:"\@"'>Backroads - Ladder Back Side Chair (RTA) - White</td>
+<td nowrap>8</td>
+<td nowrap>920.00</td>
+<td nowrap>1914.02</td>
+<td nowrap>994.02</td>
+<td nowrap>0.52</td>
+<td nowrap>1/13/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9461</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>607-BR15</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - King Panel Headboard - White</td>
+<td nowrap>1</td>
+<td nowrap>199.00</td>
+<td nowrap>479.99</td>
+<td nowrap>280.99</td>
+<td nowrap>0.59</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9863</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>607-BR15</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - King Panel Headboard - White</td>
+<td nowrap>1</td>
+<td nowrap>199.00</td>
+<td nowrap>559.99</td>
+<td nowrap>360.99</td>
+<td nowrap>0.64</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9863</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>607-BR16</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - King Panel Footboard - White</td>
+<td nowrap>1</td>
+<td nowrap>112.00</td>
+<td nowrap>319.99</td>
+<td nowrap>207.99</td>
+<td nowrap>0.65</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9461</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>607-BR32</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - 2 Door 5 Drawer Dresser - White</td>
+<td nowrap>1</td>
+<td nowrap>309.00</td>
+<td nowrap>802.49</td>
+<td nowrap>493.49</td>
+<td nowrap>0.61</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9863</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>607-BR32</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - 2 Door 5 Drawer Dresser - White</td>
+<td nowrap>1</td>
+<td nowrap>309.00</td>
+<td nowrap>959.99</td>
+<td nowrap>650.99</td>
+<td nowrap>0.68</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9461</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>607-BR41</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - 5 Drawer Wood Chest - White</td>
+<td nowrap>1</td>
+<td nowrap>285.00</td>
+<td nowrap>674.99</td>
+<td nowrap>389.99</td>
+<td nowrap>0.58</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9863</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>607-BR41</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - 5 Drawer Wood Chest - White</td>
+<td nowrap>1</td>
+<td nowrap>285.00</td>
+<td nowrap>879.99</td>
+<td nowrap>594.99</td>
+<td nowrap>0.68</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9849</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>607-BR60</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - 2 Drawer Nightstand - White</td>
+<td nowrap>1</td>
+<td nowrap>146.75</td>
+<td nowrap>279.99</td>
+<td nowrap>133.24</td>
+<td nowrap>0.48</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>12/26/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9809</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>607-BR61</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - Nightstand - White</td>
+<td nowrap>2</td>
+<td nowrap>310.98</td>
+<td nowrap>899.99</td>
+<td nowrap>589.01</td>
+<td nowrap>0.65</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9461</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>607-BR61</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - Nightstand - White</td>
+<td nowrap>2</td>
+<td nowrap>333.27</td>
+<td nowrap>599.99</td>
+<td nowrap>266.72</td>
+<td nowrap>0.44</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9863</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>607-BR61</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - Nightstand - White</td>
+<td nowrap>2</td>
+<td nowrap>344.54</td>
+<td nowrap>799.98</td>
+<td nowrap>455.44</td>
+<td nowrap>0.57</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9863</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>607-BR90</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - Panel Bed Rails - White</td>
+<td nowrap>1</td>
+<td nowrap>43.00</td>
+<td nowrap>119.99</td>
+<td nowrap>76.99</td>
+<td nowrap>0.64</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9952</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>607-C9001S</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - Slat Back Side Chair - Oyster White</td>
+<td nowrap>4</td>
+<td nowrap>263.80</td>
+<td nowrap>639.97</td>
+<td nowrap>376.17</td>
+<td nowrap>0.59</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9853</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>607-P4254</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - Round Pedestal Table Base - Oyster White</td>
+<td nowrap>1</td>
+<td nowrap>59.00</td>
+<td nowrap>159.99</td>
+<td nowrap>100.99</td>
+<td nowrap>0.63</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9952</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>607-P4254</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - Round Pedestal Table Base - Oyster White</td>
+<td nowrap>1</td>
+<td nowrap>63.13</td>
+<td nowrap>159.99</td>
+<td nowrap>96.86</td>
+<td nowrap>0.61</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9853</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>607-T4254</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - Round Pedestal Table Top - Oyster White</td>
+<td nowrap>1</td>
+<td nowrap>141.00</td>
+<td nowrap>319.99</td>
+<td nowrap>178.99</td>
+<td nowrap>0.56</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9952</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>607-T4254</td>
+<td nowrap style='mso-number-format:"\@"'>Summer House - Round Pedestal Table Top - Oyster White</td>
+<td nowrap>1</td>
+<td nowrap>150.87</td>
+<td nowrap>319.99</td>
+<td nowrap>169.12</td>
+<td nowrap>0.53</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9926</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>652-BR03</td>
+<td nowrap style='mso-number-format:"\@"'>Farmhouse Reimagined - King Poster Headboard - White</td>
+<td nowrap>1</td>
+<td nowrap>280.00</td>
+<td nowrap>649.27</td>
+<td nowrap>369.27</td>
+<td nowrap>0.57</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9926</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>652-BR04</td>
+<td nowrap style='mso-number-format:"\@"'>Farmhouse Reimagined - King Poster Footboard - White</td>
+<td nowrap>1</td>
+<td nowrap>175.00</td>
+<td nowrap>405.79</td>
+<td nowrap>230.79</td>
+<td nowrap>0.57</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9926</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>652-BR31</td>
+<td nowrap style='mso-number-format:"\@"'>Farmhouse Reimagined - 8 Drawer Dresser - White</td>
+<td nowrap>1</td>
+<td nowrap>480.00</td>
+<td nowrap>1095.64</td>
+<td nowrap>615.64</td>
+<td nowrap>0.56</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9926</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>652-BR41</td>
+<td nowrap style='mso-number-format:"\@"'>Farmhouse Reimagined - 5 Drawer Chest - White</td>
+<td nowrap>1</td>
+<td nowrap>410.00</td>
+<td nowrap>852.17</td>
+<td nowrap>442.17</td>
+<td nowrap>0.52</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9926</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>652-BR51</td>
+<td nowrap style='mso-number-format:"\@"'>Farmhouse Reimagined - Mirror - White</td>
+<td nowrap>1</td>
+<td nowrap>80.00</td>
+<td nowrap>202.89</td>
+<td nowrap>122.89</td>
+<td nowrap>0.61</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9926</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>652-BR61</td>
+<td nowrap style='mso-number-format:"\@"'>Farmhouse Reimagined - 3 Drawer Nightstand With Charging Station - White</td>
+<td nowrap>2</td>
+<td nowrap>430.00</td>
+<td nowrap>892.74</td>
+<td nowrap>462.74</td>
+<td nowrap>0.52</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9926</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>652-BR90</td>
+<td nowrap style='mso-number-format:"\@"'>Farmhouse Reimagined - Panel Bed Rails - White</td>
+<td nowrap>1</td>
+<td nowrap>45.00</td>
+<td nowrap>121.73</td>
+<td nowrap>76.73</td>
+<td nowrap>0.63</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9478</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>652-C2000S</td>
+<td nowrap style='mso-number-format:"\@"'>Farmhouse Reimagined - Ladder Back Side Chair - White</td>
+<td nowrap>7</td>
+<td nowrap>573.00</td>
+<td nowrap>1417.45</td>
+<td nowrap>844.45</td>
+<td nowrap>0.60</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9478</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>652-C9000B</td>
+<td nowrap style='mso-number-format:"\@"'>Farmhouse Reimagined - Bench - White</td>
+<td nowrap>1</td>
+<td nowrap>144.00</td>
+<td nowrap>374.99</td>
+<td nowrap>230.99</td>
+<td nowrap>0.62</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9478</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>652-P4096</td>
+<td nowrap style='mso-number-format:"\@"'>Farmhouse Reimagined - Trestle Table Base - White</td>
+<td nowrap>1</td>
+<td nowrap>118.00</td>
+<td nowrap>314.99</td>
+<td nowrap>196.99</td>
+<td nowrap>0.63</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9478</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>KITCHEN & DINING ROOM</td>
+<td nowrap style='mso-number-format:"\@"'>652-T4096</td>
+<td nowrap style='mso-number-format:"\@"'>Farmhouse Reimagined - Trestle Table Top - White</td>
+<td nowrap>1</td>
+<td nowrap>334.00</td>
+<td nowrap>749.99</td>
+<td nowrap>415.99</td>
+<td nowrap>0.55</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9936</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>7016CN-40A</td>
+<td nowrap style='mso-number-format:"\@"'>Collins - Armless Chair - Brown</td>
+<td nowrap>1</td>
+<td nowrap>358.45</td>
+<td nowrap>858.57</td>
+<td nowrap>500.12</td>
+<td nowrap>0.58</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9936</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>7016CN-40C</td>
+<td nowrap style='mso-number-format:"\@"'>Collins - Console - Brown</td>
+<td nowrap>2</td>
+<td nowrap>545.70</td>
+<td nowrap>1062.99</td>
+<td nowrap>517.29</td>
+<td nowrap>0.49</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9936</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>7016CN-40W</td>
+<td nowrap style='mso-number-format:"\@"'>Collins - Corner Wedge - Brown</td>
+<td nowrap>1</td>
+<td nowrap>508.25</td>
+<td nowrap>1062.99</td>
+<td nowrap>554.74</td>
+<td nowrap>0.52</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9936</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>7016CN-43AP</td>
+<td nowrap style='mso-number-format:"\@"'>Collins - Armless Recliner P3 & ZG - Brown</td>
+<td nowrap>1</td>
+<td nowrap>502.90</td>
+<td nowrap>940.34</td>
+<td nowrap>437.44</td>
+<td nowrap>0.47</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9936</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>7016CN-43LP</td>
+<td nowrap style='mso-number-format:"\@"'>Collins - Left Arm Recliner P3 & ZG - Brown</td>
+<td nowrap>1</td>
+<td nowrap>588.50</td>
+<td nowrap>1308.30</td>
+<td nowrap>719.80</td>
+<td nowrap>0.55</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9936</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>LIVING ROOM - SECTIONALS</td>
+<td nowrap style='mso-number-format:"\@"'>7016CN-43RP</td>
+<td nowrap style='mso-number-format:"\@"'>Collins - Right Arm Recliner P3 & ZG - Brown</td>
+<td nowrap>1</td>
+<td nowrap>588.50</td>
+<td nowrap>1308.30</td>
+<td nowrap>719.80</td>
+<td nowrap>0.55</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>12/19/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9728</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS,BEDROOM - BEDS</td>
+<td nowrap style='mso-number-format:"\@"'>737-BR03</td>
+<td nowrap style='mso-number-format:"\@"'>Messina Estates - King Poster Headboard - Dark Brown</td>
+<td nowrap>1</td>
+<td nowrap>479.60</td>
+<td nowrap>1061.95</td>
+<td nowrap>582.35</td>
+<td nowrap>0.55</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>12/19/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9728</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS,BEDROOM - BEDS</td>
+<td nowrap style='mso-number-format:"\@"'>737-BR04</td>
+<td nowrap style='mso-number-format:"\@"'>Messina Estates - King Poster Footboard - Dark Brown</td>
+<td nowrap>1</td>
+<td nowrap>343.35</td>
+<td nowrap>757.29</td>
+<td nowrap>413.94</td>
+<td nowrap>0.55</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>12/19/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9728</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>737-BR31</td>
+<td nowrap style='mso-number-format:"\@"'>Messina Estates - 7 Drawer Dresser - Dark Brown</td>
+<td nowrap>1</td>
+<td nowrap>588.60</td>
+<td nowrap>1296.97</td>
+<td nowrap>708.37</td>
+<td nowrap>0.55</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>12/19/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9728</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>737-BR41</td>
+<td nowrap style='mso-number-format:"\@"'>Messina Estates - 5 Drawer Chest - Dark Brown</td>
+<td nowrap>1</td>
+<td nowrap>545.00</td>
+<td nowrap>1201.22</td>
+<td nowrap>656.22</td>
+<td nowrap>0.55</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>12/19/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9728</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>737-BR51</td>
+<td nowrap style='mso-number-format:"\@"'>Messina Estates - Mirror - Dark Brown</td>
+<td nowrap>1</td>
+<td nowrap>201.65</td>
+<td nowrap>443.92</td>
+<td nowrap>242.27</td>
+<td nowrap>0.55</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>12/19/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9728</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>737-BR61</td>
+<td nowrap style='mso-number-format:"\@"'>Messina Estates - 3 Drawer Nightstand - Dark Brown</td>
+<td nowrap>2</td>
+<td nowrap>490.50</td>
+<td nowrap>1096.76</td>
+<td nowrap>606.26</td>
+<td nowrap>0.55</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>12/19/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9728</td>
+<td nowrap>Liberty Furniture</td>
+<td nowrap>BEDROOMS,BEDROOM - BEDS</td>
+<td nowrap style='mso-number-format:"\@"'>737-BR73</td>
+<td nowrap style='mso-number-format:"\@"'>Messina Estates - King Poster Rails - Dark Brown</td>
+<td nowrap>1</td>
+<td nowrap>76.30</td>
+<td nowrap>174.08</td>
+<td nowrap>97.78</td>
+<td nowrap>0.56</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9896</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_1</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $800-$1200</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>157.25</td>
+<td nowrap>94.30</td>
+<td nowrap>0.60</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10003</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_1</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $800-$1200</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>157.73</td>
+<td nowrap>94.78</td>
+<td nowrap>0.60</td>
+<td nowrap>1/13/2026</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10022</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_1</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $800-$1200</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>158.87</td>
+<td nowrap>95.92</td>
+<td nowrap>0.60</td>
+<td nowrap>1/21/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>9958</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_1</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $800-$1200</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>157.45</td>
+<td nowrap>94.50</td>
+<td nowrap>0.60</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9874</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_1</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $800-$1200</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>169.99</td>
+<td nowrap>107.04</td>
+<td nowrap>0.63</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9883</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_1</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $800-$1200</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>141.39</td>
+<td nowrap>78.44</td>
+<td nowrap>0.55</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>1/18/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>10050</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_1</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $800-$1200</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>154.54</td>
+<td nowrap>91.59</td>
+<td nowrap>0.59</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9932</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_1</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $800-$1200</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>154.88</td>
+<td nowrap>91.93</td>
+<td nowrap>0.59</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>12/13/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9680</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_2</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $1201-$2500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>231.54</td>
+<td nowrap>168.59</td>
+<td nowrap>0.73</td>
+<td nowrap>1/14/2026</td>
+</tr>
+<tr>
+<td nowrap>12/23/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9794</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_2</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $1201-$2500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>200.16</td>
+<td nowrap>137.21</td>
+<td nowrap>0.69</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9848</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_2</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $1201-$2500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>190.87</td>
+<td nowrap>127.92</td>
+<td nowrap>0.67</td>
+<td nowrap>1/14/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9939</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_2</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $1201-$2500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>204.49</td>
+<td nowrap>141.54</td>
+<td nowrap>0.69</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10026</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_2</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $1201-$2500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>232.00</td>
+<td nowrap>169.05</td>
+<td nowrap>0.73</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>9919</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_2</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $1201-$2500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>199.98</td>
+<td nowrap>137.03</td>
+<td nowrap>0.69</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9940</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_2</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $1201-$2500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>229.51</td>
+<td nowrap>166.56</td>
+<td nowrap>0.73</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>10/14/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9032</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_2</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $1201-$2500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>249.99</td>
+<td nowrap>187.04</td>
+<td nowrap>0.75</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>12/27/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9827</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_2</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $1201-$2500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>206.40</td>
+<td nowrap>143.45</td>
+<td nowrap>0.70</td>
+<td nowrap>1/5/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>9945</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_2</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $1201-$2500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>225.60</td>
+<td nowrap>162.65</td>
+<td nowrap>0.72</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>10042</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_2</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $1201-$2500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>249.99</td>
+<td nowrap>187.04</td>
+<td nowrap>0.75</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10056</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_3</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $2501-$3000</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>280.36</td>
+<td nowrap>217.41</td>
+<td nowrap>0.78</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9934</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_3</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $2501-$3000</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>254.54</td>
+<td nowrap>191.59</td>
+<td nowrap>0.75</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9986</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_3</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $2501-$3000</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>210.63</td>
+<td nowrap>147.68</td>
+<td nowrap>0.70</td>
+<td nowrap>1/10/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9885</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_3</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $2501-$3000</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>221.73</td>
+<td nowrap>158.78</td>
+<td nowrap>0.72</td>
+<td nowrap>1/3/2026</td>
+</tr>
+<tr>
+<td nowrap>12/22/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9776</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_4</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $3001-$3500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>266.16</td>
+<td nowrap>203.21</td>
+<td nowrap>0.76</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>1/13/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10011</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_4</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $3001-$3500</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>325.84</td>
+<td nowrap>262.89</td>
+<td nowrap>0.81</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>12/9/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9645</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_5</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $3501-$5000</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>432.23</td>
+<td nowrap>369.28</td>
+<td nowrap>0.85</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9946</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_5</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $3501-$5000</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>417.60</td>
+<td nowrap>354.65</td>
+<td nowrap>0.85</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9960</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_5</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $3501-$5000</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>404.87</td>
+<td nowrap>341.92</td>
+<td nowrap>0.84</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>10027</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_5</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $3501-$5000</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>325.57</td>
+<td nowrap>262.62</td>
+<td nowrap>0.81</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>11/28/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9492</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_5</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $3501-$5000</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>374.99</td>
+<td nowrap>312.04</td>
+<td nowrap>0.83</td>
+<td nowrap>1/13/2026</td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10002</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_COMBO_TIER_5</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $3501-$5000</td>
+<td nowrap>1</td>
+<td nowrap>62.95</td>
+<td nowrap>441.68</td>
+<td nowrap>378.73</td>
+<td nowrap>0.86</td>
+<td nowrap>1/19/2026</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>10021</td>
+<td nowrap>PROTECTION 1ST</td>
+<td nowrap>PROTECTION PROGRAMS</td>
+<td nowrap style='mso-number-format:"\@"'>PRO1ST_LITE</td>
+<td nowrap style='mso-number-format:"\@"'>5 YEAR PROTECTION PLAN $500-$799</td>
+<td nowrap>1</td>
+<td nowrap>47.95</td>
+<td nowrap>129.99</td>
+<td nowrap>82.04</td>
+<td nowrap>0.63</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9926</td>
+<td nowrap>RESTONIC</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>9IN_PREM_3-3XL</td>
+<td nowrap style='mso-number-format:"\@"'>FOUNDATION 3/3XL - 4002999-6320</td>
+<td nowrap>2</td>
+<td nowrap>210.00</td>
+<td nowrap>259.69</td>
+<td nowrap>49.69</td>
+<td nowrap>0.19</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/30/2025</td>
+<td nowrap>Greenville</td>
+<td nowrap>9874</td>
+<td nowrap>RESTONIC</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>DUNCAN_COOL_F_5-0</td>
+<td nowrap style='mso-number-format:"\@"'>MATTRESS 5/0 - 4001251</td>
+<td nowrap>1</td>
+<td nowrap>350.00</td>
+<td nowrap>718.98</td>
+<td nowrap>368.98</td>
+<td nowrap>0.51</td>
+<td nowrap>1/1/2026</td>
+</tr>
+<tr>
+<td nowrap>12/23/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9801</td>
+<td nowrap>RIZE</td>
+<td nowrap>BEDDING HARDWARE</td>
+<td nowrap style='mso-number-format:"\@"'>TFQKK-7</td>
+<td nowrap style='mso-number-format:"\@"'>FRAME</td>
+<td nowrap>1</td>
+<td nowrap>53.70</td>
+<td nowrap>111.99</td>
+<td nowrap>58.29</td>
+<td nowrap>0.52</td>
+<td nowrap>1/5/2026</td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>Morehead</td>
+<td nowrap>10038</td>
+<td nowrap>RIZE</td>
+<td nowrap>BEDDING HARDWARE</td>
+<td nowrap style='mso-number-format:"\@"'>TFQKK-7</td>
+<td nowrap style='mso-number-format:"\@"'>FRAME</td>
+<td nowrap>1</td>
+<td nowrap>53.70</td>
+<td nowrap>159.99</td>
+<td nowrap>106.29</td>
+<td nowrap>0.66</td>
+<td nowrap>1/17/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Havelock</td>
+<td nowrap>9887</td>
+<td nowrap>SERTA</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>BRIAZA_II_PL_5-0_MAT</td>
+<td nowrap style='mso-number-format:"\@"'>* MATTRESS 5/0 - 500782542</td>
+<td nowrap>1</td>
+<td nowrap>455.00</td>
+<td nowrap>827.83</td>
+<td nowrap>372.83</td>
+<td nowrap>0.45</td>
+<td nowrap>1/2/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9916</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>10244261</td>
+<td nowrap style='mso-number-format:"\@"'>Tempur-Breeze - Tempur-LuxeBreeze Firm - King</td>
+<td nowrap>1</td>
+<td nowrap>2931.00</td>
+<td nowrap>5692.42</td>
+<td nowrap>2761.42</td>
+<td nowrap>0.49</td>
+<td nowrap>1/5/2026</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9970</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>10745151</td>
+<td nowrap style='mso-number-format:"\@"'>Adapt - Tempur-Adapt Medium Mattress - Queen</td>
+<td nowrap>1</td>
+<td nowrap>974.00</td>
+<td nowrap>1834.42</td>
+<td nowrap>860.42</td>
+<td nowrap>0.47</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9881</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>10745151</td>
+<td nowrap style='mso-number-format:"\@"'>Adapt - Tempur-Adapt Medium Mattress - Queen</td>
+<td nowrap>1</td>
+<td nowrap>974.00</td>
+<td nowrap>1790.75</td>
+<td nowrap>816.75</td>
+<td nowrap>0.46</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10010</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>10745161</td>
+<td nowrap style='mso-number-format:"\@"'>Adapt - Tempur-Adapt Medium Mattress - King</td>
+<td nowrap>1</td>
+<td nowrap>1295.00</td>
+<td nowrap>2678.23</td>
+<td nowrap>1383.23</td>
+<td nowrap>0.52</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9941</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>10746151</td>
+<td nowrap style='mso-number-format:"\@"'>Adapt - Tempur-Adapt Medium Hybrid Mattress - Queen</td>
+<td nowrap>1</td>
+<td nowrap>1114.00</td>
+<td nowrap>1854.10</td>
+<td nowrap>740.10</td>
+<td nowrap>0.40</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9961</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>10747161</td>
+<td nowrap style='mso-number-format:"\@"'>Adapt - Tempur-Proadapt Firm Mattress - King</td>
+<td nowrap>1</td>
+<td nowrap>1880.00</td>
+<td nowrap>3644.85</td>
+<td nowrap>1764.85</td>
+<td nowrap>0.48</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>12/29/2025</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9857</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>10752151</td>
+<td nowrap style='mso-number-format:"\@"'>Adapt - Tempur-Proadapt Medium Hybrid Mattress - Queen</td>
+<td nowrap>1</td>
+<td nowrap>1505.00</td>
+<td nowrap>2951.82</td>
+<td nowrap>1446.82</td>
+<td nowrap>0.49</td>
+<td nowrap>1/16/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9914</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>10752161</td>
+<td nowrap style='mso-number-format:"\@"'>Adapt - Tempur-Proadapt Medium Hybrid Mattress - King</td>
+<td nowrap>1</td>
+<td nowrap>1880.00</td>
+<td nowrap>3661.58</td>
+<td nowrap>1781.58</td>
+<td nowrap>0.49</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9941</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESS CARE</td>
+<td nowrap style='mso-number-format:"\@"'>15374250</td>
+<td nowrap style='mso-number-format:"\@"'>Adapt 2.0 - Prolo + Cooling Pillow - Queen</td>
+<td nowrap>2</td>
+<td nowrap>129.34</td>
+<td nowrap>222.49</td>
+<td nowrap>93.15</td>
+<td nowrap>0.42</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9970</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESS CARE</td>
+<td nowrap style='mso-number-format:"\@"'>15374250</td>
+<td nowrap style='mso-number-format:"\@"'>Adapt 2.0 - Prolo + Cooling Pillow - Queen</td>
+<td nowrap>2</td>
+<td nowrap>129.34</td>
+<td nowrap>250.15</td>
+<td nowrap>120.81</td>
+<td nowrap>0.48</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9914</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>20514120</td>
+<td nowrap style='mso-number-format:"\@"'>Tempur-Pedic - Flat High Profile Foundation - Twin Long</td>
+<td nowrap>2</td>
+<td nowrap>189.00</td>
+<td nowrap>464.38</td>
+<td nowrap>275.38</td>
+<td nowrap>0.59</td>
+<td nowrap>1/6/2026</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>Greenville</td>
+<td nowrap>10010</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>20514120</td>
+<td nowrap style='mso-number-format:"\@"'>Tempur-Pedic - Flat High Profile Foundation - Twin Long</td>
+<td nowrap>2</td>
+<td nowrap>510.00</td>
+<td nowrap>480.22</td>
+<td nowrap>(-29.78)</td>
+<td nowrap>(-0.06)</td>
+<td nowrap>1/20/2026</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9941</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>20514150</td>
+<td nowrap style='mso-number-format:"\@"'>Tempur-Pedic - Flat High Profile Foundation - Queen</td>
+<td nowrap>1</td>
+<td nowrap>136.50</td>
+<td nowrap>289.23</td>
+<td nowrap>152.73</td>
+<td nowrap>0.53</td>
+<td nowrap>1/12/2026</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>9970</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>20514150</td>
+<td nowrap style='mso-number-format:"\@"'>Tempur-Pedic - Flat High Profile Foundation - Queen</td>
+<td nowrap>1</td>
+<td nowrap>136.50</td>
+<td nowrap>325.19</td>
+<td nowrap>188.69</td>
+<td nowrap>0.58</td>
+<td nowrap>1/15/2026</td>
+</tr>
+<tr>
+<td nowrap>12/31/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9881</td>
+<td nowrap>Tempur Sealy</td>
+<td nowrap>MATTRESSES</td>
+<td nowrap style='mso-number-format:"\@"'>21514150</td>
+<td nowrap style='mso-number-format:"\@"'>Tempur-Pedic - Flat Low Profile Foundation - Queen</td>
+<td nowrap>1</td>
+<td nowrap>380.00</td>
+<td nowrap>317.45</td>
+<td nowrap>(-62.55)</td>
+<td nowrap>(-0.20)</td>
+<td nowrap>1/9/2026</td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>Havelock</td>
+<td nowrap>9973</td>
+<td nowrap>Vaughan-Bassett</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>782-227</td>
+<td nowrap style='mso-number-format:"\@"'>Yellowstone - 2 Drawer Nightstand - Chestnut Natural</td>
+<td nowrap>1</td>
+<td nowrap>249.99</td>
+<td nowrap>699.99</td>
+<td nowrap>450.00</td>
+<td nowrap>0.64</td>
+<td nowrap>1/8/2026</td>
+</tr>
+<tr>
+<td nowrap>12/9/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9650</td>
+<td nowrap>Vaughan-Bassett</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>BB29-668</td>
+<td nowrap style='mso-number-format:"\@"'>Bonanza - King Mansion Headboard - White</td>
+<td nowrap>1</td>
+<td nowrap>297.83</td>
+<td nowrap>487.99</td>
+<td nowrap>190.16</td>
+<td nowrap>0.39</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>12/9/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9650</td>
+<td nowrap>Vaughan-Bassett</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>BB29-866</td>
+<td nowrap style='mso-number-format:"\@"'>Bonanza - King Mansion Footboard - White</td>
+<td nowrap>1</td>
+<td nowrap>167.86</td>
+<td nowrap>239.99</td>
+<td nowrap>72.13</td>
+<td nowrap>0.30</td>
+<td nowrap>1/7/2026</td>
+</tr>
+<tr>
+<td nowrap>12/9/2025</td>
+<td nowrap>Morehead</td>
+<td nowrap>9650</td>
+<td nowrap>Vaughan-Bassett</td>
+<td nowrap>BEDROOMS</td>
+<td nowrap style='mso-number-format:"\@"'>BB29-922</td>
+<td nowrap style='mso-number-format:"\@"'>Bonanza - King/Queen Rails - White</td>
+<td nowrap>1</td>
+<td nowrap>97.67</td>
+<td nowrap>159.99</td>
+<td nowrap>62.32</td>
+<td nowrap>0.39</td>
+<td nowrap>1/7/2026</td>
+</tr>
+</table>
+</body>
+</html>

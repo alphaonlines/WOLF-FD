@@ -32,6 +32,7 @@ import {
   fetchSalesDaily,
   fetchSummary,
   getPosApiBaseUrl,
+  uploadPosExports,
 } from "../services/posBackendApi";
 import { SalesData, StoreData } from "../types";
 
@@ -479,7 +480,7 @@ const SalesDashboard: React.FC = () => {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !storage) return;
+    if (!file) return;
 
     if (!file.name.endsWith(".xlsx") && !file.name.endsWith(".xls")) {
       alert("Please upload a valid Excel file (.xlsx or .xls)");
@@ -490,11 +491,29 @@ const SalesDashboard: React.FC = () => {
     setUploadSuccess(false);
 
     try {
-      const storageRef = ref(storage, `sales/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
+      if (posBackendOk) {
+        const result = await uploadPosExports([file]);
+        if (result?.import?.stderr) {
+          alert(`Import error: ${result.import.stderr}`);
+        }
+      } else if (storage) {
+        const storageRef = ref(storage, `sales/${Date.now()}_${file.name}`);
+        await uploadBytes(storageRef, file);
+      } else {
+        throw new Error("No upload target available.");
+      }
 
       setUploadSuccess(true);
       setTimeout(() => setUploadSuccess(false), 5000);
+      if (posBackendOk) {
+        fetchAvailableYears()
+          .then((years) => {
+            if (!years.length) return;
+            setAvailableYears(years);
+          })
+          .catch(() => null);
+        void loadData();
+      }
     } catch (uploadError) {
       console.error("Upload failed", uploadError);
       alert("Failed to upload file. Check console for details.");

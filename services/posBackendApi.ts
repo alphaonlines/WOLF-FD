@@ -46,6 +46,21 @@ export async function fetchAvailableYears(): Promise<number[]> {
   return years.map((y: any) => Number(y)).filter((y: number) => Number.isFinite(y)).sort((a, b) => a - b);
 }
 
+export async function uploadPosExports(files: File[]): Promise<{ import?: { ok?: boolean; stdout?: string; stderr?: string } }> {
+  if (!files.length) return;
+  const baseUrl = getPosApiBaseUrl();
+  const form = new FormData();
+  files.forEach((file) => form.append("files", file, file.name));
+  const res = await fetch(`${baseUrl}/api/import/upload`, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) {
+    throw new Error(`POS API ${res.status} for upload`);
+  }
+  return (await res.json()) as any;
+}
+
 export async function fetchOutliers(params: {
   start: string;
   end: string;

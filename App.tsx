@@ -1,30 +1,71 @@
-import React, { useState } from 'react';
-import { LayoutDashboard, CheckSquare, MessageSquare, Menu, Bell, Sofa, Search, Activity, Star } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { LayoutDashboard, CheckSquare, MessageSquare, Menu, Bell, Sofa, Search, Activity, Star, UploadCloud } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import TaskManager from './components/TaskManager';
 import WorkAdvertising from './components/WorkAdvertising';
+import UpdateDatabase from './components/UpdateDatabase';
 
 enum Tab {
   OVERVIEW = 'OVERVIEW',
   TASKS = 'TASKS',
-  SOCIAL = 'SOCIAL'
+  SOCIAL = 'SOCIAL',
+  UPDATE = 'UPDATE',
 }
+
+const PASSWORD = "1111";
+const STORAGE_KEY = "fd_app_unlocked";
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.OVERVIEW);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showLoading, setShowLoading] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    try {
+      return sessionStorage.getItem(STORAGE_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!showLoading) return;
+    const t = window.setTimeout(() => setShowLoading(false), 2000);
+    return () => window.clearTimeout(t);
+  }, [showLoading]);
+
+  const handleUnlock = () => {
+    if (passwordInput === PASSWORD) {
+      setIsUnlocked(true);
+      setPasswordInput("");
+      setPasswordError(null);
+      setShowLoading(true);
+      try {
+        sessionStorage.setItem(STORAGE_KEY, "true");
+      } catch {
+        // Ignore storage failures.
+      }
+      return;
+    }
+    setPasswordError("Incorrect password.");
+  };
 
   const renderContent = () => {
     switch(activeTab) {
       case Tab.OVERVIEW: return <SalesDashboard />;
       case Tab.TASKS: return <TaskManager />;
       case Tab.SOCIAL: return <WorkAdvertising />;
+      case Tab.UPDATE: return <UpdateDatabase />;
       default: return <SalesDashboard />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex font-sans text-slate-800">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+      {!isUnlocked && <LockScreen passwordInput={passwordInput} setPasswordInput={setPasswordInput} passwordError={passwordError} onUnlock={handleUnlock} />}
+      {showLoading && <LoadingOverlay />}
+      <div className={`flex ${!isUnlocked || showLoading ? 'blur-md' : ''} transition-[filter] duration-500`}>
       
       {/* Sidebar */}
       <aside 
@@ -61,6 +102,13 @@ const App: React.FC = () => {
             label="Work Advertising" 
             isActive={activeTab === Tab.SOCIAL} 
             onClick={() => setActiveTab(Tab.SOCIAL)}
+            isOpen={sidebarOpen}
+          />
+          <NavItem 
+            icon={<UploadCloud size={20} />} 
+            label="Update Database" 
+            isActive={activeTab === Tab.UPDATE} 
+            onClick={() => setActiveTab(Tab.UPDATE)}
             isOpen={sidebarOpen}
           />
           <div className="pt-4 mt-4 border-t border-slate-800" />
@@ -115,6 +163,7 @@ const App: React.FC = () => {
               {activeTab === Tab.OVERVIEW && 'Business Overview'}
               {activeTab === Tab.TASKS && 'Team Tasks'}
               {activeTab === Tab.SOCIAL && 'Work Advertising'}
+              {activeTab === Tab.UPDATE && 'Update Database'}
             </h1>
           </div>
 
@@ -140,6 +189,74 @@ const App: React.FC = () => {
         </div>
 
       </main>
+      </div>
+    </div>
+  );
+};
+
+const LoadingOverlay: React.FC = () => {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" />
+      <div className="relative z-10 flex flex-col items-center gap-5 text-white">
+        <style>
+          {`
+            @keyframes loadbar {
+              0% { transform: translateX(-100%); }
+              100% { transform: translateX(100%); }
+            }
+          `}
+        </style>
+        <div className="w-20 h-20 rounded-2xl bg-slate-900/80 border border-slate-700 flex items-center justify-center shadow-xl text-4xl">
+          🐺
+        </div>
+        <div className="text-sm uppercase tracking-[0.3em] text-slate-200">Wolf FD</div>
+        <div className="w-64 h-2 rounded-full bg-slate-700 overflow-hidden">
+          <div className="h-full w-1/2 bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-200 animate-[loadbar_2s_linear_infinite]" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+type LockScreenProps = {
+  passwordInput: string;
+  setPasswordInput: (value: string) => void;
+  passwordError: string | null;
+  onUnlock: () => void;
+};
+
+const LockScreen: React.FC<LockScreenProps> = ({ passwordInput, setPasswordInput, passwordError, onUnlock }) => {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center">
+      <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" />
+      <div className="relative z-10 w-full max-w-sm bg-white/95 border border-slate-200 rounded-2xl p-6 shadow-xl">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center text-2xl">
+            🐺
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-slate-800">Wolf FD Locked</h2>
+            <p className="text-sm text-slate-500">Enter the passcode to continue.</p>
+          </div>
+        </div>
+        <div className="flex flex-col gap-3">
+          <input
+            type="password"
+            value={passwordInput}
+            onChange={(event) => setPasswordInput(event.target.value)}
+            placeholder="Passcode"
+            className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
+          />
+          <button
+            onClick={onUnlock}
+            className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium"
+          >
+            Unlock
+          </button>
+          {passwordError && <div className="text-xs text-red-600">{passwordError}</div>}
+        </div>
+      </div>
     </div>
   );
 };

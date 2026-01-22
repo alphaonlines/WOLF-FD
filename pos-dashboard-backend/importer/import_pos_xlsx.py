@@ -406,6 +406,14 @@ def clean_row(df: pd.DataFrame, source_file: str) -> pd.DataFrame:
 
     return df
 
+def is_sales_report(df: pd.DataFrame) -> bool:
+    cols = {str(c).strip().lower() for c in df.columns}
+    required = {"sales#", "date of sale", "sales person", "sales location", "grand total"}
+    # allow for alternate label "sale #" in some exports
+    if "sales#" not in cols and "sale #" in cols:
+        cols.add("sales#")
+    return required.issubset(cols)
+
 def main():
     ap = argparse.ArgumentParser(description="Import POS export XLSX files into Postgres (upsert by sale_id).")
     ap.add_argument("--incoming", default=INCOMING, help="Folder to scan for XLSX files (default: %(default)s)")
@@ -437,6 +445,9 @@ def main():
                 source = os.path.basename(path)
                 print(f"\n=== Importing {source} ===")
                 df = read_pos_excel(path)
+                if not is_sales_report(df):
+                    print("Skipped: not a sales report export (line-item exports are ignored for now).")
+                    continue
                 df2 = clean_row(df, source)
 
                 # RAW rows: sale_id + sale_date + json of entire original row

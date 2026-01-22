@@ -1,0 +1,6961 @@
+<html><body>
+<table border="1">
+<tr>
+<th>Date Deliv Confirmed</th>
+<th>Date of Sale</th>
+<th>Est Date of Delivery</th>
+<th>Sales Person</th>
+<th>Sales Location</th>
+<th>Sales Type</th>
+<th>Sales#</th>
+<th>Receitp#</th>
+<th>Status</th>
+<th>Subtotal</th>
+<th>Adjustments Before Tax</th>
+<th>Addit Fees Before Tax</th>
+<th>Tax</th>
+<th>Adjustments After Tax</th>
+<th>Addit Fees After Tax</th>
+<th>Grand Total</th>
+<th>Store Credit Applied</th>
+<th>Prev. Paid</th>
+<th>Total Collected</th>
+<th>Total Finance AMT</th>
+<th>Finance Balance</th>
+<th>Lwy Balance</th>
+<th>Cost</th>
+<th>Finance Fee</th>
+<th>Profit</th>
+<th>Gross Margin</th>
+<th>Date of Last PMT</th>
+<th>Customer Name</th>
+<th>Address</th>
+<th>City</th>
+<th>State</th>
+<th>Zip</th>
+<th>Email</th>
+<th>Home Phone</th>
+<th>Cell Phone</th>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>7/13/2024</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>Gibbs-Kenon, Jodine and SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>3136</td>
+<td nowrap>5384</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$499.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$33.75</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$533.74</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$533.74</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$211.95</td>
+<td nowrap>$0.00</td>
+<td nowrap>$288.04</td>
+<td nowrap>0.576</td>
+<td nowrap>7/13/2024</td>
+<td nowrap>SERGI, JOHN</td>
+<td nowrap>120 ELS LANE</td>
+<td nowrap>NEW BERN</td>
+<td nowrap>NC</td>
+<td nowrap>28560</td>
+<td nowrap></td>
+<td nowrap>(732)299-0148</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>5/13/2025</td>
+<td nowrap>5/13/2025</td>
+<td nowrap>Sales, Store</td>
+<td nowrap>Havelock</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>7300</td>
+<td nowrap>13682</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1069.99</td>
+<td nowrap>$-1069.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$492.85</td>
+<td nowrap>$0.00</td>
+<td nowrap>($492.85)</td>
+<td nowrap>N/A</td>
+<td nowrap>N/A</td>
+<td nowrap>CHAMBER OF COMMERCE, HAVELOCK</td>
+<td nowrap>123 DRIVE Apt. # SUE KLEIN</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)670-0150</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/21/2026</td>
+<td nowrap>10/10/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>8986</td>
+<td nowrap>17031</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$89.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$6.3</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$96.29</td>
+<td nowrap>$96.29</td>
+<td nowrap>$0.00</td>
+<td nowrap>$96.29</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$35.85</td>
+<td nowrap>$0.00</td>
+<td nowrap>$54.14</td>
+<td nowrap>0.602</td>
+<td nowrap>10/10/2025</td>
+<td nowrap>LEE, KATHY</td>
+<td nowrap>4622 JULIE-MARIE CT</td>
+<td nowrap>AYDEN</td>
+<td nowrap>NC</td>
+<td nowrap>28513</td>
+<td nowrap></td>
+<td nowrap>(252)714-3276</td>
+<td nowrap>(252)714-0914</td>
+</tr>
+<tr>
+<td nowrap>1/20/2026</td>
+<td nowrap>10/13/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SANNER, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9026</td>
+<td nowrap>17102</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$579.99</td>
+<td nowrap>$-36.67</td>
+<td nowrap>$0</td>
+<td nowrap>$36.67</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$579.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$579.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$263.38</td>
+<td nowrap>$0.00</td>
+<td nowrap>$279.94</td>
+<td nowrap>0.515</td>
+<td nowrap>1/20/2026</td>
+<td nowrap>DONLEY, KATHRYN</td>
+<td nowrap>4277 10 MILE FORK RD</td>
+<td nowrap>POLLOCKSVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(720)403-3860</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>10/14/2025</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9032</td>
+<td nowrap>17118</td>
+<td nowrap>Paid Off, Deliveried(10/10)</td>
+<td nowrap>$2399.97</td>
+<td nowrap>$0</td>
+<td nowrap>$199.99</td>
+<td nowrap>$175.5</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2775.46</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2775.46</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,332.03</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,267.93</td>
+<td nowrap>0.488</td>
+<td nowrap>10/14/2025</td>
+<td nowrap>LINEBACK, AVERIE</td>
+<td nowrap>236 SEA TRACE LN</td>
+<td nowrap>NEWPORT</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap>AVERIEL12@GMAIL.COM</td>
+<td nowrap>(919)410-0484</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>10/20/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9084</td>
+<td nowrap>17239</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$130</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$8.78</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$138.78</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$138.78</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$112.50</td>
+<td nowrap>$0.00</td>
+<td nowrap>$17.50</td>
+<td nowrap>0.135</td>
+<td nowrap>10/20/2025</td>
+<td nowrap>MURRELL, DORIS</td>
+<td nowrap>216 BELL CREEK DRIVE </td>
+<td nowrap>BEAUFORT</td>
+<td nowrap>NC</td>
+<td nowrap>28516</td>
+<td nowrap></td>
+<td nowrap>(252)504-4719</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/13/2026</td>
+<td nowrap>11/4/2025</td>
+<td nowrap>1/13/2026</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>Finance</td>
+<td nowrap>9217</td>
+<td nowrap>17510</td>
+<td nowrap>Paid Off, Deliveried(10/10)</td>
+<td nowrap>$2829.92</td>
+<td nowrap>$0</td>
+<td nowrap>$169.99</td>
+<td nowrap>$202.49</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3202.4</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3116.26</td>
+<td nowrap>$3202.4</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,744.76</td>
+<td nowrap>$86.14</td>
+<td nowrap>$1,255.15</td>
+<td nowrap>0.418</td>
+<td nowrap>11/4/2025</td>
+<td nowrap>SHERROD, JANNIS</td>
+<td nowrap>216 KENNETH BLVD</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)259-8776</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>11/5/2025</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9224</td>
+<td nowrap>17532</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$2099.99</td>
+<td nowrap>$-274.98</td>
+<td nowrap>$169.99</td>
+<td nowrap>$134.66</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2129.66</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2129.66</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,568.36</td>
+<td nowrap>$0.00</td>
+<td nowrap>$426.64</td>
+<td nowrap>0.214</td>
+<td nowrap>11/5/2025</td>
+<td nowrap>BREWER, HUGH ELVIE</td>
+<td nowrap>115 Joseph Dr</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)723-3490</td>
+<td nowrap>(252)723-3490</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>11/11/2025</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>SMITH, KASSIA and SUMRELL, TRACEY</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9284</td>
+<td nowrap>17663</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$3288.98</td>
+<td nowrap>$-662.98</td>
+<td nowrap>$199.99</td>
+<td nowrap>$190.75</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3016.74</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3016.74</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,475.35</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,350.64</td>
+<td nowrap>0.478</td>
+<td nowrap>11/11/2025</td>
+<td nowrap>LEWIS, COREY</td>
+<td nowrap>213 GATSEY LANE</td>
+<td nowrap>BEAUFORT</td>
+<td nowrap>NC</td>
+<td nowrap>28516</td>
+<td nowrap>clewis@soundchoiceinsurance.com</td>
+<td nowrap>(252)646-3367</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>11/26/2025</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9407</td>
+<td nowrap>18071</td>
+<td nowrap>Paid Off, Deliveried(10/10)</td>
+<td nowrap>$2689.96</td>
+<td nowrap>$-403</td>
+<td nowrap>$199.99</td>
+<td nowrap>$167.87</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2654.82</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2654.82</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,296.34</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,190.61</td>
+<td nowrap>0.479</td>
+<td nowrap>11/26/2025</td>
+<td nowrap>HART, BRENDA</td>
+<td nowrap>6632 NC HWY 306 SOUTH</td>
+<td nowrap>GRANTSBORO</td>
+<td nowrap>NC</td>
+<td nowrap>28529</td>
+<td nowrap></td>
+<td nowrap>(252)229-1078</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SANNER, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9441</td>
+<td nowrap>18112</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$599.99</td>
+<td nowrap>$-150</td>
+<td nowrap>$0</td>
+<td nowrap>$30.37</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$480.36</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$480.36</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$277.19</td>
+<td nowrap>$0.00</td>
+<td nowrap>$172.80</td>
+<td nowrap>0.384</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>ROBINSON, EDWARD</td>
+<td nowrap>103 HOWARD CIR</td>
+<td nowrap>ERNUL</td>
+<td nowrap>NC</td>
+<td nowrap>28527</td>
+<td nowrap></td>
+<td nowrap>(619)957-4219</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9461</td>
+<td nowrap>18134</td>
+<td nowrap>Paid Off, Deliveried(8/8)</td>
+<td nowrap>$7189.92</td>
+<td nowrap>$-1797.48</td>
+<td nowrap>$349.99</td>
+<td nowrap>$387.61</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$6130.04</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$6130.04</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3,573.60</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,168.83</td>
+<td nowrap>0.378</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>JOHNSON, AMY</td>
+<td nowrap>206 W. BOGUE SOUND DR</td>
+<td nowrap>ATLANTIC BEACH</td>
+<td nowrap>NC</td>
+<td nowrap>28512</td>
+<td nowrap></td>
+<td nowrap>(919)522-7748</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9463</td>
+<td nowrap>18136</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1419.99</td>
+<td nowrap>$-354.99</td>
+<td nowrap>$0</td>
+<td nowrap>$71.89</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1136.89</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1136.89</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$662.63</td>
+<td nowrap>$0.00</td>
+<td nowrap>$402.37</td>
+<td nowrap>0.378</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>HUMPHREY, CHRIS AND  DARLEEN</td>
+<td nowrap>118 NINE J DRIVE</td>
+<td nowrap>Newport</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(252)241-5382</td>
+<td nowrap>(252)241-8411</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9467</td>
+<td nowrap>18141</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$4599.98</td>
+<td nowrap>$-1149.99</td>
+<td nowrap>$249.99</td>
+<td nowrap>$259</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3958.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3958.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,183.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,516.98</td>
+<td nowrap>0.41</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>WHITE, PAMELA</td>
+<td nowrap>3301 countywood lane</td>
+<td nowrap>Greenville</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap></td>
+<td nowrap>(252)917-1988</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/21/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>Finance</td>
+<td nowrap>9470</td>
+<td nowrap>18144</td>
+<td nowrap>Open, Deliveried(4/4)</td>
+<td nowrap>$1389.96</td>
+<td nowrap>$-347.49</td>
+<td nowrap>$0</td>
+<td nowrap>$70.37</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1112.84</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0</td>
+<td nowrap>$1112.84</td>
+<td nowrap>$1,112.84</td>
+<td nowrap>$0.00</td>
+<td nowrap>$612.45</td>
+<td nowrap>$0.00</td>
+<td nowrap>$430.02</td>
+<td nowrap>0.413</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>MONTFORD, LUTHER</td>
+<td nowrap>174 Canton St</td>
+<td nowrap>Newport</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(252)342-0245</td>
+<td nowrap>(252)342-4635</td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9472</td>
+<td nowrap>18146</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$3929.97</td>
+<td nowrap>$-982.49</td>
+<td nowrap>$249.99</td>
+<td nowrap>$223.82</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3421.29</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3421.29</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,731.06</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,466.41</td>
+<td nowrap>0.459</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>DEHART, WENDIE</td>
+<td nowrap>312 GAYLE BLVD</td>
+<td nowrap>WINTERVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28590</td>
+<td nowrap></td>
+<td nowrap>(859)321-7163</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>12/9/2025</td>
+<td nowrap>HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9478</td>
+<td nowrap>18154</td>
+<td nowrap>Paid Off, Deliveried(10/10)</td>
+<td nowrap>$3809.9</td>
+<td nowrap>$-952.48</td>
+<td nowrap>$199.99</td>
+<td nowrap>$214.02</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3271.43</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3271.43</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,759.91</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,297.50</td>
+<td nowrap>0.424</td>
+<td nowrap>12/4/2025</td>
+<td nowrap>MOORE, KRISTAL</td>
+<td nowrap>1718 EDS GROCERY RD </td>
+<td nowrap>WILLIAMSTON </td>
+<td nowrap>NC</td>
+<td nowrap>27892</td>
+<td nowrap></td>
+<td nowrap>(330)322-4531</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/13/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/13/2026</td>
+<td nowrap>HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9483</td>
+<td nowrap>18159</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$3119.98</td>
+<td nowrap>$-780</td>
+<td nowrap>$129.99</td>
+<td nowrap>$172.9</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2642.87</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2642.87</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,448.34</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,021.63</td>
+<td nowrap>0.414</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>HARRIS, APRIL</td>
+<td nowrap>4930 OLD WASHINGTON RD </td>
+<td nowrap>WASHINGTON</td>
+<td nowrap>NC</td>
+<td nowrap>27889</td>
+<td nowrap></td>
+<td nowrap>(252)341-8381</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9490</td>
+<td nowrap>18169</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$799.99</td>
+<td nowrap>$-199.99</td>
+<td nowrap>$169.99</td>
+<td nowrap>$51.97</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$821.96</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$821.96</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$443.26</td>
+<td nowrap>$0.00</td>
+<td nowrap>$326.73</td>
+<td nowrap>0.424</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>GOLDEN, TOMMY</td>
+<td nowrap>125 TRADITION TRAIL</td>
+<td nowrap>NEWPORT</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(252)646-9699</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/13/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>HILL, MELISSA and STANLEY, LORRI</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9492</td>
+<td nowrap>18173</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$3759.97</td>
+<td nowrap>$-939.99</td>
+<td nowrap>$0</td>
+<td nowrap>$197.4</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3017.38</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3017.38</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,432.02</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,387.96</td>
+<td nowrap>0.492</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>PORTER, PATRICK</td>
+<td nowrap>106 Breeze Lane </td>
+<td nowrap>Atlantic Beach</td>
+<td nowrap>NC</td>
+<td nowrap>28512</td>
+<td nowrap>pmporter1@icloud.com</td>
+<td nowrap>(252)341-2229</td>
+<td nowrap>(252)341-2229</td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9497</td>
+<td nowrap>18185</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1199.98</td>
+<td nowrap>$-299.99</td>
+<td nowrap>$169.99</td>
+<td nowrap>$72.22</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1142.2</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1142.2</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$650.71</td>
+<td nowrap>$0.00</td>
+<td nowrap>$419.27</td>
+<td nowrap>0.392</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>MANDARELLI, SUE</td>
+<td nowrap>3400 MILL CREEK RD</td>
+<td nowrap>NEWPORT</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(856)278-3522</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9500</td>
+<td nowrap>18194</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1037.99</td>
+<td nowrap>$-259.5</td>
+<td nowrap>$0</td>
+<td nowrap>$52.55</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$831.04</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$831.04</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$432.60</td>
+<td nowrap>$0.00</td>
+<td nowrap>$345.89</td>
+<td nowrap>0.444</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>MCCLAMROCH, JIM</td>
+<td nowrap>310 south 19th street</td>
+<td nowrap>Morehead</td>
+<td nowrap>NC</td>
+<td nowrap>28557</td>
+<td nowrap></td>
+<td nowrap>(919)880-6169</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>Finance</td>
+<td nowrap>9511</td>
+<td nowrap>18208</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1449.99</td>
+<td nowrap>$-290</td>
+<td nowrap>$129.99</td>
+<td nowrap>$90.3</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1380.28</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1343.15</td>
+<td nowrap>$1380.28</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$745.60</td>
+<td nowrap>$37.13</td>
+<td nowrap>$544.38</td>
+<td nowrap>0.422</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>ROWE, MARY</td>
+<td nowrap>4918 Emma Cannon Rd</td>
+<td nowrap>Ayden</td>
+<td nowrap>NC</td>
+<td nowrap>28513</td>
+<td nowrap></td>
+<td nowrap>(252)350-3804</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>Sales, Store</td>
+<td nowrap>WH - BW5-Unboxed (Liquidators)</td>
+<td nowrap>Finance</td>
+<td nowrap>9543</td>
+<td nowrap>18259</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1149.99</td>
+<td nowrap>$0</td>
+<td nowrap>$129.99</td>
+<td nowrap>$86.4</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1366.38</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1349.44</td>
+<td nowrap>$1366.38</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$954.36</td>
+<td nowrap>$16.94</td>
+<td nowrap>$325.62</td>
+<td nowrap>0.254</td>
+<td nowrap>11/28/2025</td>
+<td nowrap>ARMSTRONG, RODNEY</td>
+<td nowrap>202 PIGEON LN</td>
+<td nowrap>SWANSBORO</td>
+<td nowrap>NC</td>
+<td nowrap>28584</td>
+<td nowrap></td>
+<td nowrap>(410)920-2623</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>11/29/2025</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>Finance</td>
+<td nowrap>9564</td>
+<td nowrap>18308</td>
+<td nowrap>Open, Deliveried(5/5)</td>
+<td nowrap>$2269.97</td>
+<td nowrap>$-460.49</td>
+<td nowrap>$169.99</td>
+<td nowrap>$138.56</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2118.03</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0</td>
+<td nowrap>$2118.03</td>
+<td nowrap>$2,118.03</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,078.95</td>
+<td nowrap>$0.00</td>
+<td nowrap>$900.52</td>
+<td nowrap>0.455</td>
+<td nowrap>11/29/2025</td>
+<td nowrap>KING, TARA</td>
+<td nowrap>418 FARMINGWOOD RD </td>
+<td nowrap>GREENVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap></td>
+<td nowrap>(252)531-6226</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>11/29/2025</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9572</td>
+<td nowrap>18319</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$980.49</td>
+<td nowrap>$-20</td>
+<td nowrap>$129.99</td>
+<td nowrap>$76.33</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1166.81</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1166.81</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$557.85</td>
+<td nowrap>$0.00</td>
+<td nowrap>$532.63</td>
+<td nowrap>0.488</td>
+<td nowrap>11/29/2025</td>
+<td nowrap>MILLER, JUDY</td>
+<td nowrap>505 PLYMOUTH DR </td>
+<td nowrap>GREENVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap></td>
+<td nowrap>(267)838-4983</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>12/2/2025</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9593</td>
+<td nowrap>18368</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$1624.98</td>
+<td nowrap>$-236.3</td>
+<td nowrap>$129.99</td>
+<td nowrap>$106.31</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1624.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1624.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$831.50</td>
+<td nowrap>$0.00</td>
+<td nowrap>$687.17</td>
+<td nowrap>0.452</td>
+<td nowrap>12/2/2025</td>
+<td nowrap>RAHAL, ALEXANDER</td>
+<td nowrap>708 NORTHWEST BRIDGE ROAD</td>
+<td nowrap>Jacksonville</td>
+<td nowrap>NC</td>
+<td nowrap>28540</td>
+<td nowrap></td>
+<td nowrap>(910)324-3520</td>
+<td nowrap>(910)389-1648</td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>12/5/2025</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9621</td>
+<td nowrap>18431</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$599.99</td>
+<td nowrap>$-119.99</td>
+<td nowrap>$169.99</td>
+<td nowrap>$43.87</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$693.86</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$693.86</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$346.69</td>
+<td nowrap>$0.00</td>
+<td nowrap>$303.30</td>
+<td nowrap>0.467</td>
+<td nowrap>12/5/2025</td>
+<td nowrap>CLARKE, WANDA</td>
+<td nowrap>313 PRIMROSE PL</td>
+<td nowrap>NEWPORT</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap>DARLENEWILLIS@HOTMAIL.COM</td>
+<td nowrap>(252)725-5788</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>12/9/2025</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9645</td>
+<td nowrap>18491</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$4499.96</td>
+<td nowrap>$-609.81</td>
+<td nowrap>$249.99</td>
+<td nowrap>$289.81</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$4429.95</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$4429.95</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,985.33</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,154.81</td>
+<td nowrap>0.52</td>
+<td nowrap>12/9/2025</td>
+<td nowrap>DEARDORFF, PATRICIA</td>
+<td nowrap>335 GATEWOOD DRIVE</td>
+<td nowrap>NEWBERN</td>
+<td nowrap>NC</td>
+<td nowrap>28562</td>
+<td nowrap>DTDEARDORFF@HOTMAIL.COM</td>
+<td nowrap>(252)241-4783</td>
+<td nowrap>(252)723-7636</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>12/9/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9650</td>
+<td nowrap>18509</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$1199.96</td>
+<td nowrap>$-239.99</td>
+<td nowrap>$0</td>
+<td nowrap>$64.8</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1024.77</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1024.77</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$629.94</td>
+<td nowrap>$0.00</td>
+<td nowrap>$330.03</td>
+<td nowrap>0.344</td>
+<td nowrap>12/9/2025</td>
+<td nowrap>HUGHES, CAROL</td>
+<td nowrap>1185 ROBERTS RD</td>
+<td nowrap>NEWPORT</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(540)621-9163</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/14/2026</td>
+<td nowrap>12/13/2025</td>
+<td nowrap>1/14/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9680</td>
+<td nowrap>18580</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$1949.96</td>
+<td nowrap>$-143.9</td>
+<td nowrap>$249.99</td>
+<td nowrap>$143.92</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2199.97</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2199.97</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$988.60</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,067.45</td>
+<td nowrap>0.519</td>
+<td nowrap>12/13/2025</td>
+<td nowrap>BOLDUC, EDWARD</td>
+<td nowrap>575 N SHORE DR</td>
+<td nowrap>SOUTHPORT</td>
+<td nowrap>NC</td>
+<td nowrap>28461</td>
+<td nowrap>1D@YAHOO.COM</td>
+<td nowrap>(910)367-2680</td>
+<td nowrap>(910)367-2680</td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>12/17/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>STANLEY, LORRI</td>
+<td nowrap>Greenville</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9714</td>
+<td nowrap>18668</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$699.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$49</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$748.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$748.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$330.75</td>
+<td nowrap>$0.00</td>
+<td nowrap>$369.24</td>
+<td nowrap>0.527</td>
+<td nowrap>12/17/2025</td>
+<td nowrap>HARDEE, GINGER</td>
+<td nowrap>202 Gloria St</td>
+<td nowrap>Greenville</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap>gingerhardee@hotmail.com</td>
+<td nowrap>(252)341-2568</td>
+<td nowrap>(252)341-2568</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>12/19/2025</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9728</td>
+<td nowrap>18696</td>
+<td nowrap>Paid Off, Deliveried(8/8)</td>
+<td nowrap>$6929.92</td>
+<td nowrap>$-897.74</td>
+<td nowrap>$249.99</td>
+<td nowrap>$439.75</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$6721.92</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$6721.92</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3,187.52</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3,094.65</td>
+<td nowrap>0.493</td>
+<td nowrap>12/28/2025</td>
+<td nowrap>MARTIN, ANTHONY</td>
+<td nowrap>1034 beech tree rd</td>
+<td nowrap>jville</td>
+<td nowrap>NC</td>
+<td nowrap>28546-6000</td>
+<td nowrap></td>
+<td nowrap>(910)526-5941</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>12/20/2025</td>
+<td nowrap>12/22/2025</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9731</td>
+<td nowrap>18703</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$698.99</td>
+<td nowrap>$-137.23</td>
+<td nowrap>$0</td>
+<td nowrap>$39.32</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$601.08</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$601.08</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$303.42</td>
+<td nowrap>$0.00</td>
+<td nowrap>$258.34</td>
+<td nowrap>0.46</td>
+<td nowrap>12/20/2025</td>
+<td nowrap>ALLEN, JAKE</td>
+<td nowrap>7139 CHAPMAN DRIVE</td>
+<td nowrap>CAMP LEJEUNE</td>
+<td nowrap>NC</td>
+<td nowrap>28547</td>
+<td nowrap>JAKEALLEN13579@GMAIL.COM</td>
+<td nowrap>(502)445-1448</td>
+<td nowrap>(773)499-1696</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>12/21/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9760</td>
+<td nowrap>18754</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$1618.99</td>
+<td nowrap>$-8.34</td>
+<td nowrap>$0</td>
+<td nowrap>$112.75</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1723.4</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1723.4</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$904.32</td>
+<td nowrap>$0.00</td>
+<td nowrap>$706.33</td>
+<td nowrap>0.439</td>
+<td nowrap>12/21/2025</td>
+<td nowrap>BARNETT, TONYA  PAUL</td>
+<td nowrap>191 Greentown rd</td>
+<td nowrap>Trenton</td>
+<td nowrap>NC</td>
+<td nowrap>28585</td>
+<td nowrap></td>
+<td nowrap>(252)560-7108</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>12/21/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9763</td>
+<td nowrap>18758</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$699.99</td>
+<td nowrap>$-139.99</td>
+<td nowrap>$0</td>
+<td nowrap>$37.8</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$597.8</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$597.8</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$379.75</td>
+<td nowrap>$0.00</td>
+<td nowrap>$180.25</td>
+<td nowrap>0.322</td>
+<td nowrap>12/21/2025</td>
+<td nowrap>FICKLING, BETH</td>
+<td nowrap>2605 THREE IRON ST</td>
+<td nowrap>MOREHEAD CITY</td>
+<td nowrap>NC</td>
+<td nowrap>28557</td>
+<td nowrap></td>
+<td nowrap>(252)717-0983</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>12/21/2025</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>SANNER, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9764</td>
+<td nowrap>18761</td>
+<td nowrap>Paid Off, Deliveried(8/8)</td>
+<td nowrap>$2529.92</td>
+<td nowrap>$-433</td>
+<td nowrap>$169.99</td>
+<td nowrap>$153.02</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2419.93</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2419.93</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,324.90</td>
+<td nowrap>$0.00</td>
+<td nowrap>$942.01</td>
+<td nowrap>0.416</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>STALLINGS, THOMAS</td>
+<td nowrap>308 WILLOW RUN</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)626-8057</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>12/22/2025</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9769</td>
+<td nowrap>18777</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$999.99</td>
+<td nowrap>$-76.54</td>
+<td nowrap>$169.99</td>
+<td nowrap>$76.54</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1169.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1169.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$530.90</td>
+<td nowrap>$0.00</td>
+<td nowrap>$562.54</td>
+<td nowrap>0.514</td>
+<td nowrap>12/22/2025</td>
+<td nowrap>WATERS, KORBIN</td>
+<td nowrap>6450 MONTANA STREET</td>
+<td nowrap>CAMP LEJEUNE</td>
+<td nowrap>NC</td>
+<td nowrap>28547</td>
+<td nowrap>WATERSKTC@GMAIL.COM</td>
+<td nowrap>(916)899-0137</td>
+<td nowrap>(916)899-0316</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>12/22/2025</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Finance</td>
+<td nowrap>9776</td>
+<td nowrap>18792</td>
+<td nowrap>Open, Deliveried(5/5)</td>
+<td nowrap>$3829.95</td>
+<td nowrap>$-917.37</td>
+<td nowrap>$249.99</td>
+<td nowrap>$221.38</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3383.95</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0</td>
+<td nowrap>$3383.95</td>
+<td nowrap>$3,383.95</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,641.37</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,521.20</td>
+<td nowrap>0.481</td>
+<td nowrap>12/22/2025</td>
+<td nowrap>BYERS, SHYANNE</td>
+<td nowrap>4427 BUTER DRIVE NORTH</td>
+<td nowrap>MIDWAY PARK</td>
+<td nowrap>NC</td>
+<td nowrap>28544</td>
+<td nowrap>SHYANNEBYERS@YAHOO.COM</td>
+<td nowrap>(360)433-8971</td>
+<td nowrap>(360)433-8236</td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>12/23/2025</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9794</td>
+<td nowrap>18833</td>
+<td nowrap>Paid Off, Deliveried(5/5)</td>
+<td nowrap>$2749.95</td>
+<td nowrap>$-548.12</td>
+<td nowrap>$199.99</td>
+<td nowrap>$168.13</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2569.95</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2569.95</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,311.14</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,090.68</td>
+<td nowrap>0.454</td>
+<td nowrap>12/23/2025</td>
+<td nowrap>CUSTER, RYAN</td>
+<td nowrap>510 BANNERMANS MILL ROAD</td>
+<td nowrap>RICHLANDS</td>
+<td nowrap>NC</td>
+<td nowrap>28574</td>
+<td nowrap>RYAN5CUSTER@GMAIL.COM</td>
+<td nowrap>(330)631-2208</td>
+<td nowrap>(808)321-0961</td>
+</tr>
+<tr>
+<td nowrap>1/21/2026</td>
+<td nowrap>12/23/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SANNER, STEPHANIE and SHANKLE, CHRISTOPHER</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9798</td>
+<td nowrap>18840</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1499.98</td>
+<td nowrap>$-375.88</td>
+<td nowrap>$0</td>
+<td nowrap>$75.88</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1199.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1199.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$697.45</td>
+<td nowrap>$0.00</td>
+<td nowrap>$426.65</td>
+<td nowrap>0.38</td>
+<td nowrap>12/23/2025</td>
+<td nowrap>RAZMI, MOHAMMAD</td>
+<td nowrap>4007 LANDING CIR Apt. # 103</td>
+<td nowrap>Havelock</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(863)271-3966</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/23/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9799</td>
+<td nowrap>18841</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$1999.97</td>
+<td nowrap>$-400</td>
+<td nowrap>$0</td>
+<td nowrap>$108</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1707.97</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1707.97</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$888.21</td>
+<td nowrap>$0.00</td>
+<td nowrap>$711.76</td>
+<td nowrap>0.445</td>
+<td nowrap>12/23/2025</td>
+<td nowrap>TOLER, RUSTYN</td>
+<td nowrap>4005 galantis Apt. # 105E</td>
+<td nowrap>Morehead</td>
+<td nowrap>NC</td>
+<td nowrap>28557</td>
+<td nowrap></td>
+<td nowrap>(252)723-6755</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>12/23/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9801</td>
+<td nowrap>18843</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$139.99</td>
+<td nowrap>$-28</td>
+<td nowrap>$0</td>
+<td nowrap>$7.56</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$119.55</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$119.55</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$67.13</td>
+<td nowrap>$0.00</td>
+<td nowrap>$44.86</td>
+<td nowrap>0.401</td>
+<td nowrap>12/23/2025</td>
+<td nowrap>HIGGINS, PATRICK AND  JAMIE</td>
+<td nowrap>252 ROBERTS RD</td>
+<td nowrap>Newport</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap>higgins1424@yahoo.com</td>
+<td nowrap>(252)223-7413</td>
+<td nowrap>(252)725-7586</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>12/26/2025</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9806</td>
+<td nowrap>18855</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$3999.98</td>
+<td nowrap>$-509.99</td>
+<td nowrap>$169.99</td>
+<td nowrap>$247.05</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3907.03</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3907.03</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,383.05</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,276.93</td>
+<td nowrap>0.349</td>
+<td nowrap>12/26/2025</td>
+<td nowrap>PEREZ, ANGEL</td>
+<td nowrap>528 MULBERRY LANE </td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)659-2434</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/26/2025</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9809</td>
+<td nowrap>18859</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$1999.97</td>
+<td nowrap>$-199.99</td>
+<td nowrap>$169.99</td>
+<td nowrap>$132.97</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2102.94</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2102.94</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$980.25</td>
+<td nowrap>$0.00</td>
+<td nowrap>$989.72</td>
+<td nowrap>0.502</td>
+<td nowrap>12/26/2025</td>
+<td nowrap>NORFOLK, CRAIG</td>
+<td nowrap>502 VILLAGE GREEN DRIVE Apt. # UNIT B</td>
+<td nowrap>MOREHEAD CITY</td>
+<td nowrap>NC</td>
+<td nowrap>28557</td>
+<td nowrap></td>
+<td nowrap>(704)560-5131</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>12/26/2025</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9818</td>
+<td nowrap>18878</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$2599.99</td>
+<td nowrap>$-520</td>
+<td nowrap>$199.99</td>
+<td nowrap>$153.9</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2433.88</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2433.88</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,322.23</td>
+<td nowrap>$0.00</td>
+<td nowrap>$957.75</td>
+<td nowrap>0.42</td>
+<td nowrap>12/26/2025</td>
+<td nowrap>ONEAL, GEORGIA</td>
+<td nowrap>1920 snowy egret</td>
+<td nowrap>Morehead</td>
+<td nowrap>NC</td>
+<td nowrap>28557</td>
+<td nowrap></td>
+<td nowrap>(252)725-0574</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>12/26/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>STANLEY, LORRI</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9820</td>
+<td nowrap>18886</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$729.99</td>
+<td nowrap>$-146</td>
+<td nowrap>$0</td>
+<td nowrap>$40.88</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$624.87</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$624.87</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$323.70</td>
+<td nowrap>$0.00</td>
+<td nowrap>$260.29</td>
+<td nowrap>0.446</td>
+<td nowrap>12/26/2025</td>
+<td nowrap>FRANKLIN, JAMES</td>
+<td nowrap>680 Tabbard </td>
+<td nowrap>Winterville</td>
+<td nowrap>NC</td>
+<td nowrap>28590</td>
+<td nowrap>jfranklin.choir@gmail.com</td>
+<td nowrap>(469)744-2786</td>
+<td nowrap>(469)744-2786</td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>12/27/2025</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>STANLEY, LORRI</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9823</td>
+<td nowrap>18899</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$699.99</td>
+<td nowrap>$-140</td>
+<td nowrap>$129.99</td>
+<td nowrap>$48.3</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$738.28</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$738.28</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$362.46</td>
+<td nowrap>$0.00</td>
+<td nowrap>$327.52</td>
+<td nowrap>0.475</td>
+<td nowrap>12/27/2025</td>
+<td nowrap>HARRIS, IVAN</td>
+<td nowrap>657 NC 102 West</td>
+<td nowrap>Ayden</td>
+<td nowrap>NC</td>
+<td nowrap>28513</td>
+<td nowrap>n/a</td>
+<td nowrap>(252)531-4774</td>
+<td nowrap>(252)531-4774</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>12/27/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9827</td>
+<td nowrap>18903</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1949.98</td>
+<td nowrap>$-340</td>
+<td nowrap>$0</td>
+<td nowrap>$108.67</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1718.65</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1718.65</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,135.17</td>
+<td nowrap>$0.00</td>
+<td nowrap>$474.81</td>
+<td nowrap>0.295</td>
+<td nowrap>12/27/2025</td>
+<td nowrap>LEWIS, SAVANNAH</td>
+<td nowrap>878 hwy 70 otway</td>
+<td nowrap>beaufort</td>
+<td nowrap>NC</td>
+<td nowrap>28516</td>
+<td nowrap></td>
+<td nowrap>(252)342-2993</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>12/27/2025</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>SANNER, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9830</td>
+<td nowrap>18908</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$999.99</td>
+<td nowrap>$-250.59</td>
+<td nowrap>$0</td>
+<td nowrap>$50.58</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$799.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$799.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$484.05</td>
+<td nowrap>$0.00</td>
+<td nowrap>$265.35</td>
+<td nowrap>0.354</td>
+<td nowrap>12/27/2025</td>
+<td nowrap>MAGYAR, JULIANA</td>
+<td nowrap>3310 MIDVAILE DRIVE Apt. # 911</td>
+<td nowrap>WILMINGTON</td>
+<td nowrap>NC</td>
+<td nowrap>28412</td>
+<td nowrap></td>
+<td nowrap>(252)259-6946</td>
+<td nowrap>(252)259-4170</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>12/27/2025</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>Open Layaway</td>
+<td nowrap>9837</td>
+<td nowrap>18919</td>
+<td nowrap>Open, Deliveried(1/1)</td>
+<td nowrap>$539.99</td>
+<td nowrap>$-304</td>
+<td nowrap>$0</td>
+<td nowrap>$15.93</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$251.92</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1105.9</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>($853.98)</td>
+<td nowrap>$140.69</td>
+<td nowrap>$0.00</td>
+<td nowrap>$95.30</td>
+<td nowrap>0.404</td>
+<td nowrap>12/27/2025</td>
+<td nowrap>ACREE, ANDREW</td>
+<td nowrap>346 station house rd</td>
+<td nowrap>New Bern </td>
+<td nowrap>NC</td>
+<td nowrap>28562</td>
+<td nowrap></td>
+<td nowrap>(661)886-9635</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/27/2025</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>SANNER, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9838</td>
+<td nowrap>18920</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$1679.97</td>
+<td nowrap>$-360.22</td>
+<td nowrap>$164.99</td>
+<td nowrap>$100.22</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1584.96</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1584.96</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$783.44</td>
+<td nowrap>$0.00</td>
+<td nowrap>$701.30</td>
+<td nowrap>0.472</td>
+<td nowrap>12/27/2025</td>
+<td nowrap>STOLL, SARAH</td>
+<td nowrap>507 SCOT DRIVE</td>
+<td nowrap>NEWPORT</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(252)241-7553</td>
+<td nowrap>(252)622-1846</td>
+</tr>
+<tr>
+<td nowrap>1/14/2026</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>1/14/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9848</td>
+<td nowrap>18941</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$2249.97</td>
+<td nowrap>$-532.13</td>
+<td nowrap>$169.99</td>
+<td nowrap>$132.15</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2019.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2019.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,048.75</td>
+<td nowrap>$0.00</td>
+<td nowrap>$839.08</td>
+<td nowrap>0.444</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>YUHAS, NICOLAS</td>
+<td nowrap>710 ASHLEY MEADOW LANE</td>
+<td nowrap>JACKSONVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28546</td>
+<td nowrap>NYUHAS1@GMAIL.COM</td>
+<td nowrap>(440)296-2373</td>
+<td nowrap>(440)296-2373</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>STANLEY, LORRI</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9849</td>
+<td nowrap>18945</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$349.99</td>
+<td nowrap>$-70</td>
+<td nowrap>$0</td>
+<td nowrap>$19.6</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$299.59</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$299.59</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$171.50</td>
+<td nowrap>$0.00</td>
+<td nowrap>$108.49</td>
+<td nowrap>0.387</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>GRIFFIN, GREG AND DEBORAH</td>
+<td nowrap>960 HUNTER GRACE DR</td>
+<td nowrap>Winterville</td>
+<td nowrap>NC</td>
+<td nowrap>28590</td>
+<td nowrap></td>
+<td nowrap>(252)714-6596</td>
+<td nowrap>(252)327-3262</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>SANNER, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9852</td>
+<td nowrap>18956</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1699.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$114.75</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1814.74</td>
+<td nowrap>$1614.74</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1814.74</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,059.63</td>
+<td nowrap>$0.00</td>
+<td nowrap>$640.36</td>
+<td nowrap>0.377</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>MUSGRAVE, SHANE</td>
+<td nowrap>1128 CORAL REEF DR</td>
+<td nowrap>NEW BERN</td>
+<td nowrap>NC</td>
+<td nowrap>28560</td>
+<td nowrap>TJMIC_2000@YAHOO.COM</td>
+<td nowrap>(717)654-2029</td>
+<td nowrap>(717)818-6526</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BURGOS, JENNIFER and HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9853</td>
+<td nowrap>18959</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$599.98</td>
+<td nowrap>$-120</td>
+<td nowrap>$0</td>
+<td nowrap>$33.6</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$513.58</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$513.58</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$265.83</td>
+<td nowrap>$0.00</td>
+<td nowrap>$214.15</td>
+<td nowrap>0.446</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>LABUS, RICH AND SHIRLEY</td>
+<td nowrap>304 MARY LEE</td>
+<td nowrap>Winterville</td>
+<td nowrap>NC</td>
+<td nowrap>28590</td>
+<td nowrap></td>
+<td nowrap>(252)689-5924</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>STANLEY, LORRI</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9854</td>
+<td nowrap>18960</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$359.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$25.2</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$385.19</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$385.19</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$199.70</td>
+<td nowrap>$0.00</td>
+<td nowrap>$160.29</td>
+<td nowrap>0.445</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>ODEN, NANEVEA</td>
+<td nowrap>3132 Ladybug ln</td>
+<td nowrap>Greenville</td>
+<td nowrap>NC</td>
+<td nowrap>27834</td>
+<td nowrap>ncoden82@gmail.com</td>
+<td nowrap>(252)347-4310</td>
+<td nowrap>(252)347-4310</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9856</td>
+<td nowrap>18962</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$459.99</td>
+<td nowrap>$-85.99</td>
+<td nowrap>$0</td>
+<td nowrap>$25.25</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$399.25</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$399.25</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$168.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$206.00</td>
+<td nowrap>0.551</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>GUYANT, BRENDA</td>
+<td nowrap>103 GEMINI DR</td>
+<td nowrap>CAPE CARTERET</td>
+<td nowrap>NC</td>
+<td nowrap>28584</td>
+<td nowrap></td>
+<td nowrap>(252)354-9245</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9857</td>
+<td nowrap>18963</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$3399.99</td>
+<td nowrap>$-448.17</td>
+<td nowrap>$164.99</td>
+<td nowrap>$218.18</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3334.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3334.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,741.40</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,375.41</td>
+<td nowrap>0.441</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>GIBSON, AMBER</td>
+<td nowrap>2410 COMET DR</td>
+<td nowrap>NEW BERN</td>
+<td nowrap>NC</td>
+<td nowrap>28562</td>
+<td nowrap></td>
+<td nowrap>(231)670-6083</td>
+<td nowrap>(231)670-6083</td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9861</td>
+<td nowrap>18974</td>
+<td nowrap>Paid Off, Deliveried(9/9)</td>
+<td nowrap>$2179.91</td>
+<td nowrap>$-435.98</td>
+<td nowrap>$169.99</td>
+<td nowrap>$133.97</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2047.89</td>
+<td nowrap>$2047.89</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2047.89</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,056.03</td>
+<td nowrap>$0.00</td>
+<td nowrap>$857.89</td>
+<td nowrap>0.448</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>FELLER , THOMAS </td>
+<td nowrap>1802 OLD MILL CT </td>
+<td nowrap>GREENVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap></td>
+<td nowrap>(252)414-2510</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>12/29/2025</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9862</td>
+<td nowrap>18975</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$6409.97</td>
+<td nowrap>$-970</td>
+<td nowrap>$284.99</td>
+<td nowrap>$386.43</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$6111.39</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$6111.39</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,994.17</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,730.79</td>
+<td nowrap>0.477</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>HARPER, FRANK</td>
+<td nowrap>321 wild wood Apt. # 00</td>
+<td nowrap>morehead</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(252)241-7340</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9863</td>
+<td nowrap>18982</td>
+<td nowrap>Paid Off, Deliveried(7/7)</td>
+<td nowrap>$4549.93</td>
+<td nowrap>$-909.99</td>
+<td nowrap>$249.99</td>
+<td nowrap>$262.57</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$4152.5</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$4152.5</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,140.14</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,749.79</td>
+<td nowrap>0.45</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>COLMORGAN, CLAUDIA</td>
+<td nowrap>1002 boneito bend</td>
+<td nowrap>New Bern</td>
+<td nowrap>NC</td>
+<td nowrap>28562</td>
+<td nowrap></td>
+<td nowrap>(732)740-9755</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>SUMRELL, TRACEY</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9864</td>
+<td nowrap>18988</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$999.99</td>
+<td nowrap>$-76.19</td>
+<td nowrap>$204.99</td>
+<td nowrap>$76.19</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1204.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1204.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$618.74</td>
+<td nowrap>$0.00</td>
+<td nowrap>$510.05</td>
+<td nowrap>0.452</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>FRANLIN, JAMES</td>
+<td nowrap>1380 SALTER PATH RD</td>
+<td nowrap>SALTER PATH</td>
+<td nowrap>NC</td>
+<td nowrap>28512</td>
+<td nowrap></td>
+<td nowrap>(252)342-3634</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/13/2026</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9865</td>
+<td nowrap>18990</td>
+<td nowrap>Paid Off, Deliveried(8/8)</td>
+<td nowrap>$2559.92</td>
+<td nowrap>$-645.9</td>
+<td nowrap>$0</td>
+<td nowrap>$133.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2048</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2048</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,127.04</td>
+<td nowrap>$0.00</td>
+<td nowrap>$786.98</td>
+<td nowrap>0.411</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>HOWARD, GARY</td>
+<td nowrap>412 WHISTLING HERON WAY</td>
+<td nowrap>SWANSBORO</td>
+<td nowrap>NC</td>
+<td nowrap>28584</td>
+<td nowrap>GPHOWARD6@GMAIL.COM</td>
+<td nowrap>(603)953-8818</td>
+<td nowrap>(603)953-8822</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9867</td>
+<td nowrap>18997</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$2699.97</td>
+<td nowrap>$-363.52</td>
+<td nowrap>$0</td>
+<td nowrap>$163.55</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2500</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2500</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,255.63</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,080.82</td>
+<td nowrap>0.463</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>BAKER, DIANE</td>
+<td nowrap>3495 TOBBA COURT</td>
+<td nowrap>AYDEN</td>
+<td nowrap>NC</td>
+<td nowrap>28513</td>
+<td nowrap></td>
+<td nowrap>(252)916-9609</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9868</td>
+<td nowrap>18998</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1179.98</td>
+<td nowrap>$-119.99</td>
+<td nowrap>$0</td>
+<td nowrap>$71.55</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1131.54</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1131.54</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$563.33</td>
+<td nowrap>$0.00</td>
+<td nowrap>$496.66</td>
+<td nowrap>0.469</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>BOOTH, WAYNE</td>
+<td nowrap>108 CLUB HOUSE DRIVE</td>
+<td nowrap>CAPE CARTERET</td>
+<td nowrap>NC</td>
+<td nowrap>28584</td>
+<td nowrap></td>
+<td nowrap>(252)503-2197</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9869</td>
+<td nowrap>19000</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$749.99</td>
+<td nowrap>$-60.18</td>
+<td nowrap>$169.99</td>
+<td nowrap>$60.19</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$919.99</td>
+<td nowrap>$919.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$919.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$443.26</td>
+<td nowrap>$0.00</td>
+<td nowrap>$416.54</td>
+<td nowrap>0.484</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>BURCHAM, ANGIE</td>
+<td nowrap>332 CAROLINA FOREST BLVD Apt. # 2F</td>
+<td nowrap>JACKSONVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28546</td>
+<td nowrap>ABURCHAM08@GMAIL.COM</td>
+<td nowrap>(217)972-4769</td>
+<td nowrap>(217)972-4769</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9873</td>
+<td nowrap>19009</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1039.99</td>
+<td nowrap>$-207.99</td>
+<td nowrap>$0</td>
+<td nowrap>$56.16</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$888.16</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$888.16</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$432.60</td>
+<td nowrap>$0.00</td>
+<td nowrap>$399.40</td>
+<td nowrap>0.48</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>TAYLOR, ROBERT</td>
+<td nowrap>406 CLEARWATER DR</td>
+<td nowrap>NEWPORT</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(336)266-1418</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>Finance</td>
+<td nowrap>9874</td>
+<td nowrap>19010</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$1487.99</td>
+<td nowrap>$-0.04</td>
+<td nowrap>$169.99</td>
+<td nowrap>$116.06</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1774</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1729.72</td>
+<td nowrap>$1200</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,068.32</td>
+<td nowrap>$44.28</td>
+<td nowrap>$589.62</td>
+<td nowrap>0.356</td>
+<td nowrap>12/30/2025</td>
+<td nowrap>HOWELL JONES, ZAKEMA</td>
+<td nowrap>4033 NORTH EAST  COLLEGE ST</td>
+<td nowrap>AYDEN</td>
+<td nowrap>NC</td>
+<td nowrap>28513</td>
+<td nowrap></td>
+<td nowrap>(252)902-8225</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/14/2026</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>Finance</td>
+<td nowrap>9876</td>
+<td nowrap>19015</td>
+<td nowrap>Open, Deliveried(1/1)</td>
+<td nowrap>$799.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$56</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$855.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0</td>
+<td nowrap>$855.99</td>
+<td nowrap>$855.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$364.83</td>
+<td nowrap>$0.00</td>
+<td nowrap>$435.16</td>
+<td nowrap>0.544</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>KING, TARA</td>
+<td nowrap>418 FARMINGWOOD RD </td>
+<td nowrap>GREENVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap></td>
+<td nowrap>(252)531-6226</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9877</td>
+<td nowrap>19016</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$599.98</td>
+<td nowrap>$-95.32</td>
+<td nowrap>$0</td>
+<td nowrap>$35.33</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$539.99</td>
+<td nowrap>$499.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$539.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$249.16</td>
+<td nowrap>$0.00</td>
+<td nowrap>$255.50</td>
+<td nowrap>0.506</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>BURGESS, SON</td>
+<td nowrap>189 BEN WILLIAMS RD</td>
+<td nowrap>Jacksonville</td>
+<td nowrap>NC</td>
+<td nowrap>28540</td>
+<td nowrap>SUN.BURGESS@GMAIL.COM</td>
+<td nowrap>(910)265-3641</td>
+<td nowrap>(910)265-3641</td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>Finance</td>
+<td nowrap>9881</td>
+<td nowrap>19022</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$2719.97</td>
+<td nowrap>$-505.96</td>
+<td nowrap>$164.99</td>
+<td nowrap>$160.58</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2539.58</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2508.09</td>
+<td nowrap>$2539.58</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,470.73</td>
+<td nowrap>$31.49</td>
+<td nowrap>$908.27</td>
+<td nowrap>0.382</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>PITULA, LAWRENCE</td>
+<td nowrap>5124 CHALK STREET</td>
+<td nowrap>Morehead City</td>
+<td nowrap>NC</td>
+<td nowrap>28557</td>
+<td nowrap></td>
+<td nowrap>(252)247-5885</td>
+<td nowrap>(252)247-5885</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>SANNER, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9882</td>
+<td nowrap>19024</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1449.98</td>
+<td nowrap>$-254.19</td>
+<td nowrap>$169.99</td>
+<td nowrap>$92.19</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1457.97</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1457.97</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$789.38</td>
+<td nowrap>$0.00</td>
+<td nowrap>$576.40</td>
+<td nowrap>0.422</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>BARRETT, BRENNAN</td>
+<td nowrap>133 FORSYTHE RD</td>
+<td nowrap>Havelock</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(217)371-3334</td>
+<td nowrap>(217)371-9912</td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>Finance</td>
+<td nowrap>9883</td>
+<td nowrap>19025</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1069.98</td>
+<td nowrap>$-179.99</td>
+<td nowrap>$0</td>
+<td nowrap>$60.07</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$950.06</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$938.28</td>
+<td nowrap>$950.06</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$613.10</td>
+<td nowrap>$11.78</td>
+<td nowrap>$276.89</td>
+<td nowrap>0.311</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>SMITH, LUKE</td>
+<td nowrap>902 COYOTE TRAIL</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap>lukeman161@gmail.com</td>
+<td nowrap>(252)444-6960</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9884</td>
+<td nowrap>19026</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$699.99</td>
+<td nowrap>$-140.99</td>
+<td nowrap>$0</td>
+<td nowrap>$39.13</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$598.13</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$598.13</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$330.75</td>
+<td nowrap>$0.00</td>
+<td nowrap>$228.25</td>
+<td nowrap>0.408</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>STOCKS, JERRY</td>
+<td nowrap>5603 Sand Pitt Lane</td>
+<td nowrap>WASHINGTON</td>
+<td nowrap>NC</td>
+<td nowrap>27889</td>
+<td nowrap></td>
+<td nowrap>(252)341-6959</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>Finance</td>
+<td nowrap>9885</td>
+<td nowrap>19027</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$6899.97</td>
+<td nowrap>$-1800</td>
+<td nowrap>$249.99</td>
+<td nowrap>$361.12</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$5711.08</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$5640.26</td>
+<td nowrap>$5711.08</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3,243.62</td>
+<td nowrap>$70.82</td>
+<td nowrap>$2,106.34</td>
+<td nowrap>0.394</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>HARVEY, CLAUDE</td>
+<td nowrap>2317 HWY 101</td>
+<td nowrap>BEAUFORT</td>
+<td nowrap>NC</td>
+<td nowrap>28516</td>
+<td nowrap>auto_gal2001@yahoo.com</td>
+<td nowrap>(252)732-5675</td>
+<td nowrap>(252)342-1374</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9887</td>
+<td nowrap>19031</td>
+<td nowrap>Paid Off, Deliveried(7/7)</td>
+<td nowrap>$3974.96</td>
+<td nowrap>$-599.99</td>
+<td nowrap>$249.99</td>
+<td nowrap>$244.68</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3869.64</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3869.64</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,972.22</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,652.74</td>
+<td nowrap>0.456</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>MAGANA, KEVIN</td>
+<td nowrap>144 GOODING DRIVE</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(909)236-3231</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>STANLEY, LORRI</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9888</td>
+<td nowrap>19032</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$599.99</td>
+<td nowrap>$-120</td>
+<td nowrap>$129.99</td>
+<td nowrap>$42.7</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$652.68</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$652.68</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$287.35</td>
+<td nowrap>$0.00</td>
+<td nowrap>$322.63</td>
+<td nowrap>0.529</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>DEFAZIO, JENNIFER</td>
+<td nowrap>1748 Blue Banks Farm Rd</td>
+<td nowrap>Greenville</td>
+<td nowrap>NC</td>
+<td nowrap>27834</td>
+<td nowrap>jenniferdefazio@icloud.com</td>
+<td nowrap>(304)266-9049</td>
+<td nowrap>(304)266-9049</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9889</td>
+<td nowrap>19034</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$919.99</td>
+<td nowrap>$-240.64</td>
+<td nowrap>$129.99</td>
+<td nowrap>$56.65</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$865.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$865.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$491.22</td>
+<td nowrap>$0.00</td>
+<td nowrap>$318.12</td>
+<td nowrap>0.393</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>DEVITO, MICHAEL</td>
+<td nowrap>202 PRISM COURT</td>
+<td nowrap>RICHLANDS</td>
+<td nowrap>NC</td>
+<td nowrap>28574</td>
+<td nowrap>MICHAEL.DEVITO@PROTONMAIL.COM</td>
+<td nowrap>(540)455-0697</td>
+<td nowrap>(360)994-0099</td>
+</tr>
+<tr>
+<td nowrap>1/2/2026</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9892</td>
+<td nowrap>19038</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$999.99</td>
+<td nowrap>$-380</td>
+<td nowrap>$0</td>
+<td nowrap>$43.4</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$663.39</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$663.39</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$413.11</td>
+<td nowrap>$0.00</td>
+<td nowrap>$206.88</td>
+<td nowrap>0.334</td>
+<td nowrap>12/31/2025</td>
+<td nowrap>HURST, ZACHARY </td>
+<td nowrap>5592 florida ave</td>
+<td nowrap>camp lejeune</td>
+<td nowrap>NC</td>
+<td nowrap>28547</td>
+<td nowrap>zacharya.hurst@outlook.com</td>
+<td nowrap>(949)338-3843</td>
+<td nowrap>(949)338-3843</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>Sales, Store and SHANKLE, CHRISTOPHER</td>
+<td nowrap>WH - BW5-Unboxed (Liquidators)</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9894</td>
+<td nowrap>19042</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$699.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$47.25</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$747.24</td>
+<td nowrap>$747.24</td>
+<td nowrap>$0.00</td>
+<td nowrap>$747.24</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$321.91</td>
+<td nowrap>$0.00</td>
+<td nowrap>$378.08</td>
+<td nowrap>0.54</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>SADLER, DEBRA</td>
+<td nowrap>506 COVE DR</td>
+<td nowrap>NEWPORT</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(252)732-4223</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9896</td>
+<td nowrap>19046</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1169.98</td>
+<td nowrap>$-87.66</td>
+<td nowrap>$169.99</td>
+<td nowrap>$87.66</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1339.97</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1339.97</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$612.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$639.32</td>
+<td nowrap>0.511</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>GEIGER, SARAH</td>
+<td nowrap>123 CYPRESS MANOR CT</td>
+<td nowrap>JACKSONVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28540</td>
+<td nowrap>LUBIEN.SARAH@GMAIL.COM</td>
+<td nowrap>(586)980-3308</td>
+<td nowrap>(586)980-3308</td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9897</td>
+<td nowrap>19048</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$659.98</td>
+<td nowrap>$-83.26</td>
+<td nowrap>$0</td>
+<td nowrap>$40.37</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$617.09</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$617.09</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$269.44</td>
+<td nowrap>$0.00</td>
+<td nowrap>$307.28</td>
+<td nowrap>0.533</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>DINGWALL, CHRIS</td>
+<td nowrap>109 NAUTICAL WAVE RD</td>
+<td nowrap>HUBERT</td>
+<td nowrap>NC</td>
+<td nowrap>28539</td>
+<td nowrap></td>
+<td nowrap>(931)644-5557</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/1/2026</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9899</td>
+<td nowrap>19053</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$899.99</td>
+<td nowrap>$-180</td>
+<td nowrap>$0</td>
+<td nowrap>$48.6</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$768.59</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$768.59</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$392.84</td>
+<td nowrap>$0.00</td>
+<td nowrap>$327.15</td>
+<td nowrap>0.454</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>WHITE, MARTI</td>
+<td nowrap>1878 NINE MILE RD</td>
+<td nowrap>Newport</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(252)223-3238</td>
+<td nowrap>(252)223-3238</td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>Finance</td>
+<td nowrap>9903</td>
+<td nowrap>19058</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1499.99</td>
+<td nowrap>$-300</td>
+<td nowrap>$204.99</td>
+<td nowrap>$94.84</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1499.82</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1459.24</td>
+<td nowrap>$1099.82</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,002.69</td>
+<td nowrap>$40.58</td>
+<td nowrap>$402.29</td>
+<td nowrap>0.286</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>LAWRENCE, DORA</td>
+<td nowrap>2308 FISHER ST</td>
+<td nowrap>MOREHEAD CITY</td>
+<td nowrap>NC</td>
+<td nowrap>28557</td>
+<td nowrap></td>
+<td nowrap>(252)342-3673</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9906</td>
+<td nowrap>19062</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$2119.99</td>
+<td nowrap>$-424</td>
+<td nowrap>$169.99</td>
+<td nowrap>$130.62</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1996.6</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1996.6</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,017.67</td>
+<td nowrap>$0.00</td>
+<td nowrap>$848.31</td>
+<td nowrap>0.455</td>
+<td nowrap>1/1/2026</td>
+<td nowrap>WOOLARD, MISSY</td>
+<td nowrap>279 Alger lane</td>
+<td nowrap>Washinton</td>
+<td nowrap>NC</td>
+<td nowrap>27889</td>
+<td nowrap></td>
+<td nowrap>(252)945-0091</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9907</td>
+<td nowrap>19064</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$939.99</td>
+<td nowrap>$-188</td>
+<td nowrap>$0</td>
+<td nowrap>$52.64</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$804.63</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$804.63</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$414.52</td>
+<td nowrap>$0.00</td>
+<td nowrap>$337.47</td>
+<td nowrap>0.449</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>ROBERSON, BRIAN AND  LINDSAY</td>
+<td nowrap>993 Appaloosa Trail </td>
+<td nowrap>GRIMESLAND</td>
+<td nowrap>NC</td>
+<td nowrap>27837</td>
+<td nowrap></td>
+<td nowrap>(252)432-5514</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9908</td>
+<td nowrap>19066</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1099.99</td>
+<td nowrap>$-219.99</td>
+<td nowrap>$0</td>
+<td nowrap>$59.4</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$939.4</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$939.4</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$490.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$390.00</td>
+<td nowrap>0.443</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>CERRIGAN, CASEY</td>
+<td nowrap>6102 GARDENIA COURT</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(760)994-3901</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9909</td>
+<td nowrap>19069</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1379.98</td>
+<td nowrap>$-137.99</td>
+<td nowrap>$169.99</td>
+<td nowrap>$95.31</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1507.29</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1507.29</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$886.90</td>
+<td nowrap>$0.00</td>
+<td nowrap>$525.08</td>
+<td nowrap>0.372</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>GODETTE, IESHA</td>
+<td nowrap>326 MCCOTTER BLVD</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)617-6624</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9910</td>
+<td nowrap>19072</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$499.99</td>
+<td nowrap>$-69.23</td>
+<td nowrap>$129.99</td>
+<td nowrap>$39.25</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$600</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$600</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$301.07</td>
+<td nowrap>$0.00</td>
+<td nowrap>$259.68</td>
+<td nowrap>0.463</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>GOODING, MARGIE</td>
+<td nowrap>2225 BROOK FIELDS DR</td>
+<td nowrap>Winterville</td>
+<td nowrap>NC</td>
+<td nowrap>28590</td>
+<td nowrap></td>
+<td nowrap>(252)521-2525</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9912</td>
+<td nowrap>19075</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1319</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$92.33</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1411.33</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1411.33</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$863.63</td>
+<td nowrap>$0.00</td>
+<td nowrap>$455.37</td>
+<td nowrap>0.345</td>
+<td nowrap>1/2/2026</td>
+<td nowrap>BARNETT, TONYA  PAUL</td>
+<td nowrap>191 Greentown rd</td>
+<td nowrap>Trenton</td>
+<td nowrap>NC</td>
+<td nowrap>28585</td>
+<td nowrap></td>
+<td nowrap>(252)560-7108</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9914</td>
+<td nowrap>19079</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$4749.96</td>
+<td nowrap>$-507.91</td>
+<td nowrap>$0</td>
+<td nowrap>$296.94</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$4538.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$4538.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,334.64</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,907.41</td>
+<td nowrap>0.45</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>SERCOMBE, KYLE</td>
+<td nowrap>311 FORBES LANE</td>
+<td nowrap>JACKSONVILLE </td>
+<td nowrap>NC</td>
+<td nowrap>28540</td>
+<td nowrap></td>
+<td nowrap>(321)917-9671</td>
+<td nowrap>(321)917-9671</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Finance</td>
+<td nowrap>9916</td>
+<td nowrap>19083</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$6399.99</td>
+<td nowrap>$-707.57</td>
+<td nowrap>$129.99</td>
+<td nowrap>$407.57</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$6229.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$5358.41</td>
+<td nowrap>$6229.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$4,043.43</td>
+<td nowrap>$871.57</td>
+<td nowrap>$1,778.98</td>
+<td nowrap>0.306</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>MILLER, DANIEL </td>
+<td nowrap>635 PROSPECT WAY</td>
+<td nowrap>SNEADS FERRY</td>
+<td nowrap>NC</td>
+<td nowrap>28460</td>
+<td nowrap></td>
+<td nowrap>(443)859-2864</td>
+<td nowrap>(443)859-2864</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9917</td>
+<td nowrap>19084</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$1999.96</td>
+<td nowrap>$-185.99</td>
+<td nowrap>$204.99</td>
+<td nowrap>$136.28</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2155.24</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2155.24</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$965.15</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,053.81</td>
+<td nowrap>0.522</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>MARTIN, GILLETTE</td>
+<td nowrap>1005 TEMPLES POINT ROAD</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)447-8702</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9918</td>
+<td nowrap>19085</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1419.99</td>
+<td nowrap>$-241.99</td>
+<td nowrap>$164.99</td>
+<td nowrap>$90.65</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1433.64</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1433.64</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$804.30</td>
+<td nowrap>$0.00</td>
+<td nowrap>$538.69</td>
+<td nowrap>0.401</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>HUMPHERY, DAVID</td>
+<td nowrap>148 CEDAR SWAMP ROAD</td>
+<td nowrap>NEWPORT</td>
+<td nowrap>NC</td>
+<td nowrap>28557</td>
+<td nowrap></td>
+<td nowrap>(252)269-7855</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9919</td>
+<td nowrap>19086</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1559.98</td>
+<td nowrap>$-0.09</td>
+<td nowrap>$0</td>
+<td nowrap>$109.19</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1669.08</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1669.08</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$845.73</td>
+<td nowrap>$0.00</td>
+<td nowrap>$714.16</td>
+<td nowrap>0.458</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>LETCHWORTH, KRISTEN</td>
+<td nowrap>3003 OAKWOOD DR </td>
+<td nowrap>WINTERVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap></td>
+<td nowrap>(252)531-2585</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>STANLEY, LORRI</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9922</td>
+<td nowrap>19090</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$29.99</td>
+<td nowrap>$-6</td>
+<td nowrap>$0</td>
+<td nowrap>$1.68</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$25.67</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$25.67</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$10.32</td>
+<td nowrap>$0.00</td>
+<td nowrap>$13.67</td>
+<td nowrap>0.57</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>BARRETT, TYRA</td>
+<td nowrap>3740 Langston Blvd</td>
+<td nowrap>Winterville</td>
+<td nowrap>NC</td>
+<td nowrap>28590</td>
+<td nowrap>tyra.manns@yahoo.com</td>
+<td nowrap>(203)650-7319</td>
+<td nowrap>(203)650-7319</td>
+</tr>
+<tr>
+<td nowrap>1/5/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9923</td>
+<td nowrap>19091</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$399.99</td>
+<td nowrap>$-26.16</td>
+<td nowrap>$0</td>
+<td nowrap>$26.17</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$400</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$400</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$184.20</td>
+<td nowrap>$0.00</td>
+<td nowrap>$189.63</td>
+<td nowrap>0.507</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>SPEARS, ELLA</td>
+<td nowrap>1171 GOULD RD</td>
+<td nowrap>JACKSONVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28540</td>
+<td nowrap></td>
+<td nowrap>(910)455-9330</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9925</td>
+<td nowrap>19096</td>
+<td nowrap>Paid Off, Deliveried(9/9)</td>
+<td nowrap>$1479.91</td>
+<td nowrap>$-399.94</td>
+<td nowrap>$234.99</td>
+<td nowrap>$88.76</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1403.72</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1403.72</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$742.85</td>
+<td nowrap>$0.00</td>
+<td nowrap>$572.11</td>
+<td nowrap>0.435</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>PAGE, STEPHANIE</td>
+<td nowrap>204 s 18th  st</td>
+<td nowrap>Morehead</td>
+<td nowrap>NC</td>
+<td nowrap>28557</td>
+<td nowrap></td>
+<td nowrap>(917)407-7966</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>Finance</td>
+<td nowrap>9926</td>
+<td nowrap>19098</td>
+<td nowrap>Paid Off, Deliveried(10/10)</td>
+<td nowrap>$5519.9</td>
+<td nowrap>$-1039.98</td>
+<td nowrap>$0</td>
+<td nowrap>$302.39</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$4782.31</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$4605.84</td>
+<td nowrap>$4782.31</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,867.99</td>
+<td nowrap>$176.47</td>
+<td nowrap>$1,611.93</td>
+<td nowrap>0.36</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>ANDERSON, TREVOR</td>
+<td nowrap>201 TIMOTHY COURT</td>
+<td nowrap>NEW BERN</td>
+<td nowrap>NC</td>
+<td nowrap>28562</td>
+<td nowrap></td>
+<td nowrap>(304)923-9916</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9928</td>
+<td nowrap>19100</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$599.99</td>
+<td nowrap>$-120</td>
+<td nowrap>$169.99</td>
+<td nowrap>$43.87</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$693.85</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$693.85</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$386.04</td>
+<td nowrap>$0.00</td>
+<td nowrap>$263.94</td>
+<td nowrap>0.406</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>GARLAND, MINDY</td>
+<td nowrap>133 wild wood rd Apt. # 538</td>
+<td nowrap>Newport</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(252)646-3693</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9929</td>
+<td nowrap>19101</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$499.99</td>
+<td nowrap>$-172.89</td>
+<td nowrap>$0</td>
+<td nowrap>$22.9</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$350</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$350</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$216.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$110.11</td>
+<td nowrap>0.337</td>
+<td nowrap>1/3/2026</td>
+<td nowrap>COLEMAN, LIAM</td>
+<td nowrap>5245 ALABAMA ST</td>
+<td nowrap>CAMP LEJEUNE</td>
+<td nowrap>NC</td>
+<td nowrap>28547</td>
+<td nowrap></td>
+<td nowrap>(559)726-0072</td>
+<td nowrap>(559)726-0072</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9930</td>
+<td nowrap>19103</td>
+<td nowrap>Paid Off, Deliveried(9/9)</td>
+<td nowrap>$4729.91</td>
+<td nowrap>$-580.91</td>
+<td nowrap>$249.99</td>
+<td nowrap>$307.93</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$4706.92</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$4706.92</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,098.12</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,300.87</td>
+<td nowrap>0.523</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>PARKHIMTCHIK, ALEXANDER</td>
+<td nowrap>71 CAMDEN TR</td>
+<td nowrap>HAMPSTEAD</td>
+<td nowrap>NC</td>
+<td nowrap>28443</td>
+<td nowrap></td>
+<td nowrap>(928)287-8431</td>
+<td nowrap>(928)287-8431</td>
+</tr>
+<tr>
+<td nowrap>1/4/2026</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9931</td>
+<td nowrap>19104</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1199.98</td>
+<td nowrap>$-263.21</td>
+<td nowrap>$0</td>
+<td nowrap>$63.23</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1000</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1000</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,001.50</td>
+<td nowrap>$0.00</td>
+<td nowrap>($64.73)</td>
+<td nowrap>-0.069</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>HOWARD, NATALIE</td>
+<td nowrap>2204 NORTH NO HWY 58</td>
+<td nowrap>NASHVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>27856</td>
+<td nowrap></td>
+<td nowrap>(252)382-3847</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9932</td>
+<td nowrap>19105</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$1349.97</td>
+<td nowrap>$-120</td>
+<td nowrap>$204.99</td>
+<td nowrap>$96.86</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1531.82</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1531.82</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$817.08</td>
+<td nowrap>$0.00</td>
+<td nowrap>$617.88</td>
+<td nowrap>0.431</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>MARCENO, JOSEPH</td>
+<td nowrap>6403 ocean drive Apt. # E</td>
+<td nowrap>emerald isle</td>
+<td nowrap>NC</td>
+<td nowrap>28594</td>
+<td nowrap></td>
+<td nowrap>(919)345-0251</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9933</td>
+<td nowrap>19106</td>
+<td nowrap>Paid Off, Deliveried(6/6)</td>
+<td nowrap>$3729.94</td>
+<td nowrap>$-494.99</td>
+<td nowrap>$199.99</td>
+<td nowrap>$231.86</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3666.8</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3666.8</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,900.94</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,534.00</td>
+<td nowrap>0.447</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>MALAGON, LETICIA</td>
+<td nowrap>235 LEMONWOOD DRIVE</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)444-4727</td>
+<td nowrap>(252)675-3680</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9934</td>
+<td nowrap>19109</td>
+<td nowrap>Paid Off, Deliveried(5/5)</td>
+<td nowrap>$3299.95</td>
+<td nowrap>$-499.99</td>
+<td nowrap>$199.99</td>
+<td nowrap>$202.5</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3202.45</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3202.45</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,797.59</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,202.36</td>
+<td nowrap>0.401</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>HERRERA, RYAN AND SAMATHA</td>
+<td nowrap>287 GATES ROAD</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap>RYAN.HERRERA33@YAHOO.COM</td>
+<td nowrap>(319)693-6355</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>SANNER, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9936</td>
+<td nowrap>19112</td>
+<td nowrap>Paid Off, Deliveried(7/7)</td>
+<td nowrap>$7999.93</td>
+<td nowrap>$-1458.43</td>
+<td nowrap>$249.99</td>
+<td nowrap>$458.43</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$7249.92</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$7249.92</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$4,069.52</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,721.97</td>
+<td nowrap>0.401</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>WARD, ALAN</td>
+<td nowrap>3119 BETTYE GRESHAM</td>
+<td nowrap>NEW BERN</td>
+<td nowrap>NC</td>
+<td nowrap>28562</td>
+<td nowrap></td>
+<td nowrap>(307)365-9917</td>
+<td nowrap>(307)630-9846</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9937</td>
+<td nowrap>19113</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1499.98</td>
+<td nowrap>$-140</td>
+<td nowrap>$169.99</td>
+<td nowrap>$103.28</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1633.25</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1633.25</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$834.16</td>
+<td nowrap>$0.00</td>
+<td nowrap>$695.81</td>
+<td nowrap>0.455</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>GOLITZ, MARK</td>
+<td nowrap>504 kysers cove lane</td>
+<td nowrap>Beaufort</td>
+<td nowrap>NC</td>
+<td nowrap>28516</td>
+<td nowrap>blu@blu-sail.com</td>
+<td nowrap>(252)723-3271</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Finance</td>
+<td nowrap>9939</td>
+<td nowrap>19117</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$2849.96</td>
+<td nowrap>$-518.69</td>
+<td nowrap>$249.99</td>
+<td nowrap>$180.69</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2761.95</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2463.94</td>
+<td nowrap>$2761.95</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,572.55</td>
+<td nowrap>$298.01</td>
+<td nowrap>$1,008.71</td>
+<td nowrap>0.391</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>MONCADA, DAISY</td>
+<td nowrap>1768 RIGGS RD</td>
+<td nowrap>MAYSVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28555</td>
+<td nowrap>DAISYBRIONESH@GMAIL.COM</td>
+<td nowrap>(915)216-9204</td>
+<td nowrap>(915)216-9204</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>1/4/2026</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9940</td>
+<td nowrap>19118</td>
+<td nowrap>Paid Off, Deliveried(5/5)</td>
+<td nowrap>$4149.94</td>
+<td nowrap>$-339.99</td>
+<td nowrap>$199.99</td>
+<td nowrap>$270.67</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$4280.61</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$4280.61</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,013.97</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,995.97</td>
+<td nowrap>0.498</td>
+<td nowrap>1/12/2026</td>
+<td nowrap>SIMMONS, GINNY</td>
+<td nowrap>408 SEVEN SEA DRIVE</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap>GINNY24@YAHOO.COM</td>
+<td nowrap>(252)665-2412</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9941</td>
+<td nowrap>19120</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$3189.98</td>
+<td nowrap>$-824.15</td>
+<td nowrap>$164.99</td>
+<td nowrap>$177.16</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2707.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2707.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,682.04</td>
+<td nowrap>$0.00</td>
+<td nowrap>$848.78</td>
+<td nowrap>0.335</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>HOWARD, BETH</td>
+<td nowrap>426 EMERALD CIRCLE</td>
+<td nowrap>EMERALD ISLE</td>
+<td nowrap>NC</td>
+<td nowrap>28594</td>
+<td nowrap>HOWARDB005@CHARTER.NET</td>
+<td nowrap>(808)428-4404</td>
+<td nowrap>(808)428-4403</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9943</td>
+<td nowrap>19133</td>
+<td nowrap>Paid Off, Deliveried(9/9)</td>
+<td nowrap>$2499.99</td>
+<td nowrap>$-371.03</td>
+<td nowrap>$199.99</td>
+<td nowrap>$163.03</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2491.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2491.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,233.19</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,095.76</td>
+<td nowrap>0.47</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>TUTHILL, JAMES</td>
+<td nowrap>226 NATALIE LANE</td>
+<td nowrap>HUBERT</td>
+<td nowrap>NC</td>
+<td nowrap>28539</td>
+<td nowrap>LEETUTHILL@GMAIL.COM</td>
+<td nowrap>(910)330-0468</td>
+<td nowrap>(910)330-0471</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9945</td>
+<td nowrap>19136</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$2049.97</td>
+<td nowrap>$-200</td>
+<td nowrap>$204.99</td>
+<td nowrap>$138.71</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2193.67</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2193.67</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,029.42</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,025.54</td>
+<td nowrap>0.499</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>PONDER, CHERYL </td>
+<td nowrap>247 Lemonwood dr</td>
+<td nowrap>havelock</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)503-1776</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9946</td>
+<td nowrap>19140</td>
+<td nowrap>Paid Off, Deliveried(8/8)</td>
+<td nowrap>$5379.92</td>
+<td nowrap>$-886.53</td>
+<td nowrap>$0</td>
+<td nowrap>$314.54</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$4807.93</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$4807.93</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,250.87</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,242.52</td>
+<td nowrap>0.499</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>HOLLOWAY, BILLY</td>
+<td nowrap>12916 CHAMPLAIN DRIVE</td>
+<td nowrap>MANASSAS</td>
+<td nowrap>VA</td>
+<td nowrap>22134</td>
+<td nowrap>BILLY.A.HOLLOWAY@GMAIL.COM</td>
+<td nowrap>(910)728-3445</td>
+<td nowrap>(910)728-3445</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9949</td>
+<td nowrap>19148</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$599.99</td>
+<td nowrap>$-119.99</td>
+<td nowrap>$0</td>
+<td nowrap>$32.4</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$512.4</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$512.4</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$263.38</td>
+<td nowrap>$0.00</td>
+<td nowrap>$216.62</td>
+<td nowrap>0.451</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>THOMPSON, BRIAN</td>
+<td nowrap>3107 BETTYE GRESHAM LANE</td>
+<td nowrap>NEW BERN</td>
+<td nowrap>NC</td>
+<td nowrap>28562</td>
+<td nowrap></td>
+<td nowrap>(302)500-2985</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9950</td>
+<td nowrap>19149</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$1019.97</td>
+<td nowrap>$-139.99</td>
+<td nowrap>$0</td>
+<td nowrap>$59.4</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$939.38</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$939.38</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$454.50</td>
+<td nowrap>$0.00</td>
+<td nowrap>$425.48</td>
+<td nowrap>0.484</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>NEUMAN, KEVIN</td>
+<td nowrap>145 JOHN COURT</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)646-7094</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9951</td>
+<td nowrap>19150</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$159.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$10.8</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$170.79</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$170.79</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$117.96</td>
+<td nowrap>$0.00</td>
+<td nowrap>$42.03</td>
+<td nowrap>0.263</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>HARRIS, GEORGIA</td>
+<td nowrap>209 MARIE COURT</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(706)523-0103</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>STANLEY, LORRI</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9952</td>
+<td nowrap>19151</td>
+<td nowrap>Paid Off, Deliveried(6/6)</td>
+<td nowrap>$1399.94</td>
+<td nowrap>$-279.99</td>
+<td nowrap>$169.99</td>
+<td nowrap>$90.3</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1380.24</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1380.24</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$718.35</td>
+<td nowrap>$0.00</td>
+<td nowrap>$571.59</td>
+<td nowrap>0.443</td>
+<td nowrap>1/5/2026</td>
+<td nowrap>JONES, KENNITH</td>
+<td nowrap>135 Berkshire Dr</td>
+<td nowrap>Winterville</td>
+<td nowrap>NC</td>
+<td nowrap>28590</td>
+<td nowrap>poppopngigi@gmail.com</td>
+<td nowrap>(252)916-5409</td>
+<td nowrap>(252)916-5409</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>STANLEY, LORRI</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9953</td>
+<td nowrap>19155</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$499.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$35</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$534.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$534.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$275.63</td>
+<td nowrap>$0.00</td>
+<td nowrap>$224.35</td>
+<td nowrap>0.449</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>LAWRENCE, LAREN</td>
+<td nowrap>1138 Galloway RD</td>
+<td nowrap>Grimesland</td>
+<td nowrap>NC</td>
+<td nowrap>27837</td>
+<td nowrap></td>
+<td nowrap>(252)678-2574</td>
+<td nowrap>(252)678-2574</td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>BISE, STEPHANIE and SANNER, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9955</td>
+<td nowrap>19158</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$799.99</td>
+<td nowrap>$-50.58</td>
+<td nowrap>$0</td>
+<td nowrap>$50.59</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$800</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$800</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$516.24</td>
+<td nowrap>$0.00</td>
+<td nowrap>$233.17</td>
+<td nowrap>0.311</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>ONEIL, DAVID</td>
+<td nowrap>PO BOX 214</td>
+<td nowrap>OCRACOKE</td>
+<td nowrap>NC</td>
+<td nowrap>27960</td>
+<td nowrap></td>
+<td nowrap>(252)921-0059</td>
+<td nowrap>(252)921-0059</td>
+</tr>
+<tr>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9957</td>
+<td nowrap>19162</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$499.99</td>
+<td nowrap>$-80</td>
+<td nowrap>$0</td>
+<td nowrap>$28.35</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$448.34</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$448.34</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$211.95</td>
+<td nowrap>$0.00</td>
+<td nowrap>$208.04</td>
+<td nowrap>0.495</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>BRYANT, JOHN</td>
+<td nowrap>350 FRAZIERTOWN ROAD</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)447-1636</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>BISE, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9958</td>
+<td nowrap>19164</td>
+<td nowrap>Paid Off, Deliveried(8/8)</td>
+<td nowrap>$1019.98</td>
+<td nowrap>$-75.24</td>
+<td nowrap>$169.99</td>
+<td nowrap>$75.24</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1189.97</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1189.97</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$719.68</td>
+<td nowrap>$0.00</td>
+<td nowrap>$395.05</td>
+<td nowrap>0.354</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>MARTINEZ, JOSHUA</td>
+<td nowrap>308 panther tr</td>
+<td nowrap>Havelock</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap>swaysway11102033@gmail.com</td>
+<td nowrap>(979)267-1757</td>
+<td nowrap>(979)267-1757</td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9960</td>
+<td nowrap>19167</td>
+<td nowrap>Paid Off, Deliveried(8/8)</td>
+<td nowrap>$4919.92</td>
+<td nowrap>$-935.96</td>
+<td nowrap>$249.99</td>
+<td nowrap>$296.38</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$4530.33</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$4530.33</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,022.25</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,211.70</td>
+<td nowrap>0.522</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>HARRINGTON, DONNA</td>
+<td nowrap>512 BANNERMANS MILL ROAD</td>
+<td nowrap>RICHLANDS</td>
+<td nowrap>NC</td>
+<td nowrap>28574</td>
+<td nowrap>DPH98433@GMAIL.COM</td>
+<td nowrap>(386)288-5881</td>
+<td nowrap>(386)288-5889</td>
+</tr>
+<tr>
+<td nowrap>1/7/2026</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9961</td>
+<td nowrap>19168</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$4099.99</td>
+<td nowrap>$-455.14</td>
+<td nowrap>$0</td>
+<td nowrap>$255.14</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3899.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3899.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,992.80</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,652.05</td>
+<td nowrap>0.453</td>
+<td nowrap>1/6/2026</td>
+<td nowrap>ANGULO, ALVARO</td>
+<td nowrap>173 ALDERSGATE DRIVE</td>
+<td nowrap>JACKSONVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28546</td>
+<td nowrap>ALVAROANGULO28@HOTMAIL.COM</td>
+<td nowrap>(786)709-7133</td>
+<td nowrap>(786)518-0896</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9963</td>
+<td nowrap>19170</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$399.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$28</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$427.99</td>
+<td nowrap>$427.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$427.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$262.88</td>
+<td nowrap>$0.00</td>
+<td nowrap>$137.11</td>
+<td nowrap>0.343</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>CARLO, ANIBAL </td>
+<td nowrap>401-C OPHELIA WAY</td>
+<td nowrap>WINTERVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28590</td>
+<td nowrap></td>
+<td nowrap>(787)238-7187</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Finance</td>
+<td nowrap>9965</td>
+<td nowrap>19172</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$4399.98</td>
+<td nowrap>$-571.47</td>
+<td nowrap>$249.99</td>
+<td nowrap>$285.5</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$4364</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3753.48</td>
+<td nowrap>$4364</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,763.52</td>
+<td nowrap>$610.52</td>
+<td nowrap>$1,314.98</td>
+<td nowrap>0.322</td>
+<td nowrap>1/12/2026</td>
+<td nowrap>MCKAY, JAY</td>
+<td nowrap>176 JUSTICE RD</td>
+<td nowrap>JACKSONVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28540</td>
+<td nowrap></td>
+<td nowrap>(910)330-0821</td>
+<td nowrap>(910)330-0821</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9966</td>
+<td nowrap>19174</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$99.99</td>
+<td nowrap>$-5</td>
+<td nowrap>$0</td>
+<td nowrap>$6.41</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$101.4</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$101.4</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$42.75</td>
+<td nowrap>$0.00</td>
+<td nowrap>$52.24</td>
+<td nowrap>0.55</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>LESZCZUK, CAMBRIEL</td>
+<td nowrap>507 CHEYENNE RD</td>
+<td nowrap>JACKSONVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28540</td>
+<td nowrap></td>
+<td nowrap>(937)751-6482</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9968</td>
+<td nowrap>19181</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$799.99</td>
+<td nowrap>$0</td>
+<td nowrap>$129.99</td>
+<td nowrap>$62.77</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$992.75</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$992.75</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$436.25</td>
+<td nowrap>$0.00</td>
+<td nowrap>$493.73</td>
+<td nowrap>0.531</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>ARQUITT, RANDY</td>
+<td nowrap>116 DANIELS COURT</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)639-1061</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER and SMITH, KASSIA</td>
+<td nowrap>Havelock</td>
+<td nowrap>Finance</td>
+<td nowrap>9969</td>
+<td nowrap>19184</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$3299.97</td>
+<td nowrap>$-225</td>
+<td nowrap>$284.99</td>
+<td nowrap>$226.8</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3586.76</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3454.41</td>
+<td nowrap>$3586.76</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,738.74</td>
+<td nowrap>$132.35</td>
+<td nowrap>$1,621.22</td>
+<td nowrap>0.483</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>HAMILTON, RICHARD</td>
+<td nowrap>150 EVA DRIVE</td>
+<td nowrap>ATLANTIC</td>
+<td nowrap>NC</td>
+<td nowrap>28511</td>
+<td nowrap></td>
+<td nowrap>(252)725-3694</td>
+<td nowrap>(252)725-2595</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>1/7/2026</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Finance</td>
+<td nowrap>9970</td>
+<td nowrap>19186</td>
+<td nowrap>Open, Deliveried(4/4)</td>
+<td nowrap>$2889.98</td>
+<td nowrap>$-480.23</td>
+<td nowrap>$164.99</td>
+<td nowrap>$180.23</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2754.97</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$35</td>
+<td nowrap>$2719.97</td>
+<td nowrap>$2,719.97</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,533.64</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,041.10</td>
+<td nowrap>0.404</td>
+<td nowrap>1/14/2026</td>
+<td nowrap>MARYANSKI, ANNA</td>
+<td nowrap>1904 BLUE CREEK ROAD</td>
+<td nowrap>JACKSONVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28540</td>
+<td nowrap>DUQUESNEPITTMOM@GMAIL.COM</td>
+<td nowrap>(412)855-6704</td>
+<td nowrap>(412)855-6704</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>Sales, Store</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9972</td>
+<td nowrap>19190</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$197.22</td>
+<td nowrap>$-12.47</td>
+<td nowrap>$0</td>
+<td nowrap>$12.47</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$197.22</td>
+<td nowrap>$197.22</td>
+<td nowrap>$0.00</td>
+<td nowrap>$197.22</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$170.68</td>
+<td nowrap>$0.00</td>
+<td nowrap>$14.07</td>
+<td nowrap>0.076</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>MOSKAL, RON AND  MARY</td>
+<td nowrap>1003 TABERNA CIRCLE</td>
+<td nowrap>NEW BERN</td>
+<td nowrap>NC</td>
+<td nowrap>28562</td>
+<td nowrap></td>
+<td nowrap>(301)518-7873</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/8/2026</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9973</td>
+<td nowrap>19192</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$699.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$47.25</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$747.24</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$747.24</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$283.74</td>
+<td nowrap>$0.00</td>
+<td nowrap>$416.25</td>
+<td nowrap>0.595</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>SCHULMAN, LISA</td>
+<td nowrap>102 FALCON LANDING COURT</td>
+<td nowrap>NEW BERN</td>
+<td nowrap>NC</td>
+<td nowrap>28560</td>
+<td nowrap></td>
+<td nowrap>(631)428-5341</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>BISE, STEPHANIE and SHANKLE, CHRISTOPHER</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9974</td>
+<td nowrap>19197</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$2599.98</td>
+<td nowrap>$-969.98</td>
+<td nowrap>$169.99</td>
+<td nowrap>$121.5</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1921.49</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1921.49</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,285.50</td>
+<td nowrap>$0.00</td>
+<td nowrap>$514.49</td>
+<td nowrap>0.286</td>
+<td nowrap>1/8/2026</td>
+<td nowrap>PIETRANGELO, CARL</td>
+<td nowrap>1218 WORMWOOD BRANCH COURT</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(908)812-8070</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>Finance</td>
+<td nowrap>9982</td>
+<td nowrap>19214</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1999.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$135</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2134.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2077.55</td>
+<td nowrap>$2134.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,159.93</td>
+<td nowrap>$57.43</td>
+<td nowrap>$840.05</td>
+<td nowrap>0.42</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>THOMPSON, MARK</td>
+<td nowrap>106 HOLLYWOOD BLVD</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)723-3984</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/12/2026</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>1/12/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9984</td>
+<td nowrap>19217</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$799.99</td>
+<td nowrap>$0</td>
+<td nowrap>$164.99</td>
+<td nowrap>$65.14</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1030.12</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1030.12</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$453.75</td>
+<td nowrap>$0.00</td>
+<td nowrap>$511.23</td>
+<td nowrap>0.53</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>GASKINS, DOLORES</td>
+<td nowrap>505 STATLEY PINES ROAD</td>
+<td nowrap>NEW BERN</td>
+<td nowrap>NC</td>
+<td nowrap>28560</td>
+<td nowrap></td>
+<td nowrap>(252)670-1535</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>Finance</td>
+<td nowrap>9985</td>
+<td nowrap>19218</td>
+<td nowrap>Open, Deliveried(5/5)</td>
+<td nowrap>$2999.99</td>
+<td nowrap>$0</td>
+<td nowrap>$169.99</td>
+<td nowrap>$221.9</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3391.88</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0</td>
+<td nowrap>$3391.88</td>
+<td nowrap>$3,391.88</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,778.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,391.98</td>
+<td nowrap>0.439</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>IBARRA, FIDELINA</td>
+<td nowrap>2370 GLENN BLVD</td>
+<td nowrap>FARMVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>27828</td>
+<td nowrap></td>
+<td nowrap>(252)215-7804</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9986</td>
+<td nowrap>19220</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$4699.96</td>
+<td nowrap>$-1399.98</td>
+<td nowrap>$0</td>
+<td nowrap>$222.75</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3522.73</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3522.73</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,053.92</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,246.06</td>
+<td nowrap>0.378</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>BROWN, REGGIE</td>
+<td nowrap>224 RIVERSIDE DRIVE</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap>regbrown03@gmail.com</td>
+<td nowrap>(870)665-1699</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9987</td>
+<td nowrap>19225</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$229.99</td>
+<td nowrap>$-22</td>
+<td nowrap>$0</td>
+<td nowrap>$14.04</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$222.03</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$222.03</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$138.05</td>
+<td nowrap>$0.00</td>
+<td nowrap>$69.94</td>
+<td nowrap>0.336</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>FEATENBY, ROBERT</td>
+<td nowrap>314 EMERYWOOD DR</td>
+<td nowrap>Morehead City</td>
+<td nowrap>NC</td>
+<td nowrap>28557</td>
+<td nowrap>RFEATENBY@ECRR.COM</td>
+<td nowrap>(252)342-4631</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/9/2026</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine and SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9988</td>
+<td nowrap>19226</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$229.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$15.52</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$245.51</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$245.51</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$106.65</td>
+<td nowrap>$0.00</td>
+<td nowrap>$123.34</td>
+<td nowrap>0.536</td>
+<td nowrap>1/9/2026</td>
+<td nowrap>FLYNN, TOM</td>
+<td nowrap>148 PELICAN DRIVE</td>
+<td nowrap>NEWPORT</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(240)577-2368</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/13/2026</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/13/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9989</td>
+<td nowrap>19230</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1199.99</td>
+<td nowrap>$-87</td>
+<td nowrap>$129.99</td>
+<td nowrap>$87.01</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1329.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1329.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$763.25</td>
+<td nowrap>$0.00</td>
+<td nowrap>$479.73</td>
+<td nowrap>0.386</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>MAHER, DIANNE</td>
+<td nowrap>819 WILD FLOWER DR</td>
+<td nowrap>HOLLY RIDGE </td>
+<td nowrap>NC</td>
+<td nowrap>28445</td>
+<td nowrap></td>
+<td nowrap>(910)616-6810</td>
+<td nowrap>(910)616-6810</td>
+</tr>
+<tr>
+<td nowrap>1/13/2026</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/13/2026</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9990</td>
+<td nowrap>19232</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$399.98</td>
+<td nowrap>$0</td>
+<td nowrap>$129.99</td>
+<td nowrap>$35.77</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$565.74</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$565.74</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$242.57</td>
+<td nowrap>$0.00</td>
+<td nowrap>$287.40</td>
+<td nowrap>0.542</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>GOETZ, APRIL</td>
+<td nowrap>133 wildwood rd</td>
+<td nowrap>Newport</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(217)971-9656</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9991</td>
+<td nowrap>19234</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$1109.96</td>
+<td nowrap>$-159.96</td>
+<td nowrap>$0</td>
+<td nowrap>$66.5</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1016.5</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1016.5</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$460.39</td>
+<td nowrap>$0.00</td>
+<td nowrap>$489.61</td>
+<td nowrap>0.515</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>DANIELS, CHRISTY</td>
+<td nowrap>3628 BLACK JACK SIMPSON RD </td>
+<td nowrap>GREENVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap></td>
+<td nowrap>(252)714-7255</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>STANLEY, LORRI</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9992</td>
+<td nowrap>19236</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$819.97</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$57.4</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$877.37</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$877.37</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$336.22</td>
+<td nowrap>$0.00</td>
+<td nowrap>$483.75</td>
+<td nowrap>0.59</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>CONGDON, DAVID</td>
+<td nowrap>2502 Royal Dr</td>
+<td nowrap>Winterville </td>
+<td nowrap>NC</td>
+<td nowrap>28590</td>
+<td nowrap>dave@sascoorpinc.com</td>
+<td nowrap>(252)347-6460</td>
+<td nowrap>(252)347-6460</td>
+</tr>
+<tr>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9994</td>
+<td nowrap>19241</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$599.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$40.5</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$640.49</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$640.49</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$329.06</td>
+<td nowrap>$0.00</td>
+<td nowrap>$270.93</td>
+<td nowrap>0.452</td>
+<td nowrap>1/10/2026</td>
+<td nowrap>NOWACZYK, CHRISTY</td>
+<td nowrap>106 FAWN VIEW CT</td>
+<td nowrap>NEWPORT</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(252)269-1824</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>1/11/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>9996</td>
+<td nowrap>19245</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$449.99</td>
+<td nowrap>$-22.49</td>
+<td nowrap>$0</td>
+<td nowrap>$28.86</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$456.36</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$456.36</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$179.43</td>
+<td nowrap>$0.00</td>
+<td nowrap>$248.07</td>
+<td nowrap>0.58</td>
+<td nowrap>1/11/2026</td>
+<td nowrap>GORE, HALEIGH</td>
+<td nowrap>110 HERRON MOON COURT</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)723-7796</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/11/2026</td>
+<td nowrap>1/11/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9997</td>
+<td nowrap>19247</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$19.99</td>
+<td nowrap>$-1.3</td>
+<td nowrap>$0</td>
+<td nowrap>$1.31</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$20</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$20</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$5.82</td>
+<td nowrap>$0.00</td>
+<td nowrap>$12.87</td>
+<td nowrap>0.689</td>
+<td nowrap>1/11/2026</td>
+<td nowrap>RAGAN, HARVEY</td>
+<td nowrap>TBD</td>
+<td nowrap>JACKSONVILLE </td>
+<td nowrap>NC</td>
+<td nowrap>28546</td>
+<td nowrap></td>
+<td nowrap>(910)990-4242</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/14/2026</td>
+<td nowrap>1/11/2026</td>
+<td nowrap>1/14/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>9998</td>
+<td nowrap>19250</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$879.99</td>
+<td nowrap>$0</td>
+<td nowrap>$169.99</td>
+<td nowrap>$70.87</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1120.85</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1120.85</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$492.15</td>
+<td nowrap>$0.00</td>
+<td nowrap>$557.83</td>
+<td nowrap>0.531</td>
+<td nowrap>1/11/2026</td>
+<td nowrap>SKALBY, JOANNE</td>
+<td nowrap>709 IRONWOOD DRIVE</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(410)449-9091</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/11/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10002</td>
+<td nowrap>19254</td>
+<td nowrap>Paid Off, Deliveried(9/9)</td>
+<td nowrap>$6429.92</td>
+<td nowrap>$-729.93</td>
+<td nowrap>$384.99</td>
+<td nowrap>$425.95</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$6510.93</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$6510.93</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,865.73</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3,219.25</td>
+<td nowrap>0.529</td>
+<td nowrap>1/12/2026</td>
+<td nowrap>GLIENKE, CHRISTOPHER</td>
+<td nowrap>1800 Bloomsbury Rd</td>
+<td nowrap>Greenville</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap>CMGlienke@gmail.com</td>
+<td nowrap>(252)714-6605</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/13/2026</td>
+<td nowrap>1/11/2026</td>
+<td nowrap>1/13/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10003</td>
+<td nowrap>19255</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1269.98</td>
+<td nowrap>$-91.58</td>
+<td nowrap>$129.99</td>
+<td nowrap>$91.59</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1399.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1399.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$693.74</td>
+<td nowrap>$0.00</td>
+<td nowrap>$614.65</td>
+<td nowrap>0.47</td>
+<td nowrap>1/11/2026</td>
+<td nowrap>HATHAWAY, IVISON</td>
+<td nowrap>101 CARRIAGE DR</td>
+<td nowrap>JACKSONVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28546</td>
+<td nowrap>IVISON.HATHWAY60@GMAIL.COM</td>
+<td nowrap>(910)489-6444</td>
+<td nowrap>(910)489-6444</td>
+</tr>
+<tr>
+<td nowrap>1/13/2026</td>
+<td nowrap>1/11/2026</td>
+<td nowrap>1/13/2026</td>
+<td nowrap>BURGOS, JENNIFER and HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10004</td>
+<td nowrap>19257</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$699.99</td>
+<td nowrap>$0</td>
+<td nowrap>$164.99</td>
+<td nowrap>$60.55</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$925.53</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$925.53</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$458.06</td>
+<td nowrap>$0.00</td>
+<td nowrap>$406.92</td>
+<td nowrap>0.47</td>
+<td nowrap>1/11/2026</td>
+<td nowrap>MILLS, JAMES</td>
+<td nowrap>3165 IVY RD</td>
+<td nowrap>GREENVILE</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap></td>
+<td nowrap>(252)864-8395</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/13/2026</td>
+<td nowrap>1/12/2026</td>
+<td nowrap>1/13/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>Finance</td>
+<td nowrap>10007</td>
+<td nowrap>19269</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1299.98</td>
+<td nowrap>$-150</td>
+<td nowrap>$169.99</td>
+<td nowrap>$89.1</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1409.07</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1409.07</td>
+<td nowrap>$1409.07</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$561.90</td>
+<td nowrap>$0.00</td>
+<td nowrap>$758.07</td>
+<td nowrap>0.574</td>
+<td nowrap>1/12/2026</td>
+<td nowrap>TAYLOR, SHARICE</td>
+<td nowrap>109 KENMORE COURT</td>
+<td nowrap>NEW BERN</td>
+<td nowrap>NC</td>
+<td nowrap>28560</td>
+<td nowrap></td>
+<td nowrap>(757)903-6301</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/12/2026</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10009</td>
+<td nowrap>19273</td>
+<td nowrap>Paid Off, Deliveried(12/12)</td>
+<td nowrap>$3939.88</td>
+<td nowrap>$-1064.99</td>
+<td nowrap>$199.99</td>
+<td nowrap>$215.24</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3290.12</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3290.12</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,895.50</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,179.38</td>
+<td nowrap>0.384</td>
+<td nowrap>1/12/2026</td>
+<td nowrap>COOKE, HEATHER</td>
+<td nowrap>2420 G KING RICHARD CT</td>
+<td nowrap>GREENVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap></td>
+<td nowrap>(919)608-0743</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/20/2026</td>
+<td nowrap>1/12/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>HILL, MELISSA and STANLEY, LORRI</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10010</td>
+<td nowrap>19278</td>
+<td nowrap>Paid Off, Deliveried(11/11)</td>
+<td nowrap>$8629.89</td>
+<td nowrap>$-659.93</td>
+<td nowrap>$0</td>
+<td nowrap>$557.9</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$8527.86</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$8527.86</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$4,020.53</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3,949.43</td>
+<td nowrap>0.496</td>
+<td nowrap>1/12/2026</td>
+<td nowrap>TYNDALL, CHRISTOPHER </td>
+<td nowrap>2237 ALBERT LANGSTON </td>
+<td nowrap>DEEP RUN</td>
+<td nowrap>NC</td>
+<td nowrap>28525</td>
+<td nowrap></td>
+<td nowrap>(252)286-8417</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>1/13/2026</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10011</td>
+<td nowrap>19284</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$3649.98</td>
+<td nowrap>$-251.87</td>
+<td nowrap>$234.99</td>
+<td nowrap>$254.32</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3887.42</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3887.42</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,679.17</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,953.93</td>
+<td nowrap>0.538</td>
+<td nowrap>1/13/2026</td>
+<td nowrap>HUNTER, AL AND  PAULA</td>
+<td nowrap>111 CHERRYBARK DR</td>
+<td nowrap>Jacksonville</td>
+<td nowrap>NC</td>
+<td nowrap>28540</td>
+<td nowrap>PHUNTER1166@GMAIL.COM</td>
+<td nowrap>(910)459-0399</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>1/14/2026</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10012</td>
+<td nowrap>19287</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$799.99</td>
+<td nowrap>$-89</td>
+<td nowrap>$169.99</td>
+<td nowrap>$59.47</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$940.45</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$940.45</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$504.07</td>
+<td nowrap>$0.00</td>
+<td nowrap>$376.91</td>
+<td nowrap>0.428</td>
+<td nowrap>1/14/2026</td>
+<td nowrap>MORRIS, CAROLYN</td>
+<td nowrap>110 Bayview Blvd</td>
+<td nowrap>ATLANTIC BEACH</td>
+<td nowrap>NC</td>
+<td nowrap>28512</td>
+<td nowrap></td>
+<td nowrap>(252)327-0301</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>1/14/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>Finance</td>
+<td nowrap>10014</td>
+<td nowrap>19292</td>
+<td nowrap>Open, Deliveried(1/1)</td>
+<td nowrap>$939.99</td>
+<td nowrap>$-100</td>
+<td nowrap>$0</td>
+<td nowrap>$58.8</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$898.79</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0</td>
+<td nowrap>$898.79</td>
+<td nowrap>$898.79</td>
+<td nowrap>$0.00</td>
+<td nowrap>$414.52</td>
+<td nowrap>$0.00</td>
+<td nowrap>$425.47</td>
+<td nowrap>0.507</td>
+<td nowrap>1/14/2026</td>
+<td nowrap>PLANT, ROGER</td>
+<td nowrap>920 MAYO LN.</td>
+<td nowrap>GREENVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>27834</td>
+<td nowrap>plantr@ecu.edu</td>
+<td nowrap>(252)327-5489</td>
+<td nowrap>(252)327-5486</td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>1/14/2026</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10016</td>
+<td nowrap>19294</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1499.99</td>
+<td nowrap>$-98.13</td>
+<td nowrap>$0</td>
+<td nowrap>$98.13</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1499.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1499.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$734.43</td>
+<td nowrap>$0.00</td>
+<td nowrap>$667.43</td>
+<td nowrap>0.476</td>
+<td nowrap>1/14/2026</td>
+<td nowrap>HARRIS, NANCY</td>
+<td nowrap>8909 SOUND VIEW COURT</td>
+<td nowrap>EMERALD ISLE</td>
+<td nowrap>NC</td>
+<td nowrap>28594</td>
+<td nowrap>JNH52904@MAC.COM</td>
+<td nowrap>(252)773-2502</td>
+<td nowrap>(252)773-2502</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>1/14/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SUMRELL, TRACEY</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10017</td>
+<td nowrap>19295</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1099.99</td>
+<td nowrap>$-69.56</td>
+<td nowrap>$0</td>
+<td nowrap>$69.55</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1099.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1099.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$586.59</td>
+<td nowrap>$0.00</td>
+<td nowrap>$443.84</td>
+<td nowrap>0.431</td>
+<td nowrap>1/14/2026</td>
+<td nowrap>VELASCO, FATIMA</td>
+<td nowrap>15 STANLEY RD Apt. # `</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(405)445-9009</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>SANNER, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10019</td>
+<td nowrap>19297</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$2579.98</td>
+<td nowrap>$-175.78</td>
+<td nowrap>$199.99</td>
+<td nowrap>$175.78</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2779.97</td>
+<td nowrap>$2779.97</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2779.97</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,459.75</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,144.44</td>
+<td nowrap>0.439</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>SCOTT, JOHN</td>
+<td nowrap>610 DARKWOOD DR</td>
+<td nowrap>Havelock</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)732-5369</td>
+<td nowrap>(252)670-8746</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10021</td>
+<td nowrap>19300</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$829.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$56.02</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$886</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$886</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$388.29</td>
+<td nowrap>$0.00</td>
+<td nowrap>$441.69</td>
+<td nowrap>0.532</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>GRAHAM, MEGAN</td>
+<td nowrap>189 HWY 70</td>
+<td nowrap>SMYRNA</td>
+<td nowrap>NC</td>
+<td nowrap>28579</td>
+<td nowrap>MEGAN.GRAHAM.252@GMAIL.COM</td>
+<td nowrap>(252)241-4679</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/21/2026</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10022</td>
+<td nowrap>19306</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$1569.97</td>
+<td nowrap>$-102.71</td>
+<td nowrap>$0</td>
+<td nowrap>$102.71</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1569.97</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1569.97</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$697.29</td>
+<td nowrap>$0.00</td>
+<td nowrap>$769.97</td>
+<td nowrap>0.525</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>WILKINS, JAXON</td>
+<td nowrap>4690 SALZMAN DR</td>
+<td nowrap>MIDWAY PARK</td>
+<td nowrap>NC</td>
+<td nowrap>28544</td>
+<td nowrap>JAXWILKINS023@GMAIL.COM</td>
+<td nowrap>(479)747-4233</td>
+<td nowrap>(479)747-4233</td>
+</tr>
+<tr>
+<td nowrap>1/15/2026</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10023</td>
+<td nowrap>19307</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$399.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$27</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$426.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$426.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$202.13</td>
+<td nowrap>$0.00</td>
+<td nowrap>$197.86</td>
+<td nowrap>0.495</td>
+<td nowrap>1/15/2026</td>
+<td nowrap>PAUL, TIVIA</td>
+<td nowrap>110 SUNSET DRIVE</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)422-0471</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10026</td>
+<td nowrap>19312</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$2849.96</td>
+<td nowrap>$-205.09</td>
+<td nowrap>$284.99</td>
+<td nowrap>$205.09</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3134.95</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3134.95</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,292.04</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,637.82</td>
+<td nowrap>0.559</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>YOUNG, ALEXANDRA</td>
+<td nowrap> 117 BARN HOUSE RD</td>
+<td nowrap>JACKSONVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28546</td>
+<td nowrap>ALEX31DENISE@ICLOUD.COM</td>
+<td nowrap>(910)915-5002</td>
+<td nowrap>(910)915-5002</td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10027</td>
+<td nowrap>19313</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$3749.97</td>
+<td nowrap>$-261.68</td>
+<td nowrap>$249.99</td>
+<td nowrap>$261.68</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3999.96</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3999.96</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,740.92</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,997.36</td>
+<td nowrap>0.534</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>DENISE, EVELYN</td>
+<td nowrap>105 ED COLES CT</td>
+<td nowrap>JACKSONVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28546</td>
+<td nowrap>EDENISE@ICLOUD.COM</td>
+<td nowrap>(910)554-1158</td>
+<td nowrap>(910)554-1158</td>
+</tr>
+<tr>
+<td nowrap>1/20/2026</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>1/20/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>Finance</td>
+<td nowrap>10028</td>
+<td nowrap>19314</td>
+<td nowrap>Open, Deliveried(9/9)</td>
+<td nowrap>$5109.91</td>
+<td nowrap>$-779.97</td>
+<td nowrap>$249.99</td>
+<td nowrap>$309.15</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$4889.08</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0</td>
+<td nowrap>$4889.08</td>
+<td nowrap>$4,889.08</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,369.41</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2,210.52</td>
+<td nowrap>0.483</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>KYLE,  ROY </td>
+<td nowrap>118 DANIELS COURT</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)626-0987</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/16/2026</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10030</td>
+<td nowrap>19318</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$527</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$35.57</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$562.57</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$562.57</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$368.41</td>
+<td nowrap>$0.00</td>
+<td nowrap>$158.59</td>
+<td nowrap>0.301</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>GARVEY, JUSTIN</td>
+<td nowrap>1087 NEWPORT LOOP ROAD</td>
+<td nowrap>Newport</td>
+<td nowrap>NC</td>
+<td nowrap>28570</td>
+<td nowrap></td>
+<td nowrap>(252)670-2324</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/20/2026</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10031</td>
+<td nowrap>19321</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$599.99</td>
+<td nowrap>$0</td>
+<td nowrap>$169.99</td>
+<td nowrap>$53.9</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$823.88</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$823.88</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$456.38</td>
+<td nowrap>$0.00</td>
+<td nowrap>$313.60</td>
+<td nowrap>0.407</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>DI MATTINA, PAM</td>
+<td nowrap>1142 TIMBER DR</td>
+<td nowrap>GREENVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap>P[AMELARENEE1@GMAIL.COM</td>
+<td nowrap>(603)340-8338</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>10033</td>
+<td nowrap>19326</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$599.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$40.5</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$640.49</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$640.49</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$288.52</td>
+<td nowrap>$0.00</td>
+<td nowrap>$311.47</td>
+<td nowrap>0.519</td>
+<td nowrap>1/16/2026</td>
+<td nowrap>CARPENTER, SADIE</td>
+<td nowrap>4000 GALANTIS DR Apt. # B204</td>
+<td nowrap>MOREHEAD CITY</td>
+<td nowrap>NC</td>
+<td nowrap>28557</td>
+<td nowrap></td>
+<td nowrap>(252)714-1055</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>10035</td>
+<td nowrap>19334</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$1599.97</td>
+<td nowrap>$-79.99</td>
+<td nowrap>$169.99</td>
+<td nowrap>$114.07</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1804.04</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1804.04</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$789.61</td>
+<td nowrap>$0.00</td>
+<td nowrap>$900.36</td>
+<td nowrap>0.533</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>BLAIR, KYLE</td>
+<td nowrap>258 GATES ROAD</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(330)488-7199</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>BURGOS, JENNIFER</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10036</td>
+<td nowrap>19340</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$499.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$35</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$534.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$534.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$335.02</td>
+<td nowrap>$0.00</td>
+<td nowrap>$164.97</td>
+<td nowrap>0.33</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>FARMER, PAUL</td>
+<td nowrap>4187 JOSH SMITH RD</td>
+<td nowrap>GRIMESLAND</td>
+<td nowrap>NC</td>
+<td nowrap>27837</td>
+<td nowrap></td>
+<td nowrap>(252)814-5997</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>CALKINS, ANTHONY</td>
+<td nowrap>Morehead</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10038</td>
+<td nowrap>19345</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$1459.97</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$98.55</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1558.52</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1558.52</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$607.21</td>
+<td nowrap>$0.00</td>
+<td nowrap>$852.76</td>
+<td nowrap>0.584</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>HOFFMAN, JEOFFREY</td>
+<td nowrap>131 great oak ct</td>
+<td nowrap>Havelock</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)525-5186</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/20/2026</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/20/2026</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>Finance</td>
+<td nowrap>10042</td>
+<td nowrap>19351</td>
+<td nowrap>Open, Deliveried(2/2)</td>
+<td nowrap>$2549.98</td>
+<td nowrap>$0</td>
+<td nowrap>$169.99</td>
+<td nowrap>$183.6</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2903.57</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1000</td>
+<td nowrap>$1903.57</td>
+<td nowrap>$1,903.57</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,444.59</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,275.38</td>
+<td nowrap>0.469</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>ZIMMERMAN, CAROL</td>
+<td nowrap>125 MADISON BAY DR</td>
+<td nowrap>BEAUFORT</td>
+<td nowrap>NC</td>
+<td nowrap>28516</td>
+<td nowrap>DONNIE6841@GMAIL.COM</td>
+<td nowrap>(252)808-5089</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SMITH, KASSIA</td>
+<td nowrap>Morehead</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>10046</td>
+<td nowrap>19360</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$999.99</td>
+<td nowrap>$-50</td>
+<td nowrap>$0</td>
+<td nowrap>$64.12</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1014.11</td>
+<td nowrap>$1014.11</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1014.11</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$504.90</td>
+<td nowrap>$0.00</td>
+<td nowrap>$445.09</td>
+<td nowrap>0.469</td>
+<td nowrap>1/17/2026</td>
+<td nowrap>JONES, CARLA</td>
+<td nowrap>1710 OLDE FARM RD</td>
+<td nowrap>MOREHEAD CITY</td>
+<td nowrap>NC</td>
+<td nowrap>28557</td>
+<td nowrap>carlamjones@yahoo.com</td>
+<td nowrap>(919)235-2378</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/20/2026</td>
+<td nowrap>1/18/2026</td>
+<td nowrap>1/20/2026</td>
+<td nowrap>SANNER, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10049</td>
+<td nowrap>19379</td>
+<td nowrap>Paid Off, Deliveried(4/4)</td>
+<td nowrap>$1179.96</td>
+<td nowrap>$-85.36</td>
+<td nowrap>$169.99</td>
+<td nowrap>$85.36</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1349.95</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1349.95</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$614.20</td>
+<td nowrap>$0.00</td>
+<td nowrap>$650.39</td>
+<td nowrap>0.514</td>
+<td nowrap>1/18/2026</td>
+<td nowrap>CYPHER, CHARLES</td>
+<td nowrap>1011 Ella Bengle Dr</td>
+<td nowrap>NEW BERN</td>
+<td nowrap>NC</td>
+<td nowrap>28562</td>
+<td nowrap></td>
+<td nowrap>(719)433-1157</td>
+<td nowrap>(719)433-4296</td>
+</tr>
+<tr>
+<td nowrap>1/20/2026</td>
+<td nowrap>1/18/2026</td>
+<td nowrap>1/20/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10050</td>
+<td nowrap>19382</td>
+<td nowrap>Paid Off, Deliveried(6/6)</td>
+<td nowrap>$1869.94</td>
+<td nowrap>$-169.99</td>
+<td nowrap>$169.99</td>
+<td nowrap>$126.22</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1996.16</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1996.16</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,605.62</td>
+<td nowrap>$0.00</td>
+<td nowrap>$264.32</td>
+<td nowrap>0.141</td>
+<td nowrap>1/18/2026</td>
+<td nowrap>PATTERSON, FREDERYC</td>
+<td nowrap>925 SUNSET DRIVE</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap>FNLBILLS@GMAIL.COM</td>
+<td nowrap>(252)617-8942</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/18/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>HILL, MELISSA</td>
+<td nowrap>Greenville</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10052</td>
+<td nowrap>19385</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1299.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$91</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1390.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1390.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$630.88</td>
+<td nowrap>$0.00</td>
+<td nowrap>$669.11</td>
+<td nowrap>0.515</td>
+<td nowrap>1/18/2026</td>
+<td nowrap>HALL, BRIAN </td>
+<td nowrap>2221 HARDWAY PLACE </td>
+<td nowrap>GREENVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>27858</td>
+<td nowrap></td>
+<td nowrap>(252)916-2990</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/18/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10053</td>
+<td nowrap>19387</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$193.02</td>
+<td nowrap>$-5.67</td>
+<td nowrap>$0</td>
+<td nowrap>$12.65</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$200</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$200</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$90.01</td>
+<td nowrap>$0.00</td>
+<td nowrap>$97.34</td>
+<td nowrap>0.52</td>
+<td nowrap>1/18/2026</td>
+<td nowrap>EWING, MARK</td>
+<td nowrap>300 CHELSEA COURT</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)241-2627</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/20/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/20/2026</td>
+<td nowrap>Gibbs-Kenon, Jodine</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10055</td>
+<td nowrap>19393</td>
+<td nowrap>Paid Off, Deliveried(3/3)</td>
+<td nowrap>$1759.97</td>
+<td nowrap>$-100</td>
+<td nowrap>$169.99</td>
+<td nowrap>$123.52</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1953.48</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1953.48</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$896.33</td>
+<td nowrap>$0.00</td>
+<td nowrap>$933.63</td>
+<td nowrap>0.51</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>COBBS, DEBORAH</td>
+<td nowrap>3003 WOODFEILD COVE LANE Apt. # 204</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(843)469-4489</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Finance</td>
+<td nowrap>10056</td>
+<td nowrap>19396</td>
+<td nowrap>Paid Off, Deliveried(5/5)</td>
+<td nowrap>$3399.95</td>
+<td nowrap>$-222.43</td>
+<td nowrap>$0</td>
+<td nowrap>$222.43</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$3399.95</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$3399.95</td>
+<td nowrap>$3050</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,359.54</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,817.98</td>
+<td nowrap>0.572</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>KURSCHNER, TIFFANY</td>
+<td nowrap>5566  INDIANA STREET</td>
+<td nowrap>CAMP LEJEUNE</td>
+<td nowrap>NC</td>
+<td nowrap>28547</td>
+<td nowrap>TIFFANYKURSCHNER@GMAIL.COM</td>
+<td nowrap>(513)500-7859</td>
+<td nowrap>(920)242-3050</td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>Paid Off Layaway</td>
+<td nowrap>10058</td>
+<td nowrap>19402</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$608.89</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$41.1</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$649.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$649.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$297.46</td>
+<td nowrap>$0.00</td>
+<td nowrap>$311.43</td>
+<td nowrap>0.511</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>BROOKS, CALVIN</td>
+<td nowrap>142 APRATCHE TRAIL</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(202)422-0424</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>SANNER, STEPHANIE</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10059</td>
+<td nowrap>19404</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$899.99</td>
+<td nowrap>$-56.91</td>
+<td nowrap>$0</td>
+<td nowrap>$56.91</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$899.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$899.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$450.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$393.08</td>
+<td nowrap>0.466</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>HERSHEY, DAULTON</td>
+<td nowrap>163 MACDONALD BLVD</td>
+<td nowrap>Havelock</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(717)496-5011</td>
+<td nowrap>(717)360-5410</td>
+</tr>
+<tr>
+<td nowrap>1/20/2026</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>1/20/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10064</td>
+<td nowrap>19420</td>
+<td nowrap>Paid Off, Deliveried(2/2)</td>
+<td nowrap>$1029.98</td>
+<td nowrap>$-160.84</td>
+<td nowrap>$0</td>
+<td nowrap>$60.84</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$929.98</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$929.98</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$472.49</td>
+<td nowrap>$0.00</td>
+<td nowrap>$396.65</td>
+<td nowrap>0.456</td>
+<td nowrap>1/19/2026</td>
+<td nowrap>DAVIS, SATIMA</td>
+<td nowrap>468 WATER WAGON TRAIL</td>
+<td nowrap>JACKSONVILLE</td>
+<td nowrap>NC</td>
+<td nowrap>28546</td>
+<td nowrap>SATIMA.D1102@GMAIL.COM</td>
+<td nowrap>(850)418-0102</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/21/2026</td>
+<td nowrap>1/20/2026</td>
+<td nowrap>1/21/2026</td>
+<td nowrap>BISE, STEPHANIE and UNDERWOOD, LYNN</td>
+<td nowrap>Camp LeJeune</td>
+<td nowrap>Finance</td>
+<td nowrap>10067</td>
+<td nowrap>19428</td>
+<td nowrap>Open, Deliveried(1/1)</td>
+<td nowrap>$699.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$49</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$748.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0</td>
+<td nowrap>$748.99</td>
+<td nowrap>$748.99</td>
+<td nowrap>$0.00</td>
+<td nowrap>$324.63</td>
+<td nowrap>$0.00</td>
+<td nowrap>$375.36</td>
+<td nowrap>0.536</td>
+<td nowrap>1/20/2026</td>
+<td nowrap>DROZDOWSKI, ANDREW</td>
+<td nowrap>7008 BOSTON ROAD</td>
+<td nowrap>TARAWA TERRACE</td>
+<td nowrap>NC</td>
+<td nowrap>28543</td>
+<td nowrap>ANDREW.D.DROZDOWSKI@GMAIL.COM</td>
+<td nowrap>(910)478-6649</td>
+<td nowrap>(716)622-2697</td>
+</tr>
+<tr>
+<td nowrap>1/21/2026</td>
+<td nowrap>1/21/2026</td>
+<td nowrap>1/21/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10073</td>
+<td nowrap>19445</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$1699.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$114.75</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$1814.74</td>
+<td nowrap>$1814.74</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1814.74</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$673.65</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,026.34</td>
+<td nowrap>0.604</td>
+<td nowrap>1/21/2026</td>
+<td nowrap>BISHOP, JAMES</td>
+<td nowrap>1480 RIVER DRIVE</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(336)337-6513</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/21/2026</td>
+<td nowrap>1/21/2026</td>
+<td nowrap>1/1/2501</td>
+<td nowrap>SUMRELL, TRACEY</td>
+<td nowrap>Cherry Point</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10078</td>
+<td nowrap>19454</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$2374.99</td>
+<td nowrap>$-225.36</td>
+<td nowrap>$0</td>
+<td nowrap>$145.1</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$2294.73</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$2294.73</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$1,284.05</td>
+<td nowrap>$0.00</td>
+<td nowrap>$865.58</td>
+<td nowrap>0.403</td>
+<td nowrap>1/21/2026</td>
+<td nowrap>TERHUNE, WILLIAM</td>
+<td nowrap>334 LEWIS FARM ROAD</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(252)670-4426</td>
+<td nowrap></td>
+</tr>
+<tr>
+<td nowrap>1/21/2026</td>
+<td nowrap>1/21/2026</td>
+<td nowrap>1/21/2026</td>
+<td nowrap>SHANKLE, CHRISTOPHER</td>
+<td nowrap>Havelock</td>
+<td nowrap>PIF Sale</td>
+<td nowrap>10081</td>
+<td nowrap>19461</td>
+<td nowrap>Paid Off, Deliveried(1/1)</td>
+<td nowrap>$299.99</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$20.25</td>
+<td nowrap>$0</td>
+<td nowrap>$0</td>
+<td nowrap>$320.24</td>
+<td nowrap>$0</td>
+<td nowrap>$0.00</td>
+<td nowrap>$320.24</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$288.00</td>
+<td nowrap>$0.00</td>
+<td nowrap>$11.99</td>
+<td nowrap>0.04</td>
+<td nowrap>1/21/2026</td>
+<td nowrap>NICHOLS, MICHAEL</td>
+<td nowrap>149 CHATHAM ROAD</td>
+<td nowrap>HAVELOCK</td>
+<td nowrap>NC</td>
+<td nowrap>28532</td>
+<td nowrap></td>
+<td nowrap>(978)771-0268</td>
+<td nowrap></td>
+</tr>
+</table>
+</body>
+</html>
