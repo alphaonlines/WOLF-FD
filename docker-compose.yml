@@ -1,0 +1,61 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_POS_API_BASE_URL: ${VITE_POS_API_BASE_URL:-/api}
+        VITE_GEMINI_API_KEY: ${VITE_GEMINI_API_KEY:-}
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./pos-dashboard-backend
+      dockerfile: Dockerfile
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${PGDATABASE:-salesdb}
+      PGUSER: ${PGUSER:-salesapp}
+      PGPASSWORD: ${PGPASSWORD:-dev_password_change_me}
+      POS_IMPORT_PYTHON: python3
+      INCOMING_DIR: /incoming
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+    ports:
+      - "5055:5055"
+    volumes:
+      - ./pos-dashboard-backend/incoming:/incoming
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${PGUSER:-salesapp}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-dev_password_change_me}
+      POSTGRES_DB: ${PGDATABASE:-salesdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pos-postgres-data:/var/lib/postgresql/data
+      - ./pos-dashboard-backend/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-salesapp} -d ${PGDATABASE:-salesdb}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  adminer:
+    image: adminer:4
+    depends_on:
+      - postgres
+    ports:
+      - "8081:8080"
+
+volumes:
+  pos-postgres-data:

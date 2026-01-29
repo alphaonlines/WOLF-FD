@@ -8,11 +8,33 @@ import { promisify } from "util";
 import multer from "multer";
 import { Pool } from "pg";
 
+const envString = (key: string, fallback?: string) => {
+  const v = process.env[key];
+  if (typeof v === "string" && v.trim()) return v.trim();
+  return fallback;
+};
+
 const app = express();
-app.use(cors());
+
+const corsOrigin = envString("CORS_ORIGIN", "");
+const corsOrigins = corsOrigin
+  ? corsOrigin
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean)
+  : [];
+
+app.use(
+  corsOrigins.length
+    ? cors({
+        origin: corsOrigins,
+        credentials: true,
+      })
+    : cors()
+);
 app.use(express.json());
 
-const uploadsDir = path.resolve(__dirname, "..", "incoming");
+const uploadsDir = envString("INCOMING_DIR", path.resolve(__dirname, "..", "incoming"));
 fs.mkdirSync(uploadsDir, { recursive: true });
 const execFileAsync = promisify(execFile);
 
@@ -30,12 +52,6 @@ const upload = multer({
   },
   limits: { fileSize: 50 * 1024 * 1024 },
 });
-
-const envString = (key: string, fallback?: string) => {
-  const v = process.env[key];
-  if (typeof v === "string" && v.trim()) return v.trim();
-  return fallback;
-};
 
 const pool = new Pool({
   host: envString("PGHOST", "127.0.0.1"),

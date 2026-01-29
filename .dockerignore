@@ -1,0 +1,11 @@
+dist
+node_modules
+.git
+.github
+.vscode
+.DS_Store
+pos-dashboard-backend/node_modules
+pos-dashboard-backend/dist
+pos-dashboard-backend/pgdata
+pos-dashboard-backend/incoming
+functions/node_modules
