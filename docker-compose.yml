@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wolffd-postgres
+    environment:
+      POSTGRES_USER: salesapp
+      POSTGRES_PASSWORD: dev_password_change_me
+      POSTGRES_DB: salesdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./pos-dashboard-backend/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U salesapp -d salesdb"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: runner
+    container_name: wolffd-backend
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: salesdb
+      PGUSER: salesapp
+      PGPASSWORD: dev_password_change_me
+      PORT: 5057
+      NODE_ENV: production
+    ports:
+      - "5057:5057"
+    volumes:
+      - ./pos-dashboard-backend/incoming:/app/incoming
+      - ./pos-dashboard-backend/processed:/app/processed
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5057/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: wolffd-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local

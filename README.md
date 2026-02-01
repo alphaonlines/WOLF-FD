@@ -1,22 +1,51 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# WOLF FD Dashboard
 
-# Run and deploy your AI Studio app
+Furniture Distributors dashboard (Vite + React) with a local POS backend API and Postgres data store.
 
-This contains everything you need to run your app locally.
+## Quick Start (Local Dev)
 
-View your app in AI Studio: https://ai.studio/apps/drive/18tsXpK9W67HG0rXwervEez8x6LSDicfQ
+From repo root:
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-For the POS import + Postgres + API backend workflow, see `PROJECT_NOTES.md`.
-
-
-1. Install dependencies:
+1) Install frontend deps:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2) Start frontend:
    `npm run dev`
+
+From backend folder:
+
+1) Install backend deps:
+   `cd pos-dashboard-backend && npm install`
+2) Start backend API (dev mode):
+   `npm run dev`
+3) Health check:
+   `curl -s http://127.0.0.1:5055/health`
+
+Default ports:
+- Frontend: `http://127.0.0.1:5173`
+- Backend: `http://127.0.0.1:5055`
+
+## Backend Environment
+
+Create `pos-dashboard-backend/.env` with Postgres credentials:
+
+```
+PGHOST=127.0.0.1
+PGPORT=5432
+PGDATABASE=salesdb
+PGUSER=salesapp
+PGPASSWORD=dev_password_change_me
+```
+
+## CSV/XLSX Import Workflow
+
+- Put `.xlsx`/`.xls` files into `pos-dashboard-backend/incoming/`.
+- Run importer:
+  `cd pos-dashboard-backend && source .venv/bin/activate && python importer/import_pos_xlsx.py`
+- Re-import without moving files:
+  `python importer/import_pos_xlsx.py --include-processed --no-move`
+
+## Notes
+
+- The backend API is intended to run locally (non-Docker) for development and demos.
+- Frontend talks to the backend via `VITE_POS_API_BASE_URL` (defaults to `http://127.0.0.1:5055`).
+- For deeper setup, see `PROJECT_NOTES.md` and `AGENTS.md`.

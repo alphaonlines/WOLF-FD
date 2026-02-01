@@ -31,3 +31,24 @@ Key files touched:
 Notes:
 - Items exports (ITEMS SOLD / TOPITEMS / CATEGORY) are not imported yet; only sales_report*.xls are ingested into pos_sales.
 - Uploading a sales report in the dashboard now triggers backend import automatically.
+
+Deployment notes (wolf.discount/fd):
+- Frontend built with Vite base set to /fd/ and deployed to /srv/www/wolf.discount/fd.
+- Production API base uses /fd/api (set in .env.production).
+- POS backend runs via PM2 as fd-pos-api on PORT=5057 (npm run dev, cwd pos-dashboard-backend).
+- Nginx routes added in /etc/nginx/sites-available/wolf.discount:
+  - /fd/ -> alias /srv/www/wolf.discount/fd (SPA fallback to /fd/index.html)
+  - /fd/api/ -> proxy to http://127.0.0.1:5057/
+  - /fd/api/health -> proxy to http://127.0.0.1:5057/health
+- Postgres role salesapp created; schema applied to salesdb; privileges granted on public schema.
+- Importer uses venv Python at pos-dashboard-backend/.venv/bin/python (POS_IMPORT_PYTHON in pos-dashboard-backend/.env).
+- PM2 process list saved (pm2 save) so fd-pos-api restores on reboot via pm2-alphahs service.
+
+## Recent Changes (2026-01-31)
+- Moved FD public pages to subdomain: https://furnituredistributors.wolf.discount/
+- Added redirects from https://wolf.discount/furnituredistributors/* and /fd/ to the new subdomain.
+- Enabled /fd/ app on the subdomain with /fd/api/* routed to :5057.
+- Added quick-links index page on the subdomain root with a dashboard button.
+- Bedroom page restored with mobile-friendly stacking only (no snow effect).
+- Added CSV upload modal button to FD dashboard (/fd/) gated by dashboard unlock; posts to /fd-upload-csv.
+- Nginx now listens on 0.0.0.0:80/443 and :443/:80 IPv6; SSL issued for subdomain.

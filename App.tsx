@@ -38,6 +38,7 @@ const App: React.FC = () => {
   const [missingItemData, setMissingItemData] = useState(false);
   const [missingSalesData, setMissingSalesData] = useState(false);
   const [activeFilterLabel, setActiveFilterLabel] = useState<string | null>(null);
+  const [printSelectionCount, setPrintSelectionCount] = useState(0);
 
   useEffect(() => {
     if (!showLoading) return;
@@ -97,6 +98,16 @@ const App: React.FC = () => {
     };
     window.addEventListener("fd-filter", handler as EventListener);
     return () => window.removeEventListener("fd-filter", handler as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { count?: number } | undefined;
+      const count = Number(detail?.count ?? 0);
+      setPrintSelectionCount(Number.isFinite(count) ? count : 0);
+    };
+    window.addEventListener("fd-print-selection", handler as EventListener);
+    return () => window.removeEventListener("fd-print-selection", handler as EventListener);
   }, []);
 
   const handleUnlock = () => {
@@ -189,6 +200,38 @@ const App: React.FC = () => {
           .dark .bg-slate-100 { background-color: rgba(30, 41, 59, 0.8) !important; }
           .dark .border-slate-100 { border-color: rgba(51, 65, 85, 0.8) !important; }
           .dark .border-slate-200 { border-color: rgba(51, 65, 85, 0.8) !important; }
+          @media print {
+            body * { visibility: hidden; }
+            body { background: #ffffff !important; }
+            .fd-print-area,
+            .fd-print-area * { visibility: visible; }
+            .fd-print-area {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+              padding: 0 !important;
+              background: #ffffff !important;
+            }
+            .fd-print-card {
+              break-after: page;
+              page-break-after: always;
+              box-shadow: none !important;
+              border: 1px solid #e2e8f0 !important;
+              background: #ffffff !important;
+            }
+            .fd-print-card:last-child {
+              break-after: auto;
+              page-break-after: auto;
+            }
+            .fd-print-card[data-print-selected="false"] { display: none !important; }
+            .fd-print-hide { display: none !important; }
+            .fd-print-toggle { display: none !important; }
+            .fd-print-area table,
+            .fd-print-area .recharts-wrapper { page-break-inside: avoid; }
+            .fd-print-area a { color: #0f172a !important; text-decoration: none; }
+            .fd-print-area .shadow-sm { box-shadow: none !important; }
+          }
           @keyframes overlayDarken {
             0% { background-color: rgba(2, 6, 23, 0.15); }
             100% { background-color: rgba(2, 6, 23, 0.55); }
@@ -352,6 +395,24 @@ const App: React.FC = () => {
               <div className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                 Missing sales data for this date range
               </div>
+            )}
+            {activeTab === Tab.OVERVIEW && (
+              <button
+                onClick={() => window.dispatchEvent(new Event("fd-print-request"))}
+                disabled={printSelectionCount === 0}
+                className={`hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border transition-colors ${
+                  printSelectionCount === 0
+                    ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
+                title={
+                  printSelectionCount === 0
+                    ? "Select cards to print"
+                    : `Print ${printSelectionCount} selected card${printSelectionCount === 1 ? "" : "s"}`
+                }
+              >
+                Print Selected{printSelectionCount ? ` (${printSelectionCount})` : ""}
+              </button>
             )}
             {activeTab === Tab.OVERVIEW && (
               <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1 text-xs">

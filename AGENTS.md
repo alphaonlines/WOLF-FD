@@ -17,6 +17,16 @@ From the repo root:
 - `npm run build`: create a production build (`dist/`).
 - `npm run preview`: serve the production build locally.
 
+## Dev vs Live Workflow (Quick)
+
+- Dev (local): `npm run dev` serves the app on the Vite dev server (default `http://localhost:5173`).
+- Live (FD site): the `/fd` route is a static build served by nginx from `/srv/www/wolf.discount/fd`.
+- To deploy UI changes to `/fd`:
+  1) `cd /home/alphahs/WOLF-FD && npm run build`
+  2) `cp -r /home/alphahs/WOLF-FD/dist/* /srv/www/wolf.discount/fd/`
+  3) Hard refresh the browser (`Ctrl+Shift+R`).
+- Backend API for both dev and live: `http://127.0.0.1:5055` (proxied as `/fd/api/*` on the live site).
+
 ## Home Server Deployment Guide
 
 This guide walks through setting up the Furniture Distributors Dashboard on your home server for production use. Assumes a Linux server (e.g., Ubuntu/Debian) with sudo access, Node.js 18+, Python 3.8+, and internet access. Total time: 1-2 hours.
@@ -105,9 +115,9 @@ Contact support if issues arise. Enjoy your self-hosted dashboard!
 
 Backend lives in `pos-dashboard-backend/` and is used by the React dashboard via HTTP.
 
-- Start Postgres (Docker):
-  - `cd pos-dashboard-backend && docker-compose up -d`
-  - If you see `permission denied ... /var/run/docker.sock`, use `sudo docker-compose up -d` or add your user to the `docker` group.
+- Start Postgres (local service):
+  - Ensure `postgresql` is running on `127.0.0.1:5432`.
+  - On Ubuntu/Debian: `sudo systemctl start postgresql`
 - Apply/upgrade schema (safe to re-run):
   - `cd pos-dashboard-backend`
   - `psql "postgres://salesapp:dev_password_change_me@127.0.0.1:5432/salesdb" -f db/schema.sql`
@@ -127,6 +137,7 @@ Backend lives in `pos-dashboard-backend/` and is used by the React dashboard via
 
 - Frontend defaults to the POS backend at `http://127.0.0.1:5055`; override with `VITE_POS_API_BASE_URL`.
 - If `localhost:5173` refuses to connect, Vite is configured to bind to `::` in `vite.config.ts` so both `localhost` and `127.0.0.1` should work; ensure `npm run dev` is running.
+- On the production FD subdomain, `/fd/api/*` is proxied by nginx to `http://127.0.0.1:5055` for the dashboard.
 
 ### Tasks Board (Local DB)
 
@@ -174,3 +185,19 @@ For PRs: include a short summary, linked issues, manual test steps, and screensh
 - Do not commit secrets: use `.env.local` for local-only keys.
 - Gemini: `.env.local` currently uses `GEMINI_API_KEY`, while `services/geminiService.ts` reads `process.env.API_KEY`; keep these consistent when contributing (and remember Vite only exposes `VITE_*` vars to the browser by default).
 - Firebase: config placeholders live in `services/firebase.ts`; replacing them enables live mode, otherwise the app runs in mock-data mode.
+
+## Recent Changes (2026-01-31)
+- Moved FD public pages to subdomain: https://furnituredistributors.wolf.discount/
+- Added redirects from https://wolf.discount/furnituredistributors/* and /fd/ to the new subdomain.
+- Enabled /fd/ app on the subdomain with /fd/api/* routed to :5057.
+- Added quick-links index page on the subdomain root with a dashboard button.
+- Bedroom page restored with mobile-friendly stacking only (no snow effect).
+- Added CSV upload modal button to FD dashboard (/fd/) gated by dashboard unlock; posts to /fd-upload-csv.
+- Nginx now listens on 0.0.0.0:80/443 and :443/:80 IPv6; SSL issued for subdomain.
+- Removed Docker swarm services for dashboard APIs on this host; run POS backend locally on :5055 for demos.
+- Routed `/fd/api/*` to the local POS backend on :5055 (non-Docker).
+
+## Status Update (2026-01-31)
+- Work paused at user request; project manager will review next steps.
+- Backend is running locally on :5055 with nginx `/fd/api/*` proxyed to :5055.
+- Margin calculations now use item report totals (pos_sale_items) instead of sales report profit.

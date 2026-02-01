@@ -33,8 +33,6 @@ import {
 } from "../services/posBackendApi";
 import { SalesData, StoreData } from "../types";
 
-type CompareMode = "TWO_DAYS" | "TWO_WEEKS" | "TWO_MONTHS" | "TWO_YEARS";
-
 type SalespersonPoint = SalesData & {
   fullName: string;
 };
@@ -44,6 +42,24 @@ type Summary = {
   lines: number;
 };
 
+const PRINTABLE_CARDS = [
+  { id: "total-sales", title: "Total Sales" },
+  { id: "transactions", title: "Transactions" },
+  { id: "range-selector", title: "Range Selector" },
+  { id: "financed-amount", title: "Financed Amount" },
+  { id: "financed-transactions", title: "Financed Transactions" },
+  { id: "average-ticket", title: "Average Ticket" },
+  { id: "best-sellers", title: "Best Sellers" },
+  { id: "top-categories", title: "Top Categories" },
+  { id: "top-manufacturers", title: "Top Manufacturers" },
+  { id: "pro1st-attach", title: "Pro1st Attach Rate" },
+  { id: "salesperson-performance", title: "Salesperson Performance" },
+  { id: "store-performance", title: "Store Performance" },
+  { id: "sales-trend", title: "Sales Trend" },
+  { id: "low-margins", title: "Lowest Margins" },
+  { id: "salesperson-detail", title: "Salesperson Detail" },
+];
+
 const ymd = (d: Date) => d.toISOString().slice(0, 10);
 
 const addDaysYmd = (dateYmd: string, days: number) => {
@@ -52,45 +68,8 @@ const addDaysYmd = (dateYmd: string, days: number) => {
   return ymd(d);
 };
 
-const addMonthsYm = (yearMonth: string, monthsDelta: number) => {
-  const [y, m] = yearMonth.split("-").map((n) => Number(n));
-  if (!y || !m) return yearMonth;
-  const d = new Date(Date.UTC(y, m - 1, 1));
-  d.setUTCMonth(d.getUTCMonth() + monthsDelta);
-  return d.toISOString().slice(0, 7);
-};
-
 const startOfMonthYmd = (year: number, monthIndex0: number) =>
   ymd(new Date(Date.UTC(year, monthIndex0, 1)));
-
-const getIsoWeekStart = (isoWeek: string): string | null => {
-  // input: "YYYY-Www" (from <input type="week" />)
-  const m = /^(\d{4})-W(\d{2})$/.exec(isoWeek);
-  if (!m) return null;
-  const year = Number(m[1]);
-  const week = Number(m[2]);
-  if (!Number.isFinite(year) || !Number.isFinite(week) || week < 1 || week > 53) return null;
-
-  // ISO week 1 is the week with Jan 4th in it.
-  const jan4 = new Date(Date.UTC(year, 0, 4));
-  const day = jan4.getUTCDay(); // 0 Sun .. 6 Sat
-  const diffToMonday = (day + 6) % 7;
-  const week1Monday = new Date(jan4);
-  week1Monday.setUTCDate(jan4.getUTCDate() - diffToMonday);
-
-  const d = new Date(week1Monday);
-  d.setUTCDate(week1Monday.getUTCDate() + (week - 1) * 7);
-  return ymd(d);
-};
-
-const currentIsoWeek = () => {
-  const now = new Date();
-  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  d.setUTCDate(d.getUTCDate() + 4 - ((d.getUTCDay() + 6) % 7));
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const week = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return `${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
-};
 
 const getMonthRange = (yearMonth: string): { start: string; endExclusive: string } => {
   const [y, m] = yearMonth.split("-").map((n) => Number(n));
@@ -105,68 +84,27 @@ const getYearRange = (year: number): { start: string; endExclusive: string } => 
   return { start, endExclusive };
 };
 
+const getSimplifiedRange = (year: number, month: string, day: string): { start: string; endExclusive: string } | null => {
+  if (!year) return null;
+  if (month === "ALL") {
+    return getYearRange(year);
+  }
+  const ym = `${year}-${month.padStart(2, "0")}`;
+  if (day === "ALL") {
+    return getMonthRange(ym);
+  }
+  const start = `${ym}-${day.padStart(2, "0")}`;
+  return { start, endExclusive: addDaysYmd(start, 1) };
+};
+
 const pctChange = (current: number, previous: number) => {
   if (!Number.isFinite(current)) return 0;
   if (!Number.isFinite(previous) || previous === 0) return current === 0 ? 0 : 100;
   return ((current - previous) / previous) * 100;
 };
 
-const generateMonthOptions = () => {
-  const options = [];
-  const now = new Date();
-  for (let i = 0; i < 24; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("en-US", { year: "numeric", month: "long" });
-    options.push({ value, label });
-  }
-  return options;
-};
-
-const generateWeekOptions = () => {
-  const options = [];
-  const now = new Date();
-  const toIsoWeek = (date: Date) => {
-    const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-    d.setUTCDate(d.getUTCDate() + 4 - ((d.getUTCDay() + 6) % 7));
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const week = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    return `${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
-  };
-  const seen = new Set<string>();
-  for (let i = 0; i < 104; i++) {
-    const d = new Date(now);
-    d.setUTCDate(now.getUTCDate() - i * 7);
-    const isoWeek = toIsoWeek(d);
-    if (seen.has(isoWeek)) continue;
-    seen.add(isoWeek);
-    const start = getIsoWeekStart(isoWeek) || ymd(d);
-    const label = `Week of ${new Date(`${start}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}`;
-    options.push({ value: isoWeek, label });
-  }
-  return options;
-};
-
-const generateDayOptions = () => {
-  const options = [];
-  const now = new Date();
-  for (let i = 0; i < 90; i++) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    const value = ymd(d);
-    const label = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
-    options.push({ value, label });
-  }
-  return options;
-};
-
-const yearFromYm = (ym: string) => ym.split('-')[0];
-const monthFromYm = (ym: string) => ym.split('-')[1];
 const monthOptions = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
 const dayOptions = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
-
-const isValidYm = (v: string) => /^\d{4}-\d{2}$/.test(v);
-const isValidIsoWeek = (v: string) => /^\d{4}-W\d{2}$/.test(v);
 
 const safeDiv = (n: number, d: number) => (Number.isFinite(n) && Number.isFinite(d) && d !== 0 ? n / d : 0);
 
@@ -217,17 +155,18 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
   const [trendData, setTrendData] = useState<Array<{ day: string; sales: number; pro1stSales: number }>>([]);
   const [summary, setSummary] = useState<Summary>({ sales: 0, lines: 0 });
   const [summaryCompare, setSummaryCompare] = useState<Summary>({ sales: 0, lines: 0 });
-  const [compareMode, setCompareMode] = useState<CompareMode>("TWO_MONTHS");
+  
+  const [yearA, setYearA] = useState<number>(() => new Date().getFullYear());
+  const [monthA, setMonthA] = useState<string>(() => String(new Date().getMonth() + 1).padStart(2, "0"));
+  const [dayA, setDayA] = useState<string>("ALL");
+
+  const [yearB, setYearB] = useState<number | null>(null);
+  const [monthB, setMonthB] = useState<string>("ALL");
+  const [dayB, setDayB] = useState<string>("ALL");
+
   const [compareHint, setCompareHint] = useState("");
   const [availableYears, setAvailableYears] = useState<number[]>([]);
-  const [yearA, setYearA] = useState<number>(() => new Date().getFullYear());
-  const [yearB, setYearB] = useState<number | null>(null);
-  const [selectedWeek, setSelectedWeek] = useState<string>(() => currentIsoWeek());
-  const [compareWeek, setCompareWeek] = useState<string>("");
-  const [selectedDay, setSelectedDay] = useState<string>(ymd(new Date()));
-  const [compareDay, setCompareDay] = useState<string>("");
-  const [selectedMonth, setSelectedMonth] = useState<string>(() => "2026-01");
-  const [compareMonth, setCompareMonth] = useState<string>("");
+
   const [selectedSalesperson, setSelectedSalesperson] = useState<string | null>(null);
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
   const [searchHint, setSearchHint] = useState<string | null>(null);
@@ -318,6 +257,29 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     saleIdsHigh: [],
   });
   const [salePeopleMap, setSalePeopleMap] = useState<Record<string, string>>({});
+  const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(() => new Set());
+  const [printHint, setPrintHint] = useState<string | null>(null);
+
+  const selectedCount = selectedCardIds.size;
+  const totalPrintable = PRINTABLE_CARDS.length;
+  const isCardSelected = (id: string) => selectedCardIds.has(id);
+  const toggleCardSelection = (id: string) => {
+    setSelectedCardIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+  const selectAllCards = () => {
+    setSelectedCardIds(new Set(PRINTABLE_CARDS.map((card) => card.id)));
+  };
+  const clearAllCards = () => {
+    setSelectedCardIds(new Set());
+  };
 
   const yearOptions = useMemo(() => {
     const years = new Set<number>(availableYears);
@@ -367,50 +329,17 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     setLoading(true);
     setError(null);
     try {
-      let currentRange: { start: string; endExclusive: string };
-      let compareRange: { start: string; endExclusive: string } | null = null;
-
       const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
       const location = selectedStore ? selectedStore : undefined;
 
-      if (compareMode === "TWO_WEEKS") {
-        const weekA = getIsoWeekStart(selectedWeek);
-        const weekB = getIsoWeekStart(compareWeek);
-        if (!weekA) throw new Error("Invalid Week A");
-        currentRange = { start: weekA, endExclusive: addDaysYmd(weekA, 7) };
-        if (weekB) {
-          compareRange = { start: weekB, endExclusive: addDaysYmd(weekB, 7) };
-          setCompareHint(`vs ${compareWeek}`);
-        } else {
-          setCompareHint("");
-        }
-      } else if (compareMode === "TWO_DAYS") {
-        if (!selectedDay) throw new Error("Invalid Day A");
-        currentRange = { start: selectedDay, endExclusive: addDaysYmd(selectedDay, 1) };
-        if (compareDay) {
-          compareRange = { start: compareDay, endExclusive: addDaysYmd(compareDay, 1) };
-          setCompareHint(`vs ${compareDay}`);
-        } else {
-          setCompareHint("");
-        }
-      } else if (compareMode === "TWO_YEARS") {
-        if (!Number.isFinite(yearA)) throw new Error("Invalid Year A");
-        currentRange = getYearRange(yearA);
-        if (yearB !== null && Number.isFinite(yearB)) {
-          compareRange = getYearRange(yearB);
-          setCompareHint(`vs ${yearB}`);
-        } else {
-          setCompareHint("");
-        }
+      const currentRange = getSimplifiedRange(yearA, monthA, dayA);
+      if (!currentRange) throw new Error("Invalid Range A");
+
+      const compareRange = yearB ? getSimplifiedRange(yearB, monthB, dayB) : null;
+      if (compareRange) {
+        setCompareHint(`vs ${yearB}${monthB === "ALL" ? "" : "-" + monthB}${dayB === "ALL" ? "" : "-" + dayB}`);
       } else {
-        if (!isValidYm(selectedMonth)) throw new Error("Invalid Month A");
-        currentRange = getMonthRange(selectedMonth);
-        if (isValidYm(compareMonth)) {
-          compareRange = getMonthRange(compareMonth);
-          setCompareHint(`vs ${compareMonth}`);
-        } else {
-          setCompareHint("");
-        }
+        setCompareHint("");
       }
 
       const [
@@ -588,38 +517,42 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
 
   useEffect(() => {
     loadData();
-  }, [compareMode, selectedDay, compareDay, selectedWeek, compareWeek, selectedMonth, compareMonth, yearA, yearB, selectedSalesperson, selectedStore, itemSortMetric]);
+  }, [yearA, monthA, dayA, yearB, monthB, dayB, selectedSalesperson, selectedStore, itemSortMetric]);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("fd-print-selection", {
+        detail: { count: selectedCount, total: totalPrintable },
+      })
+    );
+  }, [selectedCount, totalPrintable]);
+
+  useEffect(() => {
+    const handler = () => {
+      if (!selectedCount) {
+        setPrintHint("Select at least one card to print.");
+        return;
+      }
+      setPrintHint(null);
+      window.print();
+    };
+    window.addEventListener("fd-print-request", handler as EventListener);
+    return () => window.removeEventListener("fd-print-request", handler as EventListener);
+  }, [selectedCount]);
+
+  useEffect(() => {
+    if (selectedCount > 0 && printHint) {
+      setPrintHint(null);
+    }
+  }, [selectedCount, printHint]);
 
   useEffect(() => {
     const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
     const location = selectedStore ? selectedStore : undefined;
-    let start = "1900-01-01";
-    let endExclusive = "2100-01-01";
-
-    try {
-      if (compareMode === "TWO_WEEKS") {
-        const weekA = getIsoWeekStart(selectedWeek);
-        if (weekA) {
-          start = weekA;
-          endExclusive = addDaysYmd(weekA, 7);
-        }
-      } else if (compareMode === "TWO_DAYS") {
-        if (selectedDay) {
-          start = selectedDay;
-          endExclusive = addDaysYmd(selectedDay, 1);
-        }
-      } else if (compareMode === "TWO_YEARS") {
-        const range = getYearRange(yearA);
-        start = range.start;
-        endExclusive = range.endExclusive;
-      } else if (isValidYm(selectedMonth)) {
-        const range = getMonthRange(selectedMonth);
-        start = range.start;
-        endExclusive = range.endExclusive;
-      }
-    } catch {
-      return;
-    }
+    
+    const range = getSimplifiedRange(yearA, monthA, dayA);
+    if (!range) return;
+    const { start, endExclusive } = range;
 
     Promise.all([
       fetchSalesDaily({ start, end: endExclusive, salesperson, location }),
@@ -658,7 +591,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         console.error(e);
         setTrendData([]);
       });
-  }, [compareMode, selectedDay, selectedWeek, selectedMonth, yearA, selectedSalesperson, selectedStore]);
+  }, [yearA, monthA, dayA, selectedSalesperson, selectedStore]);
 
   const revenuePct = pctChange(summary.sales, summaryCompare.sales);
   const linesPct = pctChange(summary.lines, summaryCompare.lines);
@@ -684,18 +617,14 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
 
   const avgTicketUp = avgTicketPct >= 0;
   const rangeLabel = useMemo(() => {
-    const start = currentRange.start || "1900-01-01";
-    if (compareMode === "TWO_DAYS") {
-      return formatShortDate(start);
+    if (dayA !== "ALL") {
+      return formatShortDate(currentRange.start);
     }
-    if (compareMode === "TWO_WEEKS") {
-      return `Week of ${formatShortDate(start)}`;
+    if (monthA !== "ALL") {
+      return formatMonthLabel(`${yearA}-${monthA}`);
     }
-    if (compareMode === "TWO_YEARS") {
-      return String(start.slice(0, 4));
-    }
-    return formatMonthLabel(start.slice(0, 7));
-  }, [compareMode, currentRange.start]);
+    return String(yearA);
+  }, [yearA, monthA, dayA, currentRange.start]);
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("fd-range", { detail: { label: rangeLabel } }));
@@ -721,6 +650,28 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     const name = salesperson ?? salePeopleMap[saleId] ?? "";
     const initials = name ? salespersonLabel(name) : "";
     return initials ? `${saleId} · ${initials}` : saleId;
+  };
+  const renderPrintToggle = (id: string) => (
+    <label
+      className="fd-print-toggle inline-flex items-center gap-2 text-xs font-semibold text-slate-500"
+      data-no-print-toggle
+      onClick={(event) => event.stopPropagation()}
+    >
+      <input
+        type="checkbox"
+        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+        checked={isCardSelected(id)}
+        onChange={() => toggleCardSelection(id)}
+        onClick={(event) => event.stopPropagation()}
+      />
+      Print
+    </label>
+  );
+  const handleCardClick = (id: string) => (event: React.MouseEvent) => {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+    if (target.closest("a,button,select,option,input,textarea,label,[data-no-print-toggle]")) return;
+    toggleCardSelection(id);
   };
   const syncSalePeople = async (ids: string[]) => {
     const unique = Array.from(new Set(ids.filter(Boolean)));
@@ -750,6 +701,11 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       const query = detail?.query?.trim();
       if (!query) return;
       const q = query.toLowerCase();
+      if (/^\d{3,}$/.test(query)) {
+        window.open(saleLink(query), "_blank", "noopener,noreferrer");
+        setSearchHint(`Opened ticket ${query}.`);
+        return;
+      }
       const salespersonMatch = salesData.find((s) => s.fullName.toLowerCase().includes(q));
       if (salespersonMatch) {
         selectSalesperson(salespersonMatch.fullName);
@@ -820,7 +776,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     };
     window.addEventListener("fd-refresh-data", handler);
     return () => window.removeEventListener("fd-refresh-data", handler);
-  }, [compareMode, selectedDay, compareDay, selectedWeek, compareWeek, selectedMonth, compareMonth, yearA, yearB, selectedSalesperson, selectedStore, itemSortMetric]);
+  }, [yearA, monthA, dayA, yearB, monthB, dayB, selectedSalesperson, selectedStore, itemSortMetric]);
 
   const hasItemData = pro1stStats.totalSales > 0;
   const missingItemData = summary.lines > 0 && !hasItemData;
@@ -852,6 +808,16 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     return () => window.removeEventListener("fd-clear-filters", handler as EventListener);
   }, []);
 
+  useEffect(() => {
+    if (selectedSalesperson) return;
+    setSelectedCardIds((prev) => {
+      if (!prev.has("salesperson-detail")) return prev;
+      const next = new Set(prev);
+      next.delete("salesperson-detail");
+      return next;
+    });
+  }, [selectedSalesperson]);
+
   if (loading && salesData.length === 0) {
     return (
       <div className="h-96 flex flex-col items-center justify-center text-slate-400">
@@ -862,9 +828,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
   }
 
   return (
-    <div className="space-y-6 animate-fade-in relative">
+    <div className="space-y-6 animate-fade-in relative fd-print-area">
       {(selectedSalesperson || selectedStore || searchHint) && (
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center">
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center fd-print-hide">
           <div className="text-sm font-semibold text-slate-800">Active Filters</div>
           {selectedSalesperson && (
             <span className="px-3 py-1 text-xs rounded-full bg-blue-50 text-blue-700">
@@ -895,14 +861,42 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 fd-print-hide">
           {error}
         </div>
       )}
 
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center fd-print-hide">
+        <div className="text-sm font-semibold text-slate-800">Print selection</div>
+        <div className="text-xs text-slate-500">
+          {selectedCount} of {totalPrintable} selected
+        </div>
+        <button
+          type="button"
+          onClick={selectAllCards}
+          className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+        >
+          Select all
+        </button>
+        <button
+          type="button"
+          onClick={clearAllCards}
+          className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+        >
+          Clear all
+        </button>
+        {printHint && <span className="text-xs text-amber-600">{printHint}</span>}
+      </div>
+
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between relative fd-print-card"
+          data-print-id="total-sales"
+          data-print-selected={isCardSelected("total-sales") ? "true" : "false"}
+          onClick={handleCardClick("total-sales")}
+        >
+          <div className="absolute right-4 top-4">{renderPrintToggle("total-sales")}</div>
           <div>
             <p className="text-sm font-medium text-slate-500">Total Sales</p>
             <h3 className="text-2xl font-bold text-slate-800">${summary.sales.toLocaleString()}</h3>
@@ -919,7 +913,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between relative fd-print-card"
+          data-print-id="transactions"
+          data-print-selected={isCardSelected("transactions") ? "true" : "false"}
+          onClick={handleCardClick("transactions")}
+        >
+          <div className="absolute right-4 top-4">{renderPrintToggle("transactions")}</div>
           <div>
             <p className="text-sm font-medium text-slate-500">Transactions</p>
             <h3 className="text-2xl font-bold text-slate-800">{summary.lines.toLocaleString()}</h3>
@@ -936,195 +936,108 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center">
-          <label className="text-sm font-medium text-slate-500 mb-2">Compare</label>
-          <select
-            id="fd-range-selector"
-            value={compareMode}
-            onChange={(e) => setCompareMode(e.target.value as CompareMode)}
-            className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-          >
-            <option value="TWO_DAYS">Compare Two Days</option>
-            <option value="TWO_WEEKS">Compare Two Weeks</option>
-            <option value="TWO_MONTHS">Compare Two Months</option>
-            <option value="TWO_YEARS">Compare Two Years</option>
-          </select>
-          {compareMode === "TWO_DAYS" ? (
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Day A</label>
-                <select
-                  value={selectedDay}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === "") return;
-                    setSelectedDay(v);
-                  }}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  {generateDayOptions().map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Day B (optional)</label>
-                <select
-                  value={compareDay}
-                  onChange={(e) => setCompareDay(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  <option value="">—</option>
-                  {generateDayOptions().map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center space-y-4 relative fd-print-card"
+          data-print-id="range-selector"
+          data-print-selected={isCardSelected("range-selector") ? "true" : "false"}
+          onClick={handleCardClick("range-selector")}
+        >
+          <div className="absolute right-4 top-4">{renderPrintToggle("range-selector")}</div>
+          <div>
+            <label className="text-sm font-semibold text-slate-700 mb-2 block">Range A (Main)</label>
+            <div className="grid grid-cols-3 gap-2">
+              <select
+                value={yearA}
+                onChange={(e) => setYearA(Number(e.target.value))}
+                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2"
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              <select
+                value={monthA}
+                onChange={(e) => {
+                  setMonthA(e.target.value);
+                  if (e.target.value === "ALL") setDayA("ALL");
+                }}
+                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2"
+              >
+                <option value="ALL">All Months</option>
+                {monthOptions.map((m) => (
+                  <option key={m} value={m}>
+                    {new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "short" })}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={dayA}
+                onChange={(e) => setDayA(e.target.value)}
+                disabled={monthA === "ALL"}
+                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50"
+              >
+                <option value="ALL">All Days</option>
+                {dayOptions.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
-          ) : compareMode === "TWO_WEEKS" ? (
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Week A</label>
-                <select
-                  value={selectedWeek}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === "") return; // don't allow clearing Week A
-                    setSelectedWeek(v);
-                  }}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  {generateWeekOptions().map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Week B (optional)</label>
-                <select
-                  value={compareWeek}
-                  onChange={(e) => setCompareWeek(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  <option value="">—</option>
-                  {generateWeekOptions().map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold text-slate-700 mb-2 block">Range B (Compare)</label>
+            <div className="grid grid-cols-3 gap-2">
+              <select
+                value={yearB || ""}
+                onChange={(e) => setYearB(e.target.value ? Number(e.target.value) : null)}
+                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2"
+              >
+                <option value="">None</option>
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              <select
+                value={monthB}
+                onChange={(e) => {
+                  setMonthB(e.target.value);
+                  if (e.target.value === "ALL") setDayB("ALL");
+                }}
+                disabled={!yearB}
+                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50"
+              >
+                <option value="ALL">All Months</option>
+                {monthOptions.map((m) => (
+                  <option key={m} value={m}>
+                    {new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "short" })}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={dayB}
+                onChange={(e) => setDayB(e.target.value)}
+                disabled={!yearB || monthB === "ALL"}
+                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50"
+              >
+                <option value="ALL">All Days</option>
+                {dayOptions.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
-          ) : compareMode === "TWO_YEARS" ? (
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Year A</label>
-                <select
-                  value={String(yearA)}
-                  onChange={(e) => setYearA(Number(e.target.value))}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  {(availableYears.length ? [...availableYears, 2023] : [yearA, 2023]).map((y) => (
-                    <option key={y} value={String(y)}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Year B (optional)</label>
-                <select
-                  value={yearB === null ? "" : String(yearB)}
-                  onChange={(e) => setYearB(e.target.value ? Number(e.target.value) : null)}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  <option value="">—</option>
-                  {(availableYears.length ? [...availableYears, 2023] : yearB === null ? [2023] : [yearB, 2023]).map((y) => (
-                    <option key={y} value={String(y)}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Year</label>
-                  <select
-                    value={yearFromYm(selectedMonth)}
-                    onChange={(e) => setSelectedMonth(`${e.target.value}-${monthFromYm(selectedMonth)}`)}
-                    className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                  >
-                    {yearOptions.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Month</label>
-                  <select
-                    value={monthFromYm(selectedMonth)}
-                    onChange={(e) => setSelectedMonth(`${yearFromYm(selectedMonth)}-${e.target.value}`)}
-                    className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                  >
-                    {monthOptions.map((m) => (
-                      <option key={m} value={m}>
-                        {new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "long" })}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Year</label>
-                  <select
-                    value={compareMonth ? yearFromYm(compareMonth) : ""}
-                    onChange={(e) => setCompareMonth(e.target.value && monthFromYm(compareMonth || selectedMonth) ? `${e.target.value}-${monthFromYm(compareMonth || selectedMonth)}` : "")}
-                    className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                  >
-                    <option value="">—</option>
-                    {yearOptions.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Month</label>
-                  <select
-                    value={compareMonth ? monthFromYm(compareMonth) : ""}
-                    onChange={(e) => setCompareMonth(e.target.value && yearFromYm(compareMonth || selectedMonth) ? `${yearFromYm(compareMonth || selectedMonth)}-${e.target.value}` : "")}
-                    className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                  >
-                    <option value="">—</option>
-                    {monthOptions.map((m) => (
-                      <option key={m} value={m}>
-                        {new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "long" })}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
       {/* Finance + Avg Ticket */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card"
+          data-print-id="financed-amount"
+          data-print-selected={isCardSelected("financed-amount") ? "true" : "false"}
+          onClick={handleCardClick("financed-amount")}
+        >
+          <div className="absolute right-4 top-4">{renderPrintToggle("financed-amount")}</div>
           <p className="text-sm font-medium text-slate-500">Financed Amount</p>
           <h3 className="text-2xl font-bold text-slate-800">${finance.financedAmount.toLocaleString()}</h3>
           <p className="text-sm text-slate-400 mt-1">{financePenetration.toFixed(1)}% of transactions financed</p>
@@ -1136,7 +1049,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
             </div>
           )}
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card"
+          data-print-id="financed-transactions"
+          data-print-selected={isCardSelected("financed-transactions") ? "true" : "false"}
+          onClick={handleCardClick("financed-transactions")}
+        >
+          <div className="absolute right-4 top-4">{renderPrintToggle("financed-transactions")}</div>
           <p className="text-sm font-medium text-slate-500">Financed Transactions</p>
           <h3 className="text-2xl font-bold text-slate-800">{finance.financedLines.toLocaleString()}</h3>
           <p className="text-sm text-slate-400 mt-1">Count where finance &gt; 0</p>
@@ -1148,7 +1067,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
             </div>
           )}
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card"
+          data-print-id="average-ticket"
+          data-print-selected={isCardSelected("average-ticket") ? "true" : "false"}
+          onClick={handleCardClick("average-ticket")}
+        >
+          <div className="absolute right-4 top-4">{renderPrintToggle("average-ticket")}</div>
           <p className="text-sm font-medium text-slate-500">Average Ticket</p>
           <h3 className="text-2xl font-bold text-slate-800">${avgTicket.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
           <p className="text-sm text-slate-400 mt-1">Sales ÷ transactions (A)</p>
@@ -1163,12 +1088,20 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Best Sellers</h3>
-            <p className="text-sm text-slate-500">
-              Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"} for the selected range.
-            </p>
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
+          data-print-id="best-sellers"
+          data-print-selected={isCardSelected("best-sellers") ? "true" : "false"}
+          onClick={handleCardClick("best-sellers")}
+        >
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Best Sellers</h3>
+              <p className="text-sm text-slate-500">
+                Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"} for the selected range.
+              </p>
+            </div>
+            {renderPrintToggle("best-sellers")}
           </div>
           {bestSellers.length ? (
             <div className="space-y-4">
@@ -1218,12 +1151,20 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
           )}
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Top Categories</h3>
-            <p className="text-sm text-slate-500">
-              Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"}.
-            </p>
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
+          data-print-id="top-categories"
+          data-print-selected={isCardSelected("top-categories") ? "true" : "false"}
+          onClick={handleCardClick("top-categories")}
+        >
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Top Categories</h3>
+              <p className="text-sm text-slate-500">
+                Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"}.
+              </p>
+            </div>
+            {renderPrintToggle("top-categories")}
           </div>
           {topCategories.length ? (
             <div className="space-y-4">
@@ -1313,12 +1254,20 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Top Manufacturers</h3>
-            <p className="text-sm text-slate-500">
-              Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"}.
-            </p>
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
+          data-print-id="top-manufacturers"
+          data-print-selected={isCardSelected("top-manufacturers") ? "true" : "false"}
+          onClick={handleCardClick("top-manufacturers")}
+        >
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Top Manufacturers</h3>
+              <p className="text-sm text-slate-500">
+                Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"}.
+              </p>
+            </div>
+            {renderPrintToggle("top-manufacturers")}
           </div>
           {topManufacturers.length ? (
             <div className="space-y-4">
@@ -1406,10 +1355,18 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
           )}
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Pro1st Attach Rate</h3>
-            <p className="text-sm text-slate-500">Sales orders that include Pro1st</p>
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
+          data-print-id="pro1st-attach"
+          data-print-selected={isCardSelected("pro1st-attach") ? "true" : "false"}
+          onClick={handleCardClick("pro1st-attach")}
+        >
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Pro1st Attach Rate</h3>
+              <p className="text-sm text-slate-500">Sales orders that include Pro1st</p>
+            </div>
+            {renderPrintToggle("pro1st-attach")}
           </div>
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -1465,12 +1422,20 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       {/* Main Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Salesperson Performance */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Salesperson Performance</h3>
-            <p className="text-sm text-slate-500">Revenue by associate</p>
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
+          data-print-id="salesperson-performance"
+          data-print-selected={isCardSelected("salesperson-performance") ? "true" : "false"}
+          onClick={handleCardClick("salesperson-performance")}
+        >
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Salesperson Performance</h3>
+              <p className="text-sm text-slate-500">Revenue by associate</p>
+            </div>
+            {renderPrintToggle("salesperson-performance")}
           </div>
-          <div className="h-80 w-full">
+          <div className="h-80 w-full" data-no-print-toggle>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={salesData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <CartesianGrid stroke="#f1f5f9" vertical={false} />
@@ -1511,12 +1476,20 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         </div>
 
         {/* Store Location Breakdown */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Store Performance</h3>
-            <p className="text-sm text-slate-500">Revenue by location</p>
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
+          data-print-id="store-performance"
+          data-print-selected={isCardSelected("store-performance") ? "true" : "false"}
+          onClick={handleCardClick("store-performance")}
+        >
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Store Performance</h3>
+              <p className="text-sm text-slate-500">Revenue by location</p>
+            </div>
+            {renderPrintToggle("store-performance")}
           </div>
-          <div className="h-80 w-full">
+          <div className="h-80 w-full" data-no-print-toggle>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={storeData} layout="vertical" margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                 <CartesianGrid stroke="#f1f5f9" horizontal={true} vertical={false} />
@@ -1557,14 +1530,20 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       </div>
 
       {/* Trend */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="mb-6">
+      <div
+        className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
+        data-print-id="sales-trend"
+        data-print-selected={isCardSelected("sales-trend") ? "true" : "false"}
+        onClick={handleCardClick("sales-trend")}
+      >
+          <div className="mb-6 flex items-start justify-between gap-4">
             <div>
               <h3 className="text-lg font-bold text-slate-800">Sales Trend</h3>
               <p className="text-sm text-slate-500">Trend mirrors the selected date range.</p>
             </div>
+            {renderPrintToggle("sales-trend")}
           </div>
-        <div className="h-80 w-full">
+        <div className="h-80 w-full" data-no-print-toggle>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={trendData}
@@ -1623,10 +1602,18 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       </div>
 
       {/* Lowest Margins per Salesperson */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-        <div className="mb-6">
-          <h3 className="text-lg font-bold text-slate-800">Lowest Margins per Salesperson (Trend Dates)</h3>
-          <p className="text-sm text-slate-500">Lowest 10 margin sales per associate (by selected period) - Click headers to sort</p>
+      <div
+        className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
+        data-print-id="low-margins"
+        data-print-selected={isCardSelected("low-margins") ? "true" : "false"}
+        onClick={handleCardClick("low-margins")}
+      >
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Lowest Margins per Salesperson (Trend Dates)</h3>
+            <p className="text-sm text-slate-500">Lowest 10 margin sales per associate (by selected period) - Click headers to sort</p>
+          </div>
+          {renderPrintToggle("low-margins")}
         </div>
         {sortedLowMarginData.length > 0 ? (
           <div className="overflow-x-auto">
@@ -1677,10 +1664,18 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       </div>
 
       {selectedSalesperson && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Salesperson Detail: {selectedSalesperson}</h3>
-            <p className="text-sm text-slate-500">All tickets for the selected date range</p>
+        <div
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
+          data-print-id="salesperson-detail"
+          data-print-selected={isCardSelected("salesperson-detail") ? "true" : "false"}
+          onClick={handleCardClick("salesperson-detail")}
+        >
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Salesperson Detail: {selectedSalesperson}</h3>
+              <p className="text-sm text-slate-500">All tickets for the selected date range</p>
+            </div>
+            {renderPrintToggle("salesperson-detail")}
           </div>
           {salespersonTickets.length ? (
             <div className="overflow-x-auto">
