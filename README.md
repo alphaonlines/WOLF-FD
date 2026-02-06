@@ -2,6 +2,23 @@
 
 Furniture Distributors dashboard (Vite + React) with a local POS backend API and Postgres data store.
 
+## Architecture
+
+- **Frontend:** Vite + React (served by Nginx in production)
+- **Backend API:** Node.js Express (running in Docker Swarm)
+- **Database:** PostgreSQL 16 (Docker)
+- **Python Importer:** Python 3 + Pandas/Lxml for processing POS exports
+
+## Production Environment
+
+- **Public URL:** `https://furnituredistributors.wolf.discount/fd/`
+- **API URL:** `https://furnituredistributors.wolf.discount/fd/api/`
+- **Backend Port:** `5057`
+- **Database Port (Host):** `5433`
+
+### Nginx Routing
+Nginx acts as a reverse proxy, mapping `/fd/api/` to the internal Swarm service. Note that the path mapping includes a redundant `/api` in the frontend code to correctly trigger the backend's relative routing logic.
+
 ## Quick Start (Local Dev)
 
 From repo root:
@@ -18,34 +35,19 @@ From backend folder:
 2) Start backend API (dev mode):
    `npm run dev`
 3) Health check:
-   `curl -s http://127.0.0.1:5055/health`
-
-Default ports:
-- Frontend: `http://127.0.0.1:5173`
-- Backend: `http://127.0.0.1:5055`
-
-## Backend Environment
-
-Create `pos-dashboard-backend/.env` with Postgres credentials:
-
-```
-PGHOST=127.0.0.1
-PGPORT=5432
-PGDATABASE=salesdb
-PGUSER=salesapp
-PGPASSWORD=dev_password_change_me
-```
+   `curl -s http://127.0.0.1:5057/health`
 
 ## CSV/XLSX Import Workflow
 
-- Put `.xlsx`/`.xls` files into `pos-dashboard-backend/incoming/`.
-- Run importer:
-  `cd pos-dashboard-backend && source .venv/bin/activate && python importer/import_pos_xlsx.py`
-- Re-import without moving files:
-  `python importer/import_pos_xlsx.py --include-processed --no-move`
+- Upload via the Dashboard "Upload to Backend" modal.
+- Or manual: Put `.xlsx`/`.xls` files into `pos-dashboard-backend/incoming/` and run the script within the container.
 
 ## Notes
 
-- The backend API is intended to run locally (non-Docker) for development and demos.
-- Frontend talks to the backend via `VITE_POS_API_BASE_URL` (defaults to `http://127.0.0.1:5055`).
-- For deeper setup, see `PROJECT_NOTES.md` and `AGENTS.md`.
+- The backend is consolidated on **Port 5057**.
+- Database connectivity uses host IP with Port **5433** to bridge Swarm and standard Docker networks.
+- For historical context, see `PROJECT_NOTES.md` and `AGENTS.md`.
+
+## Current State Note (2026-02-06)
+
+The live nginx config routes `/fd/api/` to `127.0.0.1:5057`. The Docker `alphahs/fd-pos-api:local` container is published on host `:5057`, and no listener was found on `:5055`. This means nginx and the backend deployment are aligned on `5057`.
