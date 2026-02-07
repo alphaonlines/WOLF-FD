@@ -1,4 +1,21 @@
-import React, { useEffect, useState, useMemo } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   Area,
   Bar,
@@ -27,6 +44,7 @@ import {
   fetchTopManufacturers,
   fetchPro1stAttachRate,
   fetchSalespersonTickets,
+  fetchSalesReport,
   fetchManufacturerTopItems,
   fetchCategoryTopItems,
   fetchSalespeopleBySaleIds,
@@ -42,23 +60,27 @@ type Summary = {
   lines: number;
 };
 
-const PRINTABLE_CARDS = [
-  { id: "total-sales", title: "Total Sales" },
-  { id: "transactions", title: "Transactions" },
-  { id: "range-selector", title: "Range Selector" },
-  { id: "financed-amount", title: "Financed Amount" },
-  { id: "financed-transactions", title: "Financed Transactions" },
-  { id: "average-ticket", title: "Average Ticket" },
-  { id: "best-sellers", title: "Best Sellers" },
-  { id: "top-categories", title: "Top Categories" },
-  { id: "top-manufacturers", title: "Top Manufacturers" },
-  { id: "pro1st-attach", title: "Pro1st Attach Rate" },
-  { id: "salesperson-performance", title: "Salesperson Performance" },
-  { id: "store-performance", title: "Store Performance" },
-  { id: "sales-trend", title: "Sales Trend" },
-  { id: "low-margins", title: "Lowest Margins" },
-  { id: "salesperson-detail", title: "Salesperson Detail" },
-];
+function SortableItem({ id, children, className }: { id: string; children: React.ReactNode; className?: string }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={className}>
+      {children}
+    </div>
+  );
+}
+
 
 const ymd = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -127,6 +149,19 @@ const formatMonthLabel = (ym: string) => {
   return d.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
 };
 
+const formatDateLong = (value: string) => {
+  if (!value) return "";
+  const d = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+};
+
+const formatRangeLabel = (range: { start: string; endExclusive: string }) => {
+  const endInclusive = addDaysYmd(range.endExclusive, -1);
+  if (range.start === endInclusive) return formatDateLong(range.start);
+  return `${formatDateLong(range.start)} – ${formatDateLong(endInclusive)}`;
+};
+
 const salespersonLabel = (fullName: string) => {
   const s = String(fullName || "").trim();
   if (!s) return "UNK";
@@ -147,24 +182,69 @@ const salespersonLabel = (fullName: string) => {
 type SalesDashboardProps = {
   itemSortMetric: "sales" | "qty";
   onItemSortMetricChange: (metric: "sales" | "qty") => void;
+  showTooltips?: boolean;
 };
 
-const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemSortMetricChange }) => {
+const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemSortMetricChange, showTooltips = false }) => {
   const [salesData, setSalesData] = useState<SalespersonPoint[]>([]);
   const [storeData, setStoreData] = useState<StoreData[]>([]);
-  const [trendData, setTrendData] = useState<Array<{ day: string; sales: number; pro1stSales: number }>>([]);
+  const [trendData, setTrendData] = useState<Array<{ day: string; sales: number; pro1stSales: number; pro1stPct: number }>>([]);
+  const [trendFocusDay, setTrendFocusDay] = useState<string | null>(null);
+  const trendPrevRangeRef = useRef<{ year: number; month: string; day: string } | null>(null);
   const [summary, setSummary] = useState<Summary>({ sales: 0, lines: 0 });
   const [summaryCompare, setSummaryCompare] = useState<Summary>({ sales: 0, lines: 0 });
   
   const [yearA, setYearA] = useState<number>(() => new Date().getFullYear());
-  const [monthA, setMonthA] = useState<string>(() => String(new Date().getMonth() + 1).padStart(2, "0"));
+  const [monthA, setMonthA] = useState<string>("01");
   const [dayA, setDayA] = useState<string>("ALL");
+
+  useEffect(() => {
+    if (!trendFocusDay) return;
+    const current = `${yearA}-${monthA}-${dayA}`;
+    if (current !== trendFocusDay) {
+      setTrendFocusDay(null);
+      trendPrevRangeRef.current = null;
+    }
+  }, [yearA, monthA, dayA, trendFocusDay]);
+
+  const [statCardOrder, setStatCardOrder] = useState<string[]>(() => {
+    const saved = localStorage.getItem("fd-stat-card-order");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed;
+      } catch (e) {}
+    }
+    return ["range-selector", "transactions", "total-sales", "financed-amount", "financed-transactions", "avg-ticket"];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("fd-stat-card-order", JSON.stringify(statCardOrder));
+  }, [statCardOrder]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      setStatCardOrder((items) => {
+        const oldIndex = items.indexOf(active.id as string);
+        const newIndex = items.indexOf(over!.id as string);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
 
   const [yearB, setYearB] = useState<number | null>(null);
   const [monthB, setMonthB] = useState<string>("ALL");
   const [dayB, setDayB] = useState<string>("ALL");
+  const [compareEnabled, setCompareEnabled] = useState<boolean>(false);
 
   const [compareHint, setCompareHint] = useState("");
+  const printGeneratedAt = useMemo(() => new Date(), []);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
 
   const [selectedSalesperson, setSelectedSalesperson] = useState<string | null>(null);
@@ -197,6 +277,61 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     marginPct: number | null;
   }>>([]);
   const [lowMarginSort, setLowMarginSort] = useState<{ column: string; direction: 'asc' | 'desc' }>({ column: 'marginPct', direction: 'asc' });
+  const [collapsedCards, setCollapsedCards] = useState<Record<string, boolean>>({
+    "best-sellers": true,
+    "top-categories": true,
+    "top-manufacturers": true,
+    "pro1st-attach": true,
+  });
+  const [reportMode, setReportMode] = useState<"totals" | "lowest">("totals");
+  const [reportDimension, setReportDimension] = useState<"salesperson" | "store">("salesperson");
+  const [reportCategory, setReportCategory] = useState<string>("ALL");
+  const [reportManufacturer, setReportManufacturer] = useState<string>("ALL");
+  const [reportData, setReportData] = useState<{
+    rows: Array<{
+      label: string;
+      ticketCount: number;
+      totalRetail: number;
+      units: number;
+      avgMarginPct: number | null;
+    }>;
+    availableCategories: string[];
+    availableManufacturers: string[];
+  }>({
+    rows: [],
+    availableCategories: [],
+    availableManufacturers: [],
+  });
+  const [reportDataSalesperson, setReportDataSalesperson] = useState<{
+    rows: Array<{
+      label: string;
+      ticketCount: number;
+      totalRetail: number;
+      units: number;
+      avgMarginPct: number | null;
+    }>;
+    availableCategories: string[];
+    availableManufacturers: string[];
+  }>({
+    rows: [],
+    availableCategories: [],
+    availableManufacturers: [],
+  });
+  const [reportDataStore, setReportDataStore] = useState<{
+    rows: Array<{
+      label: string;
+      ticketCount: number;
+      totalRetail: number;
+      units: number;
+      avgMarginPct: number | null;
+    }>;
+    availableCategories: string[];
+    availableManufacturers: string[];
+  }>({
+    rows: [],
+    availableCategories: [],
+    availableManufacturers: [],
+  });
   const [bestSellers, setBestSellers] = useState<Array<{
     itemDescription: string;
     category: string;
@@ -257,28 +392,35 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     saleIdsHigh: [],
   });
   const [salePeopleMap, setSalePeopleMap] = useState<Record<string, string>>({});
-  const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(() => new Set());
-  const [printHint, setPrintHint] = useState<string | null>(null);
 
-  const selectedCount = selectedCardIds.size;
-  const totalPrintable = PRINTABLE_CARDS.length;
-  const isCardSelected = (id: string) => selectedCardIds.has(id);
-  const toggleCardSelection = (id: string) => {
-    setSelectedCardIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+  const isCardCollapsed = (id: string) => !!collapsedCards[id];
+  const toggleCard = (id: string) => {
+    setCollapsedCards((prev) => ({ ...prev, [id]: !prev[id] }));
   };
-  const selectAllCards = () => {
-    setSelectedCardIds(new Set(PRINTABLE_CARDS.map((card) => card.id)));
-  };
-  const clearAllCards = () => {
-    setSelectedCardIds(new Set());
+  const renderCardToggle = (id: string) => (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleCard(id);
+      }}
+      className="fd-print-hide text-xs font-semibold text-slate-500 hover:text-slate-700 border border-slate-200 rounded-full px-3 py-1"
+      title={isCardCollapsed(id) ? "Expand card" : "Minimize card"}
+    >
+      {isCardCollapsed(id) ? "Expand" : "Minimize"}
+    </button>
+  );
+
+  const renderHelp = (text: string) => {
+    if (!showTooltips) return null;
+    return (
+      <span
+        className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-100 text-slate-500 text-xs font-bold"
+        title={text}
+      >
+        ?
+      </span>
+    );
   };
 
   const yearOptions = useMemo(() => {
@@ -307,6 +449,84 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     });
   }, [lowMarginData, lowMarginSort]);
 
+  const computeReportTotals = (rows: Array<{
+    label: string;
+    ticketCount: number;
+    totalRetail: number;
+    units: number;
+    avgMarginPct: number | null;
+  }>) => {
+    const totals = rows.reduce(
+      (acc, row) => {
+        acc.totalRetail += Number.isFinite(row.totalRetail) ? row.totalRetail : 0;
+        acc.totalUnits += Number.isFinite(row.units) ? row.units : 0;
+        acc.totalTickets += Number.isFinite(row.ticketCount) ? row.ticketCount : 0;
+        if (row.avgMarginPct !== null && Number.isFinite(row.avgMarginPct)) {
+          acc.marginWeighted += row.avgMarginPct * (Number.isFinite(row.ticketCount) ? row.ticketCount : 0);
+        }
+        return acc;
+      },
+      { totalRetail: 0, totalUnits: 0, totalTickets: 0, marginWeighted: 0 }
+    );
+    const avgMarginPct = totals.totalTickets > 0 ? totals.marginWeighted / totals.totalTickets : null;
+    return { ...totals, avgMarginPct };
+  };
+
+  const reportTotals = useMemo(() => {
+    return computeReportTotals(reportData.rows);
+  }, [reportData.rows]);
+
+  const reportRowsWithPct = useMemo(() => {
+    return reportData.rows.map((row) => ({
+      ...row,
+      retailPct: reportTotals.totalRetail > 0 ? (row.totalRetail / reportTotals.totalRetail) * 100 : 0,
+      unitsPct: reportTotals.totalUnits > 0 ? (row.units / reportTotals.totalUnits) * 100 : 0,
+    }));
+  }, [reportData.rows, reportTotals.totalRetail, reportTotals.totalUnits]);
+
+  const reportTotalsSalesperson = useMemo(() => computeReportTotals(reportDataSalesperson.rows), [reportDataSalesperson.rows]);
+  const reportTotalsStore = useMemo(() => computeReportTotals(reportDataStore.rows), [reportDataStore.rows]);
+
+  const reportRowsWithPctSalesperson = useMemo(() => {
+    return reportDataSalesperson.rows.map((row) => ({
+      ...row,
+      retailPct: reportTotalsSalesperson.totalRetail > 0 ? (row.totalRetail / reportTotalsSalesperson.totalRetail) * 100 : 0,
+      unitsPct: reportTotalsSalesperson.totalUnits > 0 ? (row.units / reportTotalsSalesperson.totalUnits) * 100 : 0,
+    }));
+  }, [reportDataSalesperson.rows, reportTotalsSalesperson.totalRetail, reportTotalsSalesperson.totalUnits]);
+
+  const reportRowsWithPctStore = useMemo(() => {
+    return reportDataStore.rows.map((row) => ({
+      ...row,
+      retailPct: reportTotalsStore.totalRetail > 0 ? (row.totalRetail / reportTotalsStore.totalRetail) * 100 : 0,
+      unitsPct: reportTotalsStore.totalUnits > 0 ? (row.units / reportTotalsStore.totalUnits) * 100 : 0,
+    }));
+  }, [reportDataStore.rows, reportTotalsStore.totalRetail, reportTotalsStore.totalUnits]);
+
+  useEffect(() => {
+    const next = reportDimension === "store" ? reportDataStore : reportDataSalesperson;
+    setReportData({
+      rows: next.rows,
+      availableCategories: next.availableCategories,
+      availableManufacturers: next.availableManufacturers,
+    });
+  }, [reportDimension, reportDataSalesperson, reportDataStore]);
+
+  const formatMarginPct = (value: number | null) => {
+    if (!Number.isFinite(value as number)) return "N/A";
+    return `${(value as number).toFixed(1)}%`;
+  };
+
+  const reportCategoryOptions = useMemo(() => {
+    const values = [...reportData.availableCategories, reportCategory].filter((v) => v && String(v).trim());
+    return ["ALL", ...Array.from(new Set(values))];
+  }, [reportData.availableCategories, reportCategory]);
+
+  const reportManufacturerOptions = useMemo(() => {
+    const values = [...reportData.availableManufacturers, reportManufacturer].filter((v) => v && String(v).trim());
+    return ["ALL", ...Array.from(new Set(values))];
+  }, [reportData.availableManufacturers, reportManufacturer]);
+
 
 
 
@@ -315,10 +535,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       .then((years) => {
         if (!years.length) return;
         setAvailableYears(years);
-        const maxYear = years[years.length - 1];
-        const prevYear = years.length > 1 ? years[years.length - 2] : null;
-        setYearA(maxYear);
-        setYearB(prevYear);
+        const currentYear = new Date().getFullYear();
+        if (years.includes(currentYear)) {
+          setYearA(currentYear);
+        } else {
+          setYearA(years[years.length - 1]);
+        }
+        setYearB(null);
       })
       .catch(() => {
         // ignore; UI still works with manual year values
@@ -335,7 +558,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       const currentRange = getSimplifiedRange(yearA, monthA, dayA);
       if (!currentRange) throw new Error("Invalid Range A");
 
-      const compareRange = yearB ? getSimplifiedRange(yearB, monthB, dayB) : null;
+      const compareRange = compareEnabled && yearB ? getSimplifiedRange(yearB, monthB, dayB) : null;
       if (compareRange) {
         setCompareHint(`vs ${yearB}${monthB === "ALL" ? "" : "-" + monthB}${dayB === "ALL" ? "" : "-" + dayB}`);
       } else {
@@ -350,6 +573,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         prevSummary,
         prevFinanceSummary,
         lowMarginRows,
+        reportSummarySalesperson,
+        reportSummaryStore,
         bestSellerRows,
         categoryRows,
         manufacturerRows,
@@ -372,7 +597,34 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         compareRange
           ? fetchFinanceSummary({ start: compareRange.start, end: compareRange.endExclusive, salesperson, location })
           : Promise.resolve(null),
-        fetchLowMargin({ start: currentRange.start, end: currentRange.endExclusive, limitPer: 10, limitTotal: 200, salesperson, location }),
+        fetchLowMargin({
+          start: currentRange.start,
+          end: currentRange.endExclusive,
+          limitPer: 10,
+          limitTotal: 200,
+          salesperson,
+          location,
+          category: reportCategory !== "ALL" ? reportCategory : undefined,
+          manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
+        }),
+        fetchSalesReport({
+          start: currentRange.start,
+          end: currentRange.endExclusive,
+          dimension: "salesperson",
+          salesperson,
+          location,
+          category: reportCategory !== "ALL" ? reportCategory : undefined,
+          manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
+        }),
+        fetchSalesReport({
+          start: currentRange.start,
+          end: currentRange.endExclusive,
+          dimension: "store",
+          salesperson,
+          location,
+          category: reportCategory !== "ALL" ? reportCategory : undefined,
+          manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
+        }),
         fetchBestSellers({ start: currentRange.start, end: currentRange.endExclusive, limit: 15, sort: itemSortMetric, location, salesperson }),
         fetchTopCategories({ start: currentRange.start, end: currentRange.endExclusive, limit: 8, sort: itemSortMetric, location, salesperson }),
         fetchTopManufacturers({ start: currentRange.start, end: currentRange.endExclusive, limit: 8, sort: itemSortMetric, location, salesperson }),
@@ -451,6 +703,22 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       }
 
       setLowMarginData(lowMarginRows.rows);
+      setReportDataSalesperson({
+        rows: reportSummarySalesperson.rows,
+        availableCategories: reportSummarySalesperson.availableCategories,
+        availableManufacturers: reportSummarySalesperson.availableManufacturers,
+      });
+      setReportDataStore({
+        rows: reportSummaryStore.rows,
+        availableCategories: reportSummaryStore.availableCategories,
+        availableManufacturers: reportSummaryStore.availableManufacturers,
+      });
+      const activeReport = reportDimension === "store" ? reportSummaryStore : reportSummarySalesperson;
+      setReportData({
+        rows: activeReport.rows,
+        availableCategories: activeReport.availableCategories,
+        availableManufacturers: activeReport.availableManufacturers,
+      });
       setBestSellers(bestSellerRows);
       setTopCategories(categoryRows);
       setTopManufacturers(manufacturerRows);
@@ -471,7 +739,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       void syncSalePeople([...proIds, ...bestIds]);
     } catch (e) {
       console.error(e);
-      setError("Couldn’t load POS data. Confirm the backend API is running on http://127.0.0.1:5055.");
+      setError(`Couldn’t load POS data. Confirm the backend API is running at ${getPosApiBaseUrl()}`);
       // Reset all data on error
       setSalesData([]);
       setStoreData([]);
@@ -490,6 +758,21 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         financeBalance: 0,
       });
       setLowMarginData([]);
+      setReportData({
+        rows: [],
+        availableCategories: [],
+        availableManufacturers: [],
+      });
+      setReportDataSalesperson({
+        rows: [],
+        availableCategories: [],
+        availableManufacturers: [],
+      });
+      setReportDataStore({
+        rows: [],
+        availableCategories: [],
+        availableManufacturers: [],
+      });
       setBestSellers([]);
       setTopCategories([]);
       setTopManufacturers([]);
@@ -517,34 +800,29 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
 
   useEffect(() => {
     loadData();
-  }, [yearA, monthA, dayA, yearB, monthB, dayB, selectedSalesperson, selectedStore, itemSortMetric]);
-
-  useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent("fd-print-selection", {
-        detail: { count: selectedCount, total: totalPrintable },
-      })
-    );
-  }, [selectedCount, totalPrintable]);
+  }, [
+    yearA,
+    monthA,
+    dayA,
+    yearB,
+    monthB,
+    dayB,
+    compareEnabled,
+    selectedSalesperson,
+    selectedStore,
+    itemSortMetric,
+    reportDimension,
+    reportCategory,
+    reportManufacturer,
+  ]);
 
   useEffect(() => {
     const handler = () => {
-      if (!selectedCount) {
-        setPrintHint("Select at least one card to print.");
-        return;
-      }
-      setPrintHint(null);
       window.print();
     };
     window.addEventListener("fd-print-request", handler as EventListener);
     return () => window.removeEventListener("fd-print-request", handler as EventListener);
-  }, [selectedCount]);
-
-  useEffect(() => {
-    if (selectedCount > 0 && printHint) {
-      setPrintHint(null);
-    }
-  }, [selectedCount, printHint]);
+  }, []);
 
   useEffect(() => {
     const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
@@ -559,7 +837,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       fetchPro1stTrend({ start, end: endExclusive, salesperson, location }),
     ])
       .then(([dailyRows, proRows]) => {
-        const map = new Map<string, { day: string; sales: number; pro1stSales: number }>();
+        const map = new Map<string, { day: string; sales: number; pro1stSales: number; pro1stPct: number }>();
         dailyRows
           .filter((r) => r.day)
           .forEach((r) => {
@@ -568,6 +846,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
               day,
               sales: Number.isFinite(r.sales) ? r.sales : 0,
               pro1stSales: 0,
+              pro1stPct: 0,
             });
           });
         proRows
@@ -582,10 +861,15 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
                 day,
                 sales: 0,
                 pro1stSales: Number.isFinite(r.sales) ? r.sales : 0,
+                pro1stPct: 0,
               });
             }
           });
-        setTrendData(Array.from(map.values()).sort((a, b) => a.day.localeCompare(b.day)));
+        const rows = Array.from(map.values()).map((row) => ({
+          ...row,
+          pro1stPct: row.sales > 0 ? (row.pro1stSales / row.sales) * 100 : 0,
+        }));
+        setTrendData(rows.sort((a, b) => a.day.localeCompare(b.day)));
       })
       .catch((e) => {
         console.error(e);
@@ -593,12 +877,23 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       });
   }, [yearA, monthA, dayA, selectedSalesperson, selectedStore]);
 
+  const displayTrendData = useMemo(() => {
+    const rangeStart = currentRange.start;
+    const rangeEnd = currentRange.endExclusive;
+    const inRange = (day: string) => day >= rangeStart && day < rangeEnd;
+    const filtered = trendData.filter((row) => row.day && inRange(row.day));
+    if (!trendFocusDay) return filtered;
+    return filtered.filter((row) => row.day === trendFocusDay);
+  }, [trendData, trendFocusDay, currentRange.start, currentRange.endExclusive]);
+  const trendXAxisPadding = displayTrendData.length <= 2 ? { left: 80, right: 80 } : { left: 10, right: 10 };
+
   const revenuePct = pctChange(summary.sales, summaryCompare.sales);
   const linesPct = pctChange(summary.lines, summaryCompare.lines);
 
   const revenueUp = revenuePct >= 0;
   const linesUp = linesPct >= 0;
   const financePenetration = summary.lines > 0 ? (finance.financedLines / summary.lines) * 100 : 0;
+  const financeAmountPctOfSales = summary.sales > 0 ? (finance.financedAmount / summary.sales) * 100 : 0;
   const hasCompare = compareHint.trim().length > 0;
   const financedLinesPct = pctChange(finance.financedLines, financeCompare.financedLines);
   const financedAmountPct = pctChange(finance.financedAmount, financeCompare.financedAmount);
@@ -626,6 +921,17 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     return String(yearA);
   }, [yearA, monthA, dayA, currentRange.start]);
 
+  const printRangeA = useMemo(() => {
+    const r = getSimplifiedRange(yearA, monthA, dayA);
+    return r ? formatRangeLabel(r) : "";
+  }, [yearA, monthA, dayA]);
+
+  const printRangeB = useMemo(() => {
+    if (!compareEnabled || !yearB) return "";
+    const r = getSimplifiedRange(yearB, monthB, dayB);
+    return r ? formatRangeLabel(r) : "";
+  }, [compareEnabled, yearB, monthB, dayB]);
+
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("fd-range", { detail: { label: rangeLabel } }));
   }, [rangeLabel]);
@@ -651,28 +957,6 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     const initials = name ? salespersonLabel(name) : "";
     return initials ? `${saleId} · ${initials}` : saleId;
   };
-  const renderPrintToggle = (id: string) => (
-    <label
-      className="fd-print-toggle inline-flex items-center gap-2 text-xs font-semibold text-slate-500"
-      data-no-print-toggle
-      onClick={(event) => event.stopPropagation()}
-    >
-      <input
-        type="checkbox"
-        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-        checked={isCardSelected(id)}
-        onChange={() => toggleCardSelection(id)}
-        onClick={(event) => event.stopPropagation()}
-      />
-      Print
-    </label>
-  );
-  const handleCardClick = (id: string) => (event: React.MouseEvent) => {
-    const target = event.target as HTMLElement | null;
-    if (!target) return;
-    if (target.closest("a,button,select,option,input,textarea,label,[data-no-print-toggle]")) return;
-    toggleCardSelection(id);
-  };
   const syncSalePeople = async (ids: string[]) => {
     const unique = Array.from(new Set(ids.filter(Boolean)));
     const missing = unique.filter((id) => !(id in salePeopleMap));
@@ -684,13 +968,16 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       console.error(e);
     }
   };
+  const normalizeName = (value: string | null | undefined) => String(value || "").trim();
   const selectSalesperson = (name: string) => {
-    setSelectedSalesperson((prev) => (prev === name ? null : name));
+    const next = normalizeName(name);
+    setSelectedSalesperson((prev) => (normalizeName(prev) === next ? null : next));
     setSelectedStore(null);
     setSearchHint(null);
   };
   const selectStore = (name: string) => {
-    setSelectedStore((prev) => (prev === name ? null : name));
+    const next = normalizeName(name);
+    setSelectedStore((prev) => (normalizeName(prev) === next ? null : next));
     setSelectedSalesperson(null);
     setSearchHint(null);
   };
@@ -776,7 +1063,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     };
     window.addEventListener("fd-refresh-data", handler);
     return () => window.removeEventListener("fd-refresh-data", handler);
-  }, [yearA, monthA, dayA, yearB, monthB, dayB, selectedSalesperson, selectedStore, itemSortMetric]);
+  }, [yearA, monthA, dayA, yearB, monthB, dayB, compareEnabled, selectedSalesperson, selectedStore, itemSortMetric]);
 
   const hasItemData = pro1stStats.totalSales > 0;
   const missingItemData = summary.lines > 0 && !hasItemData;
@@ -808,15 +1095,262 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     return () => window.removeEventListener("fd-clear-filters", handler as EventListener);
   }, []);
 
-  useEffect(() => {
-    if (selectedSalesperson) return;
-    setSelectedCardIds((prev) => {
-      if (!prev.has("salesperson-detail")) return prev;
-      const next = new Set(prev);
-      next.delete("salesperson-detail");
-      return next;
-    });
-  }, [selectedSalesperson]);
+  const renderStatCard = (id: string) => {
+    switch (id) {
+      case "range-selector":
+        return (
+          <div
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center space-y-4 relative fd-print-card h-full"
+            data-print-id="range-selector"
+           
+           
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-700">Date Range</p>
+              {renderCardToggle("range-selector")}
+            </div>
+            {!isCardCollapsed("range-selector") && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                      !compareEnabled
+                        ? "bg-slate-900 text-white border-slate-900"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCompareEnabled(false);
+                      setYearB(null);
+                      setMonthB("ALL");
+                      setDayB("ALL");
+                    }}
+                  >
+                    Range Only
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                      compareEnabled
+                        ? "bg-slate-900 text-white border-slate-900"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCompareEnabled(true);
+                    }}
+                  >
+                    Compare
+                  </button>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-2 block">Range A (Main)</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <select value={yearA} onChange={(e) => setYearA(Number(e.target.value))} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2">
+                      {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                    <select value={monthA} onChange={(e) => { setMonthA(e.target.value); if (e.target.value === "ALL") setDayA("ALL"); }} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2">
+                      <option value="ALL">All Months</option>
+                      {monthOptions.map((m) => <option key={m} value={m}>{new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "short" })}</option>)}
+                    </select>
+                    <select value={dayA} onChange={(e) => setDayA(e.target.value)} disabled={monthA === "ALL"} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50">
+                      <option value="ALL">All Days</option>
+                      {dayOptions.map((d) => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                </div>
+                {compareEnabled && (
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-2 block">Range B (Compare)</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <select value={yearB || ""} onChange={(e) => setYearB(e.target.value ? Number(e.target.value) : null)} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2">
+                        <option value="">None</option>
+                        {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
+                      </select>
+                      <select value={monthB} onChange={(e) => { setMonthB(e.target.value); if (e.target.value === "ALL") setDayB("ALL"); }} disabled={!yearB} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50">
+                        <option value="ALL">All Months</option>
+                        {monthOptions.map((m) => <option key={m} value={m}>{new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "short" })}</option>)}
+                      </select>
+                      <select value={dayB} onChange={(e) => setDayB(e.target.value)} disabled={!yearB || monthB === "ALL"} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50">
+                        <option value="ALL">All Days</option>
+                        {dayOptions.map((d) => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      case "transactions":
+        return (
+          <div
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between relative fd-print-card h-full"
+            data-print-id="transactions"
+           
+           
+          >
+            <div className="w-full">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-slate-500">
+                  Transactions
+                  {renderHelp("Count of distinct sales tickets in the date range (from sales report).")}
+                </p>
+                {renderCardToggle("transactions")}
+              </div>
+              {!isCardCollapsed("transactions") && (
+                <div className="flex items-center justify-between mt-3">
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-800">{summary.lines.toLocaleString()}</h3>
+                    {hasCompare && (
+                      <div className={`flex items-center text-sm mt-1 ${linesUp ? "text-green-600" : "text-red-500"}`}>
+                        {linesUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
+                        <span className="font-medium">{Math.abs(linesPct).toFixed(1)}%</span>
+                        <span className="text-slate-400 ml-1">{compareHint}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-full text-slate-700">
+                    <Database size={24} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      case "total-sales":
+        return (
+          <div
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between relative fd-print-card h-full"
+            data-print-id="total-sales"
+           
+           
+          >
+            <div className="w-full">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-slate-500">
+                  Total Sales
+                  {renderHelp("Sum of ticket totals for the date range (from sales report).")}
+                </p>
+                {renderCardToggle("total-sales")}
+              </div>
+              {!isCardCollapsed("total-sales") && (
+                <div className="flex items-center justify-between mt-3">
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-800">${summary.sales.toLocaleString()}</h3>
+                    {hasCompare && (
+                      <div className={`flex items-center text-sm mt-1 ${revenueUp ? "text-green-600" : "text-red-500"}`}>
+                        {revenueUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
+                        <span className="font-medium">{Math.abs(revenuePct).toFixed(1)}%</span>
+                        <span className="text-slate-400 ml-1">{compareHint}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3 bg-blue-50 rounded-full text-blue-600">
+                    <ShoppingBag size={24} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      case "financed-amount":
+        return (
+          <div
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card h-full"
+            data-print-id="financed-amount"
+           
+           
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-slate-500">
+                Financed Amount
+                {renderHelp("Sum of financed amounts on tickets in the date range (from sales report).")}
+              </p>
+              {renderCardToggle("financed-amount")}
+            </div>
+            {!isCardCollapsed("financed-amount") && (
+              <div className="mt-3">
+                <h3 className="text-2xl font-bold text-slate-800">${finance.financedAmount.toLocaleString()}</h3>
+                <p className="text-sm text-slate-400 mt-1">{financeAmountPctOfSales.toFixed(1)}% of sales financed</p>
+                {hasCompare && (
+                  <div className={`flex items-center text-sm mt-2 ${financedAmountUp ? "text-green-600" : "text-red-500"}`}>
+                    {financedAmountUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
+                    <span className="font-medium">{Math.abs(financedAmountPct).toFixed(1)}%</span>
+                    <span className="text-slate-400 ml-1">{compareHint}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      case "financed-transactions":
+        return (
+          <div
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card h-full"
+            data-print-id="financed-transactions"
+           
+           
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-slate-500">
+                Financed Transactions
+                {renderHelp("Count of tickets with finance amount or balance > 0 (from sales report).")}
+              </p>
+              {renderCardToggle("financed-transactions")}
+            </div>
+            {!isCardCollapsed("financed-transactions") && (
+              <div className="mt-3">
+                <h3 className="text-2xl font-bold text-slate-800">{finance.financedLines.toLocaleString()}</h3>
+                <p className="text-sm text-slate-400 mt-1">{financePenetration.toFixed(1)}% of transactions financed</p>
+                {hasCompare && (
+                  <div className={`flex items-center text-sm mt-2 ${financedLinesUp ? "text-green-600" : "text-red-500"}`}>
+                    {financedLinesUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
+                    <span className="font-medium">{Math.abs(financedLinesPct).toFixed(1)}%</span>
+                    <span className="text-slate-400 ml-1">{compareHint}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      case "avg-ticket":
+      case "average-ticket":
+        return (
+          <div
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card h-full"
+            data-print-id="average-ticket"
+           
+           
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-slate-500">
+                Average Ticket
+                {renderHelp("Total sales ÷ transactions for the date range (from sales report).")}
+              </p>
+              {renderCardToggle("average-ticket")}
+            </div>
+            {!isCardCollapsed("average-ticket") && (
+              <div className="mt-3">
+                <h3 className="text-2xl font-bold text-slate-800">${avgTicket.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+                <p className="text-sm text-slate-400 mt-1">Sales ÷ transactions (A)</p>
+                {hasCompare && (
+                  <div className={`flex items-center text-sm mt-2 ${avgTicketUp ? "text-green-600" : "text-red-500"}`}>
+                    {avgTicketUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
+                    <span className="font-medium">{Math.abs(avgTicketPct).toFixed(1)}%</span>
+                    <span className="text-slate-400 ml-1">{compareHint}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   if (loading && salesData.length === 0) {
     return (
@@ -829,6 +1363,24 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
 
   return (
     <div className="space-y-6 animate-fade-in relative fd-print-area">
+      <div className="fd-print-only fd-print-header">
+        <div className="fd-print-title">WOLF FD Sales Report</div>
+        <div className="fd-print-meta">
+          <div>Range: {printRangeA || "N/A"}</div>
+          {printRangeB && <div>Compare: {printRangeB}</div>}
+          <div>
+            Generated: {printGeneratedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}{" "}
+            {printGeneratedAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+          </div>
+          {selectedSalesperson && <div>Salesperson: {selectedSalesperson}</div>}
+          {selectedStore && <div>Store: {selectedStore}</div>}
+        </div>
+      </div>
+      <div className="fd-print-hide">
+        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-3 text-blue-800 fd-print-hide">
+          <Database size={18} className="text-blue-500" />
+          <span className="text-sm font-medium">All figures are based on delivered sales.</span>
+        </div>
       {(selectedSalesperson || selectedStore || searchHint) && (
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center fd-print-hide">
           <div className="text-sm font-semibold text-slate-800">Active Filters</div>
@@ -866,389 +1418,198 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         </div>
       )}
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center fd-print-hide">
-        <div className="text-sm font-semibold text-slate-800">Print selection</div>
-        <div className="text-xs text-slate-500">
-          {selectedCount} of {totalPrintable} selected
-        </div>
-        <button
-          type="button"
-          onClick={selectAllCards}
-          className="text-xs font-semibold text-blue-600 hover:text-blue-700"
-        >
-          Select all
-        </button>
-        <button
-          type="button"
-          onClick={clearAllCards}
-          className="text-xs font-semibold text-slate-500 hover:text-slate-700"
-        >
-          Clear all
-        </button>
-        {printHint && <span className="text-xs text-amber-600">{printHint}</span>}
-      </div>
 
-      {/* Header Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div
-          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between relative fd-print-card"
-          data-print-id="total-sales"
-          data-print-selected={isCardSelected("total-sales") ? "true" : "false"}
-          onClick={handleCardClick("total-sales")}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={statCardOrder}
+          strategy={rectSortingStrategy}
         >
-          <div className="absolute right-4 top-4">{renderPrintToggle("total-sales")}</div>
-          <div>
-            <p className="text-sm font-medium text-slate-500">Total Sales</p>
-            <h3 className="text-2xl font-bold text-slate-800">${summary.sales.toLocaleString()}</h3>
-            {hasCompare && (
-              <div className={`flex items-center text-sm mt-1 ${revenueUp ? "text-green-600" : "text-red-500"}`}>
-                {revenueUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-                <span className="font-medium">{Math.abs(revenuePct).toFixed(1)}%</span>
-                <span className="text-slate-400 ml-1">{compareHint}</span>
-              </div>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {statCardOrder.map((id) => (
+              <SortableItem key={id} id={id} className="h-full">
+                {renderStatCard(id)}
+              </SortableItem>
+            ))}
           </div>
-          <div className="p-3 bg-blue-50 rounded-full text-blue-600">
-            <ShoppingBag size={24} />
-          </div>
-        </div>
-
-        <div
-          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between relative fd-print-card"
-          data-print-id="transactions"
-          data-print-selected={isCardSelected("transactions") ? "true" : "false"}
-          onClick={handleCardClick("transactions")}
-        >
-          <div className="absolute right-4 top-4">{renderPrintToggle("transactions")}</div>
-          <div>
-            <p className="text-sm font-medium text-slate-500">Transactions</p>
-            <h3 className="text-2xl font-bold text-slate-800">{summary.lines.toLocaleString()}</h3>
-            {hasCompare && (
-              <div className={`flex items-center text-sm mt-1 ${linesUp ? "text-green-600" : "text-red-500"}`}>
-                {linesUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-                <span className="font-medium">{Math.abs(linesPct).toFixed(1)}%</span>
-                <span className="text-slate-400 ml-1">{compareHint}</span>
-              </div>
-            )}
-          </div>
-          <div className="p-3 bg-slate-50 rounded-full text-slate-700">
-            <Database size={24} />
-          </div>
-        </div>
-
-        <div
-          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center space-y-4 relative fd-print-card"
-          data-print-id="range-selector"
-          data-print-selected={isCardSelected("range-selector") ? "true" : "false"}
-          onClick={handleCardClick("range-selector")}
-        >
-          <div className="absolute right-4 top-4">{renderPrintToggle("range-selector")}</div>
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-2 block">Range A (Main)</label>
-            <div className="grid grid-cols-3 gap-2">
-              <select
-                value={yearA}
-                onChange={(e) => setYearA(Number(e.target.value))}
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2"
-              >
-                {yearOptions.map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-              <select
-                value={monthA}
-                onChange={(e) => {
-                  setMonthA(e.target.value);
-                  if (e.target.value === "ALL") setDayA("ALL");
-                }}
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2"
-              >
-                <option value="ALL">All Months</option>
-                {monthOptions.map((m) => (
-                  <option key={m} value={m}>
-                    {new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "short" })}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={dayA}
-                onChange={(e) => setDayA(e.target.value)}
-                disabled={monthA === "ALL"}
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50"
-              >
-                <option value="ALL">All Days</option>
-                {dayOptions.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-2 block">Range B (Compare)</label>
-            <div className="grid grid-cols-3 gap-2">
-              <select
-                value={yearB || ""}
-                onChange={(e) => setYearB(e.target.value ? Number(e.target.value) : null)}
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2"
-              >
-                <option value="">None</option>
-                {yearOptions.map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-              <select
-                value={monthB}
-                onChange={(e) => {
-                  setMonthB(e.target.value);
-                  if (e.target.value === "ALL") setDayB("ALL");
-                }}
-                disabled={!yearB}
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50"
-              >
-                <option value="ALL">All Months</option>
-                {monthOptions.map((m) => (
-                  <option key={m} value={m}>
-                    {new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "short" })}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={dayB}
-                onChange={(e) => setDayB(e.target.value)}
-                disabled={!yearB || monthB === "ALL"}
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50"
-              >
-                <option value="ALL">All Days</option>
-                {dayOptions.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Finance + Avg Ticket */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div
-          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card"
-          data-print-id="financed-amount"
-          data-print-selected={isCardSelected("financed-amount") ? "true" : "false"}
-          onClick={handleCardClick("financed-amount")}
-        >
-          <div className="absolute right-4 top-4">{renderPrintToggle("financed-amount")}</div>
-          <p className="text-sm font-medium text-slate-500">Financed Amount</p>
-          <h3 className="text-2xl font-bold text-slate-800">${finance.financedAmount.toLocaleString()}</h3>
-          <p className="text-sm text-slate-400 mt-1">{financePenetration.toFixed(1)}% of transactions financed</p>
-          {hasCompare && (
-            <div className={`flex items-center text-sm mt-2 ${financedAmountUp ? "text-green-600" : "text-red-500"}`}>
-              {financedAmountUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-              <span className="font-medium">{Math.abs(financedAmountPct).toFixed(1)}%</span>
-              <span className="text-slate-400 ml-1">{compareHint}</span>
-            </div>
-          )}
-        </div>
-        <div
-          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card"
-          data-print-id="financed-transactions"
-          data-print-selected={isCardSelected("financed-transactions") ? "true" : "false"}
-          onClick={handleCardClick("financed-transactions")}
-        >
-          <div className="absolute right-4 top-4">{renderPrintToggle("financed-transactions")}</div>
-          <p className="text-sm font-medium text-slate-500">Financed Transactions</p>
-          <h3 className="text-2xl font-bold text-slate-800">{finance.financedLines.toLocaleString()}</h3>
-          <p className="text-sm text-slate-400 mt-1">Count where finance &gt; 0</p>
-          {hasCompare && (
-            <div className={`flex items-center text-sm mt-2 ${financedLinesUp ? "text-green-600" : "text-red-500"}`}>
-              {financedLinesUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-              <span className="font-medium">{Math.abs(financedLinesPct).toFixed(1)}%</span>
-              <span className="text-slate-400 ml-1">{compareHint}</span>
-            </div>
-          )}
-        </div>
-        <div
-          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card"
-          data-print-id="average-ticket"
-          data-print-selected={isCardSelected("average-ticket") ? "true" : "false"}
-          onClick={handleCardClick("average-ticket")}
-        >
-          <div className="absolute right-4 top-4">{renderPrintToggle("average-ticket")}</div>
-          <p className="text-sm font-medium text-slate-500">Average Ticket</p>
-          <h3 className="text-2xl font-bold text-slate-800">${avgTicket.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
-          <p className="text-sm text-slate-400 mt-1">Sales ÷ transactions (A)</p>
-          {hasCompare && (
-            <div className={`flex items-center text-sm mt-2 ${avgTicketUp ? "text-green-600" : "text-red-500"}`}>
-              {avgTicketUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-              <span className="font-medium">{Math.abs(avgTicketPct).toFixed(1)}%</span>
-              <span className="text-slate-400 ml-1">{compareHint}</span>
-            </div>
-          )}
-        </div>
-      </div>
+        </SortableContext>
+      </DndContext>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="best-sellers"
-          data-print-selected={isCardSelected("best-sellers") ? "true" : "false"}
-          onClick={handleCardClick("best-sellers")}
+         
+         
         >
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Best Sellers</h3>
+              <h3 className="text-lg font-bold text-slate-800">
+                Best Sellers
+                {renderHelp("Based on item report: totals by item description with qty and sales summed in the selected range.")}
+              </h3>
               <p className="text-sm text-slate-500">
                 Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"} for the selected range.
               </p>
             </div>
-            {renderPrintToggle("best-sellers")}
+            {renderCardToggle("best-sellers")}
           </div>
-          {bestSellers.length ? (
-            <div className="space-y-4">
-              {bestSellers.map((item, idx) => {
-                const { ids, remaining } = limitSaleLinks(item.saleIds);
-                return (
-                  <div key={`${item.itemDescription}-${idx}`} className="flex flex-col gap-2">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-sm font-semibold text-slate-800">{item.itemDescription || "Unnamed Item"}</div>
-                        <div className="text-xs text-slate-500">
-                          {(item.category || "Uncategorized").toUpperCase()}
-                          {item.manufacturer ? ` · ${item.manufacturer}` : ""}
+          {!isCardCollapsed("best-sellers") && (
+            bestSellers.length ? (
+              <div className="space-y-4">
+                {bestSellers.map((item, idx) => {
+                  const { ids, remaining } = limitSaleLinks(item.saleIds);
+                  return (
+                    <div key={`${item.itemDescription}-${idx}`} className="flex flex-col gap-2">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-sm font-semibold text-slate-800">{item.itemDescription || "Unnamed Item"}</div>
+                          <div className="text-xs text-slate-500">
+                            {(item.category || "Uncategorized").toUpperCase()}
+                            {item.manufacturer ? ` · ${item.manufacturer}` : ""}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-semibold text-slate-800">{item.qty.toLocaleString()} qty</div>
+                          <div className="text-xs text-slate-500">${item.sales.toLocaleString()}</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm font-semibold text-slate-800">{item.qty.toLocaleString()} qty</div>
-                        <div className="text-xs text-slate-500">${item.sales.toLocaleString()}</div>
-                      </div>
+                      {ids.length > 0 && (
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          {ids.map((sid) => (
+                            <a
+                              key={sid}
+                              href={saleLink(sid)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            >
+                              {saleLabel(sid)}
+                            </a>
+                          ))}
+                          {remaining > 0 && (
+                            <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-500">
+                              +{remaining} more
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {ids.length > 0 && (
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        {ids.map((sid) => (
-                          <a
-                            key={sid}
-                            href={saleLink(sid)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          >
-                            {saleLabel(sid)}
-                          </a>
-                        ))}
-                        {remaining > 0 && (
-                          <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-500">
-                            +{remaining} more
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500">No item data available for this range.</p>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No item data available for this range.</p>
+            )
           )}
         </div>
 
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="top-categories"
-          data-print-selected={isCardSelected("top-categories") ? "true" : "false"}
-          onClick={handleCardClick("top-categories")}
+         
+         
         >
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Top Categories</h3>
+              <h3 className="text-lg font-bold text-slate-800">
+                Top Categories
+                {renderHelp("Based on item report: category totals for qty and sales in the selected range.")}
+              </h3>
               <p className="text-sm text-slate-500">
                 Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"}.
               </p>
             </div>
-            {renderPrintToggle("top-categories")}
+            {renderCardToggle("top-categories")}
           </div>
-          {topCategories.length ? (
-            <div className="space-y-4">
-              {topCategories.map((row) => {
-                const isOpen = !!expandedCategories[row.category];
-                const items = categoryItems[row.category] || [];
-                const loading = categoryLoading[row.category];
-                return (
-                  <div
-                    key={row.category}
-                    className={`border rounded-lg transition-colors ${
-                      isOpen ? "border-blue-200 bg-blue-50/60" : "border-slate-100"
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggleCategory(row.category)}
-                      className={`w-full flex items-center justify-between px-4 py-3 text-left ${
-                        isOpen ? "hover:bg-blue-50" : "hover:bg-slate-50"
+          {!isCardCollapsed("top-categories") && (
+            topCategories.length ? (
+              <div className="space-y-4">
+                {topCategories.map((row) => {
+                  const isOpen = !!expandedCategories[row.category];
+                  const items = categoryItems[row.category] || [];
+                  const loading = categoryLoading[row.category];
+                  return (
+                    <div
+                      key={row.category}
+                      className={`border rounded-lg transition-colors ${
+                        isOpen ? "border-blue-200 bg-blue-50/60" : "border-slate-100"
                       }`}
                     >
-                      <div>
-                        <div className="text-sm font-semibold text-slate-800">{row.category}</div>
-                        <div className="text-xs text-slate-500">{row.qty.toLocaleString()} qty</div>
-                      </div>
-                      <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
-                    </button>
-                    {isOpen && (
-                      <div className="px-4 pb-4">
-                        {loading ? (
-                          <div className="text-xs text-slate-500">Loading top items…</div>
-                        ) : items.length ? (
-                          <div className="space-y-3">
-                            {items.map((item) => {
-                              const { ids, remaining } = limitSaleLinks(item.saleIds);
-                              return (
-                                <div key={`${row.category}-${item.itemNo}-${item.itemDescription}`} className="flex flex-col gap-1">
-                                  <div className="flex items-start justify-between gap-4 text-sm">
-                                    <div>
-                                      <div className="font-semibold text-slate-800">{item.itemDescription || "Unnamed Item"}</div>
-                                      <div className="text-xs text-slate-500">
-                                        {item.manufacturer ? item.manufacturer : "Unknown brand"}
+                      <button
+                        type="button"
+                        onClick={() => toggleCategory(row.category)}
+                        className={`w-full flex items-center justify-between px-4 py-3 text-left ${
+                          isOpen ? "hover:bg-blue-50" : "hover:bg-slate-50"
+                        }`}
+                      >
+                        <div>
+                          <div className="text-sm font-semibold text-slate-800">{row.category}</div>
+                          <div className="text-xs text-slate-500">{row.qty.toLocaleString()} qty</div>
+                        </div>
+                        <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
+                      </button>
+                      {isOpen && (
+                        <div className="px-4 pb-4">
+                          {loading ? (
+                            <div className="text-xs text-slate-500">Loading top items…</div>
+                          ) : items.length ? (
+                            <div className="space-y-3">
+                              {items.map((item) => {
+                                const { ids, remaining } = limitSaleLinks(item.saleIds);
+                                return (
+                                  <div key={`${row.category}-${item.itemNo}-${item.itemDescription}`} className="flex flex-col gap-1">
+                                    <div className="flex items-start justify-between gap-4 text-sm">
+                                      <div>
+                                        <div className="font-semibold text-slate-800">{item.itemDescription || "Unnamed Item"}</div>
+                                        <div className="text-xs text-slate-500">
+                                          {item.manufacturer ? item.manufacturer : "Unknown brand"}
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="font-semibold text-slate-800">{item.qty.toLocaleString()} qty</div>
+                                        <div className="text-xs text-slate-500">${item.sales.toLocaleString()}</div>
                                       </div>
                                     </div>
-                                    <div className="text-right">
-                                      <div className="font-semibold text-slate-800">{item.qty.toLocaleString()} qty</div>
-                                      <div className="text-xs text-slate-500">${item.sales.toLocaleString()}</div>
-                                    </div>
+                                    {ids.length > 0 && (
+                                      <div className="flex flex-wrap gap-2 text-xs">
+                                        {ids.map((sid) => (
+                                          <a
+                                            key={sid}
+                                            href={saleLink(sid)}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                          >
+                                          {saleLabel(sid)}
+                                          </a>
+                                        ))}
+                                        {remaining > 0 && (
+                                          <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-500">
+                                            +{remaining} more
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
-                                  {ids.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 text-xs">
-                                      {ids.map((sid) => (
-                                        <a
-                                          key={sid}
-                                          href={saleLink(sid)}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
-                                        >
-                                        {saleLabel(sid)}
-                                        </a>
-                                      ))}
-                                      {remaining > 0 && (
-                                        <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-500">
-                                          +{remaining} more
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="text-xs text-slate-500">No items for this category.</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500">No category data available for this range.</p>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-slate-500">No items for this category.</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No category data available for this range.</p>
+            )
           )}
         </div>
       </div>
@@ -1257,164 +1618,176 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="top-manufacturers"
-          data-print-selected={isCardSelected("top-manufacturers") ? "true" : "false"}
-          onClick={handleCardClick("top-manufacturers")}
+         
+         
         >
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Top Manufacturers</h3>
+              <h3 className="text-lg font-bold text-slate-800">
+                Top Manufacturers
+                {renderHelp("Based on item report: manufacturer totals for qty and sales in the selected range.")}
+              </h3>
               <p className="text-sm text-slate-500">
                 Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"}.
               </p>
             </div>
-            {renderPrintToggle("top-manufacturers")}
+            {renderCardToggle("top-manufacturers")}
           </div>
-          {topManufacturers.length ? (
-            <div className="space-y-4">
-              {topManufacturers.map((row) => {
-                const isOpen = !!expandedManufacturers[row.manufacturer];
-                const items = manufacturerItems[row.manufacturer] || [];
-                const loading = manufacturerLoading[row.manufacturer];
-                return (
-                  <div
-                    key={row.manufacturer}
-                    className={`border rounded-lg transition-colors ${
-                      isOpen ? "border-blue-200 bg-blue-50/60" : "border-slate-100"
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggleManufacturer(row.manufacturer)}
-                      className={`w-full flex items-center justify-between px-4 py-3 text-left ${
-                        isOpen ? "hover:bg-blue-50" : "hover:bg-slate-50"
+          {!isCardCollapsed("top-manufacturers") && (
+            topManufacturers.length ? (
+              <div className="space-y-4">
+                {topManufacturers.map((row) => {
+                  const isOpen = !!expandedManufacturers[row.manufacturer];
+                  const items = manufacturerItems[row.manufacturer] || [];
+                  const loading = manufacturerLoading[row.manufacturer];
+                  return (
+                    <div
+                      key={row.manufacturer}
+                      className={`border rounded-lg transition-colors ${
+                        isOpen ? "border-blue-200 bg-blue-50/60" : "border-slate-100"
                       }`}
                     >
-                      <div>
-                        <div className="text-sm font-semibold text-slate-800">{row.manufacturer}</div>
-                        <div className="text-xs text-slate-500">{row.qty.toLocaleString()} qty</div>
-                      </div>
-                      <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
-                    </button>
-                    {isOpen && (
-                      <div className="px-4 pb-4">
-                        {loading ? (
-                          <div className="text-xs text-slate-500">Loading top items…</div>
-                        ) : items.length ? (
-                          <div className="space-y-3">
-                            {items.map((item) => {
-                              const { ids, remaining } = limitSaleLinks(item.saleIds);
-                              return (
-                                <div key={`${row.manufacturer}-${item.itemNo}-${item.itemDescription}`} className="flex flex-col gap-1">
-                                  <div className="flex items-start justify-between gap-4 text-sm">
-                                    <div>
-                                      <div className="font-semibold text-slate-800">{item.itemDescription || "Unnamed Item"}</div>
-                                      <div className="text-xs text-slate-500">
-                                        {(item.category || "Uncategorized").toUpperCase()}
+                      <button
+                        type="button"
+                        onClick={() => toggleManufacturer(row.manufacturer)}
+                        className={`w-full flex items-center justify-between px-4 py-3 text-left ${
+                          isOpen ? "hover:bg-blue-50" : "hover:bg-slate-50"
+                        }`}
+                      >
+                        <div>
+                          <div className="text-sm font-semibold text-slate-800">{row.manufacturer}</div>
+                          <div className="text-xs text-slate-500">{row.qty.toLocaleString()} qty</div>
+                        </div>
+                        <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
+                      </button>
+                      {isOpen && (
+                        <div className="px-4 pb-4">
+                          {loading ? (
+                            <div className="text-xs text-slate-500">Loading top items…</div>
+                          ) : items.length ? (
+                            <div className="space-y-3">
+                              {items.map((item) => {
+                                const { ids, remaining } = limitSaleLinks(item.saleIds);
+                                return (
+                                  <div key={`${row.manufacturer}-${item.itemNo}-${item.itemDescription}`} className="flex flex-col gap-1">
+                                    <div className="flex items-start justify-between gap-4 text-sm">
+                                      <div>
+                                        <div className="font-semibold text-slate-800">{item.itemDescription || "Unnamed Item"}</div>
+                                        <div className="text-xs text-slate-500">
+                                          {(item.category || "Uncategorized").toUpperCase()}
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="font-semibold text-slate-800">{item.qty.toLocaleString()} qty</div>
+                                        <div className="text-xs text-slate-500">${item.sales.toLocaleString()}</div>
                                       </div>
                                     </div>
-                                    <div className="text-right">
-                                      <div className="font-semibold text-slate-800">{item.qty.toLocaleString()} qty</div>
-                                      <div className="text-xs text-slate-500">${item.sales.toLocaleString()}</div>
-                                    </div>
+                                    {ids.length > 0 && (
+                                      <div className="flex flex-wrap gap-2 text-xs">
+                                        {ids.map((sid) => (
+                                          <a
+                                            key={sid}
+                                            href={saleLink(sid)}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                          >
+                                          {saleLabel(sid)}
+                                          </a>
+                                        ))}
+                                        {remaining > 0 && (
+                                          <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-500">
+                                            +{remaining} more
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
-                                  {ids.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 text-xs">
-                                      {ids.map((sid) => (
-                                        <a
-                                          key={sid}
-                                          href={saleLink(sid)}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
-                                        >
-                                        {saleLabel(sid)}
-                                        </a>
-                                      ))}
-                                      {remaining > 0 && (
-                                        <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-500">
-                                          +{remaining} more
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="text-xs text-slate-500">No items for this brand.</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500">No manufacturer data available for this range.</p>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-slate-500">No items for this brand.</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No manufacturer data available for this range.</p>
+            )
           )}
         </div>
 
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="pro1st-attach"
-          data-print-selected={isCardSelected("pro1st-attach") ? "true" : "false"}
-          onClick={handleCardClick("pro1st-attach")}
+         
+         
         >
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Pro1st Attach Rate</h3>
+              <h3 className="text-lg font-bold text-slate-800">
+                Pro1st Attach Rate
+                {renderHelp("Based on item report: Pro1st item sales ÷ total item sales for the range.")}
+              </h3>
               <p className="text-sm text-slate-500">Sales orders that include Pro1st</p>
             </div>
-            {renderPrintToggle("pro1st-attach")}
+            {renderCardToggle("pro1st-attach")}
           </div>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="text-2xl font-bold text-slate-800">
-                {hasItemData ? `${pro1stStats.attachRate.toFixed(1)}%` : "—"}
-              </div>
-              <div className="text-xs text-slate-500">
-                {hasItemData ? `${pro1stStats.proSales} of ${pro1stStats.totalSales} sales` : "No item data in this range"}
-              </div>
-            </div>
-          </div>
-          {pro1stStats.saleIds.length ? (
-            (() => {
-              const tier = (label: string, ids: string[]) => {
-                const unique = Array.from(new Set(ids.filter(Boolean).map(String)));
-                return (
-                  <div className="space-y-2">
-                    <div className="text-xs font-semibold text-slate-500">{label}</div>
-                    {unique.length ? (
-                      <div className="flex flex-wrap gap-2 text-xs max-h-32 overflow-y-auto pr-1">
-                        {unique.map((sid) => (
-                          <a
-                            key={sid}
-                            href={saleLink(sid)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          >
-                            {saleLabel(sid)}
-                          </a>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-slate-400">No tickets in this tier.</div>
-                    )}
+          {!isCardCollapsed("pro1st-attach") && (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="text-2xl font-bold text-slate-800">
+                    {hasItemData ? `${pro1stStats.attachRate.toFixed(1)}%` : "—"}
                   </div>
-                );
-              };
-              return (
-                <div className="space-y-4">
-                  {tier("200+ profit", pro1stStats.saleIdsHigh)}
-                  {tier("100-200 profit", pro1stStats.saleIdsMid)}
-                  {tier("Below 100 profit", pro1stStats.saleIdsLow)}
+                  <div className="text-xs text-slate-500">
+                    {hasItemData ? `$${pro1stStats.proSales.toLocaleString()} of $${pro1stStats.totalSales.toLocaleString()}` : "No item data in this range"}
+                  </div>
                 </div>
-              );
-            })()
-          ) : (
-            <p className="text-sm text-slate-500">No Pro1st sales detected for this range.</p>
+              </div>
+              {pro1stStats.saleIds.length ? (
+                (() => {
+                  const tier = (label: string, ids: string[]) => {
+                    const unique = Array.from(new Set(ids.filter(Boolean).map(String)));
+                    return (
+                      <div className="space-y-2">
+                        <div className="text-xs font-semibold text-slate-500">{label}</div>
+                        {unique.length ? (
+                          <div className="flex flex-wrap gap-2 text-xs max-h-32 overflow-y-auto pr-1">
+                            {unique.map((sid) => (
+                              <a
+                                key={sid}
+                                href={saleLink(sid)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+                              >
+                                {saleLabel(sid)}
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-slate-400">No tickets in this tier.</div>
+                        )}
+                      </div>
+                    );
+                  };
+                  return (
+                    <div className="space-y-4">
+                      {tier("200+ profit", pro1stStats.saleIdsHigh)}
+                      {tier("100-200 profit", pro1stStats.saleIdsMid)}
+                      {tier("Below 100 profit", pro1stStats.saleIdsLow)}
+                    </div>
+                  );
+                })()
+              ) : (
+                <p className="text-sm text-slate-500">No Pro1st sales detected for this range.</p>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -1425,107 +1798,138 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="salesperson-performance"
-          data-print-selected={isCardSelected("salesperson-performance") ? "true" : "false"}
-          onClick={handleCardClick("salesperson-performance")}
+         
+         
         >
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Salesperson Performance</h3>
+              <h3 className="text-lg font-bold text-slate-800">
+                Salesperson Performance
+                {renderHelp("Based on sales report: revenue by salesperson for the selected range.")}
+              </h3>
               <p className="text-sm text-slate-500">Revenue by associate</p>
             </div>
-            {renderPrintToggle("salesperson-performance")}
+            {renderCardToggle("salesperson-performance")}
           </div>
-          <div className="h-80 w-full" data-no-print-toggle>
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={salesData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <CartesianGrid stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#64748b" }} interval={0} />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#64748b" }}
-                  tickFormatter={(v: number) => `$${Number(v).toLocaleString()}`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "none",
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+          {!isCardCollapsed("salesperson-performance") && (
+            <div className="h-80 w-full" data-no-print-toggle>
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={salesData}
+                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                  onClick={(evt: any) => {
+                    if (evt?.activePayload?.length) return;
+                    if (selectedSalesperson) {
+                      setSelectedSalesperson(null);
+                      setSearchHint(null);
+                    }
                   }}
-                  labelFormatter={(_label: any, payload: any[]) => {
-                    const p = payload?.[0]?.payload as SalespersonPoint | undefined;
-                    return p?.fullName || _label;
-                  }}
-                  formatter={(value: number) => [`$${Number(value).toLocaleString()}`, undefined]}
-                />
-                <Legend iconType="circle" />
-                <Bar
-                  dataKey="sales"
-                  name="Total Sales"
-                  fill="#3b82f6"
-                  radius={[4, 4, 0, 0]}
-                  barSize={30}
-                  onClick={(data: any) => {
-                    const name = data?.payload?.fullName;
-                    if (name) selectSalesperson(name);
-                  }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
+                >
+                  <CartesianGrid stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#64748b" }} interval={0} />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#64748b" }}
+                    tickFormatter={(v: number) => `$${Number(v).toLocaleString()}`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "none",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    }}
+                    labelFormatter={(_label: any, payload: any[]) => {
+                      const p = payload?.[0]?.payload as SalespersonPoint | undefined;
+                      return p?.fullName || _label;
+                    }}
+                    formatter={(value: number) => [`$${Number(value).toLocaleString()}`, undefined]}
+                  />
+                  <Legend iconType="circle" />
+                  <Bar
+                    dataKey="sales"
+                    name="Total Sales"
+                    fill="#3b82f6"
+                    radius={[4, 4, 0, 0]}
+                    barSize={30}
+                    onClick={(data: any) => {
+                      const name = data?.payload?.fullName;
+                      if (name) selectSalesperson(name);
+                    }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         {/* Store Location Breakdown */}
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="store-performance"
-          data-print-selected={isCardSelected("store-performance") ? "true" : "false"}
-          onClick={handleCardClick("store-performance")}
+         
+         
         >
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Store Performance</h3>
+              <h3 className="text-lg font-bold text-slate-800">
+                Store Performance
+                {renderHelp("Based on sales report: revenue by store/location for the selected range.")}
+              </h3>
               <p className="text-sm text-slate-500">Revenue by location</p>
             </div>
-            {renderPrintToggle("store-performance")}
+            {renderCardToggle("store-performance")}
           </div>
-          <div className="h-80 w-full" data-no-print-toggle>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={storeData} layout="vertical" margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                <CartesianGrid stroke="#f1f5f9" horizontal={true} vertical={false} />
-                <XAxis type="number" hide />
-                <YAxis
-                  dataKey="storeName"
-                  type="category"
-                  width={120}
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#64748b", fontSize: 13 }}
-                />
-                <Tooltip
-                  cursor={{ fill: "transparent" }}
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "none",
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+          {!isCardCollapsed("store-performance") && (
+            <div className="h-80 w-full" data-no-print-toggle>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={storeData}
+                  layout="vertical"
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                  onClick={(evt: any) => {
+                    if (evt?.activePayload?.length) return;
+                    if (selectedStore) {
+                      setSelectedStore(null);
+                      setSearchHint(null);
+                    }
                   }}
-                  formatter={(value: number) => [`$${Number(value).toLocaleString()}`, undefined]}
-                />
-                <Legend />
-                <Bar
-                  dataKey="revenue"
-                  name="Revenue"
-                  fill="#6366f1"
-                  radius={[0, 4, 4, 0]}
-                  barSize={20}
-                  onClick={(data: any) => {
-                    const name = data?.payload?.storeName;
-                    if (name) selectStore(name);
-                  }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+                >
+                  <CartesianGrid stroke="#f1f5f9" horizontal={true} vertical={false} />
+                  <XAxis type="number" hide />
+                  <YAxis
+                    dataKey="storeName"
+                    type="category"
+                    width={120}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#64748b", fontSize: 13 }}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "transparent" }}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "none",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    }}
+                    formatter={(value: number) => [`$${Number(value).toLocaleString()}`, undefined]}
+                  />
+                  <Legend />
+                  <Bar
+                    dataKey="revenue"
+                    name="Revenue"
+                    fill="#6366f1"
+                    radius={[0, 4, 4, 0]}
+                    barSize={20}
+                    onClick={(data: any) => {
+                      const name = data?.payload?.storeName;
+                      if (name) selectStore(name);
+                    }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1533,29 +1937,65 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       <div
         className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
         data-print-id="sales-trend"
-        data-print-selected={isCardSelected("sales-trend") ? "true" : "false"}
-        onClick={handleCardClick("sales-trend")}
+       
+       
       >
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Sales Trend</h3>
+              <h3 className="text-lg font-bold text-slate-800">
+                Sales Trend
+                {renderHelp("Based on sales report: daily sales trend for the selected range.")}
+              </h3>
               <p className="text-sm text-slate-500">Trend mirrors the selected date range.</p>
             </div>
-            {renderPrintToggle("sales-trend")}
+            {renderCardToggle("sales-trend")}
           </div>
+        {!isCardCollapsed("sales-trend") && (
         <div className="h-80 w-full" data-no-print-toggle>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              data={trendData}
+              data={displayTrendData}
               margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
               onClick={(evt: any) => {
-                const label = evt?.activeLabel;
-                if (!label) return;
-                const day = String(label).includes("T") ? String(label).slice(0, 10) : String(label);
-                if (!day) return;
-                setCompareMode("TWO_DAYS");
-                setSelectedDay(day);
-                setCompareDay("");
+                const payloadDay =
+                  evt?.activePayload?.[0]?.payload?.day ??
+                  evt?.activePayload?.[1]?.payload?.day ??
+                  evt?.activeLabel;
+                if (!payloadDay) {
+                  if (trendFocusDay && trendPrevRangeRef.current) {
+                    const prev = trendPrevRangeRef.current;
+                    setYearA(prev.year);
+                    setMonthA(prev.month);
+                    setDayA(prev.day);
+                    setTrendFocusDay(null);
+                    trendPrevRangeRef.current = null;
+                    window.dispatchEvent(new Event("fd-open-range"));
+                  }
+                  return;
+                }
+                const day = String(payloadDay).includes("T")
+                  ? String(payloadDay).slice(0, 10)
+                  : String(payloadDay);
+                if (!day || !day.includes("-")) return;
+                if (trendFocusDay === day && trendPrevRangeRef.current) {
+                  const prev = trendPrevRangeRef.current;
+                  setYearA(prev.year);
+                  setMonthA(prev.month);
+                  setDayA(prev.day);
+                  setTrendFocusDay(null);
+                  trendPrevRangeRef.current = null;
+                  window.dispatchEvent(new Event("fd-open-range"));
+                  return;
+                }
+                const [y, m, d] = day.split("-");
+                if (!y || !m || !d) return;
+                if (!trendFocusDay) {
+                  trendPrevRangeRef.current = { year: yearA, month: monthA, day: dayA };
+                }
+                setYearA(Number(y));
+                setMonthA(m);
+                setDayA(d);
+                setTrendFocusDay(day);
                 window.dispatchEvent(new Event("fd-open-range"));
               }}
             >
@@ -1571,13 +2011,24 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: "#64748b", fontSize: 12 }}
+                padding={trendXAxisPadding}
                 tickFormatter={(v: string) => formatShortDate(String(v).includes("T") ? String(v).slice(0, 10) : String(v))}
               />
               <YAxis
+                yAxisId="left"
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: "#64748b" }}
                 tickFormatter={(v: number) => `$${Number(v).toLocaleString()}`}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "#f59e0b" }}
+                domain={[0, 10]}
+                tickFormatter={(v: number) => `${Number(v).toFixed(0)}%`}
               />
               <Tooltip
                 contentStyle={{
@@ -1588,78 +2039,214 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
                 labelFormatter={(label: string) =>
                   formatShortDate(String(label).includes("T") ? String(label).slice(0, 10) : String(label))
                 }
-                formatter={(value: number, name: string) => {
-                  const label = name === "pro1stSales" ? "Pro1st" : "Sales";
-                  return [`$${Number(value).toLocaleString()}`, label];
+                formatter={(value: number, name: string, payload: any) => {
+                  if (String(name).toLowerCase().includes("pro1st")) {
+                    const dollars = Number(payload?.payload?.pro1stSales ?? 0);
+                    const amount = `$${dollars.toLocaleString()}`;
+                    return [`${Number(value).toFixed(1)}% (${amount})`, "Pro1st %"];
+                  }
+                  return [`$${Number(value).toLocaleString()}`, "Sales"];
                 }}
               />
               <Legend iconType="circle" />
-              <Area type="monotone" dataKey="pro1stSales" name="Pro1st" stroke="#f59e0b" fill="url(#pro1stFill)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="sales" name="Sales" stroke="#3b82f6" strokeWidth={3} dot={false} />
+              <Area type="monotone" dataKey="pro1stPct" name="Pro1st %" yAxisId="right" stroke="#f59e0b" fill="url(#pro1stFill)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="sales" name="Sales" yAxisId="left" stroke="#3b82f6" strokeWidth={3} dot={false} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
+        )}
       </div>
 
-      {/* Lowest Margins per Salesperson */}
+      {/* Sales Report / Lowest Margins */}
       <div
         className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
-        data-print-id="low-margins"
-        data-print-selected={isCardSelected("low-margins") ? "true" : "false"}
-        onClick={handleCardClick("low-margins")}
+        data-print-id="sales-report"
       >
-        <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold text-slate-800">Lowest Margins per Salesperson (Trend Dates)</h3>
-            <p className="text-sm text-slate-500">Lowest 10 margin sales per associate (by selected period) - Click headers to sort</p>
+            <h3 className="text-lg font-bold text-slate-800">
+              Sales Report
+              {renderHelp("Totals use sales report with item-report filters (category/manufacturer) when selected.")}
+            </h3>
+            <p className="text-sm text-slate-500">
+              Totals by salesperson or store, plus lowest margin tickets (by selected period)
+            </p>
           </div>
-          {renderPrintToggle("low-margins")}
+          <div className="flex flex-wrap items-center gap-2">
+            {renderCardToggle("sales-report")}
+            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+              <button
+                type="button"
+                className={`px-3 py-1 text-sm font-medium rounded-md ${reportMode === "totals" ? "bg-white shadow text-slate-900" : "text-slate-500"}`}
+                onClick={() => setReportMode("totals")}
+              >
+                Totals
+              </button>
+              <button
+                type="button"
+                className={`px-3 py-1 text-sm font-medium rounded-md ${reportMode === "lowest" ? "bg-white shadow text-slate-900" : "text-slate-500"}`}
+                onClick={() => setReportMode("lowest")}
+              >
+                Lowest Margins
+              </button>
+            </div>
+            <select
+              className={`border border-slate-200 rounded-lg px-3 py-2 text-sm ${reportMode === "lowest" ? "bg-slate-100 text-slate-400" : "bg-white text-slate-700"}`}
+              value={reportDimension}
+              onChange={(e) => setReportDimension(e.target.value === "store" ? "store" : "salesperson")}
+              disabled={reportMode === "lowest"}
+            >
+              <option value="salesperson">Salesperson</option>
+              <option value="store">Store</option>
+            </select>
+            <select
+              className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white text-slate-700"
+              value={reportCategory}
+              onChange={(e) => setReportCategory(e.target.value)}
+            >
+              {reportCategoryOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c === "ALL" ? "All Categories" : c}
+                </option>
+              ))}
+            </select>
+            <select
+              className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white text-slate-700"
+              value={reportManufacturer}
+              onChange={(e) => setReportManufacturer(e.target.value)}
+            >
+              {reportManufacturerOptions.map((m) => (
+                <option key={m} value={m}>
+                  {m === "ALL" ? "All Manufacturers" : m}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        {sortedLowMarginData.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => setLowMarginSort(prev => ({ column: 'salesperson', direction: prev.column === 'salesperson' && prev.direction === 'asc' ? 'desc' : 'asc' }))}>
-                    Salesperson {lowMarginSort.column === 'salesperson' && (lowMarginSort.direction === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Sale ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Profit</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => setLowMarginSort(prev => ({ column: 'marginPct', direction: prev.column === 'marginPct' && prev.direction === 'asc' ? 'desc' : 'asc' }))}>
-                    Margin % {lowMarginSort.column === 'marginPct' && (lowMarginSort.direction === 'asc' ? '↑' : '↓')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-slate-200">
-                  {sortedLowMarginData.map((row, idx) => (
-                    <tr key={idx} className={row.marginPct !== null && row.marginPct < 10 ? "bg-red-50" : ""}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{row.salesperson}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:text-blue-800">
-                        <a
-                          href={saleLink(row.saleId)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {saleLabel(row.saleId, row.salesperson)}
-                        </a>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                        {formatShortDate(String(row.saleDate || ""))}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.grandTotal.toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.profit.toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                        {row.marginPct !== null ? `${row.marginPct.toFixed(1)}%` : "N/A"}
-                      </td>
+        {!isCardCollapsed("sales-report") && (
+          reportMode === "totals" ? (
+            reportRowsWithPct.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      {reportDimension === "store" ? "Store" : "Salesperson"}
+                      {renderHelp("Grouping based on sales report.")}
+                      </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Total Retail
+                      {renderHelp("Sum of item total_sale_price filtered by category/manufacturer, split by salesperson if applicable.")}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Avg Margin %
+                      {renderHelp("Average of per-ticket margin (profit ÷ sales) in the range.")}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Units Sold
+                      {renderHelp("Sum of qty_sold from item report, filtered by category/manufacturer.")}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Retail %
+                      {renderHelp("Share of total retail for the selected range and filters.")}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Units %
+                      {renderHelp("Share of total units sold for the selected range and filters.")}
+                    </th>
                     </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">No low margin data available.</p>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-200">
+                    {reportRowsWithPct.map((row) => (
+                      <tr key={row.label}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                          {row.label || "(unknown)"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          ${Number(row.totalRetail || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {formatMarginPct(row.avgMarginPct)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {Number(row.units || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {row.retailPct.toFixed(1)}%
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {row.unitsPct.toFixed(1)}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-50">
+                    <tr>
+                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">Totals</td>
+                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                        ${Number(reportTotals.totalRetail || 0).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                        {formatMarginPct(reportTotals.avgMarginPct)}
+                      </td>
+                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                        {Number(reportTotals.totalUnits || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">100.0%</td>
+                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">100.0%</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No sales report data available.</p>
+            )
+          ) : (
+            sortedLowMarginData.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => setLowMarginSort(prev => ({ column: 'salesperson', direction: prev.column === 'salesperson' && prev.direction === 'asc' ? 'desc' : 'asc' }))}>
+                        Salesperson {lowMarginSort.column === 'salesperson' && (lowMarginSort.direction === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Sale ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => setLowMarginSort(prev => ({ column: 'marginPct', direction: prev.column === 'marginPct' && prev.direction === 'asc' ? 'desc' : 'asc' }))}>
+                        Margin % {lowMarginSort.column === 'marginPct' && (lowMarginSort.direction === 'asc' ? '↑' : '↓')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-200">
+                    {sortedLowMarginData.map((row, idx) => (
+                      <tr key={idx} className={row.marginPct !== null && row.marginPct < 10 ? "bg-red-50" : ""}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{row.salesperson}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:text-blue-800">
+                          <a
+                            href={saleLink(row.saleId)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {saleLabel(row.saleId, row.salesperson)}
+                          </a>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {formatShortDate(String(row.saleDate || ""))}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.grandTotal.toLocaleString()}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {row.marginPct !== null ? `${row.marginPct.toFixed(1)}%` : "N/A"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No low margin data available.</p>
+            )
+          )
         )}
       </div>
 
@@ -1667,15 +2254,14 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="salesperson-detail"
-          data-print-selected={isCardSelected("salesperson-detail") ? "true" : "false"}
-          onClick={handleCardClick("salesperson-detail")}
+         
+         
         >
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
               <h3 className="text-lg font-bold text-slate-800">Salesperson Detail: {selectedSalesperson}</h3>
               <p className="text-sm text-slate-500">All tickets for the selected date range</p>
             </div>
-            {renderPrintToggle("salesperson-detail")}
           </div>
           {salespersonTickets.length ? (
             <div className="overflow-x-auto">
@@ -1722,6 +2308,130 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         </div>
       )}
 
+      </div>
+      <div className="fd-print-only space-y-6">
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+          <h3 className="text-lg font-semibold text-slate-900 mb-3">Lowest Margin Tickets</h3>
+          {sortedLowMarginData.length ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Sale</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Date</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Salesperson</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Total</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Margin %</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {sortedLowMarginData.map((row, idx) => (
+                    <tr key={`${row.saleId}-${idx}`}>
+                      <td className="px-4 py-2 text-slate-700">{saleLabel(row.saleId, row.salesperson)}</td>
+                      <td className="px-4 py-2 text-slate-500">{formatShortDate(String(row.saleDate || ""))}</td>
+                      <td className="px-4 py-2 text-slate-500">{row.salesperson || "—"}</td>
+                      <td className="px-4 py-2 text-right text-slate-700">${Number(row.grandTotal || 0).toLocaleString()}</td>
+                      <td className="px-4 py-2 text-right text-slate-700">{formatMarginPct(row.marginPct)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-sm text-slate-500">No low margin data available.</div>
+          )}
+        </div>
+
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+          <h3 className="text-lg font-semibold text-slate-900 mb-3">Totals by Store</h3>
+          {reportRowsWithPctStore.length ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Store</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Tickets</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Retail</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Avg Margin</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Retail %</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units %</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {reportRowsWithPctStore.map((row) => (
+                    <tr key={`store-${row.label}`}>
+                      <td className="px-4 py-2 text-slate-700">{row.label || "—"}</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.ticketCount}</td>
+                      <td className="px-4 py-2 text-right text-slate-700">${Number(row.totalRetail || 0).toLocaleString()}</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{formatMarginPct(row.avgMarginPct)}</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{Number(row.units || 0).toLocaleString()}</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.unitsPct.toFixed(1)}%</td>
+                    </tr>
+                  ))}
+                  <tr className="bg-slate-50 font-semibold">
+                    <td className="px-4 py-2 text-slate-800">Totals</td>
+                    <td className="px-4 py-2 text-right text-slate-700">{reportTotalsStore.totalTickets}</td>
+                    <td className="px-4 py-2 text-right text-slate-800">${Number(reportTotalsStore.totalRetail || 0).toLocaleString()}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">{formatMarginPct(reportTotalsStore.avgMarginPct)}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">{Number(reportTotalsStore.totalUnits || 0).toLocaleString()}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">100.0%</td>
+                    <td className="px-4 py-2 text-right text-slate-700">100.0%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-sm text-slate-500">No store report data available.</div>
+          )}
+        </div>
+
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+          <h3 className="text-lg font-semibold text-slate-900 mb-3">Totals by Salesperson</h3>
+          {reportRowsWithPctSalesperson.length ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Salesperson</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Tickets</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Retail</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Avg Margin</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Retail %</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units %</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {reportRowsWithPctSalesperson.map((row) => (
+                    <tr key={`sp-${row.label}`}>
+                      <td className="px-4 py-2 text-slate-700">{row.label || "—"}</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.ticketCount}</td>
+                      <td className="px-4 py-2 text-right text-slate-700">${Number(row.totalRetail || 0).toLocaleString()}</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{formatMarginPct(row.avgMarginPct)}</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{Number(row.units || 0).toLocaleString()}</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.unitsPct.toFixed(1)}%</td>
+                    </tr>
+                  ))}
+                  <tr className="bg-slate-50 font-semibold">
+                    <td className="px-4 py-2 text-slate-800">Totals</td>
+                    <td className="px-4 py-2 text-right text-slate-700">{reportTotalsSalesperson.totalTickets}</td>
+                    <td className="px-4 py-2 text-right text-slate-800">${Number(reportTotalsSalesperson.totalRetail || 0).toLocaleString()}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">{formatMarginPct(reportTotalsSalesperson.avgMarginPct)}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">{Number(reportTotalsSalesperson.totalUnits || 0).toLocaleString()}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">100.0%</td>
+                    <td className="px-4 py-2 text-right text-slate-700">100.0%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-sm text-slate-500">No salesperson report data available.</div>
+          )}
+        </div>
+      </div>
 
     </div>
   );

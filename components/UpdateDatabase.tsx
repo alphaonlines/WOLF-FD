@@ -37,55 +37,6 @@ const hasAllRequired = (columns: string[], required: Array<string[]>) => {
   return required.every((group) => group.some((col) => set.has(col)));
 };
 
-const compressMonths = (months: string[]) => {
-  const sorted = Array.from(new Set(months))
-    .filter((m) => /^\d{4}-\d{2}$/.test(m))
-    .sort();
-  const ranges: string[] = [];
-  let start = "";
-  let prev = "";
-
-  const formatMonth = (ym: string) => {
-    const [y, m] = ym.split("-").map(Number);
-    const d = new Date(Date.UTC(y, m - 1, 1));
-    return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-  };
-
-  const pushRange = () => {
-    if (!start) return;
-    if (start === prev) {
-      ranges.push(formatMonth(start));
-    } else {
-      ranges.push(`${formatMonth(start)}–${formatMonth(prev)}`);
-    }
-  };
-
-  const nextMonth = (ym: string) => {
-    const [y, m] = ym.split("-").map(Number);
-    const d = new Date(Date.UTC(y, m - 1, 1));
-    d.setUTCMonth(d.getUTCMonth() + 1);
-    return d.toISOString().slice(0, 7);
-  };
-
-  for (const m of sorted) {
-    if (!start) {
-      start = m;
-      prev = m;
-      continue;
-    }
-    if (nextMonth(prev) === m) {
-      prev = m;
-      continue;
-    }
-    pushRange();
-    start = m;
-    prev = m;
-  }
-  pushRange();
-
-  return ranges;
-};
-
 const extractHeaders = (sheet: XLSX.WorkSheet): string[] => {
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" }) as Array<Array<string>>;
   for (const row of rows.slice(0, 10)) {
@@ -110,11 +61,21 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [uploadWarnings, setUploadWarnings] = useState<string[]>([]);
+  const [uploadLog, setUploadLog] = useState<string | null>(null);
   const [missingSalesMonths, setMissingSalesMonths] = useState<string[]>([]);
   const [missingItemMonths, setMissingItemMonths] = useState<string[]>([]);
+  const [missingSalesDays, setMissingSalesDays] = useState<string[]>([]);
+  const [missingItemDays, setMissingItemDays] = useState<string[]>([]);
+  const [missingSalesDaysCount, setMissingSalesDaysCount] = useState<number>(0);
+  const [missingItemDaysCount, setMissingItemDaysCount] = useState<number>(0);
+  const [coverageStart, setCoverageStart] = useState<string | null>(null);
+  const [coverageEnd, setCoverageEnd] = useState<string | null>(null);
+  const [coverageView, setCoverageView] = useState<"days" | "months">("days");
 
   const validChecks = useMemo(() => checks.filter((c) => c.status === "ready"), [checks]);
   const hasErrors = checks.some((c) => c.status === "invalid" || c.status === "error");
+  const salesGapList = coverageView === "days" ? missingSalesDays : missingSalesMonths;
+  const itemGapList = coverageView === "days" ? missingItemDays : missingItemMonths;
 
   const isFilenameWarning = (msg: string) =>
     msg.includes("Unrecognized filename") ||
@@ -124,6 +85,34 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
 
   const filterDisplayWarnings = (warnings: string[]) =>
     warnings.filter((w) => !isFilenameWarning(w));
+
+  const resetUploadState = () => {
+    setUploadError(null);
+    setUploadSuccess(null);
+    setUploadWarnings([]);
+    setUploadLog(null);
+  };
+
+  const applyUploadResult = (result: any) => {
+    setUploadLog(JSON.stringify(result, null, 2));
+    if (Array.isArray(result?.warnings) && result.warnings.length) {
+      const displayWarnings = filterDisplayWarnings(result.warnings);
+      setUploadWarnings(displayWarnings);
+    }
+    if (result?.import?.stderr) {
+      setUploadError(`Import error: ${result.import.stderr}`);
+      return false;
+    }
+    return true;
+  };
+
+  const finalizeSuccess = (message: string) => {
+    setUploadSuccess(message);
+    setUploadError(null);
+    refreshCoverage();
+    if (onUploadComplete) onUploadComplete();
+    window.setTimeout(() => window.location.reload(), 600);
+  };
 
   const runValidation = async (files: File[]) => {
     const nextChecks: FileCheck[] = [];
@@ -174,9 +163,7 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
       }
     }
     setChecks(nextChecks);
-    setUploadError(null);
-    setUploadSuccess(null);
-    setUploadWarnings([]);
+    resetUploadState();
   };
 
   const refreshCoverage = () => {
@@ -184,10 +171,22 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
       .then((data) => {
         setMissingSalesMonths(data.missingSalesMonths || []);
         setMissingItemMonths(data.missingItemMonths || []);
+        setMissingSalesDays(data.missingSalesDays || []);
+        setMissingItemDays(data.missingItemDays || []);
+        setMissingSalesDaysCount(Number(data.missingSalesDaysCount || 0));
+        setMissingItemDaysCount(Number(data.missingItemDaysCount || 0));
+        setCoverageStart(data.startDate || null);
+        setCoverageEnd(data.endDate || null);
       })
       .catch(() => {
         setMissingSalesMonths([]);
         setMissingItemMonths([]);
+        setMissingSalesDays([]);
+        setMissingItemDays([]);
+        setMissingSalesDaysCount(0);
+        setMissingItemDaysCount(0);
+        setCoverageStart(null);
+        setCoverageEnd(null);
       });
   };
 
@@ -217,26 +216,20 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
   const handleRetry = async (fileName: string) => {
     const target = checks.find((c) => c.file.name === fileName);
     if (!target) return;
-    setUploadError(null);
-    setUploadWarnings([]);
+    resetUploadState();
     setFileStatus(fileName, "uploading");
     try {
       const result = await uploadPosExports([target.file]);
-      if (Array.isArray(result?.warnings) && result.warnings.length) {
-        const displayWarnings = filterDisplayWarnings(result.warnings);
-        setUploadWarnings(displayWarnings);
-      }
-      if (result?.import?.stderr) {
-        setUploadError(`Import error: ${result.import.stderr}`);
+      if (!applyUploadResult(result)) {
         setFileStatus(fileName, "error");
         return;
       }
       setFileStatus(fileName, "uploaded", true);
-      setUploadSuccess("File uploaded and imported.");
-      setUploadError(null);
-      refreshCoverage();
-      if (onUploadComplete) onUploadComplete();
+      finalizeSuccess("File uploaded and imported. Refreshing...");
     } catch {
+      setUploadLog(
+        JSON.stringify({ ok: false, error: "Upload failed. Check the POS backend and try again." }, null, 2)
+      );
       setUploadError("Upload failed. Check the POS backend and try again.");
       setFileStatus(fileName, "error");
     }
@@ -244,18 +237,11 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
 
   const handleUpload = async () => {
     if (!validChecks.length) return;
-    setUploadError(null);
-    setUploadSuccess(null);
-    setUploadWarnings([]);
+    resetUploadState();
     setChecks((prev) => prev.map((c) => (c.status === "ready" ? { ...c, status: "uploading" } : c)));
     try {
       const result = await uploadPosExports(validChecks.map((c) => c.file));
-      if (Array.isArray(result?.warnings) && result.warnings.length) {
-        const displayWarnings = filterDisplayWarnings(result.warnings);
-        setUploadWarnings(displayWarnings);
-      }
-      if (result?.import?.stderr) {
-        setUploadError(`Import error: ${result.import.stderr}`);
+      if (!applyUploadResult(result)) {
         setChecks((prev) => prev.map((c) => (c.status === "uploading" ? { ...c, status: "error" } : c)));
         return;
       }
@@ -264,11 +250,11 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
           c.status === "uploading" ? { ...c, status: "uploaded", errors: undefined } : c
         )
       );
-      setUploadSuccess("Files uploaded and imported.");
-      setUploadError(null);
-      refreshCoverage();
-      if (onUploadComplete) onUploadComplete();
+      finalizeSuccess("Files uploaded and imported. Refreshing...");
     } catch (err) {
+      setUploadLog(
+        JSON.stringify({ ok: false, error: "Upload failed. Check the POS backend and try again." }, null, 2)
+      );
       setChecks((prev) => prev.map((c) => (c.status === "uploading" ? { ...c, status: "error" } : c)));
       setUploadError("Upload failed. Check the POS backend and try again.");
     }
@@ -309,6 +295,14 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
             <UploadCloud size={16} />
             Upload to Backend
           </button>
+          <a
+            href="https://furnituredistributors.wolf.discount/fd/manager-specials-upload.html"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg text-base font-medium hover:bg-slate-50"
+          >
+            Manager Specials Upload
+          </a>
           {uploadSuccess && (
             <span className="text-sm text-green-600 font-medium flex items-center gap-1">
               <CheckCircle size={14} />
@@ -328,6 +322,15 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
             </span>
           )}
         </div>
+
+        {uploadLog && (
+          <div className="mt-4">
+            <div className="text-sm font-semibold text-slate-700 mb-2">Import Log</div>
+            <pre className="text-xs bg-slate-900 text-slate-100 rounded-lg p-3 overflow-auto max-h-64 whitespace-pre-wrap">
+{uploadLog}
+            </pre>
+          </div>
+        )}
 
         {checks.length > 0 && (
           <div className="mt-4 space-y-2 text-base">
@@ -378,6 +381,81 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
             <div className="font-semibold text-slate-700">Item report</div>
             <div>Manufacturer = All and Delivered = All for both exports.</div>
             <div>Let the report fully load before exporting.</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-base">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-800">Coverage Gaps (Delivery Date)</h3>
+            <p className="text-sm text-slate-500">
+              {coverageStart && coverageEnd
+                ? `Tracking ${coverageStart} to ${coverageEnd}.`
+                : "Tracking mid-2024 to today."}
+            </p>
+          </div>
+          <div className="inline-flex rounded-full bg-slate-100 p-1 text-sm">
+            <button
+              className={`px-3 py-1 rounded-full ${coverageView === "days" ? "bg-slate-900 text-white" : "text-slate-600"}`}
+              onClick={() => setCoverageView("days")}
+            >
+              Days
+            </button>
+            <button
+              className={`px-3 py-1 rounded-full ${coverageView === "months" ? "bg-slate-900 text-white" : "text-slate-600"}`}
+              onClick={() => setCoverageView("months")}
+            >
+              Months
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-semibold text-slate-800">Sales Data</div>
+              {coverageView === "days" ? (
+                <div className="text-xs text-slate-500">
+                  {missingSalesDaysCount} missing days
+                </div>
+              ) : (
+                <div className="text-xs text-slate-500">
+                  {missingSalesMonths.length} missing months
+                </div>
+              )}
+            </div>
+            <div className="text-xs text-slate-600">Most recent gaps shown</div>
+            <div className="mt-2 max-h-40 overflow-auto text-sm text-slate-700 space-y-1">
+              {salesGapList.length ? (
+                salesGapList.map((d) => <div key={d}>{d}</div>)
+              ) : (
+                <div className="text-emerald-600">No gaps detected.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-semibold text-slate-800">Item List</div>
+              {coverageView === "days" ? (
+                <div className="text-xs text-slate-500">
+                  {missingItemDaysCount} missing days
+                </div>
+              ) : (
+                <div className="text-xs text-slate-500">
+                  {missingItemMonths.length} missing months
+                </div>
+              )}
+            </div>
+            <div className="text-xs text-slate-600">Most recent gaps shown</div>
+            <div className="mt-2 max-h-40 overflow-auto text-sm text-slate-700 space-y-1">
+              {itemGapList.length ? (
+                itemGapList.map((d) => <div key={d}>{d}</div>)
+              ) : (
+                <div className="text-emerald-600">No gaps detected.</div>
+              )}
+            </div>
           </div>
         </div>
       </div>

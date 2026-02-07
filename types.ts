@@ -1,7 +1,7 @@
 export enum SalesPeriod {
-  THIS_WEEK = 'THIS_WEEK',
-  LAST_YEAR = 'LAST_YEAR',
-  LAST_MONTH = 'LAST_MONTH'
+  THIS_WEEK = "THIS_WEEK",
+  LAST_YEAR = "LAST_YEAR",
+  LAST_MONTH = "LAST_MONTH",
 }
 
 export interface SalesData {
@@ -18,9 +18,9 @@ export interface StoreData {
 }
 
 export enum TaskStatus {
-  TODO = 'TODO',
-  IN_PROGRESS = 'IN_PROGRESS',
-  DONE = 'DONE'
+  TODO = "TODO",
+  IN_PROGRESS = "IN_PROGRESS",
+  DONE = "DONE",
 }
 
 export interface Task {
@@ -29,7 +29,7 @@ export interface Task {
   assignee: string;
   deadline: string;
   status: TaskStatus;
-  priority: 'low' | 'medium' | 'high';
+  priority: "low" | "medium" | "high";
   sortIndex?: number;
   createdAt?: string;
   respondedAt?: string;
@@ -38,15 +38,15 @@ export interface Task {
 }
 
 export enum PostStatus {
-  DRAFT = 'DRAFT',
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED'
+  DRAFT = "DRAFT",
+  PENDING_APPROVAL = "PENDING_APPROVAL",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
 }
 
 export interface SocialPost {
   id: string;
-  platform: 'Instagram' | 'Facebook' | 'Google' | 'Pinterest';
+  platform: "Instagram" | "Facebook" | "Google" | "Pinterest";
   content: string;
   imagePlaceholder: string;
   status: PostStatus;

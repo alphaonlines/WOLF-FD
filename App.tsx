@@ -1,21 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { LayoutDashboard, CheckSquare, MessageSquare, Menu, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, MessageSquare, Menu, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud, Monitor, Home, Video, ClipboardList, Bot } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
-import TaskManager from './components/TaskManager';
 import WorkAdvertising from './components/WorkAdvertising';
 import UpdateDatabase from './components/UpdateDatabase';
+import KiosksStatus from './components/KiosksStatus';
+import DashboardOverview from './components/DashboardOverview';
+import CamerasStatus from './components/CamerasStatus';
+import MessageBoard from './components/MessageBoard';
+import WolfBot from './components/WolfBot';
 
 enum Tab {
-  OVERVIEW = 'OVERVIEW',
-  TASKS = 'TASKS',
-  SOCIAL = 'SOCIAL',
+  DASHBOARD = 'DASHBOARD',
+  SALES = 'SALES',
+  CRM = 'CRM',
+  KIOSKS = 'KIOSKS',
+  CAMERAS = 'CAMERAS',
+  MESSAGE_BOARD = 'MESSAGE_BOARD',
+  WOLFBOT = 'WOLFBOT',
 }
 
 const PASSWORD = "1111";
 const STORAGE_KEY = "fd_app_unlocked";
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.OVERVIEW);
+  const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
@@ -38,7 +46,14 @@ const App: React.FC = () => {
   const [missingItemData, setMissingItemData] = useState(false);
   const [missingSalesData, setMissingSalesData] = useState(false);
   const [activeFilterLabel, setActiveFilterLabel] = useState<string | null>(null);
-  const [printSelectionCount, setPrintSelectionCount] = useState(0);
+  const [showTooltips, setShowTooltips] = useState(() => {
+    try {
+      const v = localStorage.getItem("fd_tooltips_enabled");
+      return v ? v === "true" : false;
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     if (!showLoading) return;
@@ -101,14 +116,21 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent).detail as { count?: number } | undefined;
-      const count = Number(detail?.count ?? 0);
-      setPrintSelectionCount(Number.isFinite(count) ? count : 0);
-    };
-    window.addEventListener("fd-print-selection", handler as EventListener);
-    return () => window.removeEventListener("fd-print-selection", handler as EventListener);
-  }, []);
+    try {
+      localStorage.setItem("fd_tooltips_enabled", String(showTooltips));
+    } catch {
+      // ignore storage failures
+    }
+  }, [showTooltips]);
+
+  useEffect(() => {
+    if (activeTab === Tab.DASHBOARD) {
+      setSidebarOpen(true);
+    } else {
+      setSidebarOpen(false);
+    }
+  }, [activeTab]);
+
 
   const handleUnlock = () => {
     if (passwordInput === PASSWORD) {
@@ -137,15 +159,29 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch(activeTab) {
-      case Tab.OVERVIEW: return (
+      case Tab.DASHBOARD: return (
+        <DashboardOverview
+          onNavigate={(tab) => {
+            if (tab === "SALES") setActiveTab(Tab.SALES);
+            if (tab === "TASKS") setActiveTab(Tab.TASKS);
+            if (tab === "CRM") setActiveTab(Tab.CRM);
+            if (tab === "KIOSKS") setActiveTab(Tab.KIOSKS);
+          }}
+        />
+      );
+      case Tab.SALES: return (
         <SalesDashboard
           itemSortMetric={itemSortMetric}
           onItemSortMetricChange={setItemSortMetric}
+          showTooltips={showTooltips}
         />
       );
-      case Tab.TASKS: return <TaskManager />;
-      case Tab.SOCIAL: return <WorkAdvertising />;
-      default: return <SalesDashboard />;
+      case Tab.CRM: return <WorkAdvertising />;
+      case Tab.KIOSKS: return <KiosksStatus />;
+      case Tab.CAMERAS: return <CamerasStatus />;
+      case Tab.MESSAGE_BOARD: return <MessageBoard />;
+      case Tab.WOLFBOT: return <WolfBot />;
+      default: return <SalesDashboard showTooltips={showTooltips} />;
     }
   };
 
@@ -200,35 +236,52 @@ const App: React.FC = () => {
           .dark .bg-slate-100 { background-color: rgba(30, 41, 59, 0.8) !important; }
           .dark .border-slate-100 { border-color: rgba(51, 65, 85, 0.8) !important; }
           .dark .border-slate-200 { border-color: rgba(51, 65, 85, 0.8) !important; }
+          .fd-print-only { display: none; }
           @media print {
             body * { visibility: hidden; }
             body { background: #ffffff !important; }
             .fd-print-area,
             .fd-print-area * { visibility: visible; }
             .fd-print-area {
-              position: absolute;
-              left: 0;
-              top: 0;
+              position: static;
               width: 100%;
-              padding: 0 !important;
+              padding: 0 12px !important;
               background: #ffffff !important;
             }
             .fd-print-card {
-              break-after: page;
-              page-break-after: always;
+              break-inside: avoid;
+              page-break-inside: avoid;
+              margin: 0 0 12px 0;
+              padding: 12px !important;
               box-shadow: none !important;
               border: 1px solid #e2e8f0 !important;
               background: #ffffff !important;
             }
-            .fd-print-card:last-child {
-              break-after: auto;
-              page-break-after: auto;
-            }
-            .fd-print-card[data-print-selected="false"] { display: none !important; }
             .fd-print-hide { display: none !important; }
             .fd-print-toggle { display: none !important; }
+            .fd-print-only { display: block !important; }
+            .fd-print-area .grid { display: block !important; }
+            .fd-print-area .grid > * { width: 100% !important; margin-bottom: 12px; }
             .fd-print-area table,
             .fd-print-area .recharts-wrapper { page-break-inside: avoid; }
+            .fd-print-header {
+              margin-bottom: 12px;
+              padding-bottom: 8px;
+              border-bottom: 2px solid #0f172a;
+            }
+            .fd-print-title {
+              font-size: 20px;
+              font-weight: 700;
+              color: #0f172a;
+            }
+            .fd-print-meta {
+              font-size: 12px;
+              color: #334155;
+              margin-top: 4px;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 8px 16px;
+            }
             .fd-print-area a { color: #0f172a !important; text-decoration: none; }
             .fd-print-area .shadow-sm { box-shadow: none !important; }
           }
@@ -256,7 +309,8 @@ const App: React.FC = () => {
               <Sofa className="text-blue-400" />
               <div className="leading-tight text-left">
                 <div className="font-bold text-xl tracking-tight">WOLF FD</div>
-                <div className="text-xs text-slate-400">Work Online. Live Free. Furniture Distributors</div>
+                <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Furniture Distributors</div>
+                <div className="text-xs text-slate-500">Work Online · Live Free</div>
               </div>
             </div>
           ) : (
@@ -266,24 +320,52 @@ const App: React.FC = () => {
 
         <nav className="flex-1 py-8 px-4 space-y-2">
           <NavItem 
-            icon={<LayoutDashboard size={20} />} 
+            icon={<Home size={20} />} 
             label="Dashboard" 
-            isActive={activeTab === Tab.OVERVIEW} 
-            onClick={() => setActiveTab(Tab.OVERVIEW)}
+            isActive={activeTab === Tab.DASHBOARD} 
+            onClick={() => setActiveTab(Tab.DASHBOARD)}
             isOpen={sidebarOpen}
           />
           <NavItem 
-            icon={<CheckSquare size={20} />} 
-            label="Tasks" 
-            isActive={activeTab === Tab.TASKS} 
-            onClick={() => setActiveTab(Tab.TASKS)}
+            icon={<LayoutDashboard size={20} />} 
+            label="Sales Analysis" 
+            isActive={activeTab === Tab.SALES} 
+            onClick={() => setActiveTab(Tab.SALES)}
             isOpen={sidebarOpen}
           />
           <NavItem 
             icon={<MessageSquare size={20} />} 
-            label="Work Advertising" 
-            isActive={activeTab === Tab.SOCIAL} 
-            onClick={() => setActiveTab(Tab.SOCIAL)}
+            label="CRM" 
+            isActive={activeTab === Tab.CRM} 
+            onClick={() => setActiveTab(Tab.CRM)}
+            isOpen={sidebarOpen}
+          />
+          <NavItem 
+            icon={<Monitor size={20} />} 
+            label="AlphaOS" 
+            isActive={activeTab === Tab.KIOSKS} 
+            onClick={() => setActiveTab(Tab.KIOSKS)}
+            isOpen={sidebarOpen}
+          />
+          <NavItem 
+            icon={<Video size={20} />} 
+            label="Nightowl" 
+            isActive={activeTab === Tab.CAMERAS} 
+            onClick={() => setActiveTab(Tab.CAMERAS)}
+            isOpen={sidebarOpen}
+          />
+          <NavItem 
+            icon={<ClipboardList size={20} />} 
+            label="Message Board" 
+            isActive={activeTab === Tab.MESSAGE_BOARD} 
+            onClick={() => setActiveTab(Tab.MESSAGE_BOARD)}
+            isOpen={sidebarOpen}
+          />
+          <NavItem 
+            icon={<Bot size={20} />} 
+            label="WOLFbot" 
+            isActive={activeTab === Tab.WOLFBOT} 
+            onClick={() => setActiveTab(Tab.WOLFBOT)}
             isOpen={sidebarOpen}
           />
           <div className="pt-4 mt-4 border-t border-slate-800" />
@@ -291,7 +373,7 @@ const App: React.FC = () => {
             icon={<Activity size={20} />}
             label="AlphaPulse"
             isActive={false}
-            href="https://alphaonlines.github.io/AlphaPulse/"
+            href="https://furnituredistributors.wolf.discount/alphapulse/"
             target="_blank"
             rel="noreferrer"
             isOpen={sidebarOpen}
@@ -301,6 +383,15 @@ const App: React.FC = () => {
             label="FD Connect Reviews"
             isActive={false}
             href="https://www.furnituredistributors.net/content/connect"
+            target="_blank"
+            rel="noreferrer"
+            isOpen={sidebarOpen}
+          />
+          <NavItem
+            icon={<LayoutDashboard size={20} />}
+            label="QuickLinks"
+            isActive={false}
+            href="https://sites.google.com/view/fdserver/home"
             target="_blank"
             rel="noreferrer"
             isOpen={sidebarOpen}
@@ -328,6 +419,18 @@ const App: React.FC = () => {
               <div className="text-sm font-medium">Update DB</div>
             )}
           </button>
+          <a
+            href="https://furnituredistributors.wolf.discount/fd/manager-specials-upload.html"
+            target="_blank"
+            rel="noreferrer"
+            className={`mt-2 w-full inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+              sidebarOpen ? "" : "justify-center"
+            } text-slate-300 hover:bg-slate-800 hover:text-white`}
+            title="Manager Specials Upload"
+          >
+            <UploadCloud size={16} />
+            {sidebarOpen && <span>Manager Specials Upload</span>}
+          </a>
         </div>
       </aside>
 
@@ -337,34 +440,47 @@ const App: React.FC = () => {
         {/* Top Header */}
         <header className="h-20 bg-white border-b border-slate-200 sticky top-0 z-10 px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold text-slate-800">
-              {activeTab === Tab.OVERVIEW && 'WOLF FD Dashboard'}
-              {activeTab === Tab.TASKS && 'Team Tasks'}
-              {activeTab === Tab.SOCIAL && 'Work Advertising'}
+            <h1 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+              <span>
+                {activeTab === Tab.DASHBOARD && 'WOLF FD Dashboard'}
+                {activeTab === Tab.SALES && 'Sales Analysis'}
+                {activeTab === Tab.CRM && 'CRM'}
+                {activeTab === Tab.KIOSKS && 'AlphaOS Status'}
+                {activeTab === Tab.CAMERAS && 'Nightowl Status'}
+                {activeTab === Tab.MESSAGE_BOARD && 'Message Board'}
+                {activeTab === Tab.WOLFBOT && 'WOLFbot'}
+              </span>
+              {activeTab === Tab.SALES && showRange && rangeLabel && (
+                <span className="text-sm font-semibold text-slate-400">
+                  ({rangeLabel})
+                </span>
+              )}
             </h1>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="relative hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <input 
-                type="text" 
-                placeholder="Search salesperson or store..." 
-                value={headerSearch}
-                onChange={(e) => setHeaderSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const query = headerSearch.trim();
-                    if (query) {
-                      window.dispatchEvent(new CustomEvent("fd-search", { detail: { query } }));
-                      setHeaderSearch("");
+            {activeTab === Tab.SALES && (
+              <div className="relative hidden md:block">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input 
+                  type="text" 
+                  placeholder="Search salesperson or store..." 
+                  value={headerSearch}
+                  onChange={(e) => setHeaderSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const query = headerSearch.trim();
+                      if (query) {
+                        window.dispatchEvent(new CustomEvent("fd-search", { detail: { query } }));
+                        setHeaderSearch("");
+                      }
                     }
-                  }
-                }}
-                className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 transition-all"
-              />
-            </div>
-            {showRange && rangeLabel && (
+                  }}
+                  className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 transition-all"
+                />
+              </div>
+            )}
+            {activeTab === Tab.SALES && showRange && rangeLabel && (
               <button
                 onClick={() => window.dispatchEvent(new Event("fd-open-range"))}
                 className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full bg-white/70 border border-slate-200 text-slate-600 hover:bg-white"
@@ -374,7 +490,7 @@ const App: React.FC = () => {
                 <span className="text-slate-400">Edit</span>
               </button>
             )}
-            {activeTab === Tab.OVERVIEW && activeFilterLabel && (
+            {activeTab === Tab.SALES && activeFilterLabel && (
               <div className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full bg-white/70 border border-slate-200 text-slate-600">
                 {activeFilterLabel}
                 <button
@@ -386,35 +502,26 @@ const App: React.FC = () => {
                 </button>
               </div>
             )}
-            {activeTab === Tab.OVERVIEW && missingItemData && (
+            {activeTab === Tab.SALES && missingItemData && (
               <div className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                 Missing data for items for this date range
               </div>
             )}
-            {activeTab === Tab.OVERVIEW && missingSalesData && (
+            {activeTab === Tab.SALES && missingSalesData && (
               <div className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                 Missing sales data for this date range
               </div>
             )}
-            {activeTab === Tab.OVERVIEW && (
+            {activeTab === Tab.SALES && (
               <button
                 onClick={() => window.dispatchEvent(new Event("fd-print-request"))}
-                disabled={printSelectionCount === 0}
-                className={`hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border transition-colors ${
-                  printSelectionCount === 0
-                    ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
-                title={
-                  printSelectionCount === 0
-                    ? "Select cards to print"
-                    : `Print ${printSelectionCount} selected card${printSelectionCount === 1 ? "" : "s"}`
-                }
+                className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border transition-colors bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                title="Print full report"
               >
-                Print Selected{printSelectionCount ? ` (${printSelectionCount})` : ""}
+                Print Report
               </button>
             )}
-            {activeTab === Tab.OVERVIEW && (
+            {activeTab === Tab.SALES && (
               <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1 text-xs">
                 <button
                   onClick={() => setItemSortMetric("sales")}
@@ -454,6 +561,21 @@ const App: React.FC = () => {
         </div>
 
       </main>
+
+      {activeTab === Tab.SALES && (
+        <button
+          type="button"
+          onClick={() => setShowTooltips((prev) => !prev)}
+          className={`fixed bottom-6 right-6 z-40 h-12 w-12 rounded-full shadow-lg border text-lg font-bold transition-colors ${
+            showTooltips
+              ? "bg-slate-900 text-white border-slate-900"
+              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+          }`}
+          title={showTooltips ? "Tooltips on" : "Tooltips off"}
+        >
+          ?
+        </button>
+      )}
       {updatePanelOpen && (
         <>
           <div
@@ -552,7 +674,7 @@ const LoadingOverlay: React.FC<{ darkness: number }> = ({ darkness }) => {
             🐺
           </div>
         </div>
-        <div className="text-sm uppercase tracking-[0.3em] text-slate-200">Wolf FD</div>
+        <div className="text-sm uppercase tracking-[0.3em] text-slate-200">WOLF FD</div>
         <div className="w-64 h-2 rounded-full bg-slate-700/80 overflow-hidden relative">
           <div className="h-full w-1/2 bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-200 animate-[loadbar_2s_linear_infinite]" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[sweep_2s_ease-in-out_infinite]" />
@@ -630,7 +752,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ passwordInput, setPasswordInput
             🐺
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-slate-100">Wolf FD Locked</h2>
+            <h2 className="text-lg font-semibold text-slate-100">WOLF FD Locked</h2>
             <p className="text-sm text-slate-400">Enter the passcode to continue.</p>
           </div>
         </div>

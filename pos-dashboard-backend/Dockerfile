@@ -5,7 +5,7 @@ RUN apt-get update   && apt-get install -y --no-install-recommends     python3 p
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 # Ensure dotenv exists for runtime
 RUN npm install dotenv
 

@@ -1,6 +1,6 @@
 type JsonValue = null | boolean | number | string | JsonValue[] | { [k: string]: JsonValue };
 
-const DEFAULT_BASE_URL = "http://127.0.0.1:5055";
+const DEFAULT_BASE_URL = "http://127.0.0.1:5057";
 
 export function getPosApiBaseUrl(): string {
   const v = (import.meta as any).env?.VITE_POS_API_BASE_URL;
@@ -81,11 +81,23 @@ export async function uploadPosExports(files: File[]): Promise<{ import?: { ok?:
 export async function fetchCoverageMonths(): Promise<{
   missingSalesMonths: string[];
   missingItemMonths: string[];
+  missingSalesDays: string[];
+  missingItemDays: string[];
+  missingSalesDaysCount: number;
+  missingItemDaysCount: number;
+  startDate?: string;
+  endDate?: string;
 }> {
   const json = await fetchJson("/api/import/coverage-months");
   return {
+    startDate: typeof (json as any)?.startDate === "string" ? (json as any).startDate : undefined,
+    endDate: typeof (json as any)?.endDate === "string" ? (json as any).endDate : undefined,
     missingSalesMonths: Array.isArray((json as any)?.missingSalesMonths) ? (json as any).missingSalesMonths : [],
     missingItemMonths: Array.isArray((json as any)?.missingItemMonths) ? (json as any).missingItemMonths : [],
+    missingSalesDays: Array.isArray((json as any)?.missingSalesDays) ? (json as any).missingSalesDays : [],
+    missingItemDays: Array.isArray((json as any)?.missingItemDays) ? (json as any).missingItemDays : [],
+    missingSalesDaysCount: Number((json as any)?.missingSalesDaysCount ?? 0),
+    missingItemDaysCount: Number((json as any)?.missingItemDaysCount ?? 0),
   };
 }
 
@@ -148,6 +160,8 @@ export async function fetchLowMargin(params: {
   limitTotal?: number;
   salesperson?: string;
   location?: string;
+  category?: string;
+  manufacturer?: string;
 }): Promise<{
   totalCount: number;
   rows: Array<{
@@ -174,6 +188,8 @@ export async function fetchLowMargin(params: {
   });
   if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
   if (params.location && params.location.trim()) qs.set("location", params.location.trim());
+  if (params.category && params.category.trim()) qs.set("category", params.category.trim());
+  if (params.manufacturer && params.manufacturer.trim()) qs.set("manufacturer", params.manufacturer.trim());
   const json = await fetchJson(`/api/low-margin?${qs.toString()}`);
 
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
@@ -194,6 +210,55 @@ export async function fetchLowMargin(params: {
       financeFee: Number(r.finance_fee ?? 0),
       rawSourceFile: String(r.raw_source_file ?? ""),
     })),
+  };
+}
+
+export async function fetchSalesReport(params: {
+  start: string;
+  end: string;
+  dimension: "salesperson" | "store";
+  salesperson?: string;
+  location?: string;
+  category?: string;
+  manufacturer?: string;
+}): Promise<{
+  dimension: "salesperson" | "store";
+  rows: Array<{
+    label: string;
+    ticketCount: number;
+    totalRetail: number;
+    units: number;
+    avgMarginPct: number | null;
+  }>;
+  availableCategories: string[];
+  availableManufacturers: string[];
+}> {
+  const qs = new URLSearchParams({
+    start: params.start,
+    end: params.end,
+    dimension: params.dimension,
+  });
+  if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
+  if (params.location && params.location.trim()) qs.set("location", params.location.trim());
+  if (params.category && params.category.trim()) qs.set("category", params.category.trim());
+  if (params.manufacturer && params.manufacturer.trim()) qs.set("manufacturer", params.manufacturer.trim());
+  const json = await fetchJson(`/api/report/sales-summary?${qs.toString()}`);
+  const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
+  return {
+    dimension: ((json as any)?.dimension || params.dimension) as "salesperson" | "store",
+    rows: rows.map((r: any) => {
+      const rawMargin = r.avg_margin_pct ?? r.avgMarginPct;
+      const marginNum = rawMargin === null || rawMargin === undefined || rawMargin === "" ? null : Number(rawMargin);
+      return {
+      label: String(r.label ?? ""),
+      ticketCount: Number(r.ticket_count ?? r.ticketCount ?? 0),
+      totalRetail: Number(r.total_retail ?? r.totalRetail ?? 0),
+      units: Number(r.units ?? 0),
+      avgMarginPct: Number.isFinite(marginNum as number) ? (marginNum as number) : null,
+    };
+    }),
+    availableCategories: Array.isArray((json as any)?.availableCategories) ? (json as any).availableCategories : [],
+    availableManufacturers: Array.isArray((json as any)?.availableManufacturers) ? (json as any).availableManufacturers : [],
   };
 }
 

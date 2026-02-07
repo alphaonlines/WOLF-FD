@@ -1,5 +1,4 @@
-import type { Task } from "../types";
-import { TaskStatus } from "../types";
+import { Task, TaskStatus } from "../types";
 import { checkPosBackendHealthy } from "./posBackendApi";
 import { createTaskInApi, fetchTasksFromApi, updateTaskInApi } from "./tasksApi";
 

@@ -48,6 +48,21 @@ From backend folder:
 - Database connectivity uses host IP with Port **5433** to bridge Swarm and standard Docker networks.
 - For historical context, see `PROJECT_NOTES.md` and `AGENTS.md`.
 
+## UI Overview (2026-02-06)
+
+- **Dashboard (Overview):** Draggable snapshot cards for key areas (Sales Analysis, CRM, AlphaOS, Nightowl, Message Board, WOLFbot, AlphaPulse, FD Connect, QuickLinks).
+- **Sales Analysis:** Full analytics view; print output now uses tabular reports (lowest margins, store totals, salesperson totals).
+- **CRM:** Planner, Inbox, Reviews, Drip Flows, Customers, Analytics (tasks removed).
+- **AlphaOS:** Kiosk status plus Desktops/Tablet sections (FD7 desktop, FD7T/FD7T1 tablets).
+- **Nightowl:** Camera status with per-location camera counts and Night Owl login link.
+- **Message Board:** Slack-style layout with channels, DMs, tasks panel, and voice/video sections.
+- **WOLFbot:** Conversational AI owner console with recent calls, routing, flows, and a test chat window.
+
+## Sales Report Filters
+
+- **Totals + Lowest Margins** share category/manufacturer filters.
+- Low margin endpoint now accepts `category` and `manufacturer` query params.
+
 ## Current State Note (2026-02-06)
 
 The live nginx config routes `/fd/api/` to `127.0.0.1:5057`. The Docker `alphahs/fd-pos-api:local` container is published on host `:5057`, and no listener was found on `:5055`. This means nginx and the backend deployment are aligned on `5057`.

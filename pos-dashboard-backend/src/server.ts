@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
@@ -26,7 +27,7 @@ const upload = multer({
   }),
   fileFilter: (_req, file, cb) => {
     const ok = /\.(xlsx|xls)$/i.test(file.originalname);
-    cb(ok ? null : new Error("Only .xlsx or .xls files are accepted"), ok);
+    cb((ok ? null : new Error("Only .xlsx or .xls files are accepted")) as any, ok);
   },
   limits: { fileSize: 50 * 1024 * 1024 },
 });
@@ -133,7 +134,8 @@ const SAFE_FINANCE_BALANCE = `
 `;
 
 const ITEM_DATE_FIELD = "COALESCE(delivery_confirmed_date, sale_date)";
-const PRO1ST_TREND_DATE_FIELD = "COALESCE(sale_date, delivery_confirmed_date)";
+const prefixedDateField = (p: string) => `COALESCE(${p}.delivery_confirmed_date, ${p}.sale_date, ${p}.est_delivery_date)`;
+const PRO1ST_TREND_DATE_FIELD = "COALESCE(delivery_confirmed_date, sale_date)";
 
 // Health
 app.get("/health", async (_req, res) => {
@@ -142,7 +144,8 @@ app.get("/health", async (_req, res) => {
 });
 
 app.post("/api/import/upload", upload.array("files", 25), async (req, res) => {
-  const files = (req.files || []) as Express.Multer.File[];
+  const rawFiles = (req as any).files as Array<{ originalname: string; filename: string; size: number }> | undefined;
+  const files = Array.isArray(rawFiles) ? rawFiles : [];
   if (!files.length) {
     res.status(400).json({ ok: false, error: "No files uploaded" });
     return;
@@ -151,16 +154,30 @@ app.post("/api/import/upload", upload.array("files", 25), async (req, res) => {
   const pythonBin = process.env.POS_IMPORT_PYTHON || "python";
   let importOutput = "";
   let importError = "";
+  const tempDir = fs.mkdtempSync(path.join(uploadsDir, "upload-"));
   try {
+    for (const file of files) {
+      const src = path.join(uploadsDir, file.filename);
+      const dest = path.join(tempDir, file.filename);
+      if (fs.existsSync(src)) {
+        fs.renameSync(src, dest);
+      }
+    }
     const { stdout, stderr } = await execFileAsync(
       pythonBin,
-      [importerPath, "--incoming", uploadsDir, "--no-move"],
+      [importerPath, "--incoming", tempDir, "--no-move"],
       { timeout: 5 * 60 * 1000 }
     );
     importOutput = stdout?.toString() || "";
     importError = stderr?.toString() || "";
   } catch (err: any) {
     importError = err?.stderr?.toString?.() || String(err?.message || err);
+  } finally {
+    try {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    } catch {
+      // ignore cleanup errors
+    }
   }
 
   res.json({
@@ -230,8 +247,8 @@ app.get("/api/outliers", async (req, res) => {
         ${SAFE_FINANCE_FEE}::numeric AS finance_fee,
         raw_source_file
       FROM pos_sales
-    WHERE sale_date >= $1
-      AND sale_date < $2
+    WHERE COALESCE(delivery_confirmed_date, sale_date) >= $1
+      AND COALESCE(delivery_confirmed_date, sale_date) < $2
         AND ($4::text IS NULL OR salesperson ILIKE ('%' || $4 || '%'))
     ),
     stats AS (
@@ -295,6 +312,8 @@ app.get("/api/low-margin", async (req, res) => {
   const limitTotal = Math.min(Number(req.query.limit_total || 200), 2000);
   const salespersonQ = parseTextParam(req.query.salesperson);
   const locationQ = parseTextParam(req.query.location);
+  const categoryQ = parseTextParam(req.query.category);
+  const manufacturerQ = parseTextParam(req.query.manufacturer);
 
   const sql = `
     WITH item_totals AS (
@@ -307,6 +326,9 @@ app.get("/api/low-margin", async (req, res) => {
         AND ${ITEM_DATE_FIELD} < $2
         AND sale_id IS NOT NULL
         AND sale_id <> ''
+        AND (category IS NULL OR category NOT ILIKE '%mattress%')
+        AND ($5::text IS NULL OR category ILIKE ('%' || $5 || '%'))
+        AND ($6::text IS NULL OR manufacturer ILIKE ('%' || $6 || '%'))
       GROUP BY sale_id
     ),
     people_counts AS (
@@ -340,8 +362,8 @@ app.get("/api/low-margin", async (req, res) => {
       JOIN pos_sales s ON s.sale_id = p.sale_id
       LEFT JOIN item_totals ON item_totals.sale_id = p.sale_id
       LEFT JOIN people_counts ON people_counts.sale_id = p.sale_id
-      WHERE p.sale_date >= $1
-        AND p.sale_date < $2
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
         AND p.salesperson IS NOT NULL
         AND p.salesperson <> ''
         AND p.salesperson <> 'Sales, Store'
@@ -360,14 +382,14 @@ app.get("/api/low-margin", async (req, res) => {
             ranked.*,
             COUNT(*) OVER ()::int AS total_count
           FROM ranked
-          WHERE rn <= $5
+          WHERE rn <= $7
           ORDER BY margin_pct ASC NULLS LAST, profit ASC, grand_total DESC
-          LIMIT $6
+          LIMIT $8
         )
     SELECT * FROM filtered;
   `;
 
-  const r = await pool.query(sql, [start, end, salespersonQ, locationQ, limitPer, limitTotal]);
+  const r = await pool.query(sql, [start, end, salespersonQ, locationQ, categoryQ, manufacturerQ, limitPer, limitTotal]);
   const totalCount = r.rows.length ? Number(r.rows[0].total_count ?? r.rows.length) : 0;
   const rows = r.rows.map((x: any) => ({
     sale_id: x.sale_id,
@@ -483,11 +505,11 @@ app.get("/api/salesperson-tickets", async (req, res) => {
     LEFT JOIN item_totals ON item_totals.sale_id = p.sale_id
     LEFT JOIN pro_items ON pro_items.sale_id = p.sale_id
     LEFT JOIN people_counts ON people_counts.sale_id = p.sale_id
-    WHERE p.sale_date >= $1
-      AND p.sale_date < $2
+    WHERE COALESCE(s.delivery_confirmed_date, s.sale_date) >= $1
+      AND COALESCE(s.delivery_confirmed_date, s.sale_date) < $2
       AND p.salesperson ILIKE ('%' || $3 || '%')
       AND ($4::text IS NULL OR COALESCE(p.location, s.location) ILIKE ('%' || $4 || '%'))
-    ORDER BY p.sale_date DESC, p.sale_id DESC
+    ORDER BY COALESCE(s.delivery_confirmed_date, s.sale_date) DESC, p.sale_id DESC
     LIMIT $5;
   `;
 
@@ -546,52 +568,43 @@ app.get("/api/summary", async (req, res) => {
   const salespersonQ = parseTextParam(req.query.salesperson);
   const locationQ = parseTextParam(req.query.location);
 
-  const sql = salespersonQ
-    ? `
-      WITH item_profits AS (
-        SELECT sale_id, SUM(total_profit) as item_profit
-        FROM pos_sale_items
-        GROUP BY sale_id
-      ),
-      people_counts AS (
-        SELECT sale_id, COUNT(*) as cnt FROM pos_sales_people GROUP BY sale_id
-      )
-      SELECT
-        COUNT(*)::int AS lines,
-        ROUND(SUM(p.grand_total_split)::numeric, 2) AS sales,
-        ROUND(SUM(
-          COALESCE(ip.item_profit / NULLIF(pc.cnt, 1), p.profit_split)
-        )::numeric, 2) AS profit
-      FROM pos_sales_people p
-      LEFT JOIN item_profits ip ON ip.sale_id = p.sale_id
-      LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
-      WHERE p.sale_date >= $1
-        AND p.sale_date < $2
-        AND p.salesperson ILIKE ('%' || $3 || '%')
-        AND ($4::text IS NULL OR p.location ILIKE ('%' || $4 || '%'));
-    `
-    : `
-      WITH item_profits AS (
-        SELECT sale_id, SUM(total_profit) as item_profit
-        FROM pos_sale_items
-        GROUP BY sale_id
-      )
-      SELECT
-        COUNT(*)::int AS lines,
-        ROUND(SUM(${SAFE_GRAND_TOTAL})::numeric, 2) AS sales,
-        ROUND(SUM(
-          COALESCE(ip.item_profit, ${SAFE_PROFIT})
-        )::numeric, 2) AS profit
-      FROM pos_sales s
-      LEFT JOIN item_profits ip ON ip.sale_id = s.sale_id
-      WHERE s.sale_date >= $1
-        AND s.sale_date < $2
-        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'));
-    `;
+  const sql = `
+    WITH item_sales AS (
+      SELECT i.sale_id, SUM(i.total_sale_price) AS item_sales
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+      GROUP BY i.sale_id
+    ),
+    item_profits AS (
+      SELECT sale_id, SUM(total_profit) as item_profit
+      FROM pos_sale_items
+      GROUP BY sale_id
+    ),
+    people_counts AS (
+      SELECT sale_id, COUNT(*) as cnt FROM pos_sales_people GROUP BY sale_id
+    )
+    SELECT
+      COUNT(DISTINCT p.sale_id)::int AS lines,
+      ROUND(SUM(
+        COALESCE(item_sales.item_sales / NULLIF(pc.cnt, 1), item_sales.item_sales, 0)
+      )::numeric, 2) AS sales,
+      ROUND(SUM(
+        COALESCE(ip.item_profit / NULLIF(pc.cnt, 1), p.profit_split)
+      )::numeric, 2) AS profit
+    FROM pos_sales_people p
+    JOIN pos_sales s ON s.sale_id = p.sale_id
+    LEFT JOIN item_sales ON item_sales.sale_id = p.sale_id
+    LEFT JOIN item_profits ip ON ip.sale_id = p.sale_id
+    LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
+      AND ($3::text IS NULL OR p.salesperson ILIKE ('%' || $3 || '%'))
+      AND ($4::text IS NULL OR p.location ILIKE ('%' || $4 || '%'));
+  `;
 
-  const r = salespersonQ
-    ? await pool.query(sql, [start, end, salespersonQ, locationQ])
-    : await pool.query(sql, [start, end, locationQ]);
+  const r = await pool.query(sql, [start, end, salespersonQ, locationQ]);
   res.json({ start, end, ...r.rows[0] });
 });
 
@@ -603,36 +616,22 @@ app.get("/api/finance-summary", async (req, res) => {
   const salespersonQ = parseTextParam(req.query.salesperson);
   const locationQ = parseTextParam(req.query.location);
 
-  const sql = salespersonQ
-    ? `
-      SELECT
-        COUNT(*)::int AS lines,
-        SUM(CASE WHEN (total_finance_amt_split > 0 OR finance_balance_split > 0) THEN 1 ELSE 0 END)::int AS financed_lines,
-        ROUND(SUM(total_finance_amt_split)::numeric, 2) AS financed_amount,
-        ROUND(SUM(finance_fee_split)::numeric, 2) AS finance_fee,
-        ROUND(SUM(finance_balance_split)::numeric, 2) AS finance_balance
-      FROM pos_sales_people
-      WHERE sale_date >= $1
-        AND sale_date < $2
-        AND salesperson ILIKE ('%' || $3 || '%')
-        AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'));
-    `
-    : `
-      SELECT
-        COUNT(*)::int AS lines,
-        SUM(CASE WHEN (${SAFE_TOTAL_FINANCE_AMT}) > 0 OR (${SAFE_FINANCE_BALANCE}) > 0 THEN 1 ELSE 0 END)::int AS financed_lines,
-        ROUND(SUM(${SAFE_TOTAL_FINANCE_AMT})::numeric, 2) AS financed_amount,
-        ROUND(SUM(${SAFE_FINANCE_FEE})::numeric, 2) AS finance_fee,
-        ROUND(SUM(${SAFE_FINANCE_BALANCE})::numeric, 2) AS finance_balance
-      FROM pos_sales
-      WHERE sale_date >= $1
-        AND sale_date < $2
-        AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'));
-    `;
+  const sql = `
+    SELECT
+      COUNT(DISTINCT pos_sales_people.sale_id)::int AS lines,
+      COUNT(DISTINCT CASE WHEN (total_finance_amt_split > 0 OR finance_balance_split > 0) THEN pos_sales_people.sale_id END)::int AS financed_lines,
+      ROUND(SUM(total_finance_amt_split)::numeric, 2) AS financed_amount,
+      ROUND(SUM(finance_fee_split)::numeric, 2) AS finance_fee,
+      ROUND(SUM(finance_balance_split)::numeric, 2) AS finance_balance
+    FROM pos_sales_people
+    JOIN pos_sales s ON s.sale_id = pos_sales_people.sale_id
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
+      AND ($3::text IS NULL OR pos_sales_people.salesperson ILIKE ('%' || $3 || '%'))
+      AND ($4::text IS NULL OR pos_sales_people.location ILIKE ('%' || $4 || '%'));
+  `;
 
-  const r = salespersonQ
-    ? await pool.query(sql, [start, end, salespersonQ, locationQ])
-    : await pool.query(sql, [start, end, locationQ]);
+  const r = await pool.query(sql, [start, end, salespersonQ, locationQ]);
   res.json({ start, end, ...r.rows[0] });
 });
 
@@ -647,6 +646,14 @@ app.get("/api/items/best-sellers", async (req, res) => {
 
   const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
   const sql = `
+    WITH people_counts AS (
+      SELECT sale_id, COUNT(*) as cnt FROM pos_sales_people GROUP BY sale_id
+    ),
+    salesperson_sales AS (
+      SELECT DISTINCT sale_id
+      FROM pos_sales_people
+      WHERE salesperson ILIKE ('%' || $5::text || '%')
+    )
     SELECT
       CASE
         WHEN (
@@ -724,14 +731,27 @@ app.get("/api/items/best-sellers", async (req, res) => {
         THEN NULL
         ELSE item_no
       END AS item_no,
-      ROUND(SUM(CASE WHEN qty_sold IS NULL OR qty_sold <> qty_sold THEN 0 ELSE qty_sold END)::numeric, 2) AS qty,
-      ROUND(SUM(CASE WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0 ELSE total_sale_price END)::numeric, 2) AS sales,
-      ARRAY_AGG(DISTINCT sale_id) FILTER (WHERE sale_id IS NOT NULL AND sale_id <> '') AS sale_ids
+      ROUND(SUM(
+        CASE
+          WHEN qty_sold IS NULL OR qty_sold <> qty_sold THEN 0
+          WHEN $5::text IS NULL THEN qty_sold
+          ELSE qty_sold / NULLIF(pc.cnt, 0)
+        END
+      )::numeric, 2) AS qty,
+      ROUND(SUM(
+        CASE
+          WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0
+          WHEN $5::text IS NULL THEN total_sale_price
+          ELSE total_sale_price / NULLIF(pc.cnt, 0)
+        END
+      )::numeric, 2) AS sales,
+      ARRAY_AGG(DISTINCT pos_sale_items.sale_id) FILTER (WHERE pos_sale_items.sale_id IS NOT NULL AND pos_sale_items.sale_id <> '') AS sale_ids
     FROM pos_sale_items
+    LEFT JOIN people_counts pc ON pc.sale_id = pos_sale_items.sale_id
     WHERE ${ITEM_DATE_FIELD} >= $1
       AND ${ITEM_DATE_FIELD} < $2
       AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
-      AND ($5::text IS NULL OR sale_id IN (SELECT sale_id FROM pos_sales WHERE salesperson ILIKE ('%' || $5 || '%')))
+      AND ($5::text IS NULL OR pos_sale_items.sale_id IN (SELECT sale_id FROM salesperson_sales))
       AND item_description IS NOT NULL
       AND item_description <> ''
     GROUP BY
@@ -1020,55 +1040,97 @@ app.get("/api/pro1st/attach-rate", async (req, res) => {
   const salespersonQ = parseTextParam(req.query.salesperson);
 
   const totalSql = `
-    SELECT COUNT(*)::int AS total_sales
-    FROM pos_sales
-    WHERE sale_date >= $1
-      AND sale_date < $2
-      AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
-      AND ($4::text IS NULL OR salesperson ILIKE ('%' || $4 || '%'))
-      AND sale_id IS NOT NULL
-      AND sale_id <> '';
+    WITH non_mattress_items AS (
+      SELECT
+        i.sale_id,
+        SUM(
+          CASE
+            WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0
+            ELSE i.total_sale_price
+          END
+        )::numeric AS non_mattress_sales
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
+        AND (i.category IS NULL OR i.category NOT ILIKE '%mattress%')
+      GROUP BY i.sale_id
+    ),
+    people_counts AS (
+      SELECT sale_id, COUNT(*)::int AS cnt
+      FROM pos_sales_people
+      GROUP BY sale_id
+    )
+    SELECT COALESCE(SUM(COALESCE(nm.non_mattress_sales, 0) / NULLIF(pc.cnt, 0)), 0)::numeric AS total_sales
+    FROM pos_sales_people p
+    JOIN pos_sales s ON s.sale_id = p.sale_id
+    LEFT JOIN non_mattress_items nm ON nm.sale_id = p.sale_id
+    LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
+      AND ($3::text IS NULL OR s.location ILIKE ('%' || $3::text || '%'))
+      AND ($4::text IS NULL OR p.salesperson ILIKE ('%' || $4 || '%'))
+      AND p.sale_id IS NOT NULL
+      AND p.sale_id <> '';
   `;
   const proSql = `
     WITH pro_items AS (
       SELECT
-        sale_id,
-        COALESCE(total_profit, 0)::numeric AS item_profit
-      FROM pos_sale_items
-      WHERE ${PRO1ST_TREND_DATE_FIELD} >= $1
-        AND ${PRO1ST_TREND_DATE_FIELD} < $2
-        AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
-        AND ($4::text IS NULL OR sale_id IN (SELECT sale_id FROM pos_sales WHERE salesperson ILIKE ('%' || $4 || '%')))
+        i.sale_id,
+        COALESCE(i.total_profit, 0)::numeric AS item_profit,
+        COALESCE(i.total_sale_price, 0)::numeric AS item_sales
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
         AND (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
+          i.is_pro1st = TRUE
+          OR i.item_description ILIKE '%pro1st%'
+          OR i.item_description ILIKE '%pro 1st%'
+          OR i.item_description ILIKE '%pro-1st%'
+          OR i.category ILIKE '%pro1st%'
+          OR i.category ILIKE '%pro 1st%'
+          OR i.category ILIKE '%pro-1st%'
+          OR i.item_no ILIKE '%pro1st%'
+          OR i.item_no ILIKE '%pro 1st%'
+          OR i.item_no ILIKE '%pro-1st%'
+          OR i.manufacturer ILIKE '%pro1st%'
+          OR i.manufacturer ILIKE '%pro 1st%'
+          OR i.manufacturer ILIKE '%pro-1st%'
         )
-        AND sale_id IS NOT NULL
-        AND sale_id <> ''
+        AND i.sale_id IS NOT NULL
+        AND i.sale_id <> ''
+        AND (i.category IS NULL OR i.category NOT ILIKE '%mattress%')
     ),
     sales_with_profit AS (
-      SELECT sale_id, SUM(item_profit)::numeric AS pro_profit
+      SELECT
+        sale_id,
+        SUM(item_profit)::numeric AS pro_profit,
+        SUM(item_sales)::numeric AS pro_sales
       FROM pro_items
+      GROUP BY sale_id
+    ),
+    people_counts AS (
+      SELECT sale_id, COUNT(*)::int AS cnt
+      FROM pos_sales_people
       GROUP BY sale_id
     )
     SELECT
-      COUNT(*)::int AS pro_sales,
-      ARRAY_AGG(sale_id) AS sale_ids,
-      ARRAY_AGG(sale_id) FILTER (WHERE pro_profit < 100) AS sale_ids_low,
-      ARRAY_AGG(sale_id) FILTER (WHERE pro_profit >= 100 AND pro_profit < 200) AS sale_ids_mid,
-      ARRAY_AGG(sale_id) FILTER (WHERE pro_profit >= 200) AS sale_ids_high
-    FROM sales_with_profit;
+      COALESCE(SUM(COALESCE(swp.pro_sales, 0) / NULLIF(pc.cnt, 0)), 0)::numeric AS pro_sales,
+      ARRAY_AGG(DISTINCT p.sale_id) AS sale_ids,
+      ARRAY_AGG(DISTINCT p.sale_id) FILTER (WHERE swp.pro_profit < 100) AS sale_ids_low,
+      ARRAY_AGG(DISTINCT p.sale_id) FILTER (WHERE swp.pro_profit >= 100 AND swp.pro_profit < 200) AS sale_ids_mid,
+      ARRAY_AGG(DISTINCT p.sale_id) FILTER (WHERE swp.pro_profit >= 200) AS sale_ids_high
+    FROM pos_sales_people p
+    JOIN pos_sales s ON s.sale_id = p.sale_id
+    JOIN sales_with_profit swp ON swp.sale_id = p.sale_id
+    LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
+      AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
+      AND ($4::text IS NULL OR p.salesperson ILIKE ('%' || $4 || '%'));
   `;
 
   const [totalRes, proRes] = await Promise.all([
@@ -1108,18 +1170,19 @@ app.get("/api/pro1st/sales-ratio", async (req, res) => {
   const totalSql = `
     WITH pro_items AS (
       SELECT
-        sale_id,
+        i.sale_id,
         SUM(
           CASE
-            WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0
-            ELSE total_sale_price
+            WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0
+            ELSE i.total_sale_price
           END
         )::numeric AS pro_sales
-      FROM pos_sale_items
-      WHERE ${ITEM_DATE_FIELD} >= $1
-        AND ${ITEM_DATE_FIELD} < $2
-        AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
-        AND ($4::text IS NULL OR sale_id IN (SELECT sale_id FROM pos_sales WHERE salesperson ILIKE ('%' || $4 || '%')))
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
+        AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM pos_sales_people WHERE salesperson ILIKE ('%' || $4 || '%')))
         AND (
           is_pro1st = TRUE
           OR item_description ILIKE '%pro1st%'
@@ -1137,21 +1200,22 @@ app.get("/api/pro1st/sales-ratio", async (req, res) => {
         )
         AND sale_id IS NOT NULL
         AND sale_id <> ''
+        AND (category IS NULL OR category NOT ILIKE '%mattress%')
       GROUP BY sale_id
     ),
     sales_base AS (
       SELECT
-        sale_id,
-        location,
+        s.sale_id,
+        s.location,
         CASE
-          WHEN grand_total IS NULL OR grand_total <> grand_total THEN 0
-          ELSE grand_total
+          WHEN s.grand_total IS NULL OR s.grand_total <> s.grand_total THEN 0
+          ELSE s.grand_total
         END AS grand_total
-      FROM pos_sales
-      WHERE sale_date >= $1
-        AND sale_date < $2
-        AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
-        AND ($4::text IS NULL OR salesperson ILIKE ('%' || $4 || '%'))
+      FROM pos_sales s
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
+        AND ($4::text IS NULL OR s.salesperson ILIKE ('%' || $4 || '%'))
     )
     SELECT
       ROUND(SUM(grand_total)::numeric, 2) AS total_sales,
@@ -1163,18 +1227,19 @@ app.get("/api/pro1st/sales-ratio", async (req, res) => {
   const peopleSql = `
     WITH pro_items AS (
       SELECT
-        sale_id,
+        i.sale_id,
         SUM(
           CASE
-            WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0
-            ELSE total_sale_price
+            WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0
+            ELSE i.total_sale_price
           END
         )::numeric AS pro_sales
-      FROM pos_sale_items
-      WHERE ${ITEM_DATE_FIELD} >= $1
-        AND ${ITEM_DATE_FIELD} < $2
-        AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
-        AND ($4::text IS NULL OR sale_id IN (SELECT sale_id FROM pos_sales WHERE salesperson ILIKE ('%' || $4 || '%')))
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
+        AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM pos_sales_people WHERE salesperson ILIKE ('%' || $4 || '%')))
         AND (
           is_pro1st = TRUE
           OR item_description ILIKE '%pro1st%'
@@ -1192,6 +1257,7 @@ app.get("/api/pro1st/sales-ratio", async (req, res) => {
         )
         AND sale_id IS NOT NULL
         AND sale_id <> ''
+        AND (category IS NULL OR category NOT ILIKE '%mattress%')
       GROUP BY sale_id
     ),
     people_counts AS (
@@ -1204,14 +1270,15 @@ app.get("/api/pro1st/sales-ratio", async (req, res) => {
       ROUND(SUM(p.grand_total_split)::numeric, 2) AS total_sales,
       ROUND(SUM(COALESCE(pro_items.pro_sales, 0) / NULLIF(people_counts.people_count, 0))::numeric, 2) AS pro1st_sales
     FROM pos_sales_people p
+    JOIN pos_sales s ON s.sale_id = p.sale_id
     LEFT JOIN pro_items ON pro_items.sale_id = p.sale_id
     LEFT JOIN people_counts ON people_counts.sale_id = p.sale_id
-    WHERE p.sale_date >= $1
-      AND p.sale_date < $2
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
       AND p.salesperson IS NOT NULL
       AND p.salesperson <> 'Sales, Store'
       AND ($4::text IS NULL OR p.salesperson ILIKE ('%' || $4 || '%'))
-      AND ($3::text IS NULL OR p.location ILIKE ('%' || $3 || '%'))
+      AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
     GROUP BY p.salesperson
     ORDER BY total_sales DESC;
   `;
@@ -1219,18 +1286,19 @@ app.get("/api/pro1st/sales-ratio", async (req, res) => {
   const storeSql = `
     WITH pro_items AS (
       SELECT
-        sale_id,
+        i.sale_id,
         SUM(
           CASE
-            WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0
-            ELSE total_sale_price
+            WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0
+            ELSE i.total_sale_price
           END
         )::numeric AS pro_sales
-      FROM pos_sale_items
-      WHERE ${ITEM_DATE_FIELD} >= $1
-        AND ${ITEM_DATE_FIELD} < $2
-        AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
-        AND ($4::text IS NULL OR sale_id IN (SELECT sale_id FROM pos_sales WHERE salesperson ILIKE ('%' || $4 || '%')))
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
+        AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM pos_sales_people WHERE salesperson ILIKE ('%' || $4 || '%')))
         AND (
           is_pro1st = TRUE
           OR item_description ILIKE '%pro1st%'
@@ -1248,21 +1316,22 @@ app.get("/api/pro1st/sales-ratio", async (req, res) => {
         )
         AND sale_id IS NOT NULL
         AND sale_id <> ''
+        AND (category IS NULL OR category NOT ILIKE '%mattress%')
       GROUP BY sale_id
     ),
     sales_base AS (
       SELECT
-        sale_id,
-        location,
+        s.sale_id,
+        s.location,
         CASE
-          WHEN grand_total IS NULL OR grand_total <> grand_total THEN 0
-          ELSE grand_total
+          WHEN s.grand_total IS NULL OR s.grand_total <> s.grand_total THEN 0
+          ELSE s.grand_total
         END AS grand_total
-      FROM pos_sales
-      WHERE sale_date >= $1
-        AND sale_date < $2
-        AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
-        AND ($4::text IS NULL OR salesperson ILIKE ('%' || $4 || '%'))
+      FROM pos_sales s
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
+        AND ($4::text IS NULL OR s.salesperson ILIKE ('%' || $4 || '%'))
     )
     SELECT
       location,
@@ -1325,29 +1394,46 @@ app.get("/api/pro1st/trend", async (req, res) => {
   const salespersonQ = parseTextParam(req.query.salesperson);
 
   const sql = `
+    WITH people_counts AS (
+      SELECT sale_id, COUNT(*) as cnt FROM pos_sales_people GROUP BY sale_id
+    ),
+    salesperson_sales AS (
+      SELECT DISTINCT sale_id
+      FROM pos_sales_people
+      WHERE salesperson ILIKE ('%' || $4 || '%')
+    )
     SELECT
-      date_trunc('day', ${PRO1ST_TREND_DATE_FIELD})::date AS day,
-      ROUND(SUM(CASE WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0 ELSE total_sale_price END)::numeric, 2) AS sales
-    FROM pos_sale_items
-    WHERE ${PRO1ST_TREND_DATE_FIELD} >= $1
-      AND ${PRO1ST_TREND_DATE_FIELD} < $2
-      AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
-      AND ($4::text IS NULL OR sale_id IN (SELECT sale_id FROM pos_sales WHERE salesperson ILIKE ('%' || $4 || '%')))
-      AND (
-        is_pro1st = TRUE
-        OR item_description ILIKE '%pro1st%'
-        OR item_description ILIKE '%pro 1st%'
-        OR item_description ILIKE '%pro-1st%'
-        OR category ILIKE '%pro1st%'
-        OR category ILIKE '%pro 1st%'
-        OR category ILIKE '%pro-1st%'
-        OR item_no ILIKE '%pro1st%'
-        OR item_no ILIKE '%pro 1st%'
-        OR item_no ILIKE '%pro-1st%'
-        OR manufacturer ILIKE '%pro1st%'
-        OR manufacturer ILIKE '%pro 1st%'
-        OR manufacturer ILIKE '%pro-1st%'
+      date_trunc('day', ${prefixedDateField("s")})::date AS day,
+      ROUND(SUM(
+        CASE
+          WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0
+          WHEN $4::text IS NULL THEN i.total_sale_price
+          ELSE i.total_sale_price / NULLIF(pc.cnt, 0)
+        END
+      )::numeric, 2) AS sales
+    FROM pos_sale_items i
+    JOIN pos_sales s ON s.sale_id = i.sale_id
+    LEFT JOIN people_counts pc ON pc.sale_id = i.sale_id
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
+      AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
+      AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM salesperson_sales))
+        AND (
+          i.is_pro1st = TRUE
+          OR i.item_description ILIKE '%pro1st%'
+        OR i.item_description ILIKE '%pro 1st%'
+        OR i.item_description ILIKE '%pro-1st%'
+        OR i.category ILIKE '%pro1st%'
+        OR i.category ILIKE '%pro 1st%'
+        OR i.category ILIKE '%pro-1st%'
+        OR i.item_no ILIKE '%pro1st%'
+        OR i.item_no ILIKE '%pro 1st%'
+        OR i.item_no ILIKE '%pro-1st%'
+        OR i.manufacturer ILIKE '%pro1st%'
+        OR i.manufacturer ILIKE '%pro 1st%'
+          OR i.manufacturer ILIKE '%pro-1st%'
       )
+      AND (i.category IS NULL OR i.category NOT ILIKE '%mattress%')
     GROUP BY day
     ORDER BY day;
   `;
@@ -1365,17 +1451,33 @@ app.get("/api/pro1st/trend", async (req, res) => {
 
 // Coverage check: missing months for sales vs items (delivery months)
 app.get("/api/import/coverage-months", async (_req, res) => {
-  const startFloor = "2024-01-01";
+  const startFloor = "2024-06-01";
   const sql = `
-    WITH sales AS (
-      SELECT sale_id, COALESCE(delivery_confirmed_date, est_delivery_date, sale_date) AS dt
+    WITH bounds AS (
+      SELECT $1::date AS start_date, CURRENT_DATE::date AS end_date
+    ),
+    sales AS (
+      SELECT sale_id, COALESCE(delivery_confirmed_date, sale_date, est_delivery_date) AS dt
       FROM pos_sales
-      WHERE sale_id IS NOT NULL AND sale_id <> '' AND COALESCE(delivery_confirmed_date, est_delivery_date, sale_date) >= $1
+      WHERE sale_id IS NOT NULL AND sale_id <> '' AND COALESCE(delivery_confirmed_date, sale_date, est_delivery_date) >= $1
     ),
     items AS (
       SELECT sale_id, COALESCE(delivery_confirmed_date, sale_date) AS dt
       FROM pos_sale_items
       WHERE sale_id IS NOT NULL AND sale_id <> '' AND COALESCE(delivery_confirmed_date, sale_date) >= $1
+    ),
+    sales_days AS (
+      SELECT DISTINCT date_trunc('day', dt)::date AS day
+      FROM sales
+      WHERE dt IS NOT NULL
+    ),
+    items_days AS (
+      SELECT DISTINCT date_trunc('day', dt)::date AS day
+      FROM items
+      WHERE dt IS NOT NULL
+    ),
+    days AS (
+      SELECT generate_series((SELECT start_date FROM bounds), (SELECT end_date FROM bounds), interval '1 day')::date AS day
     ),
     sales_only AS (
       SELECT s.sale_id, s.dt
@@ -1388,6 +1490,18 @@ app.get("/api/import/coverage-months", async (_req, res) => {
       FROM items i
       LEFT JOIN sales s ON s.sale_id = i.sale_id
       WHERE s.sale_id IS NULL AND i.dt IS NOT NULL
+    ),
+    missing_sales_days AS (
+      SELECT d.day
+      FROM days d
+      LEFT JOIN sales_days s ON s.day = d.day
+      WHERE s.day IS NULL
+    ),
+    missing_item_days AS (
+      SELECT d.day
+      FROM days d
+      LEFT JOIN items_days i ON i.day = d.day
+      WHERE i.day IS NULL
     )
     SELECT
       ARRAY(
@@ -1399,15 +1513,37 @@ app.get("/api/import/coverage-months", async (_req, res) => {
         SELECT DISTINCT to_char(date_trunc('month', dt), 'YYYY-MM')
         FROM items_only
         ORDER BY 1
-      ) AS missing_sales_months;
+      ) AS missing_sales_months,
+      (SELECT COUNT(*)::int FROM missing_sales_days) AS missing_sales_days_count,
+      (SELECT COUNT(*)::int FROM missing_item_days) AS missing_item_days_count,
+      ARRAY(
+        SELECT to_char(day, 'YYYY-MM-DD')
+        FROM missing_sales_days
+        ORDER BY day DESC
+        LIMIT 120
+      ) AS missing_sales_days,
+      ARRAY(
+        SELECT to_char(day, 'YYYY-MM-DD')
+        FROM missing_item_days
+        ORDER BY day DESC
+        LIMIT 120
+      ) AS missing_item_days,
+      (SELECT start_date FROM bounds)::text AS start_date,
+      (SELECT end_date FROM bounds)::text AS end_date;
   `;
 
   const r = await pool.query(sql, [startFloor]);
   const row = r.rows[0] || {};
 
   res.json({
+    startDate: row.start_date,
+    endDate: row.end_date,
     missingSalesMonths: Array.isArray(row.missing_sales_months) ? row.missing_sales_months : [],
     missingItemMonths: Array.isArray(row.missing_items_months) ? row.missing_items_months : [],
+    missingSalesDays: Array.isArray(row.missing_sales_days) ? row.missing_sales_days : [],
+    missingItemDays: Array.isArray(row.missing_item_days) ? row.missing_item_days : [],
+    missingSalesDaysCount: Number(row.missing_sales_days_count ?? 0),
+    missingItemDaysCount: Number(row.missing_item_days_count ?? 0),
   });
 });
 
@@ -1436,10 +1572,11 @@ app.get("/api/leaderboard", async (req, res) => {
         COALESCE(ip.item_profit / NULLIF(pc.cnt, 1), p.profit_split)
       )::numeric, 2) AS profit
     FROM pos_sales_people p
+    JOIN pos_sales s ON s.sale_id = p.sale_id
     LEFT JOIN item_profits ip ON ip.sale_id = p.sale_id
     LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
-    WHERE p.sale_date >= $1
-      AND p.sale_date < $2
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
       AND p.salesperson IS NOT NULL
       AND p.salesperson <> 'Sales, Store'
       AND ($4::text IS NULL OR p.salesperson ILIKE ('%' || $4 || '%'))
@@ -1461,12 +1598,12 @@ app.get("/api/sales-weekly", async (req, res) => {
 
   const sql = `
     SELECT
-      date_trunc('week', sale_date)::date AS week,
+      date_trunc('week', COALESCE(delivery_confirmed_date, sale_date))::date AS week,
       ROUND(SUM(${SAFE_GRAND_TOTAL})::numeric, 2) AS sales,
       ROUND(SUM(${SAFE_PROFIT})::numeric, 2) AS profit
     FROM pos_sales
-    WHERE sale_date >= $1
-      AND sale_date < $2
+    WHERE COALESCE(delivery_confirmed_date, sale_date) >= $1
+      AND COALESCE(delivery_confirmed_date, sale_date) < $2
       AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
     GROUP BY 1
     ORDER BY 1;
@@ -1494,17 +1631,18 @@ app.get("/api/sales-daily", async (req, res) => {
         SELECT sale_id, COUNT(*) as cnt FROM pos_sales_people GROUP BY sale_id
       )
       SELECT
-        p.sale_date::date AS day,
+        date_trunc('day', ${prefixedDateField("s")})::date AS day,
         COUNT(*)::int AS lines,
         ROUND(SUM(p.grand_total_split)::numeric, 2) AS sales,
         ROUND(SUM(
           COALESCE(ip.item_profit / NULLIF(pc.cnt, 1), p.profit_split)
         )::numeric, 2) AS profit
       FROM pos_sales_people p
+      JOIN pos_sales s ON s.sale_id = p.sale_id
       LEFT JOIN item_profits ip ON ip.sale_id = p.sale_id
       LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
-      WHERE p.sale_date >= $1
-        AND p.sale_date < $2
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
         AND p.salesperson ILIKE ('%' || $3 || '%')
         AND ($4::text IS NULL OR p.location ILIKE ('%' || $4 || '%'))
       GROUP BY 1
@@ -1517,7 +1655,7 @@ app.get("/api/sales-daily", async (req, res) => {
         GROUP BY sale_id
       )
       SELECT
-        s.sale_date::date AS day,
+        date_trunc('day', ${prefixedDateField("s")})::date AS day,
         COUNT(*)::int AS lines,
         ROUND(SUM(${SAFE_GRAND_TOTAL})::numeric, 2) AS sales,
         ROUND(SUM(
@@ -1525,8 +1663,8 @@ app.get("/api/sales-daily", async (req, res) => {
         )::numeric, 2) AS profit
       FROM pos_sales s
       LEFT JOIN item_profits ip ON ip.sale_id = s.sale_id
-      WHERE s.sale_date >= $1
-        AND s.sale_date < $2
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
       GROUP BY 1
       ORDER BY 1;
@@ -1545,57 +1683,209 @@ app.get("/api/sales-by-location", async (req, res) => {
   const salespersonQ = parseTextParam(req.query.salesperson);
   const locationQ = parseTextParam(req.query.location);
 
-  const sql = salespersonQ
-    ? `
-      WITH item_profits AS (
-        SELECT sale_id, SUM(total_profit) as item_profit
-        FROM pos_sale_items
-        GROUP BY sale_id
-      ),
-      people_counts AS (
-        SELECT sale_id, COUNT(*) as cnt FROM pos_sales_people GROUP BY sale_id
-      )
-      SELECT
-        COALESCE(p.location,'(unknown)') AS location,
-        ROUND(SUM(p.grand_total_split)::numeric, 2) AS sales,
-        ROUND(SUM(
-          COALESCE(ip.item_profit / NULLIF(pc.cnt, 1), p.profit_split)
-        )::numeric, 2) AS profit
-      FROM pos_sales_people p
-      LEFT JOIN item_profits ip ON ip.sale_id = p.sale_id
-      LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
-      WHERE p.sale_date >= $1
-        AND p.sale_date < $2
-        AND p.salesperson ILIKE ('%' || $3 || '%')
-        AND ($4::text IS NULL OR p.location ILIKE ('%' || $4 || '%'))
-      GROUP BY 1
-      ORDER BY sales DESC;
-    `
-    : `
-      WITH item_profits AS (
-        SELECT sale_id, SUM(total_profit) as item_profit
-        FROM pos_sale_items
-        GROUP BY sale_id
-      )
-      SELECT
-        COALESCE(s.location,'(unknown)') AS location,
-        ROUND(SUM(${SAFE_GRAND_TOTAL})::numeric, 2) AS sales,
-        ROUND(SUM(
-          COALESCE(ip.item_profit, ${SAFE_PROFIT})
-        )::numeric, 2) AS profit
-      FROM pos_sales s
-      LEFT JOIN item_profits ip ON ip.sale_id = s.sale_id
-      WHERE s.sale_date >= $1
-        AND s.sale_date < $2
-        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
-      GROUP BY 1
-      ORDER BY sales DESC;
-    `;
+  const sql = `
+    WITH item_profits AS (
+      SELECT sale_id, SUM(total_profit) as item_profit
+      FROM pos_sale_items
+      GROUP BY sale_id
+    ),
+    people_counts AS (
+      SELECT sale_id, COUNT(*) as cnt FROM pos_sales_people GROUP BY sale_id
+    )
+    SELECT
+      COALESCE(p.location,'(unknown)') AS location,
+      ROUND(SUM(p.grand_total_split)::numeric, 2) AS sales,
+      ROUND(SUM(
+        COALESCE(ip.item_profit / NULLIF(pc.cnt, 1), p.profit_split)
+      )::numeric, 2) AS profit
+    FROM pos_sales_people p
+    JOIN pos_sales s ON s.sale_id = p.sale_id
+    LEFT JOIN item_profits ip ON ip.sale_id = p.sale_id
+    LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
+      AND ($3::text IS NULL OR p.salesperson ILIKE ('%' || $3 || '%'))
+      AND ($4::text IS NULL OR p.location ILIKE ('%' || $4 || '%'))
+    GROUP BY 1
+    ORDER BY sales DESC;
+  `;
 
-  const r = salespersonQ
-    ? await pool.query(sql, [start, end, salespersonQ, locationQ])
-    : await pool.query(sql, [start, end, locationQ]);
+  const r = await pool.query(sql, [start, end, salespersonQ, locationQ]);
   res.json({ start, end, rows: r.rows });
+});
+
+// Sales report (totals by salesperson or store, with item filters)
+app.get("/api/report/sales-summary", async (req, res) => {
+  const start = parseDateParam(req.query.start, "1900-01-01");
+  const end = parseDateParam(req.query.end, "2100-01-01");
+  const dimensionRaw = typeof req.query.dimension === "string" ? req.query.dimension.trim().toLowerCase() : "salesperson";
+  const dimension = dimensionRaw === "store" ? "store" : "salesperson";
+  const salespersonQ = parseTextParam(req.query.salesperson);
+  const locationQ = parseTextParam(req.query.location);
+  const categoryQ = parseTextParam(req.query.category);
+  const manufacturerQ = parseTextParam(req.query.manufacturer);
+
+  const baseParams = [start, end, locationQ, categoryQ, salespersonQ, manufacturerQ];
+  const categoriesParams = [start, end, locationQ, salespersonQ, manufacturerQ];
+  const manufacturerParams = [start, end, locationQ, categoryQ, salespersonQ];
+
+  const categoriesSql = `
+    WITH salesperson_sales AS (
+      SELECT DISTINCT sale_id
+      FROM pos_sales_people
+      WHERE salesperson ILIKE ('%' || $4::text || '%')
+    )
+    SELECT DISTINCT category
+    FROM pos_sale_items i
+    JOIN pos_sales s ON s.sale_id = i.sale_id
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
+      AND ($3::text IS NULL OR s.location ILIKE ('%' || $3::text || '%'))
+      AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM salesperson_sales))
+      AND ($5::text IS NULL OR i.manufacturer ILIKE ('%' || $5::text || '%'))
+      AND i.category IS NOT NULL
+      AND i.category <> ''
+    ORDER BY category ASC;
+  `;
+
+  const manufacturersSql = `
+    WITH salesperson_sales AS (
+      SELECT DISTINCT sale_id
+      FROM pos_sales_people
+      WHERE salesperson ILIKE ('%' || $5::text || '%')
+    )
+    SELECT DISTINCT manufacturer
+    FROM pos_sale_items i
+    JOIN pos_sales s ON s.sale_id = i.sale_id
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
+      AND ($3::text IS NULL OR s.location ILIKE ('%' || $3::text || '%'))
+      AND ($5::text IS NULL OR i.sale_id IN (SELECT sale_id FROM salesperson_sales))
+      AND ($4::text IS NULL OR i.category ILIKE ('%' || $4::text || '%'))
+      AND i.manufacturer IS NOT NULL
+      AND i.manufacturer <> ''
+    ORDER BY manufacturer ASC;
+  `;
+
+  const salespersonSql = `
+    WITH people_counts AS (
+      SELECT sale_id, COUNT(*) as cnt FROM pos_sales_people GROUP BY sale_id
+    ),
+    salesperson_sales AS (
+      SELECT DISTINCT sale_id
+      FROM pos_sales_people
+      WHERE salesperson ILIKE ('%' || $5::text || '%')
+    ),
+    item_rollup AS (
+      SELECT i.sale_id,
+        SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS sales,
+        SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS profit,
+        SUM(CASE WHEN i.qty_sold IS NULL OR i.qty_sold <> i.qty_sold THEN 0 ELSE i.qty_sold END) AS qty
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3::text || '%'))
+        AND ($4::text IS NULL OR i.category ILIKE ('%' || $4::text || '%'))
+        AND ($6::text IS NULL OR i.manufacturer ILIKE ('%' || $6::text || '%'))
+        AND ($5::text IS NULL OR i.sale_id IN (SELECT sale_id FROM salesperson_sales))
+      GROUP BY i.sale_id
+    ),
+    ticket_splits AS (
+      SELECT
+        p.salesperson,
+        p.location,
+        p.sale_id,
+        COALESCE(item_rollup.sales, 0) / NULLIF(pc.cnt, 0) AS sales,
+        COALESCE(item_rollup.profit, 0) / NULLIF(pc.cnt, 0) AS profit,
+        COALESCE(item_rollup.qty, 0) / NULLIF(pc.cnt, 0) AS qty
+      FROM pos_sales_people p
+      JOIN pos_sales s ON s.sale_id = p.sale_id
+      LEFT JOIN item_rollup ON item_rollup.sale_id = p.sale_id
+      LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+        AND p.salesperson IS NOT NULL
+        AND p.salesperson <> 'Sales, Store'
+        AND ($5::text IS NULL OR p.salesperson ILIKE ('%' || $5::text || '%'))
+        AND ($3::text IS NULL OR p.location ILIKE ('%' || $3::text || '%'))
+    )
+    SELECT
+      salesperson AS label,
+      COUNT(*)::int AS ticket_count,
+      ROUND(SUM(sales)::numeric, 2) AS total_retail,
+      ROUND(SUM(qty)::numeric, 2) AS units,
+      ROUND(AVG(CASE WHEN sales > 0 THEN (profit / sales) * 100 ELSE NULL END)::numeric, 2) AS avg_margin_pct
+    FROM ticket_splits
+    GROUP BY 1
+    ORDER BY total_retail DESC NULLS LAST;
+  `;
+
+  const storeSql = `
+    WITH salesperson_sales AS (
+      SELECT DISTINCT sale_id
+      FROM pos_sales_people
+      WHERE salesperson ILIKE ('%' || $5::text || '%')
+    ),
+    item_rollup AS (
+      SELECT i.sale_id,
+        SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS sales,
+        SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS profit,
+        SUM(CASE WHEN i.qty_sold IS NULL OR i.qty_sold <> i.qty_sold THEN 0 ELSE i.qty_sold END) AS qty
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3::text || '%'))
+        AND ($4::text IS NULL OR i.category ILIKE ('%' || $4::text || '%'))
+        AND ($6::text IS NULL OR i.manufacturer ILIKE ('%' || $6::text || '%'))
+        AND ($5::text IS NULL OR i.sale_id IN (SELECT sale_id FROM salesperson_sales))
+      GROUP BY i.sale_id
+    ),
+    tickets AS (
+      SELECT
+        COALESCE(s.location, '(unknown)') AS location,
+        s.sale_id,
+        COALESCE(item_rollup.sales, 0) AS sales,
+        COALESCE(item_rollup.profit, 0) AS profit,
+        COALESCE(item_rollup.qty, 0) AS qty
+      FROM pos_sales s
+      LEFT JOIN item_rollup ON item_rollup.sale_id = s.sale_id
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3::text || '%'))
+        AND ($5::text IS NULL OR s.sale_id IN (SELECT sale_id FROM salesperson_sales))
+    )
+    SELECT
+      location AS label,
+      COUNT(*)::int AS ticket_count,
+      ROUND(SUM(sales)::numeric, 2) AS total_retail,
+      ROUND(SUM(qty)::numeric, 2) AS units,
+      ROUND(AVG(CASE WHEN sales > 0 THEN (profit / sales) * 100 ELSE NULL END)::numeric, 2) AS avg_margin_pct
+    FROM tickets
+    GROUP BY 1
+    ORDER BY total_retail DESC NULLS LAST;
+  `;
+
+  try {
+    const [categoriesRes, manufacturersRes, rowsRes] = await Promise.all([
+      pool.query(categoriesSql, categoriesParams),
+      pool.query(manufacturersSql, manufacturerParams),
+      pool.query(dimension === "store" ? storeSql : salespersonSql, baseParams),
+    ]);
+
+    res.json({
+      start,
+      end,
+      dimension,
+      rows: rowsRes.rows,
+      availableCategories: categoriesRes.rows.map((r: any) => r.category).filter((v: any) => v),
+      availableManufacturers: manufacturersRes.rows.map((r: any) => r.manufacturer).filter((v: any) => v),
+    });
+  } catch (err) {
+    console.error("report sales-summary error", err);
+    res.status(500).json({ error: "report sales-summary failed" });
+  }
 });
 
 // Tasks (shared, stored in local Postgres)
@@ -1766,7 +2056,7 @@ app.patch("/api/tasks/:id", async (req, res) => {
   });
 });
 
-const port = Number(process.env.PORT || 5055);
+const port = Number(process.env.PORT || 5057);
 app.listen(port, () => {
   console.log(`API listening on http://127.0.0.1:${port}`);
 });

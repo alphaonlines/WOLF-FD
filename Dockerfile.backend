@@ -1,30 +1,52 @@
-FROM node:22-alpine AS base
+FROM node:22-bookworm-slim AS base
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+# Install Python and build dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    libpq-dev \
+    libxml2-dev \
+    libxslt-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY pos-dashboard-backend/package*.json ./
+RUN npm install --omit=dev && npm cache clean --force
 
 FROM base AS builder
 
-RUN npm ci --only=development
+RUN npm install && npm cache clean --force
 
-COPY . .
+COPY pos-dashboard-backend/ ./
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM base AS runner
 
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV POS_IMPORT_PYTHON=/opt/venv/bin/python
 
+# Copy build artifacts
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/importer ./importer
 
-RUN npm ci --only=production && npm cache clean --force
+# Re-install production deps and python requirements
+RUN npm install --omit=dev && npm cache clean --force
+RUN /opt/venv/bin/pip install --no-cache-dir pandas psycopg2-binary openpyxl xlrd html5lib beautifulsoup4 lxml
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 frontend
+
+RUN mkdir -p /app/incoming /app/processed && chown -R frontend:nodejs /app /opt/venv
 
 USER frontend
 

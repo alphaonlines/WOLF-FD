@@ -274,7 +274,9 @@ ON CONFLICT (sale_id) DO UPDATE SET
   sale_date = EXCLUDED.sale_date,
   raw_source_file = EXCLUDED.raw_source_file,
   import_batch_id = EXCLUDED.import_batch_id,
-  row_json = EXCLUDED.row_json;
+  row_json = EXCLUDED.row_json
+WHERE pos_sales_raw.import_batch_id IS NULL
+   OR EXCLUDED.import_batch_id >= pos_sales_raw.import_batch_id;
 """
 
 UPSERT_CLEAN = """
@@ -322,7 +324,9 @@ ON CONFLICT (sale_id) DO UPDATE SET
   state = EXCLUDED.state,
   zip = EXCLUDED.zip,
   raw_source_file = EXCLUDED.raw_source_file,
-  last_import_batch_id = EXCLUDED.last_import_batch_id;
+  last_import_batch_id = EXCLUDED.last_import_batch_id
+WHERE pos_sales.last_import_batch_id IS NULL
+   OR EXCLUDED.last_import_batch_id >= pos_sales.last_import_batch_id;
 """
 
 UPSERT_ITEMS_RAW = """
@@ -333,7 +337,9 @@ ON CONFLICT (row_hash) DO UPDATE SET
   sale_date = EXCLUDED.sale_date,
   raw_source_file = EXCLUDED.raw_source_file,
   import_batch_id = EXCLUDED.import_batch_id,
-  row_json = EXCLUDED.row_json;
+  row_json = EXCLUDED.row_json
+WHERE pos_sale_items_raw.import_batch_id IS NULL
+   OR EXCLUDED.import_batch_id >= pos_sale_items_raw.import_batch_id;
 """
 
 UPSERT_ITEMS = """
@@ -634,64 +640,76 @@ def main():
                 warning_text = "; ".join(warnings)
                 batch_id = upsert_batch(cur, batch_key, entry["sales_file"], entry["items_file"], warning_text)
 
+                entries = []
                 for path in entry["files"]:
                     source = os.path.basename(path)
-                    print(f"\n=== Importing {source} (batch {batch_key}) ===")
                     df = read_pos_excel(path)
                     if is_sales_report(df):
                         df2 = clean_row(df, source)
                         date_field, range_start, range_end = compute_sales_date_range(df2)
-                        if range_start <= range_end:
-                            print(f"Clearing existing data for {date_field} between {range_start} and {range_end}...")
-                            cur.execute(
-                                f"""
-                                WITH target_sales AS (
-                                  SELECT sale_id
-                                  FROM pos_sales
-                                  WHERE {date_field} >= %s
-                                    AND {date_field} <= %s
-                                )
-                                DELETE FROM pos_sale_items WHERE sale_id IN (SELECT sale_id FROM target_sales);
-                                """,
-                                (range_start, range_end),
-                            )
-                            cur.execute(
-                                f"""
-                                WITH target_sales AS (
-                                  SELECT sale_id
-                                  FROM pos_sales
-                                  WHERE {date_field} >= %s
-                                    AND {date_field} <= %s
-                                )
-                                DELETE FROM pos_sale_items_raw WHERE sale_id IN (SELECT sale_id FROM target_sales);
-                                """,
-                                (range_start, range_end),
-                            )
-                            cur.execute(
-                                f"""
-                                WITH target_sales AS (
-                                  SELECT sale_id
-                                  FROM pos_sales
-                                  WHERE {date_field} >= %s
-                                    AND {date_field} <= %s
-                                )
-                                DELETE FROM pos_sales_raw WHERE sale_id IN (SELECT sale_id FROM target_sales);
-                                """,
-                                (range_start, range_end),
-                            )
-                            cur.execute(
-                                f"""
-                                WITH target_sales AS (
-                                  SELECT sale_id
-                                  FROM pos_sales
-                                  WHERE {date_field} >= %s
-                                    AND {date_field} <= %s
-                                )
-                                DELETE FROM pos_sales WHERE sale_id IN (SELECT sale_id FROM target_sales);
-                                """,
-                                (range_start, range_end),
-                            )
-                        raw_df = df.copy()
+                        if isinstance(range_start, str):
+                            range_start = pd.to_datetime(range_start).date()
+                        if isinstance(range_end, str):
+                            range_end = pd.to_datetime(range_end).date()
+                        if not range_start or not range_end:
+                            span_days = 0
+                        else:
+                            span_days = (range_end - range_start).days if range_start <= range_end else 0
+                        entries.append({
+                            "type": "sales",
+                            "path": path,
+                            "source": source,
+                            "df": df,
+                            "df2": df2,
+                            "date_field": date_field,
+                            "range_start": range_start,
+                            "range_end": range_end,
+                            "span_days": span_days,
+                        })
+                    elif is_item_export(df):
+                        df2 = clean_item_rows(df, source)
+                        sale_ids = list({str(x).strip() for x in df2["sale_id"].tolist() if str(x).strip()})
+                        entries.append({
+                            "type": "items",
+                            "path": path,
+                            "source": source,
+                            "df": df,
+                            "df2": df2,
+                            "sale_ids": sale_ids,
+                            "sale_count": len(sale_ids),
+                        })
+                    else:
+                        entries.append({
+                            "type": "unknown",
+                            "path": path,
+                            "source": source,
+                        })
+
+                sales_entries = sorted(
+                    [e for e in entries if e.get("type") == "sales"],
+                    key=lambda e: (e.get("span_days", 0), e.get("source", "")),
+                    reverse=True,
+                )
+                item_entries = sorted(
+                    [e for e in entries if e.get("type") == "items"],
+                    key=lambda e: (e.get("sale_count", 0), e.get("source", "")),
+                    reverse=True,
+                )
+                other_entries = [e for e in entries if e.get("type") == "unknown"]
+                ordered_entries = sales_entries + item_entries + other_entries
+
+                for entry_info in ordered_entries:
+                    source = entry_info["source"]
+                    print(f"\n=== Importing {source} (batch {batch_key}) ===")
+                    entry_type = entry_info.get("type")
+                    if entry_type == "sales":
+                        df2 = entry_info["df2"]
+                        date_field = entry_info["date_field"]
+                        range_start = entry_info["range_start"]
+                        range_end = entry_info["range_end"]
+                        if range_start and range_end and range_start <= range_end:
+                            print(f"Detected sales range {date_field} between {range_start} and {range_end} (no date-range deletes).")
+                        raw_df = entry_info["df"].copy()
                         raw_df.columns = [str(c).strip() for c in raw_df.columns]
                         raw_rows = []
                         clean_rows = []
@@ -709,14 +727,12 @@ def main():
                                 sid = row["sale_id"]
                                 if sid in existing and existing[sid] and row["sale_date"] and existing[sid] != row["sale_date"].isoformat():
                                     collisions.append((sid, existing[sid], row["sale_date"].isoformat()))
-                            if collisions and not args.allow_id_collisions:
-                                print("\n❌ Detected sale_id collisions with different sale_date. This usually means Sales# is not globally unique.")
+                            if collisions:
+                                print("\n⚠️ Detected sale_id collisions with different sale_date. Latest import will overwrite by sale_id.")
                                 for sid, prev, nxt in collisions[:25]:
                                     print(f"  sale_id={sid} existing={prev} incoming={nxt}")
                                 if len(collisions) > 25:
                                     print(f"  ... and {len(collisions) - 25} more")
-                                print("\nFix: choose a unique key strategy (e.g. include year) or rerun with --allow-id-collisions to overwrite.")
-                                raise SystemExit(2)
 
                         for idx, row in df2.iterrows():
                             raw_json = {k: json_safe(v) for k, v in (raw_df.loc[idx].to_dict() if idx in raw_df.index else {}).items()}
@@ -733,26 +749,28 @@ def main():
                         execute_values(cur, UPSERT_CLEAN, clean_rows, page_size=2000)
 
                         print(f"Upserted: {len(clean_rows)} rows (clean) + {len(raw_rows)} rows (raw)")
-                    elif is_item_export(df):
-                        df2 = clean_item_rows(df, source)
-                        sale_ids = list({str(x).strip() for x in df2["sale_id"].tolist() if str(x).strip()})
+                    elif entry_type == "items":
+                        df2 = entry_info["df2"]
+                        sale_ids = entry_info["sale_ids"]
                         if sale_ids:
-                            print(f"Clearing existing item data for {len(sale_ids)} sales...")
+                            print(f"Replacing existing item data for {len(sale_ids)} sales (latest upload wins)...")
                             cur.execute(
                                 """
                                 DELETE FROM pos_sale_items_raw
-                                WHERE sale_id = ANY(%s);
+                                WHERE sale_id = ANY(%s)
+                                  AND (import_batch_id IS NULL OR import_batch_id <= %s);
                                 """,
-                                (sale_ids,),
+                                (sale_ids, batch_id),
                             )
                             cur.execute(
                                 """
                                 DELETE FROM pos_sale_items
-                                WHERE sale_id = ANY(%s);
+                                WHERE sale_id = ANY(%s)
+                                  AND (import_batch_id IS NULL OR import_batch_id <= %s);
                                 """,
-                                (sale_ids,),
+                                (sale_ids, batch_id),
                             )
-                        raw_df = df.copy()
+                        raw_df = entry_info["df"].copy()
                         raw_df.columns = [str(c).strip() for c in raw_df.columns]
                         raw_rows = []
                         clean_rows = []

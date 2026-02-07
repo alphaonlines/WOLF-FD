@@ -201,3 +201,5 @@ For PRs: include a short summary, linked issues, manual test steps, and screensh
 - Work paused at user request; project manager will review next steps.
 - Backend is running locally on :5055 with nginx `/fd/api/*` proxyed to :5055.
 - Margin calculations now use item report totals (pos_sale_items) instead of sales report profit.
+- 2026-02-01 10:45 EST — Updated Pro1st tracking to be dollar-based (percentage of sales dollars) instead of count-based. Modified backend /api/pro1st/attach-rate to return total sales amount and pro sales amount. Updated frontend SalesDashboard.tsx to format these values as currency. Tests: curl verified backend returns dollar amounts.
+- 2026-02-01 11:15 EST — Fixed Pro1st count discrepancy (18 vs 16) by aligning date filtering logic across all endpoints. Now prefers sale_date (written) over delivery_date consistently. Updated pos_sales_people view and backend constants.

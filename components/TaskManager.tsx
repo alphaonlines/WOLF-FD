@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, Circle, Clock, Plus, User } from "lucide-react";
 import { INITIAL_TASKS } from "../constants";
-import type { Task } from "../types";
-import { TaskStatus } from "../types";
-import {
-  createTask,
-  getNextSortIndex,
-  seedLocalTasksIfEmpty,
-  subscribeTasks,
-  updateTask,
-} from "../services/tasksService";
+import { Task, TaskStatus } from "../types";
+import { createTask, getNextSortIndex, seedLocalTasksIfEmpty, subscribeTasks, updateTask } from "../services/tasksService";
+
+const INITIAL_TASKS: Task[] = [
+  { id: "1", title: "Update Catalog Pricing", assignee: "Sarah J.", deadline: "", status: TaskStatus.IN_PROGRESS, priority: "high" },
+  { id: "2", title: "Order Restock for Sectionals", assignee: "Mike T.", deadline: "", status: TaskStatus.TODO, priority: "medium" },
+  { id: "3", title: "Coordinate Delivery Schedule", assignee: "Dispatcher", deadline: "", status: TaskStatus.DONE, priority: "high" },
+  { id: "4", title: "Clean Showroom Floor", assignee: "Cleaning Crew", deadline: "", status: TaskStatus.TODO, priority: "low" },
+];
 
 type ColumnId = TaskStatus | "OVERDUE";
 
