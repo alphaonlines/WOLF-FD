@@ -64,7 +64,7 @@ export async function fetchAvailableYears(): Promise<number[]> {
 }
 
 export async function uploadPosExports(files: File[]): Promise<{ import?: { ok?: boolean; stdout?: string; stderr?: string } }> {
-  if (!files.length) return;
+  if (!files.length) return {};
   const baseUrl = getPosApiBaseUrl();
   const form = new FormData();
   files.forEach((file) => form.append("files", file, file.name));

@@ -111,7 +111,22 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
     setUploadError(null);
     refreshCoverage();
     if (onUploadComplete) onUploadComplete();
-    window.setTimeout(() => window.location.reload(), 600);
+  };
+
+  const uploadSingleCheck = async (check: FileCheck): Promise<boolean> => {
+    setFileStatus(check.file.name, "uploading");
+    try {
+      const result = await uploadPosExports([check.file]);
+      if (!applyUploadResult(result)) {
+        setFileStatus(check.file.name, "error");
+        return false;
+      }
+      setFileStatus(check.file.name, "uploaded", true);
+      return true;
+    } catch {
+      setFileStatus(check.file.name, "error");
+      return false;
+    }
   };
 
   const runValidation = async (files: File[]) => {
@@ -217,21 +232,14 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
     const target = checks.find((c) => c.file.name === fileName);
     if (!target) return;
     resetUploadState();
-    setFileStatus(fileName, "uploading");
-    try {
-      const result = await uploadPosExports([target.file]);
-      if (!applyUploadResult(result)) {
-        setFileStatus(fileName, "error");
-        return;
-      }
-      setFileStatus(fileName, "uploaded", true);
-      finalizeSuccess("File uploaded and imported. Refreshing...");
-    } catch {
+    const ok = await uploadSingleCheck(target);
+    if (ok) {
+      finalizeSuccess("File uploaded and imported.");
+    } else {
       setUploadLog(
         JSON.stringify({ ok: false, error: "Upload failed. Check the POS backend and try again." }, null, 2)
       );
       setUploadError("Upload failed. Check the POS backend and try again.");
-      setFileStatus(fileName, "error");
     }
   };
 
@@ -239,24 +247,46 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
     if (!validChecks.length) return;
     resetUploadState();
     setChecks((prev) => prev.map((c) => (c.status === "ready" ? { ...c, status: "uploading" } : c)));
+
+    let bulkOk = false;
     try {
       const result = await uploadPosExports(validChecks.map((c) => c.file));
-      if (!applyUploadResult(result)) {
-        setChecks((prev) => prev.map((c) => (c.status === "uploading" ? { ...c, status: "error" } : c)));
-        return;
+      bulkOk = applyUploadResult(result);
+      if (!bulkOk) {
+        throw new Error("Bulk upload returned import errors");
       }
       setChecks((prev) =>
         prev.map((c) =>
           c.status === "uploading" ? { ...c, status: "uploaded", errors: undefined } : c
         )
       );
-      finalizeSuccess("Files uploaded and imported. Refreshing...");
-    } catch (err) {
+      finalizeSuccess("Files uploaded and imported.");
+      return;
+    } catch {
+      setUploadError("Bulk upload failed. Retrying files one by one...");
+    }
+
+    let uploaded = 0;
+    let failed = 0;
+    for (const check of validChecks) {
+      const ok = await uploadSingleCheck(check);
+      if (ok) uploaded += 1;
+      else failed += 1;
+    }
+
+    if (uploaded > 0 && failed === 0) {
+      finalizeSuccess(`Uploaded ${uploaded} file${uploaded === 1 ? "" : "s"} successfully.`);
+    } else if (uploaded > 0) {
+      setUploadSuccess(`Uploaded ${uploaded} file${uploaded === 1 ? "" : "s"}.`);
+      setUploadError(`${failed} file${failed === 1 ? "" : "s"} still failed. Use Retry for those.`);
+      refreshCoverage();
+      if (onUploadComplete) onUploadComplete();
+    } else if (!bulkOk) {
       setUploadLog(
         JSON.stringify({ ok: false, error: "Upload failed. Check the POS backend and try again." }, null, 2)
       );
-      setChecks((prev) => prev.map((c) => (c.status === "uploading" ? { ...c, status: "error" } : c)));
       setUploadError("Upload failed. Check the POS backend and try again.");
+      setChecks((prev) => prev.map((c) => (c.status === "uploading" ? { ...c, status: "error" } : c)));
     }
   };
 
@@ -299,8 +329,9 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
             href="https://furnituredistributors.wolf.discount/fd/manager-specials-upload.html"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg text-base font-medium hover:bg-slate-50"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 bg-white text-slate-700 rounded-lg text-base font-medium hover:bg-slate-50"
           >
+            <UploadCloud size={16} />
             Manager Specials Upload
           </a>
           {uploadSuccess && (

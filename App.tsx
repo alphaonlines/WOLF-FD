@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { LayoutDashboard, CheckSquare, MessageSquare, Menu, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud, Monitor, Home, Video, ClipboardList, Bot } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, MessageSquare, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud, Monitor, Home, Video, ClipboardList, Bot } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import WorkAdvertising from './components/WorkAdvertising';
 import UpdateDatabase from './components/UpdateDatabase';
@@ -8,6 +8,7 @@ import DashboardOverview from './components/DashboardOverview';
 import CamerasStatus from './components/CamerasStatus';
 import MessageBoard from './components/MessageBoard';
 import WolfBot from './components/WolfBot';
+import TaskManager from './components/TaskManager';
 
 enum Tab {
   DASHBOARD = 'DASHBOARD',
@@ -17,6 +18,7 @@ enum Tab {
   CAMERAS = 'CAMERAS',
   MESSAGE_BOARD = 'MESSAGE_BOARD',
   WOLFBOT = 'WOLFBOT',
+  TASKS = 'TASKS',
 }
 
 const PASSWORD = "1111";
@@ -166,13 +168,13 @@ const App: React.FC = () => {
             if (tab === "TASKS") setActiveTab(Tab.TASKS);
             if (tab === "CRM") setActiveTab(Tab.CRM);
             if (tab === "KIOSKS") setActiveTab(Tab.KIOSKS);
+            if (tab === "UPDATE") setUpdatePanelOpen(true);
           }}
         />
       );
       case Tab.SALES: return (
         <SalesDashboard
           itemSortMetric={itemSortMetric}
-          onItemSortMetricChange={setItemSortMetric}
           showTooltips={showTooltips}
         />
       );
@@ -181,7 +183,8 @@ const App: React.FC = () => {
       case Tab.CAMERAS: return <CamerasStatus />;
       case Tab.MESSAGE_BOARD: return <MessageBoard />;
       case Tab.WOLFBOT: return <WolfBot />;
-      default: return <SalesDashboard showTooltips={showTooltips} />;
+      case Tab.TASKS: return <TaskManager />;
+      default: return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
     }
   };
 
@@ -264,6 +267,10 @@ const App: React.FC = () => {
             .fd-print-area .grid > * { width: 100% !important; margin-bottom: 12px; }
             .fd-print-area table,
             .fd-print-area .recharts-wrapper { page-break-inside: avoid; }
+            .fd-print-area thead { display: table-header-group; }
+            .fd-print-area tr { break-inside: avoid; page-break-inside: avoid; }
+            .fd-print-block { break-inside: avoid; page-break-inside: avoid; }
+            .fd-print-block table { break-inside: avoid; page-break-inside: avoid; }
             .fd-print-header {
               margin-bottom: 12px;
               padding-bottom: 8px;
@@ -338,6 +345,13 @@ const App: React.FC = () => {
             label="CRM" 
             isActive={activeTab === Tab.CRM} 
             onClick={() => setActiveTab(Tab.CRM)}
+            isOpen={sidebarOpen}
+          />
+          <NavItem 
+            icon={<CheckSquare size={20} />} 
+            label="Tasks" 
+            isActive={activeTab === Tab.TASKS} 
+            onClick={() => setActiveTab(Tab.TASKS)}
             isOpen={sidebarOpen}
           />
           <NavItem 
@@ -419,18 +433,6 @@ const App: React.FC = () => {
               <div className="text-sm font-medium">Update DB</div>
             )}
           </button>
-          <a
-            href="https://furnituredistributors.wolf.discount/fd/manager-specials-upload.html"
-            target="_blank"
-            rel="noreferrer"
-            className={`mt-2 w-full inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-              sidebarOpen ? "" : "justify-center"
-            } text-slate-300 hover:bg-slate-800 hover:text-white`}
-            title="Manager Specials Upload"
-          >
-            <UploadCloud size={16} />
-            {sidebarOpen && <span>Manager Specials Upload</span>}
-          </a>
         </div>
       </aside>
 

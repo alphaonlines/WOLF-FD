@@ -488,17 +488,17 @@ def clean_row(df: pd.DataFrame, source_file: str) -> pd.DataFrame:
     return df
 
 def compute_sales_date_range(df: pd.DataFrame) -> tuple[str, str, str]:
-    # Prefer delivery_confirmed_date range; fallback to sale_date.
-    delivery_dates = df["delivery_confirmed_date"].dropna().tolist()
-    if delivery_dates:
-        start = min(delivery_dates).isoformat()
-        end = max(delivery_dates).isoformat()
-        return ("delivery_confirmed_date", start, end)
     sale_dates = df["sale_date"].dropna().tolist()
     if sale_dates:
         start = min(sale_dates).isoformat()
         end = max(sale_dates).isoformat()
         return ("sale_date", start, end)
+    # Fallback only when sales date is missing from the source file.
+    delivery_dates = df["delivery_confirmed_date"].dropna().tolist()
+    if delivery_dates:
+        start = min(delivery_dates).isoformat()
+        end = max(delivery_dates).isoformat()
+        return ("delivery_confirmed_date", start, end)
     return ("sale_date", "1900-01-01", "1900-01-01")
 
 def is_sales_report(df: pd.DataFrame) -> bool:

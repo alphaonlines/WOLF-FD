@@ -31,6 +31,7 @@ import {
 } from "recharts";
 import { Database, Loader2, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
 import {
+  getPosApiBaseUrl,
   fetchAvailableYears,
   fetchLeaderboard,
   fetchFinanceSummary,
@@ -58,6 +59,29 @@ type SalespersonPoint = SalesData & {
 type Summary = {
   sales: number;
   lines: number;
+};
+
+type ReportSummaryRow = {
+  label: string;
+  ticketCount: number;
+  totalRetail: number;
+  units: number;
+  avgMarginPct: number | null;
+};
+
+type ReportRowsState = {
+  rows: ReportSummaryRow[];
+  availableCategories: string[];
+  availableManufacturers: string[];
+};
+
+type ReportRowWithPct = ReportSummaryRow & {
+  retailPct: number;
+  unitsPct: number;
+  ownRetailPct: number;
+  ownUnitsPct: number;
+  totalRetailPct: number;
+  totalUnitsPct: number;
 };
 
 function SortableItem({ id, children, className }: { id: string; children: React.ReactNode; className?: string }) {
@@ -118,6 +142,8 @@ const getSimplifiedRange = (year: number, month: string, day: string): { start: 
   const start = `${ym}-${day.padStart(2, "0")}`;
   return { start, endExclusive: addDaysYmd(start, 1) };
 };
+
+const pctOf = (value: number, total: number) => (total > 0 ? (value / total) * 100 : 0);
 
 const pctChange = (current: number, previous: number) => {
   if (!Number.isFinite(current)) return 0;
@@ -181,11 +207,10 @@ const salespersonLabel = (fullName: string) => {
 
 type SalesDashboardProps = {
   itemSortMetric: "sales" | "qty";
-  onItemSortMetricChange: (metric: "sales" | "qty") => void;
   showTooltips?: boolean;
 };
 
-const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemSortMetricChange, showTooltips = false }) => {
+const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showTooltips = false }) => {
   const [salesData, setSalesData] = useState<SalespersonPoint[]>([]);
   const [storeData, setStoreData] = useState<StoreData[]>([]);
   const [trendData, setTrendData] = useState<Array<{ day: string; sales: number; pro1stSales: number; pro1stPct: number }>>([]);
@@ -283,55 +308,55 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     "top-manufacturers": true,
     "pro1st-attach": true,
   });
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [printIncludeLowMargin, setPrintIncludeLowMargin] = useState(true);
+  const [printIncludeStore, setPrintIncludeStore] = useState(true);
+  const [printIncludeSalesperson, setPrintIncludeSalesperson] = useState(true);
+  const [printIncludeManufacturer, setPrintIncludeManufacturer] = useState(true);
+  const [printIncludeCategory, setPrintIncludeCategory] = useState(true);
+  const [printLoading, setPrintLoading] = useState(false);
+  const [printData, setPrintData] = useState<{
+    lowMarginRows: typeof lowMarginData;
+    storeRows: ReportSummaryRow[];
+    salespersonRows: ReportSummaryRow[];
+    storeOverallRows: ReportSummaryRow[];
+    salespersonOverallRows: ReportSummaryRow[];
+    manufacturerBreakdowns: Array<{
+      label: string;
+      storeRows: ReportSummaryRow[];
+      salespersonRows: ReportSummaryRow[];
+    }>;
+    categoryBreakdowns: Array<{
+      label: string;
+      storeRows: ReportSummaryRow[];
+      salespersonRows: ReportSummaryRow[];
+    }>;
+  } | null>(null);
   const [reportMode, setReportMode] = useState<"totals" | "lowest">("totals");
   const [reportDimension, setReportDimension] = useState<"salesperson" | "store">("salesperson");
   const [reportCategory, setReportCategory] = useState<string>("ALL");
   const [reportManufacturer, setReportManufacturer] = useState<string>("ALL");
-  const [reportData, setReportData] = useState<{
-    rows: Array<{
-      label: string;
-      ticketCount: number;
-      totalRetail: number;
-      units: number;
-      avgMarginPct: number | null;
-    }>;
-    availableCategories: string[];
-    availableManufacturers: string[];
-  }>({
+  const [reportData, setReportData] = useState<ReportRowsState>({
     rows: [],
     availableCategories: [],
     availableManufacturers: [],
   });
-  const [reportDataSalesperson, setReportDataSalesperson] = useState<{
-    rows: Array<{
-      label: string;
-      ticketCount: number;
-      totalRetail: number;
-      units: number;
-      avgMarginPct: number | null;
-    }>;
-    availableCategories: string[];
-    availableManufacturers: string[];
-  }>({
+  const [reportDataSalesperson, setReportDataSalesperson] = useState<ReportRowsState>({
     rows: [],
     availableCategories: [],
     availableManufacturers: [],
   });
-  const [reportDataStore, setReportDataStore] = useState<{
-    rows: Array<{
-      label: string;
-      ticketCount: number;
-      totalRetail: number;
-      units: number;
-      avgMarginPct: number | null;
-    }>;
-    availableCategories: string[];
-    availableManufacturers: string[];
-  }>({
+  const [reportDataStore, setReportDataStore] = useState<ReportRowsState>({
     rows: [],
     availableCategories: [],
     availableManufacturers: [],
   });
+  const [reportOverallTotals, setReportOverallTotals] = useState<{ totalRetail: number; totalUnits: number }>({
+    totalRetail: 0,
+    totalUnits: 0,
+  });
+  const [reportOverallRowsSalesperson, setReportOverallRowsSalesperson] = useState<ReportSummaryRow[]>([]);
+  const [reportOverallRowsStore, setReportOverallRowsStore] = useState<ReportSummaryRow[]>([]);
   const [bestSellers, setBestSellers] = useState<Array<{
     itemDescription: string;
     category: string;
@@ -472,36 +497,87 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
     return { ...totals, avgMarginPct };
   };
 
+  const withReportPercentages = (
+    rows: ReportSummaryRow[],
+    filteredTotals: { totalRetail: number; totalUnits: number },
+    overallMap: Map<string, ReportSummaryRow>,
+    companyTotals: { totalRetail: number; totalUnits: number }
+  ): ReportRowWithPct[] =>
+    rows.map((row) => ({
+      ...row,
+      retailPct: pctOf(row.totalRetail, filteredTotals.totalRetail),
+      unitsPct: pctOf(row.units, filteredTotals.totalUnits),
+      ownRetailPct: pctOf(row.totalRetail, Number(overallMap.get(row.label)?.totalRetail || 0)),
+      ownUnitsPct: pctOf(row.units, Number(overallMap.get(row.label)?.units || 0)),
+      totalRetailPct: pctOf(row.totalRetail, companyTotals.totalRetail),
+      totalUnitsPct: pctOf(row.units, companyTotals.totalUnits),
+    }));
+
   const reportTotals = useMemo(() => {
     return computeReportTotals(reportData.rows);
   }, [reportData.rows]);
+  const currentReportOverallRows = useMemo(
+    () => (reportDimension === "store" ? reportOverallRowsStore : reportOverallRowsSalesperson),
+    [reportDimension, reportOverallRowsSalesperson, reportOverallRowsStore]
+  );
+  const currentReportOverallMap = useMemo(
+    () => new Map(currentReportOverallRows.map((row) => [row.label, row])),
+    [currentReportOverallRows]
+  );
 
   const reportRowsWithPct = useMemo(() => {
-    return reportData.rows.map((row) => ({
-      ...row,
-      retailPct: reportTotals.totalRetail > 0 ? (row.totalRetail / reportTotals.totalRetail) * 100 : 0,
-      unitsPct: reportTotals.totalUnits > 0 ? (row.units / reportTotals.totalUnits) * 100 : 0,
-    }));
-  }, [reportData.rows, reportTotals.totalRetail, reportTotals.totalUnits]);
+    return withReportPercentages(reportData.rows, reportTotals, currentReportOverallMap, reportOverallTotals);
+  }, [reportData.rows, reportTotals, currentReportOverallMap, reportOverallTotals]);
 
-  const reportTotalsSalesperson = useMemo(() => computeReportTotals(reportDataSalesperson.rows), [reportDataSalesperson.rows]);
-  const reportTotalsStore = useMemo(() => computeReportTotals(reportDataStore.rows), [reportDataStore.rows]);
+  const printLowMarginRows = useMemo(() => (printData?.lowMarginRows ?? sortedLowMarginData), [printData, sortedLowMarginData]);
+  const printStoreBaseRows = useMemo(() => (printData?.storeRows ?? reportDataStore.rows), [printData, reportDataStore.rows]);
+  const printSalesBaseRows = useMemo(() => (printData?.salespersonRows ?? reportDataSalesperson.rows), [printData, reportDataSalesperson.rows]);
+  const printStoreOverallRows = useMemo(() => (printData?.storeOverallRows ?? reportOverallRowsStore), [printData, reportOverallRowsStore]);
+  const printSalesOverallRows = useMemo(() => (printData?.salespersonOverallRows ?? reportOverallRowsSalesperson), [printData, reportOverallRowsSalesperson]);
+  const printStoreOverallMap = useMemo(() => new Map(printStoreOverallRows.map((row) => [row.label, row])), [printStoreOverallRows]);
+  const printSalesOverallMap = useMemo(() => new Map(printSalesOverallRows.map((row) => [row.label, row])), [printSalesOverallRows]);
+  const printTotalsStore = useMemo(() => computeReportTotals(printStoreBaseRows), [printStoreBaseRows]);
+  const printTotalsSalesperson = useMemo(() => computeReportTotals(printSalesBaseRows), [printSalesBaseRows]);
+  const printOverallTotals = useMemo(() => computeReportTotals(printStoreOverallRows), [printStoreOverallRows]);
+  const printRowsWithPctStore = useMemo(() => {
+    return withReportPercentages(printStoreBaseRows, printTotalsStore, printStoreOverallMap, printOverallTotals);
+  }, [printStoreBaseRows, printTotalsStore, printStoreOverallMap, printOverallTotals]);
+  const printRowsWithPctSalesperson = useMemo(() => {
+    return withReportPercentages(printSalesBaseRows, printTotalsSalesperson, printSalesOverallMap, printOverallTotals);
+  }, [printSalesBaseRows, printTotalsSalesperson, printSalesOverallMap, printOverallTotals]);
+  const printOverallRetailTotal = Number(printOverallTotals.totalRetail || 0);
+  const printOverallUnitsTotal = Number(printOverallTotals.totalUnits || 0);
 
-  const reportRowsWithPctSalesperson = useMemo(() => {
-    return reportDataSalesperson.rows.map((row) => ({
-      ...row,
-      retailPct: reportTotalsSalesperson.totalRetail > 0 ? (row.totalRetail / reportTotalsSalesperson.totalRetail) * 100 : 0,
-      unitsPct: reportTotalsSalesperson.totalUnits > 0 ? (row.units / reportTotalsSalesperson.totalUnits) * 100 : 0,
-    }));
-  }, [reportDataSalesperson.rows, reportTotalsSalesperson.totalRetail, reportTotalsSalesperson.totalUnits]);
+  const printLowMarginFiltered = useMemo(() => {
+    return printLowMarginRows.filter((row) => {
+      const total = Number(row.grandTotal || 0);
+      const profit = Number(row.profit || 0);
+      const margin = row.marginPct === null ? 0 : Number(row.marginPct || 0);
+      return !(total === 0 && profit === 0 && margin === 0);
+    });
+  }, [printLowMarginRows]);
 
-  const reportRowsWithPctStore = useMemo(() => {
-    return reportDataStore.rows.map((row) => ({
-      ...row,
-      retailPct: reportTotalsStore.totalRetail > 0 ? (row.totalRetail / reportTotalsStore.totalRetail) * 100 : 0,
-      unitsPct: reportTotalsStore.totalUnits > 0 ? (row.units / reportTotalsStore.totalUnits) * 100 : 0,
-    }));
-  }, [reportDataStore.rows, reportTotalsStore.totalRetail, reportTotalsStore.totalUnits]);
+  const printStoreFiltered = useMemo(() => {
+    return printRowsWithPctStore.filter((row) => {
+      const retail = Number(row.totalRetail || 0);
+      const units = Number(row.units || 0);
+      const tickets = Number(row.ticketCount || 0);
+      const retailPct = Number(row.retailPct || 0);
+      const unitsPct = Number(row.unitsPct || 0);
+      return !(retail === 0 && units === 0 && tickets === 0) && !(retailPct === 0 && unitsPct === 0);
+    });
+  }, [printRowsWithPctStore]);
+
+  const printSalespersonFiltered = useMemo(() => {
+    return printRowsWithPctSalesperson.filter((row) => {
+      const retail = Number(row.totalRetail || 0);
+      const units = Number(row.units || 0);
+      const tickets = Number(row.ticketCount || 0);
+      const retailPct = Number(row.retailPct || 0);
+      const unitsPct = Number(row.unitsPct || 0);
+      return !(retail === 0 && units === 0 && tickets === 0) && !(retailPct === 0 && unitsPct === 0);
+    });
+  }, [printRowsWithPctSalesperson]);
 
   useEffect(() => {
     const next = reportDimension === "store" ? reportDataStore : reportDataSalesperson;
@@ -575,6 +651,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         lowMarginRows,
         reportSummarySalesperson,
         reportSummaryStore,
+        reportSummaryOverallSalesperson,
+        reportSummaryOverallStore,
         bestSellerRows,
         categoryRows,
         manufacturerRows,
@@ -624,6 +702,20 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
           location,
           category: reportCategory !== "ALL" ? reportCategory : undefined,
           manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
+        }),
+        fetchSalesReport({
+          start: currentRange.start,
+          end: currentRange.endExclusive,
+          dimension: "salesperson",
+          salesperson,
+          location,
+        }),
+        fetchSalesReport({
+          start: currentRange.start,
+          end: currentRange.endExclusive,
+          dimension: "store",
+          salesperson,
+          location,
         }),
         fetchBestSellers({ start: currentRange.start, end: currentRange.endExclusive, limit: 15, sort: itemSortMetric, location, salesperson }),
         fetchTopCategories({ start: currentRange.start, end: currentRange.endExclusive, limit: 8, sort: itemSortMetric, location, salesperson }),
@@ -713,6 +805,12 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         availableCategories: reportSummaryStore.availableCategories,
         availableManufacturers: reportSummaryStore.availableManufacturers,
       });
+      setReportOverallRowsSalesperson(reportSummaryOverallSalesperson.rows);
+      setReportOverallRowsStore(reportSummaryOverallStore.rows);
+      {
+        const overallTotals = computeReportTotals(reportSummaryOverallStore.rows);
+        setReportOverallTotals({ totalRetail: overallTotals.totalRetail, totalUnits: overallTotals.totalUnits });
+      }
       const activeReport = reportDimension === "store" ? reportSummaryStore : reportSummarySalesperson;
       setReportData({
         rows: activeReport.rows,
@@ -773,6 +871,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         availableCategories: [],
         availableManufacturers: [],
       });
+      setReportOverallRowsSalesperson([]);
+      setReportOverallRowsStore([]);
+      setReportOverallTotals({ totalRetail: 0, totalUnits: 0 });
       setBestSellers([]);
       setTopCategories([]);
       setTopManufacturers([]);
@@ -818,11 +919,133 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
 
   useEffect(() => {
     const handler = () => {
-      window.print();
+      setPrintDialogOpen(true);
     };
     window.addEventListener("fd-print-request", handler as EventListener);
     return () => window.removeEventListener("fd-print-request", handler as EventListener);
   }, []);
+
+  const runPrint = async () => {
+    setPrintLoading(true);
+    try {
+      const currentRange = getSimplifiedRange(yearA, monthA, dayA);
+      if (!currentRange) return;
+      const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
+      const location = selectedStore ? selectedStore : undefined;
+
+      const [storeSummary, salespersonSummary, storeOverallSummary, salespersonOverallSummary, lowMarginSummary] = await Promise.all([
+        fetchSalesReport({
+          start: currentRange.start,
+          end: currentRange.endExclusive,
+          dimension: "store",
+          salesperson,
+          location,
+          category: reportCategory !== "ALL" ? reportCategory : undefined,
+          manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
+        }),
+        fetchSalesReport({
+          start: currentRange.start,
+          end: currentRange.endExclusive,
+          dimension: "salesperson",
+          salesperson,
+          location,
+          category: reportCategory !== "ALL" ? reportCategory : undefined,
+          manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
+        }),
+        fetchSalesReport({
+          start: currentRange.start,
+          end: currentRange.endExclusive,
+          dimension: "store",
+          salesperson,
+          location,
+        }),
+        fetchSalesReport({
+          start: currentRange.start,
+          end: currentRange.endExclusive,
+          dimension: "salesperson",
+          salesperson,
+          location,
+        }),
+        fetchLowMargin({
+          start: currentRange.start,
+          end: currentRange.endExclusive,
+          limitPer: 10,
+          limitTotal: 200,
+          salesperson,
+          location,
+        }),
+      ]);
+
+      const manufacturers = reportManufacturerOptions.filter((m) => m && m !== "ALL");
+      const categories = reportCategoryOptions.filter((c) => c && c !== "ALL");
+
+      const manufacturerBreakdowns = printIncludeManufacturer
+        ? await Promise.all(
+            manufacturers.map(async (m) => {
+              const [storeRows, salespersonRows] = await Promise.all([
+                fetchSalesReport({
+                  start: currentRange.start,
+                  end: currentRange.endExclusive,
+                  dimension: "store",
+                  salesperson,
+                  location,
+                  manufacturer: m,
+                }),
+                fetchSalesReport({
+                  start: currentRange.start,
+                  end: currentRange.endExclusive,
+                  dimension: "salesperson",
+                  salesperson,
+                  location,
+                  manufacturer: m,
+                }),
+              ]);
+              return { label: m, storeRows: storeRows.rows, salespersonRows: salespersonRows.rows };
+            })
+          )
+        : [];
+
+      const categoryBreakdowns = printIncludeCategory
+        ? await Promise.all(
+            categories.map(async (c) => {
+              const [storeRows, salespersonRows] = await Promise.all([
+                fetchSalesReport({
+                  start: currentRange.start,
+                  end: currentRange.endExclusive,
+                  dimension: "store",
+                  salesperson,
+                  location,
+                  category: c,
+                }),
+                fetchSalesReport({
+                  start: currentRange.start,
+                  end: currentRange.endExclusive,
+                  dimension: "salesperson",
+                  salesperson,
+                  location,
+                  category: c,
+                }),
+              ]);
+              return { label: c, storeRows: storeRows.rows, salespersonRows: salespersonRows.rows };
+            })
+          )
+        : [];
+
+      setPrintData({
+        lowMarginRows: lowMarginSummary.rows,
+        storeRows: storeSummary.rows,
+        salespersonRows: salespersonSummary.rows,
+        storeOverallRows: storeOverallSummary.rows,
+        salespersonOverallRows: salespersonOverallSummary.rows,
+        manufacturerBreakdowns,
+        categoryBreakdowns,
+      });
+      setPrintDialogOpen(false);
+      setTimeout(() => window.print(), 60);
+    } finally {
+      setPrintLoading(false);
+    }
+  };
 
   useEffect(() => {
     const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
@@ -897,13 +1120,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
   const hasCompare = compareHint.trim().length > 0;
   const financedLinesPct = pctChange(finance.financedLines, financeCompare.financedLines);
   const financedAmountPct = pctChange(finance.financedAmount, financeCompare.financedAmount);
-  const financeFeePct = pctChange(finance.financeFee, financeCompare.financeFee);
-  const financeBalancePct = pctChange(finance.financeBalance, financeCompare.financeBalance);
 
   const financedLinesUp = financedLinesPct >= 0;
   const financedAmountUp = financedAmountPct >= 0;
-  const financeFeeUp = financeFeePct >= 0;
-  const financeBalanceUp = financeBalancePct >= 0;
 
   const avgTicket = safeDiv(summary.sales, summary.lines);
   const avgTicketCompare = safeDiv(summaryCompare.sales, summaryCompare.lines);
@@ -1379,7 +1598,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
       <div className="fd-print-hide">
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-3 text-blue-800 fd-print-hide">
           <Database size={18} className="text-blue-500" />
-          <span className="text-sm font-medium">All figures are based on delivered sales.</span>
+          <span className="text-sm font-medium">All figures are based on sale date.</span>
         </div>
       {(selectedSalesperson || selectedStore || searchHint) && (
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center fd-print-hide">
@@ -2136,23 +2355,39 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
                       </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Total Retail
-                      {renderHelp("Sum of item total_sale_price filtered by category/manufacturer, split by salesperson if applicable.")}
+                      {renderHelp("Raw sales dollars for this row.")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Avg Margin %
-                      {renderHelp("Average of per-ticket margin (profit ÷ sales) in the range.")}
+                      Sales % of View
+                      {renderHelp("Percent of this row's retail against the visible rows after category/manufacturer filters. These values add up to 100%.")}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Sales % of Own Total
+                      {renderHelp("Percent of this row's retail against that salesperson/store's own total retail for the selected date range.")}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Sales % of Company
+                      {renderHelp("Percent of this row's retail against company total retail for the selected date range.")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Units Sold
                       {renderHelp("Sum of qty_sold from item report, filtered by category/manufacturer.")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Retail %
-                      {renderHelp("Share of total retail for the selected range and filters.")}
+                      Units % of View
+                      {renderHelp("Percent of this row's units against the visible rows after category/manufacturer filters. These values add up to 100%.")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Units %
-                      {renderHelp("Share of total units sold for the selected range and filters.")}
+                      Units % of Own Total
+                      {renderHelp("Percent of this row's units against that salesperson/store's own total units for the selected date range.")}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Units % of Company
+                      {renderHelp("Percent of this row's units against company total units for the selected date range.")}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Avg Margin %
+                      {renderHelp("Average of per-ticket margin (profit ÷ sales) in the range.")}
                     </th>
                     </tr>
                   </thead>
@@ -2166,16 +2401,28 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
                           ${Number(row.totalRetail || 0).toLocaleString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {formatMarginPct(row.avgMarginPct)}
+                          {row.retailPct.toFixed(1)}%
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {row.ownRetailPct.toFixed(1)}%
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {row.totalRetailPct.toFixed(1)}%
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                           {Number(row.units || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {row.retailPct.toFixed(1)}%
+                          {row.unitsPct.toFixed(1)}%
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {row.unitsPct.toFixed(1)}%
+                          {row.ownUnitsPct.toFixed(1)}%
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {row.totalUnitsPct.toFixed(1)}%
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {formatMarginPct(row.avgMarginPct)}
                         </td>
                       </tr>
                     ))}
@@ -2187,13 +2434,33 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
                         ${Number(reportTotals.totalRetail || 0).toLocaleString()}
                       </td>
                       <td className="px-6 py-3 text-sm font-semibold text-slate-700">
-                        {formatMarginPct(reportTotals.avgMarginPct)}
+                        {reportTotals.totalRetail > 0 ? "100.0" : "0.0"}%
+                      </td>
+                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                        --
+                      </td>
+                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                        {reportOverallTotals.totalRetail > 0
+                          ? ((reportTotals.totalRetail / reportOverallTotals.totalRetail) * 100).toFixed(1)
+                          : "0.0"}
+                        %
                       </td>
                       <td className="px-6 py-3 text-sm font-semibold text-slate-700">
                         {Number(reportTotals.totalUnits || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                       </td>
-                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">100.0%</td>
-                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">100.0%</td>
+                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                        {reportTotals.totalUnits > 0 ? "100.0" : "0.0"}%
+                      </td>
+                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">--</td>
+                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                        {reportOverallTotals.totalUnits > 0
+                          ? ((reportTotals.totalUnits / reportOverallTotals.totalUnits) * 100).toFixed(1)
+                          : "0.0"}
+                        %
+                      </td>
+                      <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                        {formatMarginPct(reportTotals.avgMarginPct)}
+                      </td>
                     </tr>
                   </tfoot>
                 </table>
@@ -2202,7 +2469,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
               <p className="text-sm text-slate-500">No sales report data available.</p>
             )
           ) : (
-            sortedLowMarginData.length > 0 ? (
+            (printData?.lowMarginRows ?? sortedLowMarginData).length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
@@ -2219,7 +2486,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-slate-200">
-                    {sortedLowMarginData.map((row, idx) => (
+                    {(printData?.lowMarginRows ?? sortedLowMarginData).map((row, idx) => (
                       <tr key={idx} className={row.marginPct !== null && row.marginPct < 10 ? "bg-red-50" : ""}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{row.salesperson}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:text-blue-800">
@@ -2308,11 +2575,322 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
         </div>
       )}
 
+      {printDialogOpen && (
+        <div className="fd-print-hide fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white border border-slate-200 shadow-xl p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Print Options</h3>
+                <p className="text-sm text-slate-500">Choose which reports to include and apply optional filters.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPrintDialogOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-3">
+                <div className="text-xs uppercase tracking-wide text-slate-500">Reports</div>
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={printIncludeLowMargin}
+                    onChange={(e) => setPrintIncludeLowMargin(e.target.checked)}
+                  />
+                  Lowest Margin Tickets
+                </label>
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={printIncludeStore}
+                    onChange={(e) => setPrintIncludeStore(e.target.checked)}
+                  />
+                  Totals by Store
+                </label>
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={printIncludeSalesperson}
+                    onChange={(e) => setPrintIncludeSalesperson(e.target.checked)}
+                  />
+                  Totals by Salesperson
+                </label>
+              </div>
+
+              <div className="space-y-3">
+                <div className="text-xs uppercase tracking-wide text-slate-500">Additional Reports (Print)</div>
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={printIncludeManufacturer}
+                    onChange={(e) => setPrintIncludeManufacturer(e.target.checked)}
+                  />
+                  Drill down by Manufacturer (all)
+                </label>
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={printIncludeCategory}
+                    onChange={(e) => setPrintIncludeCategory(e.target.checked)}
+                  />
+                  Drill down by Category (all)
+                </label>
+                <div className="text-xs text-slate-500">These add extra sections and may produce many pages.</div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setPrintDialogOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={runPrint}
+                disabled={printLoading}
+                className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold disabled:opacity-60"
+              >
+                {printLoading ? "Preparing..." : "Print"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
       <div className="fd-print-only space-y-6">
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        {printIncludeManufacturer && printData?.manufacturerBreakdowns?.length ? (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-slate-900">Manufacturer Drill-downs</h3>
+            {printData.manufacturerBreakdowns.map((entry) => {
+              const storeTotals = computeReportTotals(entry.storeRows);
+              const storeRows = withReportPercentages(entry.storeRows, storeTotals, printStoreOverallMap, printOverallTotals).filter((row) => {
+                const retail = Number(row.totalRetail || 0);
+                const units = Number(row.units || 0);
+                const tickets = Number(row.ticketCount || 0);
+                const retailPct = Number(row.retailPct || 0);
+                const unitsPct = Number(row.unitsPct || 0);
+                return !(retail == 0 && units == 0 && tickets == 0) && !(retailPct == 0 && unitsPct == 0);
+              });
+              const salesTotals = computeReportTotals(entry.salespersonRows);
+              const salesRows = withReportPercentages(entry.salespersonRows, salesTotals, printSalesOverallMap, printOverallTotals).filter((row) => {
+                const retail = Number(row.totalRetail || 0);
+                const units = Number(row.units || 0);
+                const tickets = Number(row.ticketCount || 0);
+                const retailPct = Number(row.retailPct || 0);
+                const unitsPct = Number(row.unitsPct || 0);
+                return !(retail == 0 && units == 0 && tickets == 0) && !(retailPct == 0 && unitsPct == 0);
+              });
+              return (
+                <div key={`m-${entry.label}`} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 fd-print-block">
+                  <h4 className="text-base font-semibold text-slate-800 mb-3">Manufacturer: {entry.label}</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-700 mb-2">Store %</div>
+                      {storeRows.length ? (
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead className="bg-slate-50">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Store</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Total Retail</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % View</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Own</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Company</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units Sold</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % View</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Own</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Company</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-slate-200">
+                              {storeRows.map((row) => (
+                                <tr key={`m-${entry.label}-s-${row.label}`}>
+                                  <td className="px-4 py-2 text-slate-700">{row.label || "—"}</td>
+                                  <td className="px-4 py-2 text-right text-slate-700">${Number(row.totalRetail || 0).toLocaleString()}</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.ownRetailPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.totalRetailPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{Number(row.units || 0).toLocaleString()}</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.unitsPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.ownUnitsPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.totalUnitsPct.toFixed(1)}%</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-slate-500">No store data.</div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-700 mb-2">Salesperson %</div>
+                      {salesRows.length ? (
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead className="bg-slate-50">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Salesperson</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Total Retail</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % View</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Own</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Company</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units Sold</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % View</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Own</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Company</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-slate-200">
+                              {salesRows.map((row) => (
+                                <tr key={`m-${entry.label}-p-${row.label}`}>
+                                  <td className="px-4 py-2 text-slate-700">{row.label || "—"}</td>
+                                  <td className="px-4 py-2 text-right text-slate-700">${Number(row.totalRetail || 0).toLocaleString()}</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.ownRetailPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.totalRetailPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{Number(row.units || 0).toLocaleString()}</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.unitsPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.ownUnitsPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.totalUnitsPct.toFixed(1)}%</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-slate-500">No salesperson data.</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {printIncludeCategory && printData?.categoryBreakdowns?.length ? (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-slate-900">Category Drill-downs</h3>
+            {printData.categoryBreakdowns.map((entry) => {
+              const storeTotals = computeReportTotals(entry.storeRows);
+              const storeRows = withReportPercentages(entry.storeRows, storeTotals, printStoreOverallMap, printOverallTotals).filter((row) => {
+                const retail = Number(row.totalRetail || 0);
+                const units = Number(row.units || 0);
+                const tickets = Number(row.ticketCount || 0);
+                const retailPct = Number(row.retailPct || 0);
+                const unitsPct = Number(row.unitsPct || 0);
+                return !(retail == 0 && units == 0 && tickets == 0) && !(retailPct == 0 && unitsPct == 0);
+              });
+              const salesTotals = computeReportTotals(entry.salespersonRows);
+              const salesRows = withReportPercentages(entry.salespersonRows, salesTotals, printSalesOverallMap, printOverallTotals).filter((row) => {
+                const retail = Number(row.totalRetail || 0);
+                const units = Number(row.units || 0);
+                const tickets = Number(row.ticketCount || 0);
+                const retailPct = Number(row.retailPct || 0);
+                const unitsPct = Number(row.unitsPct || 0);
+                return !(retail == 0 && units == 0 && tickets == 0) && !(retailPct == 0 && unitsPct == 0);
+              });
+              return (
+                <div key={`c-${entry.label}`} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 fd-print-block">
+                  <h4 className="text-base font-semibold text-slate-800 mb-3">Category: {entry.label}</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-700 mb-2">Store %</div>
+                      {storeRows.length ? (
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead className="bg-slate-50">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Store</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Total Retail</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % View</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Own</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Company</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units Sold</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % View</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Own</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Company</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-slate-200">
+                              {storeRows.map((row) => (
+                                <tr key={`c-${entry.label}-s-${row.label}`}>
+                                  <td className="px-4 py-2 text-slate-700">{row.label || "—"}</td>
+                                  <td className="px-4 py-2 text-right text-slate-700">${Number(row.totalRetail || 0).toLocaleString()}</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.ownRetailPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.totalRetailPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{Number(row.units || 0).toLocaleString()}</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.unitsPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.ownUnitsPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.totalUnitsPct.toFixed(1)}%</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-slate-500">No store data.</div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-700 mb-2">Salesperson %</div>
+                      {salesRows.length ? (
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead className="bg-slate-50">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Salesperson</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Total Retail</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % View</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Own</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Company</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units Sold</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % View</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Own</th>
+                                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Company</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-slate-200">
+                              {salesRows.map((row) => (
+                                <tr key={`c-${entry.label}-p-${row.label}`}>
+                                  <td className="px-4 py-2 text-slate-700">{row.label || "—"}</td>
+                                  <td className="px-4 py-2 text-right text-slate-700">${Number(row.totalRetail || 0).toLocaleString()}</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.ownRetailPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.totalRetailPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{Number(row.units || 0).toLocaleString()}</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.unitsPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.ownUnitsPct.toFixed(1)}%</td>
+                                  <td className="px-4 py-2 text-right text-slate-600">{row.totalUnitsPct.toFixed(1)}%</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-slate-500">No salesperson data.</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {printIncludeLowMargin && (
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 fd-print-block">
           <h3 className="text-lg font-semibold text-slate-900 mb-3">Lowest Margin Tickets</h3>
-          {sortedLowMarginData.length ? (
+          {printLowMarginFiltered.length ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50">
@@ -2325,7 +2903,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {sortedLowMarginData.map((row, idx) => (
+                  {printLowMarginFiltered.map((row, idx) => (
                     <tr key={`${row.saleId}-${idx}`}>
                       <td className="px-4 py-2 text-slate-700">{saleLabel(row.saleId, row.salesperson)}</td>
                       <td className="px-4 py-2 text-slate-500">{formatShortDate(String(row.saleDate || ""))}</td>
@@ -2341,43 +2919,61 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
             <div className="text-sm text-slate-500">No low margin data available.</div>
           )}
         </div>
+        )}
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        {printIncludeStore && (
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 fd-print-block">
           <h3 className="text-lg font-semibold text-slate-900 mb-3">Totals by Store</h3>
-          {reportRowsWithPctStore.length ? (
+          {printStoreFiltered.length ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Store</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Tickets</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Retail</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Total Retail</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % View</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Own</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Company</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units Sold</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % View</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Own</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Company</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Avg Margin</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Retail %</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units %</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {reportRowsWithPctStore.map((row) => (
+                  {printStoreFiltered.map((row) => (
                     <tr key={`store-${row.label}`}>
                       <td className="px-4 py-2 text-slate-700">{row.label || "—"}</td>
                       <td className="px-4 py-2 text-right text-slate-600">{row.ticketCount}</td>
                       <td className="px-4 py-2 text-right text-slate-700">${Number(row.totalRetail || 0).toLocaleString()}</td>
-                      <td className="px-4 py-2 text-right text-slate-600">{formatMarginPct(row.avgMarginPct)}</td>
-                      <td className="px-4 py-2 text-right text-slate-600">{Number(row.units || 0).toLocaleString()}</td>
                       <td className="px-4 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.ownRetailPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.totalRetailPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{Number(row.units || 0).toLocaleString()}</td>
                       <td className="px-4 py-2 text-right text-slate-600">{row.unitsPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.ownUnitsPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.totalUnitsPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{formatMarginPct(row.avgMarginPct)}</td>
                     </tr>
                   ))}
                   <tr className="bg-slate-50 font-semibold">
                     <td className="px-4 py-2 text-slate-800">Totals</td>
-                    <td className="px-4 py-2 text-right text-slate-700">{reportTotalsStore.totalTickets}</td>
-                    <td className="px-4 py-2 text-right text-slate-800">${Number(reportTotalsStore.totalRetail || 0).toLocaleString()}</td>
-                    <td className="px-4 py-2 text-right text-slate-700">{formatMarginPct(reportTotalsStore.avgMarginPct)}</td>
-                    <td className="px-4 py-2 text-right text-slate-700">{Number(reportTotalsStore.totalUnits || 0).toLocaleString()}</td>
-                    <td className="px-4 py-2 text-right text-slate-700">100.0%</td>
-                    <td className="px-4 py-2 text-right text-slate-700">100.0%</td>
+                    <td className="px-4 py-2 text-right text-slate-700">{printTotalsStore.totalTickets}</td>
+                    <td className="px-4 py-2 text-right text-slate-800">${Number(printTotalsStore.totalRetail || 0).toLocaleString()}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">{printTotalsStore.totalRetail > 0 ? "100.0%" : "0.0%"}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">--</td>
+                    <td className="px-4 py-2 text-right text-slate-700">
+                      {printOverallRetailTotal > 0 ? ((printTotalsStore.totalRetail / printOverallRetailTotal) * 100).toFixed(1) : "0.0"}%
+                    </td>
+                    <td className="px-4 py-2 text-right text-slate-700">{Number(printTotalsStore.totalUnits || 0).toLocaleString()}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">{printTotalsStore.totalUnits > 0 ? "100.0%" : "0.0%"}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">--</td>
+                    <td className="px-4 py-2 text-right text-slate-700">
+                      {printOverallUnitsTotal > 0 ? ((printTotalsStore.totalUnits / printOverallUnitsTotal) * 100).toFixed(1) : "0.0"}%
+                    </td>
+                    <td className="px-4 py-2 text-right text-slate-700">{formatMarginPct(printTotalsStore.avgMarginPct)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -2386,43 +2982,61 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
             <div className="text-sm text-slate-500">No store report data available.</div>
           )}
         </div>
+        )}
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        {printIncludeSalesperson && (
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 fd-print-block">
           <h3 className="text-lg font-semibold text-slate-900 mb-3">Totals by Salesperson</h3>
-          {reportRowsWithPctSalesperson.length ? (
+          {printSalespersonFiltered.length ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Salesperson</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Tickets</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Retail</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Total Retail</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % View</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Own</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Company</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units Sold</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % View</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Own</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Company</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Avg Margin</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Retail %</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units %</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {reportRowsWithPctSalesperson.map((row) => (
+                  {printSalespersonFiltered.map((row) => (
                     <tr key={`sp-${row.label}`}>
                       <td className="px-4 py-2 text-slate-700">{row.label || "—"}</td>
                       <td className="px-4 py-2 text-right text-slate-600">{row.ticketCount}</td>
                       <td className="px-4 py-2 text-right text-slate-700">${Number(row.totalRetail || 0).toLocaleString()}</td>
-                      <td className="px-4 py-2 text-right text-slate-600">{formatMarginPct(row.avgMarginPct)}</td>
-                      <td className="px-4 py-2 text-right text-slate-600">{Number(row.units || 0).toLocaleString()}</td>
                       <td className="px-4 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.ownRetailPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.totalRetailPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{Number(row.units || 0).toLocaleString()}</td>
                       <td className="px-4 py-2 text-right text-slate-600">{row.unitsPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.ownUnitsPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{row.totalUnitsPct.toFixed(1)}%</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{formatMarginPct(row.avgMarginPct)}</td>
                     </tr>
                   ))}
                   <tr className="bg-slate-50 font-semibold">
                     <td className="px-4 py-2 text-slate-800">Totals</td>
-                    <td className="px-4 py-2 text-right text-slate-700">{reportTotalsSalesperson.totalTickets}</td>
-                    <td className="px-4 py-2 text-right text-slate-800">${Number(reportTotalsSalesperson.totalRetail || 0).toLocaleString()}</td>
-                    <td className="px-4 py-2 text-right text-slate-700">{formatMarginPct(reportTotalsSalesperson.avgMarginPct)}</td>
-                    <td className="px-4 py-2 text-right text-slate-700">{Number(reportTotalsSalesperson.totalUnits || 0).toLocaleString()}</td>
-                    <td className="px-4 py-2 text-right text-slate-700">100.0%</td>
-                    <td className="px-4 py-2 text-right text-slate-700">100.0%</td>
+                    <td className="px-4 py-2 text-right text-slate-700">{printTotalsSalesperson.totalTickets}</td>
+                    <td className="px-4 py-2 text-right text-slate-800">${Number(printTotalsSalesperson.totalRetail || 0).toLocaleString()}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">{printTotalsSalesperson.totalRetail > 0 ? "100.0%" : "0.0%"}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">--</td>
+                    <td className="px-4 py-2 text-right text-slate-700">
+                      {printOverallRetailTotal > 0 ? ((printTotalsSalesperson.totalRetail / printOverallRetailTotal) * 100).toFixed(1) : "0.0"}%
+                    </td>
+                    <td className="px-4 py-2 text-right text-slate-700">{Number(printTotalsSalesperson.totalUnits || 0).toLocaleString()}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">{printTotalsSalesperson.totalUnits > 0 ? "100.0%" : "0.0%"}</td>
+                    <td className="px-4 py-2 text-right text-slate-700">--</td>
+                    <td className="px-4 py-2 text-right text-slate-700">
+                      {printOverallUnitsTotal > 0 ? ((printTotalsSalesperson.totalUnits / printOverallUnitsTotal) * 100).toFixed(1) : "0.0"}%
+                    </td>
+                    <td className="px-4 py-2 text-right text-slate-700">{formatMarginPct(printTotalsSalesperson.avgMarginPct)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -2431,6 +3045,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, onItemS
             <div className="text-sm text-slate-500">No salesperson report data available.</div>
           )}
         </div>
+        )}
       </div>
 
     </div>

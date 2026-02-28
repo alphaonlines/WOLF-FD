@@ -1355,14 +1355,20 @@ app.get("/api/import/coverage-months", async (_req, res) => {
     const startFloor = "2024-01-01";
     const sql = `
     WITH sales AS (
-      SELECT sale_id, COALESCE(delivery_confirmed_date, est_delivery_date, sale_date) AS dt
+      SELECT sale_id, delivery_confirmed_date AS dt
       FROM pos_sales
-      WHERE sale_id IS NOT NULL AND sale_id <> '' AND COALESCE(delivery_confirmed_date, est_delivery_date, sale_date) >= $1
+      WHERE sale_id IS NOT NULL
+        AND sale_id <> ''
+        AND delivery_confirmed_date IS NOT NULL
+        AND delivery_confirmed_date >= $1
     ),
     items AS (
-      SELECT sale_id, COALESCE(delivery_confirmed_date, sale_date) AS dt
+      SELECT sale_id, delivery_confirmed_date AS dt
       FROM pos_sale_items
-      WHERE sale_id IS NOT NULL AND sale_id <> '' AND COALESCE(delivery_confirmed_date, sale_date) >= $1
+      WHERE sale_id IS NOT NULL
+        AND sale_id <> ''
+        AND delivery_confirmed_date IS NOT NULL
+        AND delivery_confirmed_date >= $1
     ),
     sales_only AS (
       SELECT s.sale_id, s.dt

@@ -133,9 +133,9 @@ const SAFE_FINANCE_BALANCE = `
   END
 `;
 
-const ITEM_DATE_FIELD = "COALESCE(delivery_confirmed_date, sale_date)";
-const prefixedDateField = (p: string) => `COALESCE(${p}.delivery_confirmed_date, ${p}.sale_date, ${p}.est_delivery_date)`;
-const PRO1ST_TREND_DATE_FIELD = "COALESCE(delivery_confirmed_date, sale_date)";
+const ITEM_DATE_FIELD = "sale_date";
+const prefixedDateField = (p: string) => `${p}.sale_date`;
+const PRO1ST_TREND_DATE_FIELD = "sale_date";
 
 // Health
 app.get("/health", async (_req, res) => {
@@ -203,18 +203,6 @@ app.get("/api/available-years", async (_req, res) => {
       SELECT EXTRACT(YEAR FROM sale_date)::int AS year
       FROM pos_sales
       WHERE sale_date IS NOT NULL
-      UNION
-      SELECT EXTRACT(YEAR FROM delivery_confirmed_date)::int AS year
-      FROM pos_sales
-      WHERE delivery_confirmed_date IS NOT NULL
-      UNION
-      SELECT EXTRACT(YEAR FROM est_delivery_date)::int AS year
-      FROM pos_sales
-      WHERE est_delivery_date IS NOT NULL
-      UNION
-      SELECT EXTRACT(YEAR FROM last_payment_date)::int AS year
-      FROM pos_sales
-      WHERE last_payment_date IS NOT NULL
     ) years
     ORDER BY year;
   `;
@@ -247,8 +235,8 @@ app.get("/api/outliers", async (req, res) => {
         ${SAFE_FINANCE_FEE}::numeric AS finance_fee,
         raw_source_file
       FROM pos_sales
-    WHERE COALESCE(delivery_confirmed_date, sale_date) >= $1
-      AND COALESCE(delivery_confirmed_date, sale_date) < $2
+    WHERE sale_date >= $1
+      AND sale_date < $2
         AND ($4::text IS NULL OR salesperson ILIKE ('%' || $4 || '%'))
     ),
     stats AS (
@@ -505,11 +493,11 @@ app.get("/api/salesperson-tickets", async (req, res) => {
     LEFT JOIN item_totals ON item_totals.sale_id = p.sale_id
     LEFT JOIN pro_items ON pro_items.sale_id = p.sale_id
     LEFT JOIN people_counts ON people_counts.sale_id = p.sale_id
-    WHERE COALESCE(s.delivery_confirmed_date, s.sale_date) >= $1
-      AND COALESCE(s.delivery_confirmed_date, s.sale_date) < $2
+    WHERE s.sale_date >= $1
+      AND s.sale_date < $2
       AND p.salesperson ILIKE ('%' || $3 || '%')
       AND ($4::text IS NULL OR COALESCE(p.location, s.location) ILIKE ('%' || $4 || '%'))
-    ORDER BY COALESCE(s.delivery_confirmed_date, s.sale_date) DESC, p.sale_id DESC
+    ORDER BY s.sale_date DESC, p.sale_id DESC
     LIMIT $5;
   `;
 
@@ -1449,7 +1437,7 @@ app.get("/api/pro1st/trend", async (req, res) => {
   });
 });
 
-// Coverage check: missing months for sales vs items (delivery months)
+// Coverage check: missing months for sales vs items (sale months)
 app.get("/api/import/coverage-months", async (_req, res) => {
   const startFloor = "2024-06-01";
   const sql = `
@@ -1457,14 +1445,20 @@ app.get("/api/import/coverage-months", async (_req, res) => {
       SELECT $1::date AS start_date, CURRENT_DATE::date AS end_date
     ),
     sales AS (
-      SELECT sale_id, COALESCE(delivery_confirmed_date, sale_date, est_delivery_date) AS dt
+      SELECT sale_id, sale_date AS dt
       FROM pos_sales
-      WHERE sale_id IS NOT NULL AND sale_id <> '' AND COALESCE(delivery_confirmed_date, sale_date, est_delivery_date) >= $1
+      WHERE sale_id IS NOT NULL
+        AND sale_id <> ''
+        AND sale_date IS NOT NULL
+        AND sale_date >= $1
     ),
     items AS (
-      SELECT sale_id, COALESCE(delivery_confirmed_date, sale_date) AS dt
+      SELECT sale_id, sale_date AS dt
       FROM pos_sale_items
-      WHERE sale_id IS NOT NULL AND sale_id <> '' AND COALESCE(delivery_confirmed_date, sale_date) >= $1
+      WHERE sale_id IS NOT NULL
+        AND sale_id <> ''
+        AND sale_date IS NOT NULL
+        AND sale_date >= $1
     ),
     sales_days AS (
       SELECT DISTINCT date_trunc('day', dt)::date AS day
@@ -1598,12 +1592,12 @@ app.get("/api/sales-weekly", async (req, res) => {
 
   const sql = `
     SELECT
-      date_trunc('week', COALESCE(delivery_confirmed_date, sale_date))::date AS week,
+      date_trunc('week', sale_date)::date AS week,
       ROUND(SUM(${SAFE_GRAND_TOTAL})::numeric, 2) AS sales,
       ROUND(SUM(${SAFE_PROFIT})::numeric, 2) AS profit
     FROM pos_sales
-    WHERE COALESCE(delivery_confirmed_date, sale_date) >= $1
-      AND COALESCE(delivery_confirmed_date, sale_date) < $2
+    WHERE sale_date >= $1
+      AND sale_date < $2
       AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
     GROUP BY 1
     ORDER BY 1;

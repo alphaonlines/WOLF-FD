@@ -9,7 +9,6 @@ import {
   Plus,
   Send,
   Settings,
-  Users,
   Wand2,
 } from "lucide-react";
 
