@@ -4,12 +4,12 @@
 Add secure employee login with role-based module visibility, lead assignment, and internal collaboration comments.
 
 ## Phase 1: Authentication
-- [ ] Add `users` table (`id`, `name`, `email`, `password_hash`, `active`, `created_at`, `updated_at`)
-- [ ] Add auth endpoints: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
-- [ ] Hash passwords with `bcrypt` or `argon2`
-- [ ] Use secure HTTP-only cookie sessions
-- [ ] Add `requireAuth` middleware for protected routes
-- [ ] Add initial admin seed user
+- [x] Add `users` table (`id`, `name`, `email`, `password_hash`, `active`, `created_at`, `updated_at`)
+- [x] Add auth endpoints: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
+- [x] Hash passwords with a strong KDF (`scrypt`)
+- [x] Use secure HTTP-only cookie sessions
+- [x] Add `requireAuth` middleware for protected routes
+- [x] Add initial admin seed user
 
 ## Phase 2: Roles and Module Permissions
 - [ ] Add `roles`, `user_roles`, `module_permissions`, `role_module_permissions` tables
@@ -40,10 +40,10 @@ Add secure employee login with role-based module visibility, lead assignment, an
 - [ ] Add basic admin user management page
 
 ## Test + Rollout Checklist
-- [ ] Backend build passes (`pos-dashboard-backend`)
-- [ ] Frontend build passes (`WOLF-FD`)
-- [ ] Manual auth flow test (login/logout/me)
+- [x] Backend build passes (`pos-dashboard-backend`)
+- [x] Frontend build passes (`WOLF-FD`)
+- [x] Manual auth flow test (login/logout/me)
 - [ ] Permission tests for each role
 - [ ] Lead assignment test across roles
 - [ ] Message board visibility and comment permissions verified
-- [ ] Deploy and verify live endpoints
+- [x] Deploy and verify live endpoints

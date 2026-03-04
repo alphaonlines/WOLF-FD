@@ -8,9 +8,16 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import multer from "multer";
 import { Pool } from "pg";
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 
 const app = express();
-app.use(cors());
+app.set("trust proxy", 1);
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 const uploadsDir = path.resolve(__dirname, "..", "incoming");
@@ -45,6 +52,195 @@ const pool = new Pool({
   user: envString("PGUSER", "salesapp"),
   password: envString("PGPASSWORD", "dev_password_change_me"),
 });
+
+const AUTH_COOKIE_NAME = "fd_session";
+const AUTH_SESSION_DAYS = Math.max(Number(envString("AUTH_SESSION_DAYS", "14")) || 14, 1);
+const AUTH_COOKIE_SECURE_MODE = (envString("AUTH_COOKIE_SECURE", "auto") || "auto").toLowerCase();
+
+type AuthUserView = {
+  id: string;
+  name: string;
+  email: string;
+  roles: string[];
+};
+
+function hashPassword(password: string, saltHex?: string): string {
+  const salt = saltHex || randomBytes(16).toString("hex");
+  const derived = scryptSync(password, salt, 64);
+  return `scrypt$${salt}$${derived.toString("hex")}`;
+}
+
+function verifyPassword(password: string, storedHash: string): boolean {
+  if (!storedHash || typeof storedHash !== "string") return false;
+  const parts = storedHash.split("$");
+  if (parts.length !== 3 || parts[0] !== "scrypt") return false;
+  const salt = parts[1];
+  const digestHex = parts[2];
+  if (!salt || !digestHex) return false;
+  const expected = Buffer.from(digestHex, "hex");
+  const actual = scryptSync(password, salt, expected.length);
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+function sha256Hex(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function parseCookies(req: any): Record<string, string> {
+  const raw = typeof req.headers?.cookie === "string" ? req.headers.cookie : "";
+  if (!raw) return {};
+  const out: Record<string, string> = {};
+  for (const part of raw.split(";")) {
+    const idx = part.indexOf("=");
+    if (idx <= 0) continue;
+    const k = part.slice(0, idx).trim();
+    const v = part.slice(idx + 1).trim();
+    if (!k) continue;
+    try {
+      out[k] = decodeURIComponent(v);
+    } catch {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+function isSecureRequest(req: any): boolean {
+  if (AUTH_COOKIE_SECURE_MODE === "true") return true;
+  if (AUTH_COOKIE_SECURE_MODE === "false") return false;
+  const proto = String(req.headers?.["x-forwarded-proto"] || "").toLowerCase();
+  return Boolean(req.secure) || proto.includes("https");
+}
+
+function setAuthCookie(res: any, token: string, req: any) {
+  const maxAgeMs = AUTH_SESSION_DAYS * 24 * 60 * 60 * 1000;
+  const cookie = [
+    `${AUTH_COOKIE_NAME}=${encodeURIComponent(token)}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    `Max-Age=${Math.floor(maxAgeMs / 1000)}`,
+  ];
+  if (isSecureRequest(req)) cookie.push("Secure");
+  res.setHeader("Set-Cookie", cookie.join("; "));
+}
+
+function clearAuthCookie(res: any, req: any) {
+  const cookie = [
+    `${AUTH_COOKIE_NAME}=`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    "Max-Age=0",
+  ];
+  if (isSecureRequest(req)) cookie.push("Secure");
+  res.setHeader("Set-Cookie", cookie.join("; "));
+}
+
+function buildAuthUser(row: any): AuthUserView {
+  return {
+    id: String(row.id ?? ""),
+    name: String(row.name ?? ""),
+    email: String(row.email ?? ""),
+    roles: ["Owner"],
+  };
+}
+
+async function findAuthUserBySessionToken(token: string): Promise<AuthUserView | null> {
+  if (!token) return null;
+  const tokenHash = sha256Hex(token);
+  const sql = `
+    SELECT u.id, u.name, u.email
+    FROM auth_sessions s
+    JOIN users u ON u.id = s.user_id
+    WHERE s.token_hash = $1
+      AND s.expires_at > now()
+      AND u.active = TRUE
+    LIMIT 1;
+  `;
+  const r = await pool.query(sql, [tokenHash]);
+  if (!r.rows.length) return null;
+
+  await pool.query("UPDATE auth_sessions SET last_seen_at = now() WHERE token_hash = $1", [tokenHash]).catch(() => {
+    // Ignore non-critical session touch failures.
+  });
+  return buildAuthUser(r.rows[0]);
+}
+
+async function currentAuthUserFromReq(req: any): Promise<AuthUserView | null> {
+  const cookies = parseCookies(req);
+  const token = cookies[AUTH_COOKIE_NAME];
+  if (!token) return null;
+  return findAuthUserBySessionToken(token);
+}
+
+async function ensureAuthSchema() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id            BIGSERIAL PRIMARY KEY,
+      name          TEXT NOT NULL,
+      email         TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      active        BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS active BOOLEAN;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE users ALTER COLUMN active SET DEFAULT TRUE;`);
+  await pool.query(`ALTER TABLE users ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE users ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users ((lower(email)));`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS auth_sessions (
+      id            BIGSERIAL PRIMARY KEY,
+      user_id       BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash    TEXT NOT NULL UNIQUE,
+      expires_at    TIMESTAMPTZ NOT NULL,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+      last_seen_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+      user_agent    TEXT,
+      ip_address    TEXT
+    );
+  `);
+  await pool.query(`ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS user_id BIGINT;`);
+  await pool.query(`ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS token_hash TEXT;`);
+  await pool.query(`ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS user_agent TEXT;`);
+  await pool.query(`ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS ip_address TEXT;`);
+  await pool.query(`ALTER TABLE auth_sessions ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE auth_sessions ALTER COLUMN last_seen_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_id ON auth_sessions(user_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);`);
+}
+
+async function ensureDefaultAuthUser() {
+  const existing = await pool.query("SELECT COUNT(*)::int AS n FROM users;");
+  const count = Number(existing.rows[0]?.n ?? 0);
+  if (count > 0) return;
+
+  const defaultEmail = (envString("AUTH_BOOTSTRAP_EMAIL", "owner@wolffd.local") || "owner@wolffd.local").toLowerCase();
+  const defaultName = envString("AUTH_BOOTSTRAP_NAME", "WOLF FD Owner") || "WOLF FD Owner";
+  const defaultPassword = envString("AUTH_BOOTSTRAP_PASSWORD", "1111") || "1111";
+  const passwordHash = hashPassword(defaultPassword);
+
+  await pool.query(
+    `INSERT INTO users (name, email, password_hash, active, created_at, updated_at)
+     VALUES ($1, $2, $3, TRUE, now(), now())
+     ON CONFLICT (email) DO NOTHING;`,
+    [defaultName, defaultEmail, passwordHash]
+  );
+
+  console.log(`Auth bootstrap user ready: ${defaultEmail}`);
+}
 
 function parseDateParam(v: any, fallback: string) {
   if (!v || typeof v !== "string") return fallback;
@@ -218,6 +414,69 @@ const PRO1ST_TREND_DATE_FIELD = "sale_date";
 app.get("/health", async (_req, res) => {
   const r = await pool.query("SELECT 1 AS ok");
   res.json({ ok: true, db: r.rows[0].ok });
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  const password = typeof req.body?.password === "string" ? req.body.password : "";
+  if (!email || !password) return res.status(400).json({ ok: false, error: "email and password are required" });
+
+  const userSql = `
+    SELECT id, name, email, password_hash, active
+    FROM users
+    WHERE lower(email) = lower($1)
+    LIMIT 1;
+  `;
+  const userRes = await pool.query(userSql, [email]);
+  if (!userRes.rows.length) return res.status(401).json({ ok: false, error: "invalid credentials" });
+  const user = userRes.rows[0];
+  if (!user.active) return res.status(403).json({ ok: false, error: "user is inactive" });
+  if (!verifyPassword(password, String(user.password_hash || ""))) {
+    return res.status(401).json({ ok: false, error: "invalid credentials" });
+  }
+
+  const token = randomBytes(32).toString("hex");
+  const tokenHash = sha256Hex(token);
+  const userAgent = typeof req.headers?.["user-agent"] === "string" ? req.headers["user-agent"] : "";
+  const ipAddress = (req.headers?.["x-forwarded-for"] as string) || req.ip || "";
+  await pool.query(
+    `
+      INSERT INTO auth_sessions (user_id, token_hash, expires_at, created_at, last_seen_at, user_agent, ip_address)
+      VALUES ($1, $2, now() + ($3::int || ' days')::interval, now(), now(), $4, $5)
+    `,
+    [user.id, tokenHash, AUTH_SESSION_DAYS, userAgent || null, ipAddress || null]
+  );
+
+  setAuthCookie(res, token, req);
+  res.json({ ok: true, user: buildAuthUser(user) });
+});
+
+app.post("/api/auth/logout", async (req, res) => {
+  const cookies = parseCookies(req);
+  const token = cookies[AUTH_COOKIE_NAME];
+  if (token) {
+    const tokenHash = sha256Hex(token);
+    await pool.query("DELETE FROM auth_sessions WHERE token_hash = $1", [tokenHash]).catch(() => {
+      // Ignore missing/invalid session cleanup issues.
+    });
+  }
+  clearAuthCookie(res, req);
+  res.json({ ok: true });
+});
+
+app.get("/api/auth/me", async (req, res) => {
+  const user = await currentAuthUserFromReq(req);
+  if (!user) return res.status(401).json({ ok: false, user: null });
+  res.json({ ok: true, user });
+});
+
+app.use("/api", async (req, res, next) => {
+  if (req.method === "OPTIONS") return next();
+  if (req.path.startsWith("/auth/")) return next();
+  const user = await currentAuthUserFromReq(req);
+  if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
+  (req as any).authUser = user;
+  return next();
 });
 
 app.post("/api/import/upload", upload.array("files", 25), async (req, res) => {
@@ -2474,9 +2733,11 @@ const port = Number(process.env.PORT || 5057);
 
 async function startServer() {
   try {
+    await ensureAuthSchema();
+    await ensureDefaultAuthUser();
     await ensureCrmSchema();
   } catch (err) {
-    console.error("Failed to ensure CRM schema:", err);
+    console.error("Failed to ensure startup schema/state:", err);
   }
 
   app.listen(port, () => {

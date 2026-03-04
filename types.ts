@@ -82,3 +82,10 @@ export interface CRMAutomationRule {
   description: string;
   enabled: boolean;
 }
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  roles: string[];
+}

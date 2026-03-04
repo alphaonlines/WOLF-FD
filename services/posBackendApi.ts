@@ -12,7 +12,7 @@ export async function checkPosBackendHealthy(timeoutMs = 900): Promise<boolean> 
   const t = window.setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const baseUrl = getPosApiBaseUrl();
-    const res = await fetch(`${baseUrl}/health`, { signal: ctrl.signal });
+    const res = await fetch(`${baseUrl}/health`, { signal: ctrl.signal, credentials: "include" });
     if (!res.ok) return false;
     const json = (await res.json().catch(() => null)) as any;
     return !!json?.ok;
@@ -28,6 +28,7 @@ async function fetchJson(path: string, init?: RequestInit): Promise<JsonValue> {
   const url = `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
   const res = await fetch(url, {
     ...init,
+    credentials: "include",
     headers: {
       Accept: "application/json",
       ...(init?.headers || {}),
@@ -44,6 +45,7 @@ async function postJson(path: string, body: any): Promise<JsonValue> {
   const url = `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
   const res = await fetch(url, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
@@ -70,6 +72,7 @@ export async function uploadPosExports(files: File[]): Promise<{ import?: { ok?:
   files.forEach((file) => form.append("files", file, file.name));
   const res = await fetch(`${baseUrl}/api/import/upload`, {
     method: "POST",
+    credentials: "include",
     body: form,
   });
   if (!res.ok) {

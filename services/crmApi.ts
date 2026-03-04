@@ -31,6 +31,7 @@ async function fetchJson(path: string, init?: RequestInit): Promise<any> {
   const url = `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
   const res = await fetch(url, {
     ...init,
+    credentials: "include",
     headers: {
       Accept: "application/json",
       ...(init?.headers || {}),

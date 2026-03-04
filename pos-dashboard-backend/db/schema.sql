@@ -301,3 +301,52 @@ ALTER TABLE crm_automations ALTER COLUMN description SET DEFAULT '';
 ALTER TABLE crm_automations ALTER COLUMN enabled SET DEFAULT TRUE;
 ALTER TABLE crm_automations ALTER COLUMN created_at SET DEFAULT now();
 ALTER TABLE crm_automations ALTER COLUMN updated_at SET DEFAULT now();
+
+-- Employee auth/session foundation
+CREATE TABLE IF NOT EXISTS users (
+  id            BIGSERIAL PRIMARY KEY,
+  name          TEXT NOT NULL,
+  email         TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS active BOOLEAN;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
+ALTER TABLE users ALTER COLUMN active SET DEFAULT TRUE;
+ALTER TABLE users ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE users ALTER COLUMN updated_at SET DEFAULT now();
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users ((lower(email)));
+
+CREATE TABLE IF NOT EXISTS auth_sessions (
+  id            BIGSERIAL PRIMARY KEY,
+  user_id       BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash    TEXT NOT NULL UNIQUE,
+  expires_at    TIMESTAMPTZ NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_seen_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  user_agent    TEXT,
+  ip_address    TEXT
+);
+
+ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS user_id BIGINT;
+ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS token_hash TEXT;
+ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
+ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ;
+ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS user_agent TEXT;
+ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS ip_address TEXT;
+
+ALTER TABLE auth_sessions ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE auth_sessions ALTER COLUMN last_seen_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_id ON auth_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);

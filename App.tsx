@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { LayoutDashboard, CheckSquare, MessageSquare, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud, Monitor, Home, ClipboardList, Bot, X } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, MessageSquare, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud, Monitor, Home, ClipboardList, Bot, X, LogOut } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import WorkAdvertising from './components/WorkAdvertising';
 import UpdateDatabase from './components/UpdateDatabase';
@@ -9,6 +9,8 @@ import CRMWorkspace from './components/CRMWorkspace';
 import MessageBoard from './components/MessageBoard';
 import WolfBot from './components/WolfBot';
 import TaskManager from './components/TaskManager';
+import type { AuthUser } from './types';
+import { fetchCurrentUser, loginWithPassword, logoutCurrentUser } from './services/authApi';
 
 enum Tab {
   DASHBOARD = 'DASHBOARD',
@@ -20,24 +22,17 @@ enum Tab {
   TASKS = 'TASKS',
 }
 
-const PASSWORD = "1111";
-const STORAGE_KEY = "fd_app_unlocked";
-
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
-  const [loadingDarkness, setLoadingDarkness] = useState(0.6);
-  const [isUnlocked, setIsUnlocked] = useState(() => {
-    try {
-      return sessionStorage.getItem(STORAGE_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
-  const [passwordInput, setPasswordInput] = useState("");
-  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginPending, setLoginPending] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [headerSearch, setHeaderSearch] = useState("");
   const [rangeLabel, setRangeLabel] = useState<string | null>(null);
   const [showRange, setShowRange] = useState(false);
@@ -56,6 +51,23 @@ const App: React.FC = () => {
       return false;
     }
   });
+
+  useEffect(() => {
+    let stopped = false;
+    void (async () => {
+      try {
+        const user = await fetchCurrentUser();
+        if (!stopped) setAuthUser(user);
+      } catch {
+        if (!stopped) setAuthUser(null);
+      } finally {
+        if (!stopped) setAuthReady(true);
+      }
+    })();
+    return () => {
+      stopped = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!showLoading) return;
@@ -134,21 +146,32 @@ const App: React.FC = () => {
   }, [activeTab]);
 
 
-  const handleUnlock = () => {
-    if (passwordInput === PASSWORD) {
-      setLoadingDarkness(Math.min(0.6 + passwordInput.length * 0.06, 0.96));
-      setIsUnlocked(true);
-      setPasswordInput("");
-      setPasswordError(null);
-      setShowLoading(true);
-      try {
-        sessionStorage.setItem(STORAGE_KEY, "true");
-      } catch {
-        // Ignore storage failures.
-      }
+  const handleLogin = async () => {
+    if (!loginEmail.trim() || !loginPassword) {
+      setLoginError("Email and password are required.");
       return;
     }
-    setPasswordError("Incorrect password.");
+    setLoginPending(true);
+    setLoginError(null);
+    try {
+      const user = await loginWithPassword(loginEmail.trim(), loginPassword);
+      setAuthUser(user);
+      setLoginPassword("");
+      setShowLoading(true);
+    } catch {
+      setLoginError("Login failed. Check your credentials.");
+    } finally {
+      setLoginPending(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logoutCurrentUser();
+    setAuthUser(null);
+    setLoginPassword("");
+    setLoginError(null);
+    setWolfbotOpen(false);
+    setUpdatePanelOpen(false);
   };
 
   const closeUpdatePanel = () => {
@@ -187,6 +210,28 @@ const App: React.FC = () => {
       default: return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
     }
   };
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen bg-slate-950">
+        <LoadingOverlay darkness={0.84} />
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return (
+      <AuthScreen
+        email={loginEmail}
+        password={loginPassword}
+        pending={loginPending}
+        error={loginError}
+        setEmail={setLoginEmail}
+        setPassword={setLoginPassword}
+        onLogin={handleLogin}
+      />
+    );
+  }
 
   return (
     <div
@@ -298,9 +343,8 @@ const App: React.FC = () => {
           }
         `}
       </style>
-      {!isUnlocked && <LockScreen passwordInput={passwordInput} setPasswordInput={setPasswordInput} passwordError={passwordError} onUnlock={handleUnlock} />}
-      {showLoading && <LoadingOverlay darkness={loadingDarkness} />}
-      <div className={`flex ${!isUnlocked || showLoading ? 'blur-md' : ''} transition-[filter] duration-500`}>
+      {showLoading && <LoadingOverlay darkness={0.9} />}
+      <div className={`flex ${showLoading ? 'blur-md' : ''} transition-[filter] duration-500`}>
       
       {/* Sidebar */}
       <aside 
@@ -546,6 +590,14 @@ const App: React.FC = () => {
             >
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              title={`Signed in as ${authUser.email}`}
+            >
+              <LogOut size={14} />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
           </div>
         </header>
 
@@ -556,7 +608,7 @@ const App: React.FC = () => {
 
       </main>
 
-      {isUnlocked && !showLoading && (
+      {!showLoading && (
         <>
           <button
             type="button"
@@ -739,17 +791,20 @@ const LoadingOverlay: React.FC<{ darkness: number }> = ({ darkness }) => {
   );
 };
 
-type LockScreenProps = {
-  passwordInput: string;
-  setPasswordInput: (value: string) => void;
-  passwordError: string | null;
-  onUnlock: () => void;
+type AuthScreenProps = {
+  email: string;
+  password: string;
+  pending: boolean;
+  error: string | null;
+  setEmail: (value: string) => void;
+  setPassword: (value: string) => void;
+  onLogin: () => void;
 };
 
-const LockScreen: React.FC<LockScreenProps> = ({ passwordInput, setPasswordInput, passwordError, onUnlock }) => {
-  const darkness = Math.min(0.6 + passwordInput.length * 0.06, 0.96);
+const AuthScreen: React.FC<AuthScreenProps> = ({ email, password, pending, error, setEmail, setPassword, onLogin }) => {
+  const darkness = Math.min(0.64 + email.length * 0.02, 0.92);
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center">
+    <div className="min-h-screen fixed inset-0 z-40 flex items-center justify-center">
       <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-800/70 backdrop-blur-md" />
       <div
         className="absolute inset-0 transition-colors duration-300 pointer-events-none"
@@ -787,32 +842,43 @@ const LockScreen: React.FC<LockScreenProps> = ({ passwordInput, setPasswordInput
             🐺
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-slate-100">WOLF FD Locked</h2>
-            <p className="text-sm text-slate-400">Enter the passcode to continue.</p>
+            <h2 className="text-lg font-semibold text-slate-100">WOLF FD Employee Login</h2>
+            <p className="text-sm text-slate-400">Sign in with your employee account.</p>
           </div>
         </div>
         <form
           className="relative z-10 flex flex-col gap-3"
           onSubmit={(event) => {
             event.preventDefault();
-            onUnlock();
+            onLogin();
           }}
         >
           <input
-            type="password"
-            value={passwordInput}
-            onChange={(event) => setPasswordInput(event.target.value)}
-            placeholder="Passcode"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="Email"
             autoFocus
+            className="px-3 py-2 rounded-lg text-sm bg-slate-950/70 border border-slate-700 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Password"
             className="px-3 py-2 rounded-lg text-sm bg-slate-950/70 border border-slate-700 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-white text-slate-900 rounded-lg text-sm font-semibold hover:bg-slate-100"
+            disabled={pending}
+            className="px-4 py-2 bg-white text-slate-900 rounded-lg text-sm font-semibold hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Unlock
+            {pending ? "Signing in..." : "Sign in"}
           </button>
-          {passwordError && <div className="text-xs text-rose-300">{passwordError}</div>}
+          {error && <div className="text-xs text-rose-300">{error}</div>}
+          <div className="text-[11px] text-slate-400">
+            First login seed account defaults to `owner@wolffd.local` / `1111` unless overridden by backend env vars.
+          </div>
         </form>
       </div>
     </div>
