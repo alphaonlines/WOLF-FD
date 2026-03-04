@@ -12,9 +12,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   rectSortingStrategy,
-  useSortable,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   Area,
@@ -59,10 +57,15 @@ import {
   getSimplifiedRange,
   monthOptions,
   pctChange,
-  pctOf,
   safeDiv,
   salespersonLabel,
 } from "./salesUtils";
+import SortableItem from "./sales/SortableItem";
+import {
+  computeReportTotals,
+  type ReportSummaryRow,
+  withReportPercentages,
+} from "./salesReportUtils";
 
 type SalespersonPoint = SalesData & {
   fullName: string;
@@ -73,49 +76,11 @@ type Summary = {
   lines: number;
 };
 
-type ReportSummaryRow = {
-  label: string;
-  ticketCount: number;
-  totalRetail: number;
-  units: number;
-  avgMarginPct: number | null;
-};
-
 type ReportRowsState = {
   rows: ReportSummaryRow[];
   availableCategories: string[];
   availableManufacturers: string[];
 };
-
-type ReportRowWithPct = ReportSummaryRow & {
-  retailPct: number;
-  unitsPct: number;
-  ownRetailPct: number;
-  ownUnitsPct: number;
-  totalRetailPct: number;
-  totalUnitsPct: number;
-};
-
-function SortableItem({ id, children, className }: { id: string; children: React.ReactNode; className?: string }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={className}>
-      {children}
-    </div>
-  );
-}
 
 type SalesDashboardProps = {
   itemSortMetric: "sales" | "qty";
@@ -385,45 +350,6 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
       return lowMarginSort.direction === 'asc' ? cmp : -cmp;
     });
   }, [lowMarginData, lowMarginSort]);
-
-  const computeReportTotals = (rows: Array<{
-    label: string;
-    ticketCount: number;
-    totalRetail: number;
-    units: number;
-    avgMarginPct: number | null;
-  }>) => {
-    const totals = rows.reduce(
-      (acc, row) => {
-        acc.totalRetail += Number.isFinite(row.totalRetail) ? row.totalRetail : 0;
-        acc.totalUnits += Number.isFinite(row.units) ? row.units : 0;
-        acc.totalTickets += Number.isFinite(row.ticketCount) ? row.ticketCount : 0;
-        if (row.avgMarginPct !== null && Number.isFinite(row.avgMarginPct)) {
-          acc.marginWeighted += row.avgMarginPct * (Number.isFinite(row.ticketCount) ? row.ticketCount : 0);
-        }
-        return acc;
-      },
-      { totalRetail: 0, totalUnits: 0, totalTickets: 0, marginWeighted: 0 }
-    );
-    const avgMarginPct = totals.totalTickets > 0 ? totals.marginWeighted / totals.totalTickets : null;
-    return { ...totals, avgMarginPct };
-  };
-
-  const withReportPercentages = (
-    rows: ReportSummaryRow[],
-    filteredTotals: { totalRetail: number; totalUnits: number },
-    overallMap: Map<string, ReportSummaryRow>,
-    companyTotals: { totalRetail: number; totalUnits: number }
-  ): ReportRowWithPct[] =>
-    rows.map((row) => ({
-      ...row,
-      retailPct: pctOf(row.totalRetail, filteredTotals.totalRetail),
-      unitsPct: pctOf(row.units, filteredTotals.totalUnits),
-      ownRetailPct: pctOf(row.totalRetail, Number(overallMap.get(row.label)?.totalRetail || 0)),
-      ownUnitsPct: pctOf(row.units, Number(overallMap.get(row.label)?.units || 0)),
-      totalRetailPct: pctOf(row.totalRetail, companyTotals.totalRetail),
-      totalUnitsPct: pctOf(row.units, companyTotals.totalUnits),
-    }));
 
   const reportTotals = useMemo(() => {
     return computeReportTotals(reportData.rows);
