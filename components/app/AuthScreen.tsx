@@ -94,9 +94,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
             {pending ? 'Signing in...' : 'Sign in'}
           </button>
           {error && <div className="text-xs text-rose-300">{error}</div>}
-          <div className="text-[11px] text-slate-400">
-            First login seed account defaults to `owner@wolffd.local` / `1111` unless overridden by backend env vars.
-          </div>
         </form>
       </div>
     </div>
