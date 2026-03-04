@@ -65,6 +65,7 @@ import SalesPrintDialog from "./sales/SalesPrintDialog";
 import SalesDrilldownPrintSections from "./sales/SalesDrilldownPrintSections";
 import SalesCorePrintSections from "./sales/SalesCorePrintSections";
 import SalesReportCard from "./sales/SalesReportCard";
+import SalespersonDetailCard, { type SalespersonTicketRow } from "./sales/SalespersonDetailCard";
 import {
   computeReportTotals,
   type ReportSummaryRow,
@@ -247,17 +248,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
     sales: number;
     saleIds: string[];
   }>>([]);
-  const [salespersonTickets, setSalespersonTickets] = useState<Array<{
-    saleId: string;
-    saleDate: string;
-    salesperson: string;
-    location: string;
-    receiptNo: string;
-    customerName: string;
-    grandTotal: number;
-    profit: number;
-    marginPct: number | null;
-  }>>([]);
+  const [salespersonTickets, setSalespersonTickets] = useState<SalespersonTicketRow[]>([]);
   const [topCategories, setTopCategories] = useState<Array<{ category: string; qty: number; sales: number }>>([]);
   const [topManufacturers, setTopManufacturers] = useState<Array<{ manufacturer: string; qty: number; sales: number }>>([]);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
@@ -2144,61 +2135,12 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
       />
 
       {selectedSalesperson && (
-        <div
-          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
-          data-print-id="salesperson-detail"
-         
-         
-        >
-          <div className="mb-6 flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">Salesperson Detail: {selectedSalesperson}</h3>
-              <p className="text-sm text-slate-500">All tickets for the selected date range</p>
-            </div>
-          </div>
-          {salespersonTickets.length ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Sale ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Location</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Profit</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Margin %</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {salespersonTickets.map((row, idx) => (
-                    <tr key={`${row.saleId}-${idx}`}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:text-blue-800">
-                        <a
-                          href={saleLink(row.saleId)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {saleLabel(row.saleId, row.salesperson)}
-                        </a>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                        {formatShortDate(String(row.saleDate || ""))}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.location || "(unknown)"}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.grandTotal.toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.profit.toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                        {row.marginPct !== null ? `${row.marginPct.toFixed(1)}%` : "N/A"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500">No tickets found for this salesperson and range.</p>
-          )}
-        </div>
+        <SalespersonDetailCard
+          selectedSalesperson={selectedSalesperson}
+          salespersonTickets={salespersonTickets}
+          saleLink={saleLink}
+          saleLabel={saleLabel}
+        />
       )}
 
       <SalesPrintDialog
