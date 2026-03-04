@@ -258,12 +258,67 @@ const priorityRank: Record<UpsPriority, number> = {
 };
 
 const UPS_LANES: UpsLane[] = ["Unattended", "Be-Back", "Quote Follow-up"];
+const UPS_PRIORITIES: UpsPriority[] = ["Hot", "Today", "Nurture"];
+const LEAD_CHANNELS: CRMLeadChannel[] = ["SMS", "Webchat", "Facebook", "Instagram", "Phone"];
+
+const isUpsLane = (value: unknown): value is UpsLane => typeof value === "string" && UPS_LANES.includes(value as UpsLane);
+const isUpsPriority = (value: unknown): value is UpsPriority =>
+  typeof value === "string" && UPS_PRIORITIES.includes(value as UpsPriority);
+const isLeadChannel = (value: unknown): value is CRMLeadChannel =>
+  typeof value === "string" && LEAD_CHANNELS.includes(value as CRMLeadChannel);
+
+const normalizeUpsList = (raw: unknown): UpsItem[] => {
+  if (!Array.isArray(raw) || !raw.length) return seedUpsList;
+
+  const normalized = raw
+    .map((entry, index) => {
+      if (!entry || typeof entry !== "object") return null;
+      const item = entry as Record<string, unknown>;
+      const legacyTitle = typeof item.title === "string" ? item.title.trim() : "";
+      const customer =
+        typeof item.customer === "string" && item.customer.trim()
+          ? item.customer.trim()
+          : legacyTitle || `Lead ${index + 1}`;
+      const task =
+        typeof item.task === "string" && item.task.trim()
+          ? item.task.trim()
+          : legacyTitle || "Follow up";
+      const owner = typeof item.owner === "string" && item.owner.trim() ? item.owner.trim() : "Unassigned";
+      const lane = isUpsLane(item.lane) ? item.lane : "Unattended";
+      const priority = isUpsPriority(item.priority) ? item.priority : "Today";
+      const dueAt =
+        typeof item.dueAt === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.dueAt)
+          ? item.dueAt
+          : todayIso();
+      const channel = isLeadChannel(item.channel) ? item.channel : "SMS";
+      const done = item.done === true;
+      const id =
+        typeof item.id === "string" && item.id.trim()
+          ? item.id
+          : `ups-${Date.now()}-${index}`;
+
+      return {
+        id,
+        customer,
+        task,
+        owner,
+        lane,
+        priority,
+        dueAt,
+        channel,
+        done,
+      };
+    })
+    .filter((item): item is UpsItem => item !== null);
+
+  return normalized.length ? normalized : seedUpsList;
+};
 
 const CRMWorkspace: React.FC = () => {
   const [syncMode, setSyncMode] = useState<CRMSyncMode>("LOCAL_STORAGE");
   const [focusMode, setFocusMode] = useState(false);
   const [leads, setLeads] = useState<CRMLead[]>(() => readLocal(LEAD_KEY, seedLeads));
-  const [upsList, setUpsList] = useState<UpsItem[]>(() => readLocal(UPS_KEY, seedUpsList));
+  const [upsList, setUpsList] = useState<UpsItem[]>(() => normalizeUpsList(readLocal(UPS_KEY, seedUpsList)));
   const [upsDraft, setUpsDraft] = useState({
     customer: "",
     task: "",
@@ -457,7 +512,8 @@ const CRMWorkspace: React.FC = () => {
       "Quote Follow-up": [],
     };
     for (const item of orderedUpsList) {
-      if (!item.done) grouped[item.lane].push(item);
+      const laneBucket = grouped[item.lane as UpsLane];
+      if (!item.done && laneBucket) laneBucket.push(item);
     }
     return grouped;
   }, [orderedUpsList]);
