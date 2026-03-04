@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { LayoutDashboard, CheckSquare, MessageSquare, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud, Monitor, Home, Video, ClipboardList, Bot } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, MessageSquare, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud, Monitor, Home, ClipboardList, Bot } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import WorkAdvertising from './components/WorkAdvertising';
 import UpdateDatabase from './components/UpdateDatabase';
 import KiosksStatus from './components/KiosksStatus';
 import DashboardOverview from './components/DashboardOverview';
-import CamerasStatus from './components/CamerasStatus';
+import CRMWorkspace from './components/CRMWorkspace';
 import MessageBoard from './components/MessageBoard';
 import WolfBot from './components/WolfBot';
 import TaskManager from './components/TaskManager';
@@ -14,8 +14,8 @@ enum Tab {
   DASHBOARD = 'DASHBOARD',
   SALES = 'SALES',
   CRM = 'CRM',
+  SOCIAL = 'SOCIAL',
   KIOSKS = 'KIOSKS',
-  CAMERAS = 'CAMERAS',
   MESSAGE_BOARD = 'MESSAGE_BOARD',
   WOLFBOT = 'WOLFBOT',
   TASKS = 'TASKS',
@@ -167,6 +167,7 @@ const App: React.FC = () => {
             if (tab === "SALES") setActiveTab(Tab.SALES);
             if (tab === "TASKS") setActiveTab(Tab.TASKS);
             if (tab === "CRM") setActiveTab(Tab.CRM);
+            if (tab === "SOCIAL") setActiveTab(Tab.SOCIAL);
             if (tab === "KIOSKS") setActiveTab(Tab.KIOSKS);
             if (tab === "UPDATE") setUpdatePanelOpen(true);
           }}
@@ -178,9 +179,9 @@ const App: React.FC = () => {
           showTooltips={showTooltips}
         />
       );
-      case Tab.CRM: return <WorkAdvertising />;
+      case Tab.CRM: return <CRMWorkspace />;
+      case Tab.SOCIAL: return <WorkAdvertising />;
       case Tab.KIOSKS: return <KiosksStatus />;
-      case Tab.CAMERAS: return <CamerasStatus />;
       case Tab.MESSAGE_BOARD: return <MessageBoard />;
       case Tab.WOLFBOT: return <WolfBot />;
       case Tab.TASKS: return <TaskManager />;
@@ -348,6 +349,13 @@ const App: React.FC = () => {
             isOpen={sidebarOpen}
           />
           <NavItem 
+            icon={<Activity size={20} />} 
+            label="Social Posts" 
+            isActive={activeTab === Tab.SOCIAL} 
+            onClick={() => setActiveTab(Tab.SOCIAL)}
+            isOpen={sidebarOpen}
+          />
+          <NavItem 
             icon={<CheckSquare size={20} />} 
             label="Tasks" 
             isActive={activeTab === Tab.TASKS} 
@@ -359,13 +367,6 @@ const App: React.FC = () => {
             label="AlphaOS" 
             isActive={activeTab === Tab.KIOSKS} 
             onClick={() => setActiveTab(Tab.KIOSKS)}
-            isOpen={sidebarOpen}
-          />
-          <NavItem 
-            icon={<Video size={20} />} 
-            label="Nightowl" 
-            isActive={activeTab === Tab.CAMERAS} 
-            onClick={() => setActiveTab(Tab.CAMERAS)}
             isOpen={sidebarOpen}
           />
           <NavItem 
@@ -447,8 +448,8 @@ const App: React.FC = () => {
                 {activeTab === Tab.DASHBOARD && 'WOLF FD Dashboard'}
                 {activeTab === Tab.SALES && 'Sales Analysis'}
                 {activeTab === Tab.CRM && 'CRM'}
+                {activeTab === Tab.SOCIAL && 'Social Posts'}
                 {activeTab === Tab.KIOSKS && 'AlphaOS Status'}
-                {activeTab === Tab.CAMERAS && 'Nightowl Status'}
                 {activeTab === Tab.MESSAGE_BOARD && 'Message Board'}
                 {activeTab === Tab.WOLFBOT && 'WOLFbot'}
               </span>

@@ -1001,8 +1001,8 @@ const WorkAdvertising: React.FC = () => {
       <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6 md:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="text-xs uppercase tracking-wide text-slate-500">CRM Command Center</div>
-            <h2 className="text-2xl font-semibold text-slate-900">CRM + Social Planner</h2>
+            <div className="text-xs uppercase tracking-wide text-slate-500">Social Media Command Center</div>
+            <h2 className="text-2xl font-semibold text-slate-900">Social Posts Planner</h2>
             <p className="text-sm text-slate-500">
               Premium front-end analytics: upload exports, track trends, and spot what content converts.
             </p>
