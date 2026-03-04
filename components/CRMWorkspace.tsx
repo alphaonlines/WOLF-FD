@@ -27,11 +27,18 @@ type TodoItem = {
   done: boolean;
 };
 
+type UpsItem = {
+  id: string;
+  title: string;
+  done: boolean;
+};
+
 type CRMSyncMode = "POS_DB" | "LOCAL_STORAGE";
 
 const LEAD_KEY = "fd_crm_leads_v1";
 const TODO_KEY = "fd_crm_todos_v1";
 const AUTOMATION_KEY = "fd_crm_automations_v1";
+const UPS_KEY = "fd_crm_ups_list_v1";
 
 const STAGES: CRMLeadStage[] = ["New", "Contacted", "Appointment", "Quoted", "Won", "Lost"];
 
@@ -151,6 +158,12 @@ const seedTodos: TodoItem[] = [
   { id: "todo-7", title: "Message templates", done: true },
 ];
 
+const seedUpsList: UpsItem[] = [
+  { id: "ups-1", title: "Priority callback list for quoted leads", done: false },
+  { id: "ups-2", title: "Review top 10 high-budget opportunities", done: false },
+  { id: "ups-3", title: "Prep manager special upsell bundle", done: true },
+];
+
 const seedAutomations: CRMAutomationRule[] = [
   {
     id: "auto-1",
@@ -209,6 +222,8 @@ const CRMWorkspace: React.FC = () => {
   const [syncMode, setSyncMode] = useState<CRMSyncMode>("LOCAL_STORAGE");
   const [leads, setLeads] = useState<CRMLead[]>(() => readLocal(LEAD_KEY, seedLeads));
   const [todos, setTodos] = useState<TodoItem[]>(() => readLocal(TODO_KEY, seedTodos));
+  const [upsList, setUpsList] = useState<UpsItem[]>(() => readLocal(UPS_KEY, seedUpsList));
+  const [upsInput, setUpsInput] = useState("");
   const [automations, setAutomations] = useState<CRMAutomationRule[]>(() => readLocal(AUTOMATION_KEY, seedAutomations));
   const [selectedLeadId, setSelectedLeadId] = useState<string>(() => readLocal(LEAD_KEY, seedLeads)[0]?.id ?? "");
   const [copiedTemplate, setCopiedTemplate] = useState<string | null>(null);
@@ -312,6 +327,14 @@ const CRMWorkspace: React.FC = () => {
       // ignore storage failures
     }
   }, [todos]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(UPS_KEY, JSON.stringify(upsList));
+    } catch {
+      // ignore storage failures
+    }
+  }, [upsList]);
 
   useEffect(() => {
     try {
@@ -454,6 +477,31 @@ const CRMWorkspace: React.FC = () => {
     );
   };
 
+  const toggleUpsItem = (id: string) => {
+    setUpsList((current) =>
+      current.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              done: !item.done,
+            }
+          : item
+      )
+    );
+  };
+
+  const addUpsItem = () => {
+    const title = upsInput.trim();
+    if (!title) return;
+    const created: UpsItem = {
+      id: `ups-${Date.now()}`,
+      title,
+      done: false,
+    };
+    setUpsList((current) => [created, ...current]);
+    setUpsInput("");
+  };
+
   const toggleAutomation = (id: string) => {
     const currentRule = automations.find((item) => item.id === id);
     if (!currentRule) return;
@@ -565,6 +613,49 @@ const CRMWorkspace: React.FC = () => {
             >
               <input type="checkbox" checked={item.done} onChange={() => toggleTodo(item.id)} />
               {item.title}
+            </label>
+          ))}
+        </div>
+      </section>
+
+      <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">UPS List</h3>
+            <p className="text-sm text-slate-500">
+              Track your current UPS priorities for the CRM team.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+            <CheckSquare size={14} /> Priority Queue
+          </div>
+        </div>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <input
+            value={upsInput}
+            onChange={(event) => setUpsInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") addUpsItem();
+            }}
+            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            placeholder="Add UPS list item"
+          />
+          <button
+            type="button"
+            onClick={addUpsItem}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+          >
+            <Plus size={14} /> Add
+          </button>
+        </div>
+        <div className="mt-4 grid grid-cols-1 gap-2">
+          {upsList.map((item) => (
+            <label
+              key={item.id}
+              className="inline-flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+            >
+              <input type="checkbox" checked={item.done} onChange={() => toggleUpsItem(item.id)} />
+              <span className={item.done ? "line-through text-slate-400" : ""}>{item.title}</span>
             </label>
           ))}
         </div>
