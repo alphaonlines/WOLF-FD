@@ -2,7 +2,6 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import fs from "fs";
-import os from "os";
 import path from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
@@ -553,7 +552,6 @@ const SAFE_FINANCE_BALANCE = `
 
 const ITEM_DATE_FIELD = "sale_date";
 const prefixedDateField = (p: string) => `${p}.sale_date`;
-const PRO1ST_TREND_DATE_FIELD = "sale_date";
 
 // Health
 app.get("/health", async (_req, res) => {

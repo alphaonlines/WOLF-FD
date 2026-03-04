@@ -23,6 +23,10 @@ pos-dashboard-backend/logs
 pos-dashboard-backend/incoming
 pos-dashboard-backend/processed
 pos-dashboard-backend/dist
+pos-dashboard-backend/src/*.js
+pos-dashboard-backend/src/*.js.map
+pos-dashboard-backend/src/*.d.ts
+pos-dashboard-backend/src/*.d.ts.map
 
 # Editor directories and files
 .vscode/*
