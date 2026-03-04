@@ -27,6 +27,16 @@ import { registerSalesDetailRoutes } from "./routes/salesDetailRoutes";
 import { registerInsightsRoutes } from "./routes/insightsRoutes";
 import { registerSystemRoutes } from "./routes/systemRoutes";
 import { runStartupBootstrap } from "./startupBootstrap";
+import {
+  type AuthUserView,
+  normalizeRoleList,
+  hasAnyRole,
+  buildAuthUser,
+  parseCookies,
+  setAuthCookie,
+  clearAuthCookie,
+} from "./authSessionUtils";
+import { createAuthDbHelpers } from "./authDb";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -76,15 +86,7 @@ const pool = new Pool({
 const AUTH_COOKIE_NAME = "fd_session";
 const AUTH_SESSION_DAYS = Math.max(Number(envString("AUTH_SESSION_DAYS", "14")) || 14, 1);
 const AUTH_COOKIE_SECURE_MODE = (envString("AUTH_COOKIE_SECURE", "auto") || "auto").toLowerCase();
-const VALID_USER_ROLES = ["Owner", "Manager", "Sales", "Marketing"] as const;
 const PUBLIC_AUTH_PATHS = new Set(["/auth/login", "/auth/logout", "/auth/me"]);
-
-type AuthUserView = {
-  id: string;
-  name: string;
-  email: string;
-  roles: (typeof VALID_USER_ROLES)[number][];
-};
 
 function hashPassword(password: string, saltHex?: string): string {
   const salt = saltHex || randomBytes(16).toString("hex");
@@ -108,169 +110,14 @@ function sha256Hex(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function parseCookies(req: any): Record<string, string> {
-  const raw = typeof req.headers?.cookie === "string" ? req.headers.cookie : "";
-  if (!raw) return {};
-  const out: Record<string, string> = {};
-  for (const part of raw.split(";")) {
-    const idx = part.indexOf("=");
-    if (idx <= 0) continue;
-    const k = part.slice(0, idx).trim();
-    const v = part.slice(idx + 1).trim();
-    if (!k) continue;
-    try {
-      out[k] = decodeURIComponent(v);
-    } catch {
-      out[k] = v;
-    }
-  }
-  return out;
-}
-
-function isSecureRequest(req: any): boolean {
-  if (AUTH_COOKIE_SECURE_MODE === "true") return true;
-  if (AUTH_COOKIE_SECURE_MODE === "false") return false;
-  const proto = String(req.headers?.["x-forwarded-proto"] || "").toLowerCase();
-  return Boolean(req.secure) || proto.includes("https");
-}
-
-function setAuthCookie(res: any, token: string, req: any) {
-  const maxAgeMs = AUTH_SESSION_DAYS * 24 * 60 * 60 * 1000;
-  const cookie = [
-    `${AUTH_COOKIE_NAME}=${encodeURIComponent(token)}`,
-    "Path=/",
-    "HttpOnly",
-    "SameSite=Lax",
-    `Max-Age=${Math.floor(maxAgeMs / 1000)}`,
-  ];
-  if (isSecureRequest(req)) cookie.push("Secure");
-  res.setHeader("Set-Cookie", cookie.join("; "));
-}
-
-function clearAuthCookie(res: any, req: any) {
-  const cookie = [
-    `${AUTH_COOKIE_NAME}=`,
-    "Path=/",
-    "HttpOnly",
-    "SameSite=Lax",
-    "Max-Age=0",
-  ];
-  if (isSecureRequest(req)) cookie.push("Secure");
-  res.setHeader("Set-Cookie", cookie.join("; "));
-}
-
-function normalizeRoleList(raw: any): (typeof VALID_USER_ROLES)[number][] {
-  const inList = Array.isArray(raw) ? raw : typeof raw === "string" ? [raw] : [];
-  const seen = new Set<string>();
-  const out: (typeof VALID_USER_ROLES)[number][] = [];
-  for (const item of inList) {
-    const role = String(item || "").trim();
-    if (!role || seen.has(role)) continue;
-    if (!VALID_USER_ROLES.includes(role as any)) continue;
-    seen.add(role);
-    out.push(role as any);
-  }
-  return out;
-}
-
-function hasAnyRole(user: AuthUserView | null | undefined, roles: string[]): boolean {
-  if (!user) return false;
-  const own = new Set((user.roles || []).map((r) => String(r)));
-  return roles.some((r) => own.has(r));
-}
-
-function buildAuthUser(row: any): AuthUserView {
-  return {
-    id: String(row.id ?? ""),
-    name: String(row.name ?? ""),
-    email: String(row.email ?? ""),
-    roles: normalizeRoleList(row.roles),
-  };
-}
-
-async function findAuthUserBySessionToken(token: string): Promise<AuthUserView | null> {
-  if (!token) return null;
-  const tokenHash = sha256Hex(token);
-  const sql = `
-    SELECT
-      u.id,
-      u.name,
-      u.email,
-      COALESCE(
-        ARRAY_AGG(DISTINCT r.role_key) FILTER (WHERE r.role_key IS NOT NULL),
-        ARRAY[]::text[]
-      ) AS roles
-    FROM auth_sessions s
-    JOIN users u ON u.id = s.user_id
-    LEFT JOIN user_roles ur ON ur.user_id = u.id
-    LEFT JOIN roles r ON r.id = ur.role_id
-    WHERE s.token_hash = $1
-      AND s.expires_at > now()
-      AND u.active = TRUE
-    GROUP BY u.id, u.name, u.email
-    LIMIT 1;
-  `;
-  const r = await pool.query(sql, [tokenHash]);
-  if (!r.rows.length) return null;
-
-  await pool.query("UPDATE auth_sessions SET last_seen_at = now() WHERE token_hash = $1", [tokenHash]).catch(() => {
-    // Ignore non-critical session touch failures.
-  });
-  return buildAuthUser(r.rows[0]);
-}
-
-async function currentAuthUserFromReq(req: any): Promise<AuthUserView | null> {
-  const cookies = parseCookies(req);
-  const token = cookies[AUTH_COOKIE_NAME];
-  if (!token) return null;
-  return findAuthUserBySessionToken(token);
-}
-
-async function getRoleIdMap(): Promise<Record<string, number>> {
-  const r = await pool.query("SELECT id, role_key FROM roles;");
-  const out: Record<string, number> = {};
-  for (const row of r.rows) {
-    const k = String(row.role_key || "");
-    const id = Number(row.id);
-    if (k && Number.isFinite(id)) out[k] = id;
-  }
-  return out;
-}
-
-async function setUserRolesByKeys(userId: number, roleKeys: string[]) {
-  const normalized = normalizeRoleList(roleKeys);
-  const map = await getRoleIdMap();
-  const roleIds = normalized.map((k) => map[k]).filter((v) => Number.isFinite(v));
-  await pool.query("DELETE FROM user_roles WHERE user_id = $1", [userId]);
-  for (const roleId of roleIds) {
-    await pool.query(
-      `INSERT INTO user_roles (user_id, role_id, created_at) VALUES ($1, $2, now()) ON CONFLICT DO NOTHING`,
-      [userId, roleId]
-    );
-  }
-}
-
-async function loadAuthUserById(userId: number): Promise<AuthUserView | null> {
-  const sql = `
-    SELECT
-      u.id,
-      u.name,
-      u.email,
-      COALESCE(
-        ARRAY_AGG(DISTINCT r.role_key) FILTER (WHERE r.role_key IS NOT NULL),
-        ARRAY[]::text[]
-      ) AS roles
-    FROM users u
-    LEFT JOIN user_roles ur ON ur.user_id = u.id
-    LEFT JOIN roles r ON r.id = ur.role_id
-    WHERE u.id = $1
-    GROUP BY u.id, u.name, u.email
-    LIMIT 1;
-  `;
-  const r = await pool.query(sql, [userId]);
-  if (!r.rows.length) return null;
-  return buildAuthUser(r.rows[0]);
-}
+const { currentAuthUserFromReq, setUserRolesByKeys, loadAuthUserById } = createAuthDbHelpers({
+  pool,
+  authCookieName: AUTH_COOKIE_NAME,
+  parseCookies,
+  sha256Hex,
+  buildAuthUser,
+  normalizeRoleList,
+});
 
 registerAuthRoutes({
   app,
@@ -282,8 +129,17 @@ registerAuthRoutes({
   hashPassword,
   sha256Hex,
   createSessionToken: () => randomBytes(32).toString("hex"),
-  setAuthCookie,
-  clearAuthCookie,
+  setAuthCookie: (res: any, token: string, req: any) =>
+    setAuthCookie(res, token, req, {
+      authCookieName: AUTH_COOKIE_NAME,
+      authSessionDays: AUTH_SESSION_DAYS,
+      authCookieSecureMode: AUTH_COOKIE_SECURE_MODE,
+    }),
+  clearAuthCookie: (res: any, req: any) =>
+    clearAuthCookie(res, req, {
+      authCookieName: AUTH_COOKIE_NAME,
+      authCookieSecureMode: AUTH_COOKIE_SECURE_MODE,
+    }),
   parseCookies,
   currentAuthUserFromReq,
   loadAuthUserById: async (userId: number) => {
