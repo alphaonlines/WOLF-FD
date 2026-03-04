@@ -310,25 +310,30 @@ const App: React.FC = () => {
     <div
       className={`min-h-screen wolf-theme font-sans ${isDarkMode ? "dark text-slate-100" : "text-slate-800"} ${
         isDarkMode
-          ? "bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.12),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(34,197,94,0.12),transparent_50%),linear-gradient(135deg,#0f172a_0%,#0b1120_50%,#111827_100%)]"
-          : "bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.08),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_55%),linear-gradient(135deg,#f8fafc_0%,#ffffff_45%,#f1f5f9_100%)]"
+          ? "bg-[linear-gradient(160deg,#0b1220_0%,#101827_52%,#0f172a_100%)]"
+          : "bg-[linear-gradient(160deg,#f8fafc_0%,#eef3fb_52%,#e6edf7_100%)]"
       }`}
     >
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
           :root {
-            --wolf-card: rgba(255, 255, 255, 0.88);
-            --wolf-border: rgba(148, 163, 184, 0.35);
-            --wolf-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+            --wolf-card: rgba(255, 255, 255, 0.78);
+            --wolf-border: rgba(148, 163, 184, 0.22);
+            --wolf-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
           }
           .dark {
             color-scheme: dark;
           }
           .dark {
-            --wolf-card: rgba(15, 23, 42, 0.78);
-            --wolf-border: rgba(51, 65, 85, 0.7);
-            --wolf-shadow: 0 18px 40px rgba(2, 6, 23, 0.5);
+            --wolf-card: rgba(15, 23, 42, 0.72);
+            --wolf-border: rgba(71, 85, 105, 0.55);
+            --wolf-shadow: 0 16px 36px rgba(2, 6, 23, 0.45);
+          }
+          html, body, #root {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
           }
           body {
             font-family: "Space Grotesk", system-ui, sans-serif;
@@ -342,10 +347,12 @@ const App: React.FC = () => {
           .wolf-theme .bg-white {
             background-color: var(--wolf-card) !important;
             border-color: var(--wolf-border) !important;
+            backdrop-filter: blur(10px) saturate(120%);
           }
           .wolf-theme .shadow-sm {
             box-shadow: var(--wolf-shadow) !important;
           }
+          .wolf-theme .rounded-3xl { border-radius: 1.4rem; }
           .dark .text-slate-800 { color: #e2e8f0 !important; }
           .dark .text-slate-900 { color: #f1f5f9 !important; }
           .dark .text-slate-950 { color: #f8fafc !important; }
@@ -421,11 +428,11 @@ const App: React.FC = () => {
       
       {/* Sidebar */}
       <aside 
-        className={`${sidebarOpen ? 'w-64' : 'w-20'} fixed h-screen bg-slate-900 text-white transition-all duration-300 ease-in-out z-20 flex flex-col`}
+        className={`${sidebarOpen ? 'w-64' : 'w-20'} fixed h-screen bg-slate-950/90 text-white backdrop-blur-xl border-r border-white/10 transition-all duration-300 ease-in-out z-20 flex flex-col`}
       >
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="h-20 w-full flex items-center justify-center border-b border-slate-800 hover:bg-slate-800/60 transition-colors"
+          className="h-20 w-full flex items-center justify-center border-b border-white/10 hover:bg-white/5 transition-colors"
           aria-label="Toggle sidebar"
         >
           {sidebarOpen ? (
@@ -442,7 +449,7 @@ const App: React.FC = () => {
           )}
         </button>
 
-        <nav className="flex-1 py-8 px-4 space-y-2">
+        <nav className="flex-1 py-6 px-3 space-y-1.5">
           {canView(Tab.DASHBOARD) && (
             <NavItem 
               icon={<Home size={20} />} 
@@ -515,7 +522,7 @@ const App: React.FC = () => {
               isOpen={sidebarOpen}
             />
           )}
-          <div className="pt-4 mt-4 border-t border-slate-800" />
+          <div className="pt-4 mt-4 border-t border-white/10" />
           <NavItem
             icon={<Activity size={20} />}
             label="AlphaPulse"
@@ -546,7 +553,7 @@ const App: React.FC = () => {
         </nav>
 
         {canView(Tab.KIOSKS) && (
-          <div className="p-4 border-t border-slate-800">
+          <div className="p-3 border-t border-white/10">
             <button
               onClick={() => {
                 if (updatePanelOpen) {
@@ -557,8 +564,8 @@ const App: React.FC = () => {
               }}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
                 updatePanelOpen
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-sky-500/20 border border-sky-300/40 text-sky-100 shadow-sm'
+                  : 'border border-transparent text-slate-300 hover:bg-white/8 hover:border-white/15 hover:text-white'
               } ${!sidebarOpen ? 'justify-center' : ''}`}
               title="Update database"
             >
@@ -572,10 +579,10 @@ const App: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
+      <main className={`flex-1 transition-[margin] duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
         
         {/* Top Header */}
-        <header className="h-20 bg-white border-b border-slate-200 sticky top-0 z-10 px-8 flex items-center justify-between">
+        <header className="h-20 bg-white/70 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-10 px-6 lg:px-8 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
               <span>
@@ -712,7 +719,7 @@ const App: React.FC = () => {
         </header>
 
         {/* Dynamic Page Content */}
-        <div className="p-8">
+        <div className="p-5 lg:p-7">
           {renderContent()}
         </div>
 
@@ -1075,10 +1082,10 @@ type NavItemProps = {
 const NavItem: React.FC<NavItemProps> = (props) => {
   const { icon, label, isActive, isOpen } = props;
   const className = `
-        w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all
+        w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all
         ${isActive 
-          ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' 
-          : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+          ? 'bg-sky-500/18 border-sky-300/40 text-sky-100 shadow-sm' 
+          : 'border-transparent text-slate-300 hover:bg-white/8 hover:border-white/15 hover:text-white'
         }
         ${!isOpen && 'justify-center'}
       `;

@@ -209,8 +209,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
   };
 
   return (
-    <div className="space-y-6">
-      <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6 md:p-8">
+    <div className="space-y-7">
+      <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6 md:p-7">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-slate-900">Dashboard Overview</h2>
@@ -228,7 +228,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
               href={link.url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+              className="inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all hover:-translate-y-0.5 hover:bg-slate-50"
             >
               {link.label}
             </a>
@@ -238,14 +238,14 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={orderedCards.map((card) => card.id)} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {orderedCards.map((card) => (
               <SortableCard key={card.id} id={card.id}>
                 <div
-                  className={`h-full bg-white border rounded-3xl shadow-sm p-6 flex flex-col justify-between transition-all duration-200 ${
+                  className={`h-full bg-white border rounded-3xl shadow-sm p-5 flex flex-col justify-between transition-all duration-200 ${
                     expandedCardId === card.id
-                      ? "border-blue-200 shadow-lg shadow-blue-100/60"
-                      : "border-slate-100 hover:border-slate-200 hover:shadow-md"
+                      ? "border-sky-200 shadow-md shadow-sky-100/50"
+                      : "border-slate-100 hover:-translate-y-0.5 hover:border-slate-200 hover:shadow-md"
                   }`}
                 >
                   <button
@@ -256,7 +256,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
                     <div>
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-11 w-11 rounded-2xl bg-slate-50 flex items-center justify-center">
+                          <div className="h-11 w-11 rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 flex items-center justify-center">
                             {card.icon}
                           </div>
                           <div>
@@ -272,7 +272,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
                         />
                       </div>
                       {expandedCardId === card.id && (
-                        <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
+                        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-3 text-sm leading-6 text-slate-700">
                           <p className="text-sm font-medium text-slate-900">{card.description}</p>
                           <p className="mt-2">{card.details}</p>
                         </div>
@@ -281,7 +281,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
                   </button>
                   <button
                     type="button"
-                    className="mt-6 inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                    className="mt-5 inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
                     onClick={(event) => {
                       event.stopPropagation();
                       card.onClick();
