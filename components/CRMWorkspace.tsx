@@ -3,7 +3,6 @@ import {
   Activity,
   Bot,
   CalendarCheck2,
-  CheckSquare,
   MessageSquare,
   PhoneCall,
   Plus,
@@ -21,22 +20,24 @@ import {
   updateCrmLeadInApi,
 } from "../services/crmApi";
 
-type TodoItem = {
-  id: string;
-  title: string;
-  done: boolean;
-};
+type UpsPriority = "Hot" | "Today" | "Nurture";
+type UpsLane = "Unattended" | "Be-Back" | "Quote Follow-up";
 
 type UpsItem = {
   id: string;
-  title: string;
+  customer: string;
+  task: string;
+  owner: string;
+  lane: UpsLane;
+  priority: UpsPriority;
+  dueAt: string;
+  channel: CRMLeadChannel;
   done: boolean;
 };
 
 type CRMSyncMode = "POS_DB" | "LOCAL_STORAGE";
 
 const LEAD_KEY = "fd_crm_leads_v1";
-const TODO_KEY = "fd_crm_todos_v1";
 const AUTOMATION_KEY = "fd_crm_automations_v1";
 const UPS_KEY = "fd_crm_ups_list_v1";
 
@@ -148,20 +149,40 @@ const seedLeads: CRMLead[] = [
   },
 ];
 
-const seedTodos: TodoItem[] = [
-  { id: "todo-1", title: "Lead intake flow", done: true },
-  { id: "todo-2", title: "Pipeline stage board", done: true },
-  { id: "todo-3", title: "Contact 360 editor", done: true },
-  { id: "todo-4", title: "Follow-up queue", done: true },
-  { id: "todo-5", title: "Unified inbox snapshot", done: true },
-  { id: "todo-6", title: "Automation control center", done: true },
-  { id: "todo-7", title: "Message templates", done: true },
-];
-
 const seedUpsList: UpsItem[] = [
-  { id: "ups-1", title: "Priority callback list for quoted leads", done: false },
-  { id: "ups-2", title: "Review top 10 high-budget opportunities", done: false },
-  { id: "ups-3", title: "Prep manager special upsell bundle", done: true },
+  {
+    id: "ups-1",
+    customer: "Jordan Family",
+    task: "Confirm sectional fabric + financing option",
+    owner: "Alex",
+    lane: "Unattended",
+    priority: "Hot",
+    dueAt: todayIso(),
+    channel: "Webchat",
+    done: false,
+  },
+  {
+    id: "ups-2",
+    customer: "Avery Retail",
+    task: "Send revised bedroom package quote",
+    owner: "Morgan",
+    lane: "Quote Follow-up",
+    priority: "Today",
+    dueAt: addDaysIso(1),
+    channel: "Phone",
+    done: false,
+  },
+  {
+    id: "ups-3",
+    customer: "Miller Home",
+    task: "Re-engage on payment split question",
+    owner: "Jordan",
+    lane: "Be-Back",
+    priority: "Nurture",
+    dueAt: addDaysIso(2),
+    channel: "SMS",
+    done: true,
+  },
 ];
 
 const seedAutomations: CRMAutomationRule[] = [
@@ -218,12 +239,37 @@ const stagePillClass = (stage: CRMLeadStage) => {
   return "border-slate-200 bg-slate-50 text-slate-700";
 };
 
+const upsPriorityClass = (priority: UpsPriority) => {
+  if (priority === "Hot") return "border-rose-200 bg-rose-50 text-rose-700";
+  if (priority === "Today") return "border-amber-200 bg-amber-50 text-amber-700";
+  return "border-blue-200 bg-blue-50 text-blue-700";
+};
+
+const upsLaneClass = (lane: UpsLane) => {
+  if (lane === "Unattended") return "border-violet-200 bg-violet-50 text-violet-700";
+  if (lane === "Quote Follow-up") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  return "border-slate-200 bg-slate-50 text-slate-700";
+};
+
+const priorityRank: Record<UpsPriority, number> = {
+  Hot: 0,
+  Today: 1,
+  Nurture: 2,
+};
+
 const CRMWorkspace: React.FC = () => {
   const [syncMode, setSyncMode] = useState<CRMSyncMode>("LOCAL_STORAGE");
   const [leads, setLeads] = useState<CRMLead[]>(() => readLocal(LEAD_KEY, seedLeads));
-  const [todos, setTodos] = useState<TodoItem[]>(() => readLocal(TODO_KEY, seedTodos));
   const [upsList, setUpsList] = useState<UpsItem[]>(() => readLocal(UPS_KEY, seedUpsList));
-  const [upsInput, setUpsInput] = useState("");
+  const [upsDraft, setUpsDraft] = useState({
+    customer: "",
+    task: "",
+    owner: "Unassigned",
+    lane: "Unattended" as UpsLane,
+    priority: "Today" as UpsPriority,
+    dueAt: todayIso(),
+    channel: "SMS" as CRMLeadChannel,
+  });
   const [automations, setAutomations] = useState<CRMAutomationRule[]>(() => readLocal(AUTOMATION_KEY, seedAutomations));
   const [selectedLeadId, setSelectedLeadId] = useState<string>(() => readLocal(LEAD_KEY, seedLeads)[0]?.id ?? "");
   const [copiedTemplate, setCopiedTemplate] = useState<string | null>(null);
@@ -322,14 +368,6 @@ const CRMWorkspace: React.FC = () => {
 
   useEffect(() => {
     try {
-      localStorage.setItem(TODO_KEY, JSON.stringify(todos));
-    } catch {
-      // ignore storage failures
-    }
-  }, [todos]);
-
-  useEffect(() => {
-    try {
       localStorage.setItem(UPS_KEY, JSON.stringify(upsList));
     } catch {
       // ignore storage failures
@@ -359,15 +397,6 @@ const CRMWorkspace: React.FC = () => {
     const overdue = leads.filter((lead) => !["Won", "Lost"].includes(lead.stage) && lead.dueDate < today).length;
     return { open, appointments, quoted, won, overdue };
   }, [leads]);
-
-  const completion = useMemo(() => {
-    const done = todos.filter((item) => item.done).length;
-    return {
-      done,
-      total: todos.length,
-      percent: todos.length ? Math.round((done / todos.length) * 100) : 0,
-    };
-  }, [todos]);
 
   const selectedLead = useMemo(
     () => leads.find((lead) => lead.id === selectedLeadId) ?? null,
@@ -400,6 +429,23 @@ const CRMWorkspace: React.FC = () => {
       .sort((a, b) => b.lastTouch.localeCompare(a.lastTouch))
       .slice(0, 7);
   }, [leads]);
+
+  const upsStats = useMemo(() => {
+    const active = upsList.filter((item) => !item.done).length;
+    const unattended = upsList.filter((item) => !item.done && item.lane === "Unattended").length;
+    const hot = upsList.filter((item) => !item.done && item.priority === "Hot").length;
+    const completed = upsList.filter((item) => item.done).length;
+    return { active, unattended, hot, completed };
+  }, [upsList]);
+
+  const orderedUpsList = useMemo(() => {
+    return [...upsList].sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      const byPriority = priorityRank[a.priority] - priorityRank[b.priority];
+      if (byPriority !== 0) return byPriority;
+      return a.dueAt.localeCompare(b.dueAt);
+    });
+  }, [upsList]);
 
   const updateLead = (id: string, patch: Partial<CRMLead>) => {
     setLeads((current) =>
@@ -464,19 +510,6 @@ const CRMWorkspace: React.FC = () => {
     });
   };
 
-  const toggleTodo = (id: string) => {
-    setTodos((current) =>
-      current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              done: !item.done,
-            }
-          : item
-      )
-    );
-  };
-
   const toggleUpsItem = (id: string) => {
     setUpsList((current) =>
       current.map((item) =>
@@ -491,15 +524,28 @@ const CRMWorkspace: React.FC = () => {
   };
 
   const addUpsItem = () => {
-    const title = upsInput.trim();
-    if (!title) return;
+    if (!upsDraft.customer.trim() || !upsDraft.task.trim()) return;
     const created: UpsItem = {
       id: `ups-${Date.now()}`,
-      title,
+      customer: upsDraft.customer.trim(),
+      task: upsDraft.task.trim(),
+      owner: upsDraft.owner.trim() || "Unassigned",
+      lane: upsDraft.lane,
+      priority: upsDraft.priority,
+      dueAt: upsDraft.dueAt || todayIso(),
+      channel: upsDraft.channel,
       done: false,
     };
     setUpsList((current) => [created, ...current]);
-    setUpsInput("");
+    setUpsDraft((current) => ({
+      ...current,
+      customer: "",
+      task: "",
+      dueAt: todayIso(),
+      priority: "Today",
+      lane: "Unattended",
+      channel: "SMS",
+    }));
   };
 
   const toggleAutomation = (id: string) => {
@@ -596,68 +642,175 @@ const CRMWorkspace: React.FC = () => {
       <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900">CRM Finish Checklist</h3>
+            <h3 className="text-lg font-semibold text-slate-900">UPS Queue</h3>
             <p className="text-sm text-slate-500">
-              Keep this list green as we complete the project. Progress: {completion.done}/{completion.total} ({completion.percent}%)
+              Clean up-list view with unattended, be-back, and quote follow-up lanes.
             </p>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
-            <CheckSquare size={14} /> Project TODO
+          <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+            Perq/Podium style priority queue
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
-          {todos.map((item) => (
-            <label
-              key={item.id}
-              className="inline-flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
-            >
-              <input type="checkbox" checked={item.done} onChange={() => toggleTodo(item.id)} />
-              {item.title}
-            </label>
-          ))}
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-[11px] uppercase tracking-wide text-slate-500">Active</div>
+            <div className="mt-1 text-xl font-semibold text-slate-900">{upsStats.active}</div>
+          </div>
+          <div className="rounded-2xl border border-violet-200 bg-violet-50 p-3">
+            <div className="text-[11px] uppercase tracking-wide text-violet-700">Unattended</div>
+            <div className="mt-1 text-xl font-semibold text-violet-900">{upsStats.unattended}</div>
+          </div>
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3">
+            <div className="text-[11px] uppercase tracking-wide text-rose-700">Hot Priority</div>
+            <div className="mt-1 text-xl font-semibold text-rose-900">{upsStats.hot}</div>
+          </div>
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+            <div className="text-[11px] uppercase tracking-wide text-emerald-700">Completed</div>
+            <div className="mt-1 text-xl font-semibold text-emerald-900">{upsStats.completed}</div>
+          </div>
         </div>
-      </section>
 
-      <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">UPS List</h3>
-            <p className="text-sm text-slate-500">
-              Track your current UPS priorities for the CRM team.
-            </p>
-          </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
-            <CheckSquare size={14} /> Priority Queue
-          </div>
-        </div>
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
           <input
-            value={upsInput}
-            onChange={(event) => setUpsInput(event.target.value)}
+            value={upsDraft.customer}
+            onChange={(event) => setUpsDraft((current) => ({ ...current, customer: event.target.value }))}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            placeholder="Customer"
+          />
+          <input
+            value={upsDraft.task}
+            onChange={(event) => setUpsDraft((current) => ({ ...current, task: event.target.value }))}
             onKeyDown={(event) => {
               if (event.key === "Enter") addUpsItem();
             }}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            placeholder="Add UPS list item"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            placeholder="Next action"
+          />
+          <input
+            value={upsDraft.owner}
+            onChange={(event) => setUpsDraft((current) => ({ ...current, owner: event.target.value }))}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            placeholder="Owner"
           />
           <button
             type="button"
             onClick={addUpsItem}
             className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
           >
-            <Plus size={14} /> Add
+            <Plus size={14} /> Add UPS Item
           </button>
         </div>
-        <div className="mt-4 grid grid-cols-1 gap-2">
-          {upsList.map((item) => (
-            <label
-              key={item.id}
-              className="inline-flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
-            >
-              <input type="checkbox" checked={item.done} onChange={() => toggleUpsItem(item.id)} />
-              <span className={item.done ? "line-through text-slate-400" : ""}>{item.title}</span>
-            </label>
-          ))}
+
+        <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+          <select
+            value={upsDraft.priority}
+            onChange={(event) =>
+              setUpsDraft((current) => ({
+                ...current,
+                priority: event.target.value as UpsPriority,
+              }))
+            }
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          >
+            <option value="Hot">Hot</option>
+            <option value="Today">Today</option>
+            <option value="Nurture">Nurture</option>
+          </select>
+          <select
+            value={upsDraft.lane}
+            onChange={(event) =>
+              setUpsDraft((current) => ({
+                ...current,
+                lane: event.target.value as UpsLane,
+              }))
+            }
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          >
+            <option value="Unattended">Unattended</option>
+            <option value="Be-Back">Be-Back</option>
+            <option value="Quote Follow-up">Quote Follow-up</option>
+          </select>
+          <select
+            value={upsDraft.channel}
+            onChange={(event) =>
+              setUpsDraft((current) => ({
+                ...current,
+                channel: event.target.value as CRMLeadChannel,
+              }))
+            }
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          >
+            <option value="SMS">SMS</option>
+            <option value="Webchat">Webchat</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Instagram">Instagram</option>
+            <option value="Phone">Phone</option>
+          </select>
+          <input
+            type="date"
+            value={upsDraft.dueAt}
+            onChange={(event) => setUpsDraft((current) => ({ ...current, dueAt: event.target.value }))}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
+                <th className="py-2 pr-4">Customer</th>
+                <th className="py-2 pr-4">Action</th>
+                <th className="py-2 pr-4">Lane</th>
+                <th className="py-2 pr-4">Priority</th>
+                <th className="py-2 pr-4">Owner</th>
+                <th className="py-2 pr-4">Due</th>
+                <th className="py-2 pr-4">Channel</th>
+                <th className="py-2 pr-4">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {!orderedUpsList.length ? (
+                <tr>
+                  <td colSpan={8} className="py-4 text-center text-sm text-slate-500">
+                    No UPS items yet.
+                  </td>
+                </tr>
+              ) : (
+                orderedUpsList.map((item) => (
+                  <tr key={item.id} className={item.done ? "bg-slate-50/70" : ""}>
+                    <td className="py-3 pr-4 font-semibold text-slate-900">{item.customer}</td>
+                    <td className={`py-3 pr-4 ${item.done ? "text-slate-400 line-through" : "text-slate-700"}`}>{item.task}</td>
+                    <td className="py-3 pr-4">
+                      <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${upsLaneClass(item.lane)}`}>
+                        {item.lane}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${upsPriorityClass(item.priority)}`}>
+                        {item.priority}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4 text-slate-700">{item.owner}</td>
+                    <td className="py-3 pr-4 text-slate-700">{item.dueAt}</td>
+                    <td className="py-3 pr-4 text-slate-700">{item.channel}</td>
+                    <td className="py-3 pr-4">
+                      <button
+                        type="button"
+                        onClick={() => toggleUpsItem(item.id)}
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                          item.done
+                            ? "bg-slate-200 text-slate-700"
+                            : "bg-emerald-600 text-white"
+                        }`}
+                      >
+                        {item.done ? "Reopen" : "Done"}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
 
