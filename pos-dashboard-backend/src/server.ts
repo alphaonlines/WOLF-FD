@@ -8,6 +8,29 @@ import { promisify } from "util";
 import multer from "multer";
 import { Pool } from "pg";
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import {
+  parseCrmBool,
+  parseCrmChannel,
+  parseCrmDate,
+  parseCrmLeadId,
+  parseCrmStage,
+  parseDateParam,
+  parseIntBody,
+  parseTaskDeadline,
+  parseTaskIdParam,
+  parseTaskPriority,
+  parseTaskStatus,
+  parseTextParam,
+} from "./parsers";
+import {
+  ITEM_DATE_FIELD,
+  prefixedDateField,
+  SAFE_FINANCE_BALANCE,
+  SAFE_FINANCE_FEE,
+  SAFE_GRAND_TOTAL,
+  SAFE_PROFIT,
+  SAFE_TOTAL_FINANCE_AMT,
+} from "./sqlFields";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -386,98 +409,6 @@ async function ensureDefaultAuthUser() {
   `);
 }
 
-function parseDateParam(v: any, fallback: string) {
-  if (!v || typeof v !== "string") return fallback;
-  // Minimal safety: YYYY-MM-DD
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return fallback;
-  return v;
-}
-
-function parseTextParam(v: any): string | null {
-  if (!v || typeof v !== "string") return null;
-  const t = v.trim();
-  return t ? t : null;
-}
-
-function parseTaskStatus(v: any): "TODO" | "IN_PROGRESS" | "DONE" | null {
-  if (!v || typeof v !== "string") return null;
-  const t = v.trim().toUpperCase();
-  if (t === "TODO" || t === "IN_PROGRESS" || t === "DONE") return t;
-  return null;
-}
-
-function parseTaskPriority(v: any): "low" | "medium" | "high" | null {
-  if (!v || typeof v !== "string") return null;
-  const t = v.trim().toLowerCase();
-  if (t === "low" || t === "medium" || t === "high") return t as any;
-  return null;
-}
-
-function parseTaskDeadline(v: any): string | null {
-  if (v === null) return null;
-  if (v === undefined) return null;
-  if (typeof v !== "string") return null;
-  const t = v.trim();
-  if (!t) return null;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null;
-  return t;
-}
-
-function parseIntBody(v: any): number | null {
-  if (v === null || v === undefined) return null;
-  const n = typeof v === "number" ? v : Number(v);
-  if (!Number.isFinite(n)) return null;
-  return Math.trunc(n);
-}
-
-function parseTaskIdParam(v: any): number | null {
-  if (!v || typeof v !== "string") return null;
-  const n = Number(v);
-  if (!Number.isFinite(n)) return null;
-  const id = Math.trunc(n);
-  return id > 0 ? id : null;
-}
-
-const CRM_STAGES = ["New", "Contacted", "Appointment", "Quoted", "Won", "Lost"] as const;
-const CRM_CHANNELS = ["SMS", "Webchat", "Facebook", "Instagram", "Phone"] as const;
-
-function parseCrmLeadId(v: any): string | null {
-  if (!v || typeof v !== "string") return null;
-  const id = v.trim();
-  return id || null;
-}
-
-function parseCrmStage(v: any): (typeof CRM_STAGES)[number] | null {
-  if (!v || typeof v !== "string") return null;
-  const t = v.trim();
-  return CRM_STAGES.includes(t as any) ? (t as any) : null;
-}
-
-function parseCrmChannel(v: any): (typeof CRM_CHANNELS)[number] | null {
-  if (!v || typeof v !== "string") return null;
-  const t = v.trim();
-  return CRM_CHANNELS.includes(t as any) ? (t as any) : null;
-}
-
-function parseCrmDate(v: any): string | null {
-  if (v === null || v === undefined) return null;
-  if (typeof v !== "string") return null;
-  const t = v.trim();
-  if (!t) return null;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null;
-  return t;
-}
-
-function parseCrmBool(v: any): boolean | null {
-  if (typeof v === "boolean") return v;
-  if (typeof v === "string") {
-    const t = v.trim().toLowerCase();
-    if (t === "true") return true;
-    if (t === "false") return false;
-  }
-  return null;
-}
-
 async function ensureCrmSchema() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS crm_leads (
@@ -514,44 +445,6 @@ async function ensureCrmSchema() {
     );
   `);
 }
-
-const SAFE_GRAND_TOTAL = `
-  CASE
-    WHEN grand_total IS NULL OR grand_total <> grand_total THEN 0
-    ELSE grand_total
-  END
-`;
-
-const SAFE_PROFIT = `
-  CASE
-    WHEN profit IS NULL OR profit <> profit THEN 0
-    ELSE profit
-  END
-`;
-
-const SAFE_TOTAL_FINANCE_AMT = `
-  CASE
-    WHEN total_finance_amt IS NULL OR total_finance_amt <> total_finance_amt THEN 0
-    ELSE total_finance_amt
-  END
-`;
-
-const SAFE_FINANCE_FEE = `
-  CASE
-    WHEN finance_fee IS NULL OR finance_fee <> finance_fee THEN 0
-    ELSE finance_fee
-  END
-`;
-
-const SAFE_FINANCE_BALANCE = `
-  CASE
-    WHEN finance_balance IS NULL OR finance_balance <> finance_balance THEN 0
-    ELSE finance_balance
-  END
-`;
-
-const ITEM_DATE_FIELD = "sale_date";
-const prefixedDateField = (p: string) => `${p}.sale_date`;
 
 // Health
 app.get("/health", async (_req, res) => {
