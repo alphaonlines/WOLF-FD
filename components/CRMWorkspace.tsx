@@ -10,27 +10,16 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
-
-type LeadStage = "New" | "Contacted" | "Appointment" | "Quoted" | "Won" | "Lost";
-type LeadChannel = "SMS" | "Webchat" | "Facebook" | "Instagram" | "Phone";
-
-type LeadItem = {
-  id: string;
-  name: string;
-  phone: string;
-  channel: LeadChannel;
-  source: string;
-  interest: string;
-  budget: string;
-  store: string;
-  owner: string;
-  stage: LeadStage;
-  nextAction: string;
-  dueDate: string;
-  lastMessage: string;
-  lastTouch: string;
-  notes: string;
-};
+import type { CRMAutomationRule, CRMLead, CRMLeadChannel, CRMLeadStage } from "../types";
+import { checkPosBackendHealthy } from "../services/posBackendApi";
+import {
+  createCrmAutomationInApi,
+  createCrmLeadInApi,
+  fetchCrmAutomationsFromApi,
+  fetchCrmLeadsFromApi,
+  updateCrmAutomationInApi,
+  updateCrmLeadInApi,
+} from "../services/crmApi";
 
 type TodoItem = {
   id: string;
@@ -38,18 +27,13 @@ type TodoItem = {
   done: boolean;
 };
 
-type AutomationRule = {
-  id: string;
-  label: string;
-  description: string;
-  enabled: boolean;
-};
+type CRMSyncMode = "POS_DB" | "LOCAL_STORAGE";
 
 const LEAD_KEY = "fd_crm_leads_v1";
 const TODO_KEY = "fd_crm_todos_v1";
 const AUTOMATION_KEY = "fd_crm_automations_v1";
 
-const STAGES: LeadStage[] = ["New", "Contacted", "Appointment", "Quoted", "Won", "Lost"];
+const STAGES: CRMLeadStage[] = ["New", "Contacted", "Appointment", "Quoted", "Won", "Lost"];
 
 const readLocal = <T,>(key: string, fallback: T): T => {
   try {
@@ -69,7 +53,7 @@ const addDaysIso = (days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-const seedLeads: LeadItem[] = [
+const seedLeads: CRMLead[] = [
   {
     id: "lead-1",
     name: "Jordan Family",
@@ -167,7 +151,7 @@ const seedTodos: TodoItem[] = [
   { id: "todo-7", title: "Message templates", done: true },
 ];
 
-const seedAutomations: AutomationRule[] = [
+const seedAutomations: CRMAutomationRule[] = [
   {
     id: "auto-1",
     label: "10-minute speed-to-lead escalation",
@@ -212,7 +196,7 @@ const templates = [
   },
 ];
 
-const stagePillClass = (stage: LeadStage) => {
+const stagePillClass = (stage: CRMLeadStage) => {
   if (stage === "Won") return "border-emerald-200 bg-emerald-50 text-emerald-700";
   if (stage === "Lost") return "border-rose-200 bg-rose-50 text-rose-700";
   if (stage === "Quoted") return "border-blue-200 bg-blue-50 text-blue-700";
@@ -222,21 +206,96 @@ const stagePillClass = (stage: LeadStage) => {
 };
 
 const CRMWorkspace: React.FC = () => {
-  const [leads, setLeads] = useState<LeadItem[]>(() => readLocal(LEAD_KEY, seedLeads));
+  const [syncMode, setSyncMode] = useState<CRMSyncMode>("LOCAL_STORAGE");
+  const [leads, setLeads] = useState<CRMLead[]>(() => readLocal(LEAD_KEY, seedLeads));
   const [todos, setTodos] = useState<TodoItem[]>(() => readLocal(TODO_KEY, seedTodos));
-  const [automations, setAutomations] = useState<AutomationRule[]>(() => readLocal(AUTOMATION_KEY, seedAutomations));
+  const [automations, setAutomations] = useState<CRMAutomationRule[]>(() => readLocal(AUTOMATION_KEY, seedAutomations));
   const [selectedLeadId, setSelectedLeadId] = useState<string>(() => readLocal(LEAD_KEY, seedLeads)[0]?.id ?? "");
   const [copiedTemplate, setCopiedTemplate] = useState<string | null>(null);
   const [newLead, setNewLead] = useState({
     name: "",
     phone: "",
-    channel: "SMS" as LeadChannel,
+    channel: "SMS" as CRMLeadChannel,
     source: "Website",
     interest: "",
     budget: "",
     store: "FD7",
     owner: "Unassigned",
   });
+
+  useEffect(() => {
+    let stopped = false;
+    let pollId: number | null = null;
+
+    const seedApiIfEmpty = async () => {
+      const [apiLeads, apiAutomations] = await Promise.all([fetchCrmLeadsFromApi(), fetchCrmAutomationsFromApi()]);
+
+      if (!apiLeads.length) {
+        await Promise.all(
+          seedLeads.map(async (lead) => {
+            try {
+              await createCrmLeadInApi(lead);
+            } catch {
+              // If another client seeded first, ignore duplicate inserts.
+            }
+          })
+        );
+      }
+
+      if (!apiAutomations.length) {
+        await Promise.all(
+          seedAutomations.map(async (rule) => {
+            try {
+              await createCrmAutomationInApi(rule);
+            } catch {
+              // If another client seeded first, ignore duplicate inserts.
+            }
+          })
+        );
+      }
+    };
+
+    const loadFromApi = async () => {
+      try {
+        const [apiLeads, apiAutomations] = await Promise.all([fetchCrmLeadsFromApi(), fetchCrmAutomationsFromApi()]);
+
+        if (!apiLeads.length || !apiAutomations.length) {
+          await seedApiIfEmpty();
+        }
+
+        const [freshLeads, freshAutomations] = await Promise.all([fetchCrmLeadsFromApi(), fetchCrmAutomationsFromApi()]);
+        if (stopped) return;
+        setLeads(freshLeads.length ? freshLeads : seedLeads);
+        setAutomations(freshAutomations.length ? freshAutomations : seedAutomations);
+      } catch (err) {
+        console.warn("CRM sync failed; using local storage fallback:", err);
+        if (!stopped) setSyncMode("LOCAL_STORAGE");
+      }
+    };
+
+    const startSync = async () => {
+      const healthy = await checkPosBackendHealthy();
+      if (stopped) return;
+      if (!healthy) {
+        setSyncMode("LOCAL_STORAGE");
+        return;
+      }
+
+      setSyncMode("POS_DB");
+      await loadFromApi();
+      if (stopped) return;
+      pollId = window.setInterval(() => {
+        void loadFromApi();
+      }, 3000);
+    };
+
+    void startSync();
+
+    return () => {
+      stopped = true;
+      if (pollId !== null) window.clearInterval(pollId);
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -293,7 +352,7 @@ const CRMWorkspace: React.FC = () => {
   );
 
   const leadsByStage = useMemo(() => {
-    const grouped: Record<LeadStage, LeadItem[]> = {
+    const grouped: Record<CRMLeadStage, CRMLead[]> = {
       New: [],
       Contacted: [],
       Appointment: [],
@@ -319,7 +378,7 @@ const CRMWorkspace: React.FC = () => {
       .slice(0, 7);
   }, [leads]);
 
-  const updateLead = (id: string, patch: Partial<LeadItem>) => {
+  const updateLead = (id: string, patch: Partial<CRMLead>) => {
     setLeads((current) =>
       current.map((lead) =>
         lead.id === id
@@ -330,12 +389,19 @@ const CRMWorkspace: React.FC = () => {
           : lead
       )
     );
+
+    if (syncMode === "POS_DB") {
+      void updateCrmLeadInApi(id, patch).catch((err) => {
+        console.warn("Failed to update CRM lead in API; switching to local mode:", err);
+        setSyncMode("LOCAL_STORAGE");
+      });
+    }
   };
 
   const addLead = () => {
     if (!newLead.name.trim() || !newLead.phone.trim() || !newLead.interest.trim()) return;
 
-    const created: LeadItem = {
+    const created: CRMLead = {
       id: `lead-${Date.now()}`,
       name: newLead.name.trim(),
       phone: newLead.phone.trim(),
@@ -354,6 +420,14 @@ const CRMWorkspace: React.FC = () => {
     };
 
     setLeads((current) => [created, ...current]);
+
+    if (syncMode === "POS_DB") {
+      void createCrmLeadInApi(created).catch((err) => {
+        console.warn("Failed to create CRM lead in API; switching to local mode:", err);
+        setSyncMode("LOCAL_STORAGE");
+      });
+    }
+
     setSelectedLeadId(created.id);
     setNewLead({
       name: "",
@@ -381,16 +455,27 @@ const CRMWorkspace: React.FC = () => {
   };
 
   const toggleAutomation = (id: string) => {
+    const currentRule = automations.find((item) => item.id === id);
+    if (!currentRule) return;
+    const nextEnabled = !currentRule.enabled;
+
     setAutomations((current) =>
       current.map((item) =>
         item.id === id
           ? {
               ...item,
-              enabled: !item.enabled,
+              enabled: nextEnabled,
             }
           : item
       )
     );
+
+    if (syncMode === "POS_DB") {
+      void updateCrmAutomationInApi(id, nextEnabled).catch((err) => {
+        console.warn("Failed to toggle CRM automation in API; switching to local mode:", err);
+        setSyncMode("LOCAL_STORAGE");
+      });
+    }
   };
 
   const copyTemplate = async (id: string, body: string) => {
@@ -413,6 +498,15 @@ const CRMWorkspace: React.FC = () => {
             <p className="text-sm text-slate-500">
               Podium/Perq-inspired workflow focused on speed-to-lead, stage control, and close-rate consistency.
             </p>
+            <div
+              className={`mt-2 inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${
+                syncMode === "POS_DB"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-amber-200 bg-amber-50 text-amber-700"
+              }`}
+            >
+              {syncMode === "POS_DB" ? "Sync: POS DB (shared)" : "Sync: Browser fallback"}
+            </div>
           </div>
           <button
             type="button"
@@ -513,7 +607,7 @@ const CRMWorkspace: React.FC = () => {
                           value={lead.stage}
                           onChange={(event) =>
                             updateLead(lead.id, {
-                              stage: event.target.value as LeadStage,
+                              stage: event.target.value as CRMLeadStage,
                               lastTouch: `${todayIso()} 09:00`,
                             })
                           }
@@ -585,7 +679,9 @@ const CRMWorkspace: React.FC = () => {
               />
               <select
                 value={newLead.channel}
-                onChange={(event) => setNewLead((current) => ({ ...current, channel: event.target.value as LeadChannel }))}
+                onChange={(event) =>
+                  setNewLead((current) => ({ ...current, channel: event.target.value as CRMLeadChannel }))
+                }
                 className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
               >
                 <option value="SMS">SMS</option>

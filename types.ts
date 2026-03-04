@@ -54,3 +54,31 @@ export interface SocialPost {
   scheduledAt?: string;
   feedback?: string;
 }
+
+export type CRMLeadStage = "New" | "Contacted" | "Appointment" | "Quoted" | "Won" | "Lost";
+export type CRMLeadChannel = "SMS" | "Webchat" | "Facebook" | "Instagram" | "Phone";
+
+export interface CRMLead {
+  id: string;
+  name: string;
+  phone: string;
+  channel: CRMLeadChannel;
+  source: string;
+  interest: string;
+  budget: string;
+  store: string;
+  owner: string;
+  stage: CRMLeadStage;
+  nextAction: string;
+  dueDate: string;
+  lastMessage: string;
+  lastTouch: string;
+  notes: string;
+}
+
+export interface CRMAutomationRule {
+  id: string;
+  label: string;
+  description: string;
+  enabled: boolean;
+}

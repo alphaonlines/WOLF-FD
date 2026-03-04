@@ -227,3 +227,77 @@ ALTER TABLE tasks ALTER COLUMN created_at SET DEFAULT now();
 ALTER TABLE tasks ALTER COLUMN updated_at SET DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_tasks_status_sort ON tasks(status, sort_index, id);
+
+-- CRM: shared lead pipeline + automation controls
+CREATE TABLE IF NOT EXISTS crm_leads (
+  id           TEXT PRIMARY KEY,
+  name         TEXT NOT NULL,
+  phone        TEXT NOT NULL,
+  channel      TEXT NOT NULL DEFAULT 'SMS',
+  source       TEXT NOT NULL DEFAULT 'Website',
+  interest     TEXT NOT NULL DEFAULT '',
+  budget       TEXT NOT NULL DEFAULT 'Unspecified',
+  store        TEXT NOT NULL DEFAULT 'FD7',
+  owner        TEXT NOT NULL DEFAULT 'Unassigned',
+  stage        TEXT NOT NULL DEFAULT 'New',
+  next_action  TEXT NOT NULL DEFAULT 'First contact',
+  due_date     DATE NULL,
+  last_message TEXT NOT NULL DEFAULT '',
+  last_touch   TEXT NOT NULL DEFAULT '',
+  notes        TEXT NOT NULL DEFAULT '',
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS channel TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS source TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS interest TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS budget TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS store TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS owner TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS stage TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS next_action TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS due_date DATE;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS last_message TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS last_touch TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
+ALTER TABLE crm_leads ALTER COLUMN channel SET DEFAULT 'SMS';
+ALTER TABLE crm_leads ALTER COLUMN source SET DEFAULT 'Website';
+ALTER TABLE crm_leads ALTER COLUMN budget SET DEFAULT 'Unspecified';
+ALTER TABLE crm_leads ALTER COLUMN store SET DEFAULT 'FD7';
+ALTER TABLE crm_leads ALTER COLUMN owner SET DEFAULT 'Unassigned';
+ALTER TABLE crm_leads ALTER COLUMN stage SET DEFAULT 'New';
+ALTER TABLE crm_leads ALTER COLUMN next_action SET DEFAULT 'First contact';
+ALTER TABLE crm_leads ALTER COLUMN last_message SET DEFAULT '';
+ALTER TABLE crm_leads ALTER COLUMN last_touch SET DEFAULT '';
+ALTER TABLE crm_leads ALTER COLUMN notes SET DEFAULT '';
+ALTER TABLE crm_leads ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE crm_leads ALTER COLUMN updated_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_crm_leads_stage_due ON crm_leads(stage, due_date, id);
+CREATE INDEX IF NOT EXISTS idx_crm_leads_owner ON crm_leads(owner);
+
+CREATE TABLE IF NOT EXISTS crm_automations (
+  id          TEXT PRIMARY KEY,
+  label       TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  enabled     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE crm_automations ADD COLUMN IF NOT EXISTS label TEXT;
+ALTER TABLE crm_automations ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE crm_automations ADD COLUMN IF NOT EXISTS enabled BOOLEAN;
+ALTER TABLE crm_automations ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE crm_automations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
+ALTER TABLE crm_automations ALTER COLUMN description SET DEFAULT '';
+ALTER TABLE crm_automations ALTER COLUMN enabled SET DEFAULT TRUE;
+ALTER TABLE crm_automations ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE crm_automations ALTER COLUMN updated_at SET DEFAULT now();

@@ -98,6 +98,83 @@ function parseTaskIdParam(v: any): number | null {
   return id > 0 ? id : null;
 }
 
+const CRM_STAGES = ["New", "Contacted", "Appointment", "Quoted", "Won", "Lost"] as const;
+const CRM_CHANNELS = ["SMS", "Webchat", "Facebook", "Instagram", "Phone"] as const;
+
+function parseCrmLeadId(v: any): string | null {
+  if (!v || typeof v !== "string") return null;
+  const id = v.trim();
+  return id || null;
+}
+
+function parseCrmStage(v: any): (typeof CRM_STAGES)[number] | null {
+  if (!v || typeof v !== "string") return null;
+  const t = v.trim();
+  return CRM_STAGES.includes(t as any) ? (t as any) : null;
+}
+
+function parseCrmChannel(v: any): (typeof CRM_CHANNELS)[number] | null {
+  if (!v || typeof v !== "string") return null;
+  const t = v.trim();
+  return CRM_CHANNELS.includes(t as any) ? (t as any) : null;
+}
+
+function parseCrmDate(v: any): string | null {
+  if (v === null || v === undefined) return null;
+  if (typeof v !== "string") return null;
+  const t = v.trim();
+  if (!t) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null;
+  return t;
+}
+
+function parseCrmBool(v: any): boolean | null {
+  if (typeof v === "boolean") return v;
+  if (typeof v === "string") {
+    const t = v.trim().toLowerCase();
+    if (t === "true") return true;
+    if (t === "false") return false;
+  }
+  return null;
+}
+
+async function ensureCrmSchema() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS crm_leads (
+      id           TEXT PRIMARY KEY,
+      name         TEXT NOT NULL,
+      phone        TEXT NOT NULL,
+      channel      TEXT NOT NULL DEFAULT 'SMS',
+      source       TEXT NOT NULL DEFAULT 'Website',
+      interest     TEXT NOT NULL DEFAULT '',
+      budget       TEXT NOT NULL DEFAULT 'Unspecified',
+      store        TEXT NOT NULL DEFAULT 'FD7',
+      owner        TEXT NOT NULL DEFAULT 'Unassigned',
+      stage        TEXT NOT NULL DEFAULT 'New',
+      next_action  TEXT NOT NULL DEFAULT 'First contact',
+      due_date     DATE NULL,
+      last_message TEXT NOT NULL DEFAULT '',
+      last_touch   TEXT NOT NULL DEFAULT '',
+      notes        TEXT NOT NULL DEFAULT '',
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_stage_due ON crm_leads(stage, due_date, id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_owner ON crm_leads(owner);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS crm_automations (
+      id          TEXT PRIMARY KEY,
+      label       TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      enabled     BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+}
+
 const SAFE_GRAND_TOTAL = `
   CASE
     WHEN grand_total IS NULL OR grand_total <> grand_total THEN 0
@@ -2050,7 +2127,361 @@ app.patch("/api/tasks/:id", async (req, res) => {
   });
 });
 
-const port = Number(process.env.PORT || 5057);
-app.listen(port, () => {
-  console.log(`API listening on http://127.0.0.1:${port}`);
+// CRM leads + automations (shared, stored in local Postgres)
+app.get("/api/crm/leads", async (_req, res) => {
+  const sql = `
+    SELECT
+      id,
+      name,
+      phone,
+      channel,
+      source,
+      interest,
+      budget,
+      store,
+      owner,
+      stage,
+      next_action,
+      due_date,
+      last_message,
+      last_touch,
+      notes,
+      created_at,
+      updated_at
+    FROM crm_leads
+    ORDER BY
+      CASE stage
+        WHEN 'New' THEN 1
+        WHEN 'Contacted' THEN 2
+        WHEN 'Appointment' THEN 3
+        WHEN 'Quoted' THEN 4
+        WHEN 'Won' THEN 5
+        WHEN 'Lost' THEN 6
+        ELSE 99
+      END ASC,
+      due_date ASC NULLS LAST,
+      updated_at DESC,
+      id ASC;
+  `;
+  const r = await pool.query(sql);
+  res.json({
+    rows: r.rows.map((x: any) => ({
+      id: String(x.id ?? ""),
+      name: String(x.name ?? ""),
+      phone: String(x.phone ?? ""),
+      channel: String(x.channel ?? "SMS"),
+      source: String(x.source ?? ""),
+      interest: String(x.interest ?? ""),
+      budget: String(x.budget ?? ""),
+      store: String(x.store ?? ""),
+      owner: String(x.owner ?? "Unassigned"),
+      stage: String(x.stage ?? "New"),
+      next_action: String(x.next_action ?? ""),
+      due_date: x.due_date ? String(x.due_date).slice(0, 10) : null,
+      last_message: String(x.last_message ?? ""),
+      last_touch: String(x.last_touch ?? ""),
+      notes: String(x.notes ?? ""),
+      created_at: x.created_at,
+      updated_at: x.updated_at,
+    })),
+  });
 });
+
+app.post("/api/crm/leads", async (req, res) => {
+  const id = parseCrmLeadId(req.body?.id) ?? `lead-${Date.now()}`;
+  const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+  const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : "";
+  if (!name || !phone) return res.status(400).json({ error: "name and phone are required" });
+
+  const channel = parseCrmChannel(req.body?.channel) ?? "SMS";
+  const source = typeof req.body?.source === "string" && req.body.source.trim() ? req.body.source.trim() : "Website";
+  const interest = typeof req.body?.interest === "string" ? req.body.interest.trim() : "";
+  const budget =
+    typeof req.body?.budget === "string" && req.body.budget.trim() ? req.body.budget.trim() : "Unspecified";
+  const store = typeof req.body?.store === "string" && req.body.store.trim() ? req.body.store.trim() : "FD7";
+  const owner =
+    typeof req.body?.owner === "string" && req.body.owner.trim() ? req.body.owner.trim() : "Unassigned";
+  const stage = parseCrmStage(req.body?.stage) ?? "New";
+  const nextAction =
+    typeof req.body?.next_action === "string" && req.body.next_action.trim()
+      ? req.body.next_action.trim()
+      : "First contact";
+  const dueDate = parseCrmDate(req.body?.due_date);
+  const lastMessage = typeof req.body?.last_message === "string" ? req.body.last_message.trim() : "";
+  const lastTouch = typeof req.body?.last_touch === "string" ? req.body.last_touch.trim() : "";
+  const notes = typeof req.body?.notes === "string" ? req.body.notes.trim() : "";
+
+  const sql = `
+    INSERT INTO crm_leads (
+      id, name, phone, channel, source, interest, budget, store, owner, stage,
+      next_action, due_date, last_message, last_touch, notes, created_at, updated_at
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::date, $13, $14, $15, now(), now())
+    ON CONFLICT (id) DO UPDATE SET
+      name = EXCLUDED.name,
+      phone = EXCLUDED.phone,
+      channel = EXCLUDED.channel,
+      source = EXCLUDED.source,
+      interest = EXCLUDED.interest,
+      budget = EXCLUDED.budget,
+      store = EXCLUDED.store,
+      owner = EXCLUDED.owner,
+      stage = EXCLUDED.stage,
+      next_action = EXCLUDED.next_action,
+      due_date = EXCLUDED.due_date,
+      last_message = EXCLUDED.last_message,
+      last_touch = EXCLUDED.last_touch,
+      notes = EXCLUDED.notes,
+      updated_at = now()
+    RETURNING
+      id, name, phone, channel, source, interest, budget, store, owner, stage,
+      next_action, due_date, last_message, last_touch, notes, created_at, updated_at;
+  `;
+  const r = await pool.query(sql, [
+    id,
+    name,
+    phone,
+    channel,
+    source,
+    interest,
+    budget,
+    store,
+    owner,
+    stage,
+    nextAction,
+    dueDate,
+    lastMessage,
+    lastTouch,
+    notes,
+  ]);
+  const row = r.rows[0];
+  res.status(201).json({
+    row: {
+      id: String(row.id ?? ""),
+      name: String(row.name ?? ""),
+      phone: String(row.phone ?? ""),
+      channel: String(row.channel ?? "SMS"),
+      source: String(row.source ?? ""),
+      interest: String(row.interest ?? ""),
+      budget: String(row.budget ?? ""),
+      store: String(row.store ?? ""),
+      owner: String(row.owner ?? "Unassigned"),
+      stage: String(row.stage ?? "New"),
+      next_action: String(row.next_action ?? ""),
+      due_date: row.due_date ? String(row.due_date).slice(0, 10) : null,
+      last_message: String(row.last_message ?? ""),
+      last_touch: String(row.last_touch ?? ""),
+      notes: String(row.notes ?? ""),
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    },
+  });
+});
+
+app.patch("/api/crm/leads/:id", async (req, res) => {
+  const id = parseCrmLeadId(req.params.id);
+  if (!id) return res.status(400).json({ error: "invalid id" });
+
+  const fields: string[] = [];
+  const values: any[] = [];
+
+  const textField = (name: string, value: any, fallbackEmpty = true) => {
+    if (value === undefined) return;
+    if (typeof value !== "string") return;
+    const trimmed = value.trim();
+    values.push(fallbackEmpty ? trimmed : trimmed || null);
+    fields.push(`${name} = $${values.length}`);
+  };
+
+  textField("name", req.body?.name);
+  textField("phone", req.body?.phone);
+  textField("source", req.body?.source);
+  textField("interest", req.body?.interest);
+  textField("budget", req.body?.budget);
+  textField("store", req.body?.store);
+  textField("owner", req.body?.owner);
+  textField("next_action", req.body?.next_action);
+  textField("last_message", req.body?.last_message);
+  textField("last_touch", req.body?.last_touch);
+  textField("notes", req.body?.notes);
+
+  if (req.body?.channel !== undefined) {
+    const channel = parseCrmChannel(req.body?.channel);
+    if (!channel) return res.status(400).json({ error: "invalid channel" });
+    values.push(channel);
+    fields.push(`channel = $${values.length}`);
+  }
+
+  if (req.body?.stage !== undefined) {
+    const stage = parseCrmStage(req.body?.stage);
+    if (!stage) return res.status(400).json({ error: "invalid stage" });
+    values.push(stage);
+    fields.push(`stage = $${values.length}`);
+  }
+
+  if (req.body?.due_date !== undefined) {
+    const dueDate = req.body?.due_date === "" ? null : parseCrmDate(req.body?.due_date);
+    if (req.body?.due_date !== "" && req.body?.due_date !== null && dueDate === null) {
+      return res.status(400).json({ error: "invalid due_date" });
+    }
+    values.push(dueDate);
+    fields.push(`due_date = $${values.length}::date`);
+  }
+
+  if (!fields.length) return res.status(400).json({ error: "no fields to update" });
+
+  values.push(id);
+  const sql = `
+    UPDATE crm_leads
+    SET ${fields.join(", ")}, updated_at = now()
+    WHERE id = $${values.length}
+    RETURNING
+      id, name, phone, channel, source, interest, budget, store, owner, stage,
+      next_action, due_date, last_message, last_touch, notes, created_at, updated_at;
+  `;
+  const r = await pool.query(sql, values);
+  if (!r.rows.length) return res.status(404).json({ error: "not found" });
+
+  const row = r.rows[0];
+  res.json({
+    row: {
+      id: String(row.id ?? ""),
+      name: String(row.name ?? ""),
+      phone: String(row.phone ?? ""),
+      channel: String(row.channel ?? "SMS"),
+      source: String(row.source ?? ""),
+      interest: String(row.interest ?? ""),
+      budget: String(row.budget ?? ""),
+      store: String(row.store ?? ""),
+      owner: String(row.owner ?? "Unassigned"),
+      stage: String(row.stage ?? "New"),
+      next_action: String(row.next_action ?? ""),
+      due_date: row.due_date ? String(row.due_date).slice(0, 10) : null,
+      last_message: String(row.last_message ?? ""),
+      last_touch: String(row.last_touch ?? ""),
+      notes: String(row.notes ?? ""),
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    },
+  });
+});
+
+app.get("/api/crm/automations", async (_req, res) => {
+  const sql = `
+    SELECT id, label, description, enabled, created_at, updated_at
+    FROM crm_automations
+    ORDER BY id ASC;
+  `;
+  const r = await pool.query(sql);
+  res.json({
+    rows: r.rows.map((x: any) => ({
+      id: String(x.id ?? ""),
+      label: String(x.label ?? ""),
+      description: String(x.description ?? ""),
+      enabled: Boolean(x.enabled),
+      created_at: x.created_at,
+      updated_at: x.updated_at,
+    })),
+  });
+});
+
+app.post("/api/crm/automations", async (req, res) => {
+  const id = parseCrmLeadId(req.body?.id) ?? `auto-${Date.now()}`;
+  const label = typeof req.body?.label === "string" ? req.body.label.trim() : "";
+  if (!label) return res.status(400).json({ error: "label is required" });
+
+  const description = typeof req.body?.description === "string" ? req.body.description.trim() : "";
+  const enabled = parseCrmBool(req.body?.enabled) ?? true;
+
+  const sql = `
+    INSERT INTO crm_automations (id, label, description, enabled, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, now(), now())
+    ON CONFLICT (id) DO UPDATE SET
+      label = EXCLUDED.label,
+      description = EXCLUDED.description,
+      enabled = EXCLUDED.enabled,
+      updated_at = now()
+    RETURNING id, label, description, enabled, created_at, updated_at;
+  `;
+  const r = await pool.query(sql, [id, label, description, enabled]);
+  const row = r.rows[0];
+  res.status(201).json({
+    row: {
+      id: String(row.id ?? ""),
+      label: String(row.label ?? ""),
+      description: String(row.description ?? ""),
+      enabled: Boolean(row.enabled),
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    },
+  });
+});
+
+app.patch("/api/crm/automations/:id", async (req, res) => {
+  const id = parseCrmLeadId(req.params.id);
+  if (!id) return res.status(400).json({ error: "invalid id" });
+
+  const fields: string[] = [];
+  const values: any[] = [];
+
+  if (req.body?.label !== undefined) {
+    if (typeof req.body?.label !== "string" || !req.body?.label.trim()) {
+      return res.status(400).json({ error: "invalid label" });
+    }
+    values.push(req.body.label.trim());
+    fields.push(`label = $${values.length}`);
+  }
+
+  if (req.body?.description !== undefined) {
+    if (typeof req.body?.description !== "string") return res.status(400).json({ error: "invalid description" });
+    values.push(req.body.description.trim());
+    fields.push(`description = $${values.length}`);
+  }
+
+  if (req.body?.enabled !== undefined) {
+    const enabled = parseCrmBool(req.body?.enabled);
+    if (enabled === null) return res.status(400).json({ error: "invalid enabled value" });
+    values.push(enabled);
+    fields.push(`enabled = $${values.length}`);
+  }
+
+  if (!fields.length) return res.status(400).json({ error: "no fields to update" });
+
+  values.push(id);
+  const sql = `
+    UPDATE crm_automations
+    SET ${fields.join(", ")}, updated_at = now()
+    WHERE id = $${values.length}
+    RETURNING id, label, description, enabled, created_at, updated_at;
+  `;
+  const r = await pool.query(sql, values);
+  if (!r.rows.length) return res.status(404).json({ error: "not found" });
+
+  const row = r.rows[0];
+  res.json({
+    row: {
+      id: String(row.id ?? ""),
+      label: String(row.label ?? ""),
+      description: String(row.description ?? ""),
+      enabled: Boolean(row.enabled),
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    },
+  });
+});
+
+const port = Number(process.env.PORT || 5057);
+
+async function startServer() {
+  try {
+    await ensureCrmSchema();
+  } catch (err) {
+    console.error("Failed to ensure CRM schema:", err);
+  }
+
+  app.listen(port, () => {
+    console.log(`API listening on http://127.0.0.1:${port}`);
+  });
+}
+
+void startServer();

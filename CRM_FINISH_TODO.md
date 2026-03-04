@@ -16,7 +16,7 @@ Ship a practical, Podium/Perq-inspired CRM workflow for Furniture Distributors w
 - [x] Build + deploy to live `/fd/`
 
 ## Next Iteration (after this round)
-- [ ] Persist leads/tasks/automations in backend DB instead of browser storage
+- [x] Persist leads/tasks/automations in backend DB instead of browser storage
 - [ ] Wire real SMS/webchat/DM providers into unified inbox
 - [ ] Add conversion analytics by source/store/rep
 - [ ] Add role-based permissions and audit log
