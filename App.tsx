@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { LayoutDashboard, CheckSquare, MessageSquare, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud, Monitor, Home, ClipboardList, Bot, X, LogOut } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, MessageSquare, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud, Monitor, Home, ClipboardList, Bot, X, LogOut, Users } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import WorkAdvertising from './components/WorkAdvertising';
 import UpdateDatabase from './components/UpdateDatabase';
@@ -9,8 +9,9 @@ import CRMWorkspace from './components/CRMWorkspace';
 import MessageBoard from './components/MessageBoard';
 import WolfBot from './components/WolfBot';
 import TaskManager from './components/TaskManager';
-import type { AuthUser } from './types';
-import { fetchCurrentUser, loginWithPassword, logoutCurrentUser } from './services/authApi';
+import AdminUsers from './components/AdminUsers';
+import type { AuthUser, UserRole } from './types';
+import { changeCurrentPassword, fetchCurrentUser, loginWithPassword, logoutCurrentUser } from './services/authApi';
 
 enum Tab {
   DASHBOARD = 'DASHBOARD',
@@ -20,7 +21,24 @@ enum Tab {
   KIOSKS = 'KIOSKS',
   MESSAGE_BOARD = 'MESSAGE_BOARD',
   TASKS = 'TASKS',
+  ADMIN = 'ADMIN',
 }
+
+const TAB_ACCESS: Record<Tab, UserRole[]> = {
+  [Tab.DASHBOARD]: ["Owner", "Manager", "Sales", "Marketing"],
+  [Tab.SALES]: ["Owner", "Manager"],
+  [Tab.CRM]: ["Owner", "Manager", "Sales"],
+  [Tab.SOCIAL]: ["Owner", "Manager", "Marketing"],
+  [Tab.KIOSKS]: ["Owner", "Manager"],
+  [Tab.MESSAGE_BOARD]: ["Owner", "Manager", "Sales", "Marketing"],
+  [Tab.TASKS]: ["Owner", "Manager", "Sales", "Marketing"],
+  [Tab.ADMIN]: ["Owner"],
+};
+
+const canAccessTab = (roles: UserRole[], tab: Tab): boolean => {
+  const allowed = TAB_ACCESS[tab] || [];
+  return roles.some((role) => allowed.includes(role));
+};
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
@@ -33,6 +51,13 @@ const App: React.FC = () => {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginPending, setLoginPending] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [currentPasswordInput, setCurrentPasswordInput] = useState("");
+  const [newPasswordInput, setNewPasswordInput] = useState("");
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [headerSearch, setHeaderSearch] = useState("");
   const [rangeLabel, setRangeLabel] = useState<string | null>(null);
   const [showRange, setShowRange] = useState(false);
@@ -145,6 +170,15 @@ const App: React.FC = () => {
     }
   }, [activeTab]);
 
+  const userRoles = (authUser?.roles || []) as UserRole[];
+  const availableTabs = (Object.values(Tab) as Tab[]).filter((tab) => canAccessTab(userRoles, tab));
+
+  useEffect(() => {
+    if (!authUser) return;
+    if (availableTabs.includes(activeTab)) return;
+    setActiveTab(availableTabs[0] || Tab.DASHBOARD);
+  }, [authUser, activeTab, availableTabs]);
+
 
   const handleLogin = async () => {
     if (!loginEmail.trim() || !loginPassword) {
@@ -170,8 +204,44 @@ const App: React.FC = () => {
     setAuthUser(null);
     setLoginPassword("");
     setLoginError(null);
+    setPasswordModalOpen(false);
+    setCurrentPasswordInput("");
+    setNewPasswordInput("");
+    setConfirmPasswordInput("");
+    setPasswordMessage(null);
+    setPasswordError(null);
     setWolfbotOpen(false);
     setUpdatePanelOpen(false);
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordMessage(null);
+    setPasswordError(null);
+    if (!currentPasswordInput || !newPasswordInput) {
+      setPasswordError("Current and new password are required.");
+      return;
+    }
+    if (newPasswordInput.length < 4) {
+      setPasswordError("New password must be at least 4 characters.");
+      return;
+    }
+    if (newPasswordInput !== confirmPasswordInput) {
+      setPasswordError("New password confirmation does not match.");
+      return;
+    }
+    setPasswordBusy(true);
+    try {
+      await changeCurrentPassword(currentPasswordInput, newPasswordInput);
+      setPasswordMessage("Password updated.");
+      setCurrentPasswordInput("");
+      setNewPasswordInput("");
+      setConfirmPasswordInput("");
+      window.setTimeout(() => setPasswordModalOpen(false), 700);
+    } catch {
+      setPasswordError("Unable to change password. Verify your current password.");
+    } finally {
+      setPasswordBusy(false);
+    }
   };
 
   const closeUpdatePanel = () => {
@@ -207,6 +277,7 @@ const App: React.FC = () => {
       case Tab.KIOSKS: return <KiosksStatus />;
       case Tab.MESSAGE_BOARD: return <MessageBoard />;
       case Tab.TASKS: return <TaskManager />;
+      case Tab.ADMIN: return <AdminUsers />;
       default: return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
     }
   };
@@ -232,6 +303,8 @@ const App: React.FC = () => {
       />
     );
   }
+
+  const canView = (tab: Tab) => canAccessTab(userRoles, tab);
 
   return (
     <div
@@ -370,55 +443,78 @@ const App: React.FC = () => {
         </button>
 
         <nav className="flex-1 py-8 px-4 space-y-2">
-          <NavItem 
-            icon={<Home size={20} />} 
-            label="Dashboard" 
-            isActive={activeTab === Tab.DASHBOARD} 
-            onClick={() => setActiveTab(Tab.DASHBOARD)}
-            isOpen={sidebarOpen}
-          />
-          <NavItem 
-            icon={<LayoutDashboard size={20} />} 
-            label="Sales Analysis" 
-            isActive={activeTab === Tab.SALES} 
-            onClick={() => setActiveTab(Tab.SALES)}
-            isOpen={sidebarOpen}
-          />
-          <NavItem 
-            icon={<MessageSquare size={20} />} 
-            label="CRM" 
-            isActive={activeTab === Tab.CRM} 
-            onClick={() => setActiveTab(Tab.CRM)}
-            isOpen={sidebarOpen}
-          />
-          <NavItem 
-            icon={<Activity size={20} />} 
-            label="Social Posts" 
-            isActive={activeTab === Tab.SOCIAL} 
-            onClick={() => setActiveTab(Tab.SOCIAL)}
-            isOpen={sidebarOpen}
-          />
-          <NavItem 
-            icon={<CheckSquare size={20} />} 
-            label="Tasks" 
-            isActive={activeTab === Tab.TASKS} 
-            onClick={() => setActiveTab(Tab.TASKS)}
-            isOpen={sidebarOpen}
-          />
-          <NavItem 
-            icon={<Monitor size={20} />} 
-            label="AlphaOS" 
-            isActive={activeTab === Tab.KIOSKS} 
-            onClick={() => setActiveTab(Tab.KIOSKS)}
-            isOpen={sidebarOpen}
-          />
-          <NavItem 
-            icon={<ClipboardList size={20} />} 
-            label="Message Board" 
-            isActive={activeTab === Tab.MESSAGE_BOARD} 
-            onClick={() => setActiveTab(Tab.MESSAGE_BOARD)}
-            isOpen={sidebarOpen}
-          />
+          {canView(Tab.DASHBOARD) && (
+            <NavItem 
+              icon={<Home size={20} />} 
+              label="Dashboard" 
+              isActive={activeTab === Tab.DASHBOARD} 
+              onClick={() => setActiveTab(Tab.DASHBOARD)}
+              isOpen={sidebarOpen}
+            />
+          )}
+          {canView(Tab.SALES) && (
+            <NavItem 
+              icon={<LayoutDashboard size={20} />} 
+              label="Sales Analysis" 
+              isActive={activeTab === Tab.SALES} 
+              onClick={() => setActiveTab(Tab.SALES)}
+              isOpen={sidebarOpen}
+            />
+          )}
+          {canView(Tab.CRM) && (
+            <NavItem 
+              icon={<MessageSquare size={20} />} 
+              label="CRM" 
+              isActive={activeTab === Tab.CRM} 
+              onClick={() => setActiveTab(Tab.CRM)}
+              isOpen={sidebarOpen}
+            />
+          )}
+          {canView(Tab.SOCIAL) && (
+            <NavItem 
+              icon={<Activity size={20} />} 
+              label="Social Posts" 
+              isActive={activeTab === Tab.SOCIAL} 
+              onClick={() => setActiveTab(Tab.SOCIAL)}
+              isOpen={sidebarOpen}
+            />
+          )}
+          {canView(Tab.TASKS) && (
+            <NavItem 
+              icon={<CheckSquare size={20} />} 
+              label="Tasks" 
+              isActive={activeTab === Tab.TASKS} 
+              onClick={() => setActiveTab(Tab.TASKS)}
+              isOpen={sidebarOpen}
+            />
+          )}
+          {canView(Tab.KIOSKS) && (
+            <NavItem 
+              icon={<Monitor size={20} />} 
+              label="AlphaOS" 
+              isActive={activeTab === Tab.KIOSKS} 
+              onClick={() => setActiveTab(Tab.KIOSKS)}
+              isOpen={sidebarOpen}
+            />
+          )}
+          {canView(Tab.MESSAGE_BOARD) && (
+            <NavItem 
+              icon={<ClipboardList size={20} />} 
+              label="Message Board" 
+              isActive={activeTab === Tab.MESSAGE_BOARD} 
+              onClick={() => setActiveTab(Tab.MESSAGE_BOARD)}
+              isOpen={sidebarOpen}
+            />
+          )}
+          {canView(Tab.ADMIN) && (
+            <NavItem
+              icon={<Users size={20} />}
+              label="Admin Users"
+              isActive={activeTab === Tab.ADMIN}
+              onClick={() => setActiveTab(Tab.ADMIN)}
+              isOpen={sidebarOpen}
+            />
+          )}
           <div className="pt-4 mt-4 border-t border-slate-800" />
           <NavItem
             icon={<Activity size={20} />}
@@ -449,28 +545,30 @@ const App: React.FC = () => {
           />
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
-          <button
-            onClick={() => {
-              if (updatePanelOpen) {
-                closeUpdatePanel();
-              } else {
-                setUpdatePanelOpen(true);
-              }
-            }}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
-              updatePanelOpen
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
-                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-            } ${!sidebarOpen ? 'justify-center' : ''}`}
-            title="Update database"
-          >
-            <UploadCloud size={20} />
-            {sidebarOpen && (
-              <div className="text-sm font-medium">Update DB</div>
-            )}
-          </button>
-        </div>
+        {canView(Tab.KIOSKS) && (
+          <div className="p-4 border-t border-slate-800">
+            <button
+              onClick={() => {
+                if (updatePanelOpen) {
+                  closeUpdatePanel();
+                } else {
+                  setUpdatePanelOpen(true);
+                }
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                updatePanelOpen
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              } ${!sidebarOpen ? 'justify-center' : ''}`}
+              title="Update database"
+            >
+              <UploadCloud size={20} />
+              {sidebarOpen && (
+                <div className="text-sm font-medium">Update DB</div>
+              )}
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* Main Content */}
@@ -487,6 +585,7 @@ const App: React.FC = () => {
                 {activeTab === Tab.SOCIAL && 'Social Posts'}
                 {activeTab === Tab.KIOSKS && 'AlphaOS Status'}
                 {activeTab === Tab.MESSAGE_BOARD && 'Message Board'}
+                {activeTab === Tab.ADMIN && 'Admin Users'}
               </span>
               {activeTab === Tab.SALES && showRange && rangeLabel && (
                 <span className="text-sm font-semibold text-slate-400">
@@ -591,6 +690,17 @@ const App: React.FC = () => {
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             <button
+              onClick={() => {
+                setPasswordModalOpen(true);
+                setPasswordMessage(null);
+                setPasswordError(null);
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              title="Change your password"
+            >
+              Change Password
+            </button>
+            <button
               onClick={handleLogout}
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               title={`Signed in as ${authUser.email}`}
@@ -662,6 +772,62 @@ const App: React.FC = () => {
         >
           ?
         </button>
+      )}
+      {passwordModalOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => setPasswordModalOpen(false)}
+          />
+          <div className="fixed left-1/2 top-1/2 z-40 w-[min(92vw,460px)] -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-slate-900">Change Password</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Update your employee password.
+            </p>
+            <div className="mt-4 space-y-2">
+              <input
+                type="password"
+                value={currentPasswordInput}
+                onChange={(event) => setCurrentPasswordInput(event.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Current password"
+              />
+              <input
+                type="password"
+                value={newPasswordInput}
+                onChange={(event) => setNewPasswordInput(event.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="New password"
+              />
+              <input
+                type="password"
+                value={confirmPasswordInput}
+                onChange={(event) => setConfirmPasswordInput(event.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Confirm new password"
+              />
+            </div>
+            {passwordMessage && <div className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{passwordMessage}</div>}
+            {passwordError && <div className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{passwordError}</div>}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPasswordModalOpen(false)}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={passwordBusy}
+                onClick={() => void handleChangePassword()}
+                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {passwordBusy ? "Saving..." : "Save Password"}
+              </button>
+            </div>
+          </div>
+        </>
       )}
       {updatePanelOpen && (
         <>

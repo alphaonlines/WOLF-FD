@@ -350,3 +350,35 @@ ALTER TABLE auth_sessions ALTER COLUMN last_seen_at SET DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_id ON auth_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);
+
+CREATE TABLE IF NOT EXISTS roles (
+  id         BIGSERIAL PRIMARY KEY,
+  role_key   TEXT NOT NULL UNIQUE,
+  label      TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS role_key TEXT;
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS label TEXT;
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+ALTER TABLE roles ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE roles ALTER COLUMN updated_at SET DEFAULT now();
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_roles_role_key ON roles(role_key);
+
+CREATE TABLE IF NOT EXISTS user_roles (
+  user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role_id    BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, role_id)
+);
+
+ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS user_id BIGINT;
+ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS role_id BIGINT;
+ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE user_roles ALTER COLUMN created_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON user_roles(role_id);

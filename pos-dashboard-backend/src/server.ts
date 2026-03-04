@@ -56,12 +56,14 @@ const pool = new Pool({
 const AUTH_COOKIE_NAME = "fd_session";
 const AUTH_SESSION_DAYS = Math.max(Number(envString("AUTH_SESSION_DAYS", "14")) || 14, 1);
 const AUTH_COOKIE_SECURE_MODE = (envString("AUTH_COOKIE_SECURE", "auto") || "auto").toLowerCase();
+const VALID_USER_ROLES = ["Owner", "Manager", "Sales", "Marketing"] as const;
+const PUBLIC_AUTH_PATHS = new Set(["/auth/login", "/auth/logout", "/auth/me"]);
 
 type AuthUserView = {
   id: string;
   name: string;
   email: string;
-  roles: string[];
+  roles: (typeof VALID_USER_ROLES)[number][];
 };
 
 function hashPassword(password: string, saltHex?: string): string {
@@ -137,12 +139,32 @@ function clearAuthCookie(res: any, req: any) {
   res.setHeader("Set-Cookie", cookie.join("; "));
 }
 
+function normalizeRoleList(raw: any): (typeof VALID_USER_ROLES)[number][] {
+  const inList = Array.isArray(raw) ? raw : typeof raw === "string" ? [raw] : [];
+  const seen = new Set<string>();
+  const out: (typeof VALID_USER_ROLES)[number][] = [];
+  for (const item of inList) {
+    const role = String(item || "").trim();
+    if (!role || seen.has(role)) continue;
+    if (!VALID_USER_ROLES.includes(role as any)) continue;
+    seen.add(role);
+    out.push(role as any);
+  }
+  return out;
+}
+
+function hasAnyRole(user: AuthUserView | null | undefined, roles: string[]): boolean {
+  if (!user) return false;
+  const own = new Set((user.roles || []).map((r) => String(r)));
+  return roles.some((r) => own.has(r));
+}
+
 function buildAuthUser(row: any): AuthUserView {
   return {
     id: String(row.id ?? ""),
     name: String(row.name ?? ""),
     email: String(row.email ?? ""),
-    roles: ["Owner"],
+    roles: normalizeRoleList(row.roles),
   };
 }
 
@@ -150,12 +172,22 @@ async function findAuthUserBySessionToken(token: string): Promise<AuthUserView |
   if (!token) return null;
   const tokenHash = sha256Hex(token);
   const sql = `
-    SELECT u.id, u.name, u.email
+    SELECT
+      u.id,
+      u.name,
+      u.email,
+      COALESCE(
+        ARRAY_AGG(DISTINCT r.role_key) FILTER (WHERE r.role_key IS NOT NULL),
+        ARRAY[]::text[]
+      ) AS roles
     FROM auth_sessions s
     JOIN users u ON u.id = s.user_id
+    LEFT JOIN user_roles ur ON ur.user_id = u.id
+    LEFT JOIN roles r ON r.id = ur.role_id
     WHERE s.token_hash = $1
       AND s.expires_at > now()
       AND u.active = TRUE
+    GROUP BY u.id, u.name, u.email
     LIMIT 1;
   `;
   const r = await pool.query(sql, [tokenHash]);
@@ -198,6 +230,38 @@ async function ensureAuthSchema() {
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users ((lower(email)));`);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS roles (
+      id         BIGSERIAL PRIMARY KEY,
+      role_key   TEXT NOT NULL UNIQUE,
+      label      TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE roles ADD COLUMN IF NOT EXISTS role_key TEXT;`);
+  await pool.query(`ALTER TABLE roles ADD COLUMN IF NOT EXISTS label TEXT;`);
+  await pool.query(`ALTER TABLE roles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE roles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE roles ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE roles ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_roles_role_key ON roles(role_key);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_roles (
+      user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      role_id    BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (user_id, role_id)
+    );
+  `);
+  await pool.query(`ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS user_id BIGINT;`);
+  await pool.query(`ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS role_id BIGINT;`);
+  await pool.query(`ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE user_roles ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON user_roles(role_id);`);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS auth_sessions (
       id            BIGSERIAL PRIMARY KEY,
       user_id       BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -222,24 +286,105 @@ async function ensureAuthSchema() {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);`);
 }
 
+async function ensureDefaultRoles() {
+  const roleRows = [
+    { role_key: "Owner", label: "Owner" },
+    { role_key: "Manager", label: "Manager" },
+    { role_key: "Sales", label: "Sales" },
+    { role_key: "Marketing", label: "Marketing" },
+  ];
+  for (const role of roleRows) {
+    await pool.query(
+      `
+        INSERT INTO roles (role_key, label, created_at, updated_at)
+        VALUES ($1, $2, now(), now())
+        ON CONFLICT (role_key) DO UPDATE
+        SET label = EXCLUDED.label, updated_at = now()
+      `,
+      [role.role_key, role.label]
+    );
+  }
+}
+
+async function getRoleIdMap(): Promise<Record<string, number>> {
+  const r = await pool.query("SELECT id, role_key FROM roles;");
+  const out: Record<string, number> = {};
+  for (const row of r.rows) {
+    const k = String(row.role_key || "");
+    const id = Number(row.id);
+    if (k && Number.isFinite(id)) out[k] = id;
+  }
+  return out;
+}
+
+async function setUserRolesByKeys(userId: number, roleKeys: string[]) {
+  const normalized = normalizeRoleList(roleKeys);
+  const map = await getRoleIdMap();
+  const roleIds = normalized.map((k) => map[k]).filter((v) => Number.isFinite(v));
+  await pool.query("DELETE FROM user_roles WHERE user_id = $1", [userId]);
+  for (const roleId of roleIds) {
+    await pool.query(
+      `INSERT INTO user_roles (user_id, role_id, created_at) VALUES ($1, $2, now()) ON CONFLICT DO NOTHING`,
+      [userId, roleId]
+    );
+  }
+}
+
+async function loadAuthUserById(userId: number): Promise<AuthUserView | null> {
+  const sql = `
+    SELECT
+      u.id,
+      u.name,
+      u.email,
+      COALESCE(
+        ARRAY_AGG(DISTINCT r.role_key) FILTER (WHERE r.role_key IS NOT NULL),
+        ARRAY[]::text[]
+      ) AS roles
+    FROM users u
+    LEFT JOIN user_roles ur ON ur.user_id = u.id
+    LEFT JOIN roles r ON r.id = ur.role_id
+    WHERE u.id = $1
+    GROUP BY u.id, u.name, u.email
+    LIMIT 1;
+  `;
+  const r = await pool.query(sql, [userId]);
+  if (!r.rows.length) return null;
+  return buildAuthUser(r.rows[0]);
+}
+
 async function ensureDefaultAuthUser() {
   const existing = await pool.query("SELECT COUNT(*)::int AS n FROM users;");
   const count = Number(existing.rows[0]?.n ?? 0);
-  if (count > 0) return;
-
   const defaultEmail = (envString("AUTH_BOOTSTRAP_EMAIL", "owner@wolffd.local") || "owner@wolffd.local").toLowerCase();
-  const defaultName = envString("AUTH_BOOTSTRAP_NAME", "WOLF FD Owner") || "WOLF FD Owner";
-  const defaultPassword = envString("AUTH_BOOTSTRAP_PASSWORD", "1111") || "1111";
-  const passwordHash = hashPassword(defaultPassword);
+  if (count <= 0) {
+    const defaultName = envString("AUTH_BOOTSTRAP_NAME", "WOLF FD Owner") || "WOLF FD Owner";
+    const defaultPassword = envString("AUTH_BOOTSTRAP_PASSWORD", "1111") || "1111";
+    const passwordHash = hashPassword(defaultPassword);
 
-  await pool.query(
-    `INSERT INTO users (name, email, password_hash, active, created_at, updated_at)
-     VALUES ($1, $2, $3, TRUE, now(), now())
-     ON CONFLICT (email) DO NOTHING;`,
-    [defaultName, defaultEmail, passwordHash]
-  );
+    await pool.query(
+      `INSERT INTO users (name, email, password_hash, active, created_at, updated_at)
+       VALUES ($1, $2, $3, TRUE, now(), now())
+       ON CONFLICT (email) DO NOTHING;`,
+      [defaultName, defaultEmail, passwordHash]
+    );
+    console.log(`Auth bootstrap user ready: ${defaultEmail}`);
+  }
 
-  console.log(`Auth bootstrap user ready: ${defaultEmail}`);
+  const ownerUser = await pool.query("SELECT id FROM users WHERE lower(email) = lower($1) LIMIT 1", [defaultEmail]);
+  if (ownerUser.rows.length) {
+    await setUserRolesByKeys(Number(ownerUser.rows[0].id), ["Owner"]);
+  }
+
+  await pool.query(`
+    INSERT INTO user_roles (user_id, role_id, created_at)
+    SELECT u.id, r.id, now()
+    FROM users u
+    JOIN roles r ON r.role_key = 'Owner'
+    WHERE NOT EXISTS (
+      SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id
+    )
+    ON CONFLICT DO NOTHING;
+  `);
 }
 
 function parseDateParam(v: any, fallback: string) {
@@ -448,7 +593,8 @@ app.post("/api/auth/login", async (req, res) => {
   );
 
   setAuthCookie(res, token, req);
-  res.json({ ok: true, user: buildAuthUser(user) });
+  const authUser = await loadAuthUserById(Number(user.id));
+  res.json({ ok: true, user: authUser || buildAuthUser(user) });
 });
 
 app.post("/api/auth/logout", async (req, res) => {
@@ -472,11 +618,215 @@ app.get("/api/auth/me", async (req, res) => {
 
 app.use("/api", async (req, res, next) => {
   if (req.method === "OPTIONS") return next();
-  if (req.path.startsWith("/auth/")) return next();
+  if (PUBLIC_AUTH_PATHS.has(req.path)) return next();
   const user = await currentAuthUserFromReq(req);
   if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
   (req as any).authUser = user;
   return next();
+});
+
+app.post("/api/auth/change-password", async (req, res) => {
+  const user = (req as any).authUser as AuthUserView | undefined;
+  if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
+
+  const currentPassword = typeof req.body?.current_password === "string" ? req.body.current_password : "";
+  const newPassword = typeof req.body?.new_password === "string" ? req.body.new_password : "";
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ ok: false, error: "current_password and new_password are required" });
+  }
+  if (newPassword.length < 4) return res.status(400).json({ ok: false, error: "new password must be at least 4 chars" });
+
+  const currentRow = await pool.query(
+    "SELECT id, password_hash FROM users WHERE id = $1 AND active = TRUE LIMIT 1",
+    [Number(user.id)]
+  );
+  if (!currentRow.rows.length) return res.status(404).json({ ok: false, error: "user not found" });
+  if (!verifyPassword(currentPassword, String(currentRow.rows[0].password_hash || ""))) {
+    return res.status(401).json({ ok: false, error: "current password is invalid" });
+  }
+
+  const nextHash = hashPassword(newPassword);
+  await pool.query("UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2", [
+    nextHash,
+    Number(user.id),
+  ]);
+
+  res.json({ ok: true });
+});
+
+const requireOwner = (req: any, res: any, next: any) => {
+  const user = (req as any).authUser as AuthUserView | undefined;
+  if (!hasAnyRole(user, ["Owner"])) return res.status(403).json({ ok: false, error: "forbidden" });
+  return next();
+};
+
+app.get("/api/admin/roles", requireOwner, async (_req, res) => {
+  const r = await pool.query("SELECT role_key, label FROM roles ORDER BY role_key ASC");
+  res.json({
+    rows: r.rows.map((x: any) => ({
+      key: String(x.role_key ?? ""),
+      label: String(x.label ?? ""),
+    })),
+  });
+});
+
+app.get("/api/admin/users", requireOwner, async (_req, res) => {
+  const sql = `
+    SELECT
+      u.id,
+      u.name,
+      u.email,
+      u.active,
+      u.created_at,
+      u.updated_at,
+      COALESCE(
+        ARRAY_AGG(DISTINCT r.role_key) FILTER (WHERE r.role_key IS NOT NULL),
+        ARRAY[]::text[]
+      ) AS roles
+    FROM users u
+    LEFT JOIN user_roles ur ON ur.user_id = u.id
+    LEFT JOIN roles r ON r.id = ur.role_id
+    GROUP BY u.id, u.name, u.email, u.active, u.created_at, u.updated_at
+    ORDER BY lower(u.email) ASC;
+  `;
+  const r = await pool.query(sql);
+  res.json({
+    rows: r.rows.map((x: any) => ({
+      id: Number(x.id),
+      name: String(x.name ?? ""),
+      email: String(x.email ?? ""),
+      active: Boolean(x.active),
+      roles: normalizeRoleList(x.roles),
+      created_at: x.created_at,
+      updated_at: x.updated_at,
+    })),
+  });
+});
+
+app.post("/api/admin/users", requireOwner, async (req, res) => {
+  const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  const password = typeof req.body?.password === "string" ? req.body.password : "";
+  const roles = normalizeRoleList(req.body?.roles);
+  const active = req.body?.active === undefined ? true : Boolean(req.body?.active);
+
+  if (!name || !email || !password) return res.status(400).json({ ok: false, error: "name, email, password required" });
+  if (password.length < 4) return res.status(400).json({ ok: false, error: "password must be at least 4 chars" });
+
+  const roleKeys = roles.length ? roles : (["Sales"] as const);
+  const passwordHash = hashPassword(password);
+
+  const r = await pool.query(
+    `
+      INSERT INTO users (name, email, password_hash, active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, now(), now())
+      RETURNING id
+    `,
+    [name, email, passwordHash, active]
+  );
+  const userId = Number(r.rows[0]?.id);
+  await setUserRolesByKeys(userId, roleKeys as any);
+  const user = await loadAuthUserById(userId);
+  res.status(201).json({ ok: true, row: user ? { ...user, active } : null });
+});
+
+app.patch("/api/admin/users/:id", requireOwner, async (req, res) => {
+  const id = parseTaskIdParam(req.params.id);
+  if (!id) return res.status(400).json({ ok: false, error: "invalid id" });
+
+  const fields: string[] = [];
+  const values: any[] = [];
+
+  if (req.body?.name !== undefined) {
+    if (typeof req.body?.name !== "string" || !req.body.name.trim()) {
+      return res.status(400).json({ ok: false, error: "invalid name" });
+    }
+    values.push(req.body.name.trim());
+    fields.push(`name = $${values.length}`);
+  }
+
+  if (req.body?.email !== undefined) {
+    if (typeof req.body?.email !== "string" || !req.body.email.trim()) {
+      return res.status(400).json({ ok: false, error: "invalid email" });
+    }
+    values.push(req.body.email.trim().toLowerCase());
+    fields.push(`email = $${values.length}`);
+  }
+
+  if (req.body?.active !== undefined) {
+    values.push(Boolean(req.body.active));
+    fields.push(`active = $${values.length}`);
+  }
+
+  if (!fields.length) return res.status(400).json({ ok: false, error: "no fields to update" });
+  values.push(id);
+  await pool.query(
+    `UPDATE users SET ${fields.join(", ")}, updated_at = now() WHERE id = $${values.length}`,
+    values
+  );
+
+  const user = await loadAuthUserById(id);
+  if (!user) {
+    const row = await pool.query("SELECT id, name, email, active FROM users WHERE id = $1 LIMIT 1", [id]);
+    if (!row.rows.length) return res.status(404).json({ ok: false, error: "not found" });
+    return res.json({
+      ok: true,
+      row: {
+        id: String(row.rows[0].id),
+        name: String(row.rows[0].name ?? ""),
+        email: String(row.rows[0].email ?? ""),
+        roles: [],
+        active: Boolean(row.rows[0].active),
+      },
+    });
+  }
+  const activeRow = await pool.query("SELECT active FROM users WHERE id = $1 LIMIT 1", [id]);
+  res.json({ ok: true, row: { ...user, active: Boolean(activeRow.rows[0]?.active) } });
+});
+
+app.patch("/api/admin/users/:id/roles", requireOwner, async (req, res) => {
+  const id = parseTaskIdParam(req.params.id);
+  if (!id) return res.status(400).json({ ok: false, error: "invalid id" });
+  const roles = normalizeRoleList(req.body?.roles);
+  if (!roles.length) return res.status(400).json({ ok: false, error: "at least one valid role is required" });
+
+  await setUserRolesByKeys(id, roles);
+  const row = await pool.query("SELECT active FROM users WHERE id = $1 LIMIT 1", [id]);
+  if (!row.rows.length) return res.status(404).json({ ok: false, error: "not found" });
+  const user = await loadAuthUserById(id);
+  if (!user) {
+    const base = await pool.query("SELECT id, name, email FROM users WHERE id = $1 LIMIT 1", [id]);
+    return res.json({
+      ok: true,
+      row: {
+        id: String(base.rows[0]?.id ?? id),
+        name: String(base.rows[0]?.name ?? ""),
+        email: String(base.rows[0]?.email ?? ""),
+        roles,
+        active: Boolean(row.rows[0]?.active),
+      },
+    });
+  }
+  res.json({ ok: true, row: { ...user, active: Boolean(row.rows[0]?.active) } });
+});
+
+app.patch("/api/admin/users/:id/password", requireOwner, async (req, res) => {
+  const id = parseTaskIdParam(req.params.id);
+  if (!id) return res.status(400).json({ ok: false, error: "invalid id" });
+  const password = typeof req.body?.password === "string" ? req.body.password : "";
+  if (!password || password.length < 4) return res.status(400).json({ ok: false, error: "password must be at least 4 chars" });
+
+  const hash = hashPassword(password);
+  const r = await pool.query("UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2 RETURNING id", [
+    hash,
+    id,
+  ]);
+  if (!r.rows.length) return res.status(404).json({ ok: false, error: "not found" });
+
+  await pool.query("DELETE FROM auth_sessions WHERE user_id = $1", [id]).catch(() => {
+    // ignore session cleanup failures
+  });
+  res.json({ ok: true });
 });
 
 app.post("/api/import/upload", upload.array("files", 25), async (req, res) => {
@@ -2734,6 +3084,7 @@ const port = Number(process.env.PORT || 5057);
 async function startServer() {
   try {
     await ensureAuthSchema();
+    await ensureDefaultRoles();
     await ensureDefaultAuthUser();
     await ensureCrmSchema();
   } catch (err) {

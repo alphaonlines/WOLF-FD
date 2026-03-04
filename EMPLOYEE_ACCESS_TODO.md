@@ -12,12 +12,14 @@ Add secure employee login with role-based module visibility, lead assignment, an
 - [x] Add initial admin seed user
 
 ## Phase 2: Roles and Module Permissions
-- [ ] Add `roles`, `user_roles`, `module_permissions`, `role_module_permissions` tables
-- [ ] Define initial roles: `Owner`, `Manager`, `Sales`, `Marketing`
-- [ ] Define module keys: `dashboard`, `crm`, `social_posts`, `message_board`, `admin`
-- [ ] Add API to read/update user role + module access
-- [ ] Add backend permission middleware (`requirePermission("crm.view")`)
-- [ ] In frontend, hide tabs and screens user cannot access
+- [x] Add `roles`, `user_roles` tables (role-module mapping tables pending)
+- [x] Define initial roles: `Owner`, `Manager`, `Sales`, `Marketing`
+- [x] Define module keys in frontend access map: `dashboard`, `sales`, `crm`, `social_posts`, `tasks`, `message_board`, `alphaos`, `admin`
+- [x] Add API to read/update user roles (`/api/admin/roles`, `/api/admin/users`, role/password patch endpoints)
+- [x] Add backend role guard middleware for admin routes (`Owner` required)
+- [x] In frontend, hide tabs/screens user cannot access by role
+- [x] Add admin user management UI for create/roles/active/reset-password
+- [x] Add authenticated self-service password change flow
 
 ## Phase 3: CRM Ownership and Assignment
 - [ ] Add `owner_user_id` to `crm_leads` (nullable for migration safety)
@@ -37,7 +39,7 @@ Add secure employee login with role-based module visibility, lead assignment, an
 - [ ] Add rate-limit on login endpoint
 - [ ] Add failed login tracking and lockout threshold
 - [ ] Add session timeout + logout-all capability
-- [ ] Add basic admin user management page
+- [x] Add basic admin user management page
 
 ## Test + Rollout Checklist
 - [x] Backend build passes (`pos-dashboard-backend`)

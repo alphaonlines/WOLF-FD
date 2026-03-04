@@ -1,4 +1,4 @@
-import type { AuthUser } from "../types";
+import type { AuthUser, UserRole } from "../types";
 import { getPosApiBaseUrl } from "./posBackendApi";
 
 type AuthResponse = {
@@ -21,7 +21,7 @@ const mapUser = (raw: AuthResponse["user"]): AuthUser | null => {
     id,
     name: name || email,
     email,
-    roles: Array.isArray(raw.roles) ? raw.roles.map((r) => String(r)) : [],
+    roles: (Array.isArray(raw.roles) ? raw.roles.map((r) => String(r)) : []) as UserRole[],
   };
 };
 
@@ -72,4 +72,19 @@ export async function logoutCurrentUser(): Promise<void> {
   }).catch(() => {
     // Ignore logout errors; local state should still clear.
   });
+}
+
+export async function changeCurrentPassword(currentPassword: string, newPassword: string): Promise<void> {
+  const res = await authFetch("/api/auth/change-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  });
+  if (!res.ok) {
+    const msg = await res.text().catch(() => "");
+    throw new Error(`Password change failed (${res.status})${msg ? `: ${msg}` : ""}`);
+  }
 }

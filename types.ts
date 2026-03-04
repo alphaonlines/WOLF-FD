@@ -83,9 +83,21 @@ export interface CRMAutomationRule {
   enabled: boolean;
 }
 
+export type UserRole = "Owner" | "Manager" | "Sales" | "Marketing";
+
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  roles: string[];
+  roles: UserRole[];
+}
+
+export interface ManagedUser {
+  id: string;
+  name: string;
+  email: string;
+  active: boolean;
+  roles: UserRole[];
+  createdAt?: string;
+  updatedAt?: string;
 }
