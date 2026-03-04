@@ -7,9 +7,7 @@ import {
   MessageSquare,
   Monitor,
   Move,
-  Star,
   ClipboardList,
-  Bot,
   UploadCloud,
 } from "lucide-react";
 import {
@@ -139,15 +137,6 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
         onClick: () => onNavigate("MESSAGE_BOARD"),
       },
       {
-        id: "wolfbot",
-        title: "WOLFbot",
-        description: "AI call routing and conversational flow management.",
-        details: "Open WOLFbot to review how inbound conversations are routed, what intents are captured, and how the automation is currently behaving.",
-        cta: "Open WOLFbot",
-        icon: <Bot size={22} className="text-slate-700" />,
-        onClick: () => onNavigate("WOLFBOT"),
-      },
-      {
         id: "crm",
         title: "CRM",
         description: "Customer follow-up pipeline and lead ownership.",
@@ -165,35 +154,29 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
         icon: <Activity size={22} className="text-rose-500" />,
         onClick: () => onNavigate("SOCIAL"),
       },
+    ];
+  }, [onNavigate]);
+
+  const quickLinks = useMemo(
+    () => [
       {
         id: "alphapulse",
-        title: "AlphaPulse",
-        description: "Social analytics dashboard for the Furniture Distributors page.",
-        details: "Use AlphaPulse for social performance, engagement movement, and content-level insights tied to the Furniture Distributors presence.",
-        cta: "Open AlphaPulse",
-        icon: <Activity size={22} className="text-rose-500" />,
-        onClick: () => openExternal("https://furnituredistributors.wolf.discount/alphapulse/"),
+        label: "AlphaPulse",
+        url: "https://furnituredistributors.wolf.discount/alphapulse/",
       },
       {
         id: "fd-connect",
-        title: "FD Connect Reviews",
-        description: "Monitor and respond to Furniture Distributors reviews.",
-        details: "This is the direct path into review monitoring so the team can see new feedback, respond quickly, and protect store reputation.",
-        cta: "Open FD Connect",
-        icon: <Star size={22} className="text-amber-500" />,
-        onClick: () => openExternal("https://www.furnituredistributors.net/content/connect"),
+        label: "FD Connect Reviews",
+        url: "https://www.furnituredistributors.net/content/connect",
       },
       {
         id: "quicklinks",
-        title: "QuickLinks",
-        description: "Fast access to the shared internal FD resource hub.",
-        details: "QuickLinks opens the central resource page used by the team for day-to-day shortcuts, reference links, and store operations material.",
-        cta: "Open QuickLinks",
-        icon: <LayoutDashboard size={22} className="text-cyan-600" />,
-        onClick: () => openExternal("https://sites.google.com/view/fdserver/home"),
+        label: "QuickLinks",
+        url: "https://sites.google.com/view/fdserver/home",
       },
-    ];
-  }, [onNavigate]);
+    ],
+    []
+  );
 
   const orderedCards = useMemo(() => {
     if (!order.length) return cards;
@@ -231,11 +214,25 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-slate-900">Dashboard Overview</h2>
-            <p className="text-sm text-slate-500">Move cards to prioritize the snapshots you need most.</p>
+            <p className="text-sm text-slate-500">Core operations at a glance. Move cards to prioritize your daily workflow.</p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600">
             <Move size={14} /> Drag cards to reorder
           </div>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Quick Links</span>
+          {quickLinks.map((link) => (
+            <a
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+            >
+              {link.label}
+            </a>
+          ))}
         </div>
       </section>
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { LayoutDashboard, CheckSquare, MessageSquare, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud, Monitor, Home, ClipboardList, Bot } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, MessageSquare, Sofa, Search, Activity, Star, Moon, Sun, UploadCloud, Monitor, Home, ClipboardList, Bot, X } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import WorkAdvertising from './components/WorkAdvertising';
 import UpdateDatabase from './components/UpdateDatabase';
@@ -17,7 +17,6 @@ enum Tab {
   SOCIAL = 'SOCIAL',
   KIOSKS = 'KIOSKS',
   MESSAGE_BOARD = 'MESSAGE_BOARD',
-  WOLFBOT = 'WOLFBOT',
   TASKS = 'TASKS',
 }
 
@@ -48,6 +47,7 @@ const App: React.FC = () => {
   const [missingItemData, setMissingItemData] = useState(false);
   const [missingSalesData, setMissingSalesData] = useState(false);
   const [activeFilterLabel, setActiveFilterLabel] = useState<string | null>(null);
+  const [wolfbotOpen, setWolfbotOpen] = useState(false);
   const [showTooltips, setShowTooltips] = useState(() => {
     try {
       const v = localStorage.getItem("fd_tooltips_enabled");
@@ -183,7 +183,6 @@ const App: React.FC = () => {
       case Tab.SOCIAL: return <WorkAdvertising />;
       case Tab.KIOSKS: return <KiosksStatus />;
       case Tab.MESSAGE_BOARD: return <MessageBoard />;
-      case Tab.WOLFBOT: return <WolfBot />;
       case Tab.TASKS: return <TaskManager />;
       default: return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
     }
@@ -376,13 +375,6 @@ const App: React.FC = () => {
             onClick={() => setActiveTab(Tab.MESSAGE_BOARD)}
             isOpen={sidebarOpen}
           />
-          <NavItem 
-            icon={<Bot size={20} />} 
-            label="WOLFbot" 
-            isActive={activeTab === Tab.WOLFBOT} 
-            onClick={() => setActiveTab(Tab.WOLFBOT)}
-            isOpen={sidebarOpen}
-          />
           <div className="pt-4 mt-4 border-t border-slate-800" />
           <NavItem
             icon={<Activity size={20} />}
@@ -451,7 +443,6 @@ const App: React.FC = () => {
                 {activeTab === Tab.SOCIAL && 'Social Posts'}
                 {activeTab === Tab.KIOSKS && 'AlphaOS Status'}
                 {activeTab === Tab.MESSAGE_BOARD && 'Message Board'}
-                {activeTab === Tab.WOLFBOT && 'WOLFbot'}
               </span>
               {activeTab === Tab.SALES && showRange && rangeLabel && (
                 <span className="text-sm font-semibold text-slate-400">
@@ -565,11 +556,52 @@ const App: React.FC = () => {
 
       </main>
 
+      {isUnlocked && !showLoading && (
+        <>
+          <button
+            type="button"
+            onClick={() => setWolfbotOpen((open) => !open)}
+            className="fixed bottom-6 right-6 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-slate-900 text-white shadow-xl transition-colors hover:bg-slate-800"
+            title="Open WOLFbot assistant"
+          >
+            <Bot size={20} />
+          </button>
+
+          {wolfbotOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40 bg-slate-900/35 backdrop-blur-[2px]"
+                onClick={() => setWolfbotOpen(false)}
+              />
+              <div className="fixed bottom-24 right-6 z-50 h-[80vh] w-[min(980px,calc(100vw-3rem))] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+                <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
+                  <div>
+                    <div className="text-xs uppercase tracking-wide text-slate-500">Assistant</div>
+                    <div className="text-sm font-semibold text-slate-900">WOLFbot</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setWolfbotOpen(false)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    title="Close WOLFbot"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="h-[calc(80vh-57px)] overflow-y-auto p-4">
+                  <WolfBot />
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
+
       {activeTab === Tab.SALES && (
         <button
           type="button"
           onClick={() => setShowTooltips((prev) => !prev)}
-          className={`fixed bottom-6 right-6 z-40 h-12 w-12 rounded-full shadow-lg border text-lg font-bold transition-colors ${
+          className={`fixed bottom-24 right-6 z-40 h-12 w-12 rounded-full shadow-lg border text-lg font-bold transition-colors ${
             showTooltips
               ? "bg-slate-900 text-white border-slate-900"
               : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
