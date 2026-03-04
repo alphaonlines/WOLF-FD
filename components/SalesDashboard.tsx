@@ -61,6 +61,7 @@ import {
   salespersonLabel,
 } from "./salesUtils";
 import SortableItem from "./sales/SortableItem";
+import SalesPrintDialog from "./sales/SalesPrintDialog";
 import {
   computeReportTotals,
   type ReportSummaryRow,
@@ -2413,94 +2414,22 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         </div>
       )}
 
-      {printDialogOpen && (
-        <div className="fd-print-hide fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-white border border-slate-200 shadow-xl p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">Print Options</h3>
-                <p className="text-sm text-slate-500">Choose which reports to include and apply optional filters.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPrintDialogOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-3">
-                <div className="text-xs uppercase tracking-wide text-slate-500">Reports</div>
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={printIncludeLowMargin}
-                    onChange={(e) => setPrintIncludeLowMargin(e.target.checked)}
-                  />
-                  Lowest Margin Tickets
-                </label>
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={printIncludeStore}
-                    onChange={(e) => setPrintIncludeStore(e.target.checked)}
-                  />
-                  Totals by Store
-                </label>
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={printIncludeSalesperson}
-                    onChange={(e) => setPrintIncludeSalesperson(e.target.checked)}
-                  />
-                  Totals by Salesperson
-                </label>
-              </div>
-
-              <div className="space-y-3">
-                <div className="text-xs uppercase tracking-wide text-slate-500">Additional Reports (Print)</div>
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={printIncludeManufacturer}
-                    onChange={(e) => setPrintIncludeManufacturer(e.target.checked)}
-                  />
-                  Drill down by Manufacturer (all)
-                </label>
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={printIncludeCategory}
-                    onChange={(e) => setPrintIncludeCategory(e.target.checked)}
-                  />
-                  Drill down by Category (all)
-                </label>
-                <div className="text-xs text-slate-500">These add extra sections and may produce many pages.</div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setPrintDialogOpen(false)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={runPrint}
-                disabled={printLoading}
-                className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold disabled:opacity-60"
-              >
-                {printLoading ? "Preparing..." : "Print"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SalesPrintDialog
+        open={printDialogOpen}
+        printIncludeLowMargin={printIncludeLowMargin}
+        printIncludeStore={printIncludeStore}
+        printIncludeSalesperson={printIncludeSalesperson}
+        printIncludeManufacturer={printIncludeManufacturer}
+        printIncludeCategory={printIncludeCategory}
+        printLoading={printLoading}
+        setPrintIncludeLowMargin={setPrintIncludeLowMargin}
+        setPrintIncludeStore={setPrintIncludeStore}
+        setPrintIncludeSalesperson={setPrintIncludeSalesperson}
+        setPrintIncludeManufacturer={setPrintIncludeManufacturer}
+        setPrintIncludeCategory={setPrintIncludeCategory}
+        onClose={() => setPrintDialogOpen(false)}
+        onPrint={runPrint}
+      />
       </div>
       <div className="fd-print-only space-y-6">
         {printIncludeManufacturer && printData?.manufacturerBreakdowns?.length ? (
