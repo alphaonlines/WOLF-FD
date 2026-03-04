@@ -257,6 +257,8 @@ const priorityRank: Record<UpsPriority, number> = {
   Nurture: 2,
 };
 
+const UPS_LANES: UpsLane[] = ["Unattended", "Be-Back", "Quote Follow-up"];
+
 const CRMWorkspace: React.FC = () => {
   const [syncMode, setSyncMode] = useState<CRMSyncMode>("LOCAL_STORAGE");
   const [leads, setLeads] = useState<CRMLead[]>(() => readLocal(LEAD_KEY, seedLeads));
@@ -447,6 +449,22 @@ const CRMWorkspace: React.FC = () => {
     });
   }, [upsList]);
 
+  const upsByLane = useMemo(() => {
+    const grouped: Record<UpsLane, UpsItem[]> = {
+      Unattended: [],
+      "Be-Back": [],
+      "Quote Follow-up": [],
+    };
+    for (const item of orderedUpsList) {
+      if (!item.done) grouped[item.lane].push(item);
+    }
+    return grouped;
+  }, [orderedUpsList]);
+
+  const completedUps = useMemo(() => orderedUpsList.filter((item) => item.done).slice(0, 6), [orderedUpsList]);
+  const topFollowUps = useMemo(() => followUps.slice(0, 6), [followUps]);
+  const nextFollowUpLead = topFollowUps[0] ?? null;
+
   const updateLead = (id: string, patch: Partial<CRMLead>) => {
     setLeads((current) =>
       current.map((lead) =>
@@ -583,17 +601,17 @@ const CRMWorkspace: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6 md:p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="text-xs uppercase tracking-wide text-slate-500">CRM Command Center</div>
-            <h2 className="text-2xl font-semibold text-slate-900">Lead Pipeline + Follow-up Execution</h2>
-            <p className="text-sm text-slate-500">
-              Podium/Perq-inspired workflow focused on speed-to-lead, stage control, and close-rate consistency.
+    <div className="space-y-5">
+      <section className="rounded-3xl border border-slate-200 bg-gradient-to-r from-white via-slate-50 to-emerald-50/60 p-6 shadow-sm md:p-8">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="space-y-2">
+            <div className="text-xs uppercase tracking-[0.18em] text-slate-500">CRM Command Center</div>
+            <h2 className="text-2xl font-semibold text-slate-900 md:text-3xl">Daily Lead Flow</h2>
+            <p className="max-w-2xl text-sm text-slate-600">
+              Focuses the team on today&apos;s follow-ups first, then pipeline movement, then communication systems.
             </p>
             <div
-              className={`mt-2 inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${
+              className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${
                 syncMode === "POS_DB"
                   ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                   : "border-amber-200 bg-amber-50 text-amber-700"
@@ -602,352 +620,180 @@ const CRMWorkspace: React.FC = () => {
               {syncMode === "POS_DB" ? "Sync: POS DB (shared)" : "Sync: Browser fallback"}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (selectedLead) {
-                updateLead(selectedLead.id, { stage: "Contacted", lastTouch: `${todayIso()} 09:00` });
-              }
-            }}
-            className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-          >
-            <PhoneCall size={16} /> Log Follow-up
-          </button>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <div className="text-xs uppercase tracking-wide text-slate-500">Open Leads</div>
-            <div className="mt-2 text-2xl font-semibold text-slate-900">{stats.open}</div>
-          </div>
-          <div className="rounded-2xl border border-violet-100 bg-violet-50 p-4">
-            <div className="text-xs uppercase tracking-wide text-violet-700">Appointments</div>
-            <div className="mt-2 text-2xl font-semibold text-violet-900">{stats.appointments}</div>
-          </div>
-          <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
-            <div className="text-xs uppercase tracking-wide text-blue-700">Quoted</div>
-            <div className="mt-2 text-2xl font-semibold text-blue-900">{stats.quoted}</div>
-          </div>
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-            <div className="text-xs uppercase tracking-wide text-emerald-700">Won</div>
-            <div className="mt-2 text-2xl font-semibold text-emerald-900">{stats.won}</div>
-          </div>
-          <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4">
-            <div className="text-xs uppercase tracking-wide text-rose-700">Overdue Follow-up</div>
-            <div className="mt-2 text-2xl font-semibold text-rose-900">{stats.overdue}</div>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">UPS Queue</h3>
-            <p className="text-sm text-slate-500">
-              Clean up-list view with unattended, be-back, and quote follow-up lanes.
-            </p>
-          </div>
-          <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
-            Perq/Podium style priority queue
-          </div>
-        </div>
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-            <div className="text-[11px] uppercase tracking-wide text-slate-500">Active</div>
-            <div className="mt-1 text-xl font-semibold text-slate-900">{upsStats.active}</div>
-          </div>
-          <div className="rounded-2xl border border-violet-200 bg-violet-50 p-3">
-            <div className="text-[11px] uppercase tracking-wide text-violet-700">Unattended</div>
-            <div className="mt-1 text-xl font-semibold text-violet-900">{upsStats.unattended}</div>
-          </div>
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3">
-            <div className="text-[11px] uppercase tracking-wide text-rose-700">Hot Priority</div>
-            <div className="mt-1 text-xl font-semibold text-rose-900">{upsStats.hot}</div>
-          </div>
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
-            <div className="text-[11px] uppercase tracking-wide text-emerald-700">Completed</div>
-            <div className="mt-1 text-xl font-semibold text-emerald-900">{upsStats.completed}</div>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
-          <input
-            value={upsDraft.customer}
-            onChange={(event) => setUpsDraft((current) => ({ ...current, customer: event.target.value }))}
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            placeholder="Customer"
-          />
-          <input
-            value={upsDraft.task}
-            onChange={(event) => setUpsDraft((current) => ({ ...current, task: event.target.value }))}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") addUpsItem();
-            }}
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            placeholder="Next action"
-          />
-          <input
-            value={upsDraft.owner}
-            onChange={(event) => setUpsDraft((current) => ({ ...current, owner: event.target.value }))}
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            placeholder="Owner"
-          />
-          <button
-            type="button"
-            onClick={addUpsItem}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-          >
-            <Plus size={14} /> Add UPS Item
-          </button>
-        </div>
-
-        <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
-          <select
-            value={upsDraft.priority}
-            onChange={(event) =>
-              setUpsDraft((current) => ({
-                ...current,
-                priority: event.target.value as UpsPriority,
-              }))
-            }
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          >
-            <option value="Hot">Hot</option>
-            <option value="Today">Today</option>
-            <option value="Nurture">Nurture</option>
-          </select>
-          <select
-            value={upsDraft.lane}
-            onChange={(event) =>
-              setUpsDraft((current) => ({
-                ...current,
-                lane: event.target.value as UpsLane,
-              }))
-            }
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          >
-            <option value="Unattended">Unattended</option>
-            <option value="Be-Back">Be-Back</option>
-            <option value="Quote Follow-up">Quote Follow-up</option>
-          </select>
-          <select
-            value={upsDraft.channel}
-            onChange={(event) =>
-              setUpsDraft((current) => ({
-                ...current,
-                channel: event.target.value as CRMLeadChannel,
-              }))
-            }
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          >
-            <option value="SMS">SMS</option>
-            <option value="Webchat">Webchat</option>
-            <option value="Facebook">Facebook</option>
-            <option value="Instagram">Instagram</option>
-            <option value="Phone">Phone</option>
-          </select>
-          <input
-            type="date"
-            value={upsDraft.dueAt}
-            onChange={(event) => setUpsDraft((current) => ({ ...current, dueAt: event.target.value }))}
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          />
-        </div>
-
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
-                <th className="py-2 pr-4">Customer</th>
-                <th className="py-2 pr-4">Action</th>
-                <th className="py-2 pr-4">Lane</th>
-                <th className="py-2 pr-4">Priority</th>
-                <th className="py-2 pr-4">Owner</th>
-                <th className="py-2 pr-4">Due</th>
-                <th className="py-2 pr-4">Channel</th>
-                <th className="py-2 pr-4">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {!orderedUpsList.length ? (
-                <tr>
-                  <td colSpan={8} className="py-4 text-center text-sm text-slate-500">
-                    No UPS items yet.
-                  </td>
-                </tr>
-              ) : (
-                orderedUpsList.map((item) => (
-                  <tr key={item.id} className={item.done ? "bg-slate-50/70" : ""}>
-                    <td className="py-3 pr-4 font-semibold text-slate-900">{item.customer}</td>
-                    <td className={`py-3 pr-4 ${item.done ? "text-slate-400 line-through" : "text-slate-700"}`}>{item.task}</td>
-                    <td className="py-3 pr-4">
-                      <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${upsLaneClass(item.lane)}`}>
-                        {item.lane}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${upsPriorityClass(item.priority)}`}>
-                        {item.priority}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4 text-slate-700">{item.owner}</td>
-                    <td className="py-3 pr-4 text-slate-700">{item.dueAt}</td>
-                    <td className="py-3 pr-4 text-slate-700">{item.channel}</td>
-                    <td className="py-3 pr-4">
-                      <button
-                        type="button"
-                        onClick={() => toggleUpsItem(item.id)}
-                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                          item.done
-                            ? "bg-slate-200 text-slate-700"
-                            : "bg-emerald-600 text-white"
-                        }`}
-                      >
-                        {item.done ? "Reopen" : "Done"}
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
-        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">Pipeline Board</h3>
-            <span className="text-xs uppercase tracking-wide text-slate-500">Move leads by stage</span>
-          </div>
-          <div className="mt-4 overflow-x-auto">
-            <div className="flex min-w-[980px] gap-4">
-              {STAGES.map((stage) => (
-                <div key={stage} className="w-[230px] shrink-0 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-semibold text-slate-800">{stage}</div>
-                    <span className="text-xs font-semibold text-slate-500">{leadsByStage[stage].length}</span>
-                  </div>
-                  <div className="mt-3 space-y-2">
-                    {leadsByStage[stage].map((lead) => (
-                      <div
-                        key={lead.id}
-                        className={`rounded-xl border px-3 py-2 text-sm ${
-                          selectedLeadId === lead.id
-                            ? "border-blue-300 bg-white shadow-sm"
-                            : "border-slate-200 bg-white"
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setSelectedLeadId(lead.id)}
-                          className="w-full text-left"
-                        >
-                          <div className="font-semibold text-slate-900">{lead.name}</div>
-                          <div className="mt-1 text-xs text-slate-500">{lead.interest}</div>
-                          <div className="mt-1 text-xs text-slate-500">{lead.owner} · Due {lead.dueDate}</div>
-                        </button>
-                        <select
-                          value={lead.stage}
-                          onChange={(event) =>
-                            updateLead(lead.id, {
-                              stage: event.target.value as CRMLeadStage,
-                              lastTouch: `${todayIso()} 09:00`,
-                            })
-                          }
-                          className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
-                        >
-                          {STAGES.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900">Lead Intake</h3>
-              <span className="text-xs uppercase tracking-wide text-slate-500">Fast add</span>
-            </div>
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <input
-                value={newLead.name}
-                onChange={(event) => setNewLead((current) => ({ ...current, name: event.target.value }))}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Customer name"
-              />
-              <input
-                value={newLead.phone}
-                onChange={(event) => setNewLead((current) => ({ ...current, phone: event.target.value }))}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Phone"
-              />
-              <input
-                value={newLead.interest}
-                onChange={(event) => setNewLead((current) => ({ ...current, interest: event.target.value }))}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Interest"
-              />
-              <input
-                value={newLead.budget}
-                onChange={(event) => setNewLead((current) => ({ ...current, budget: event.target.value }))}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Budget"
-              />
-              <input
-                value={newLead.store}
-                onChange={(event) => setNewLead((current) => ({ ...current, store: event.target.value }))}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Store"
-              />
-              <input
-                value={newLead.owner}
-                onChange={(event) => setNewLead((current) => ({ ...current, owner: event.target.value }))}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Owner"
-              />
-              <input
-                value={newLead.source}
-                onChange={(event) => setNewLead((current) => ({ ...current, source: event.target.value }))}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Lead source"
-              />
-              <select
-                value={newLead.channel}
-                onChange={(event) =>
-                  setNewLead((current) => ({ ...current, channel: event.target.value as CRMLeadChannel }))
-                }
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              >
-                <option value="SMS">SMS</option>
-                <option value="Webchat">Webchat</option>
-                <option value="Facebook">Facebook</option>
-                <option value="Instagram">Instagram</option>
-                <option value="Phone">Phone</option>
-              </select>
-            </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
-              onClick={addLead}
-              className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+              onClick={() => {
+                if (!nextFollowUpLead) return;
+                setSelectedLeadId(nextFollowUpLead.id);
+                updateLead(nextFollowUpLead.id, { stage: "Contacted", lastTouch: `${todayIso()} 09:00` });
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
             >
-              <Plus size={14} /> Add Lead
+              <PhoneCall size={15} /> Call Next Up
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedLead) {
+                  updateLead(selectedLead.id, { stage: "Contacted", lastTouch: `${todayIso()} 09:00` });
+                }
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+            >
+              Mark Selected Contacted
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-5">
+          <div className="rounded-2xl border border-slate-200 bg-white/90 p-4">
+            <div className="text-[11px] uppercase tracking-wide text-slate-500">Open Leads</div>
+            <div className="mt-1 text-2xl font-semibold text-slate-900">{stats.open}</div>
+          </div>
+          <div className="rounded-2xl border border-violet-200 bg-violet-50/80 p-4">
+            <div className="text-[11px] uppercase tracking-wide text-violet-700">Appointments</div>
+            <div className="mt-1 text-2xl font-semibold text-violet-900">{stats.appointments}</div>
+          </div>
+          <div className="rounded-2xl border border-blue-200 bg-blue-50/80 p-4">
+            <div className="text-[11px] uppercase tracking-wide text-blue-700">Quoted</div>
+            <div className="mt-1 text-2xl font-semibold text-blue-900">{stats.quoted}</div>
+          </div>
+          <div className="rounded-2xl border border-rose-200 bg-rose-50/80 p-4">
+            <div className="text-[11px] uppercase tracking-wide text-rose-700">Overdue</div>
+            <div className="mt-1 text-2xl font-semibold text-rose-900">{stats.overdue}</div>
+          </div>
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4">
+            <div className="text-[11px] uppercase tracking-wide text-emerald-700">Active UPS</div>
+            <div className="mt-1 text-2xl font-semibold text-emerald-900">{upsStats.active}</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-12">
+        <div className="space-y-5 xl:col-span-8">
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Today&apos;s Follow-ups</h3>
+                <p className="text-xs text-slate-500">Ordered by due date so reps know what to do next.</p>
+              </div>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-600">
+                {topFollowUps.length} showing
+              </span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {!topFollowUps.length ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-sm text-slate-500">
+                  No open follow-ups.
+                </div>
+              ) : (
+                topFollowUps.map((lead) => (
+                  <div
+                    key={lead.id}
+                    className={`rounded-2xl border px-3 py-3 ${
+                      selectedLeadId === lead.id
+                        ? "border-blue-300 bg-blue-50/40"
+                        : "border-slate-200 bg-white"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLeadId(lead.id)}
+                        className="text-left"
+                      >
+                        <div className="text-sm font-semibold text-slate-900">{lead.name}</div>
+                        <div className="mt-1 text-xs text-slate-600">{lead.nextAction}</div>
+                        <div className="mt-1 text-[11px] text-slate-500">
+                          {lead.owner} · Due {lead.dueDate}
+                        </div>
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${stagePillClass(lead.stage)}`}>
+                          {lead.stage}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedLeadId(lead.id);
+                            updateLead(lead.id, { stage: "Contacted", lastTouch: `${todayIso()} 09:00` });
+                          }}
+                          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700"
+                        >
+                          <PhoneCall size={12} /> Call
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </section>
 
-          <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Pipeline Board</h3>
+              <span className="text-xs uppercase tracking-wide text-slate-500">Dragless quick stage updates</span>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              <div className="flex min-w-[980px] gap-4 pb-1">
+                {STAGES.map((stage) => (
+                  <div key={stage} className="w-[230px] shrink-0 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-semibold text-slate-800">{stage}</div>
+                      <span className="text-xs font-semibold text-slate-500">{leadsByStage[stage].length}</span>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {leadsByStage[stage].map((lead) => (
+                        <div
+                          key={lead.id}
+                          className={`rounded-xl border px-3 py-2 text-sm ${
+                            selectedLeadId === lead.id
+                              ? "border-blue-300 bg-white shadow-sm"
+                              : "border-slate-200 bg-white"
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setSelectedLeadId(lead.id)}
+                            className="w-full text-left"
+                          >
+                            <div className="font-semibold text-slate-900">{lead.name}</div>
+                            <div className="mt-1 text-xs text-slate-500">{lead.interest}</div>
+                            <div className="mt-1 text-xs text-slate-500">{lead.owner} · Due {lead.dueDate}</div>
+                          </button>
+                          <select
+                            value={lead.stage}
+                            onChange={(event) =>
+                              updateLead(lead.id, {
+                                stage: event.target.value as CRMLeadStage,
+                                lastTouch: `${todayIso()} 09:00`,
+                              })
+                            }
+                            className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+                          >
+                            {STAGES.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div className="space-y-5 xl:col-span-4">
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-slate-900">Contact 360</h3>
-              <span className="text-xs uppercase tracking-wide text-slate-500">Editable</span>
+              <span className="text-xs uppercase tracking-wide text-slate-500">Live editor</span>
             </div>
             {!selectedLead ? (
               <p className="mt-3 text-sm text-slate-500">Select a lead from the pipeline to edit details.</p>
@@ -995,158 +841,353 @@ const CRMWorkspace: React.FC = () => {
                   className="h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
                   placeholder="Notes"
                 />
-                <div className="inline-flex rounded-full border px-3 py-1 text-xs font-semibold text-slate-700">
+                <div className="inline-flex rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700">
                   Stage: {selectedLead.stage}
                 </div>
               </div>
             )}
           </section>
-        </div>
-      </section>
 
-      <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-900">Follow-up Queue</h3>
-          <span className="text-xs uppercase tracking-wide text-slate-500">Priority by due date</span>
-        </div>
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
-                <th className="py-2 pr-4">Lead</th>
-                <th className="py-2 pr-4">Stage</th>
-                <th className="py-2 pr-4">Next Action</th>
-                <th className="py-2 pr-4">Due</th>
-                <th className="py-2 pr-4">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {followUps.map((lead) => (
-                <tr key={lead.id}>
-                  <td className="py-3 pr-4 font-semibold text-slate-900">{lead.name}</td>
-                  <td className="py-3 pr-4">
-                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${stagePillClass(lead.stage)}`}>
-                      {lead.stage}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 text-slate-700">{lead.nextAction}</td>
-                  <td className="py-3 pr-4 text-slate-700">{lead.dueDate}</td>
-                  <td className="py-3 pr-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedLeadId(lead.id);
-                        updateLead(lead.id, { stage: "Contacted", lastTouch: `${todayIso()} 09:00` });
-                      }}
-                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600"
-                    >
-                      <PhoneCall size={12} /> Call
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-5">
-          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-            <MessageSquare size={14} /> Unified Inbox Snapshot
-          </div>
-          <div className="mt-3 space-y-2">
-            {inboxItems.map((lead) => (
-              <button
-                key={lead.id}
-                type="button"
-                onClick={() => setSelectedLeadId(lead.id)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold text-slate-900">{lead.name}</div>
-                  <div className="text-[11px] text-slate-500">{lead.channel}</div>
-                </div>
-                <div className="mt-1 text-xs text-slate-600">{lead.lastMessage}</div>
-                <div className="mt-1 text-[11px] text-slate-400">Last touch: {lead.lastTouch}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-5">
-          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-            <Activity size={14} /> Automation Rules
-          </div>
-          <div className="mt-3 space-y-3">
-            {automations.map((rule) => (
-              <div key={rule.id} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-900">{rule.label}</div>
-                    <div className="mt-1 text-xs text-slate-600">{rule.description}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => toggleAutomation(rule.id)}
-                    className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
-                      rule.enabled ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-700"
-                    }`}
-                  >
-                    {rule.enabled ? "ON" : "OFF"}
-                  </button>
-                </div>
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Lead Intake</h3>
+              <span className="text-xs uppercase tracking-wide text-slate-500">Fast add</span>
+            </div>
+            <div className="mt-3 grid grid-cols-1 gap-2">
+              <input
+                value={newLead.name}
+                onChange={(event) => setNewLead((current) => ({ ...current, name: event.target.value }))}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Customer name"
+              />
+              <input
+                value={newLead.phone}
+                onChange={(event) => setNewLead((current) => ({ ...current, phone: event.target.value }))}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Phone"
+              />
+              <input
+                value={newLead.interest}
+                onChange={(event) => setNewLead((current) => ({ ...current, interest: event.target.value }))}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Interest"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  value={newLead.budget}
+                  onChange={(event) => setNewLead((current) => ({ ...current, budget: event.target.value }))}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  placeholder="Budget"
+                />
+                <input
+                  value={newLead.store}
+                  onChange={(event) => setNewLead((current) => ({ ...current, store: event.target.value }))}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  placeholder="Store"
+                />
               </div>
-            ))}
-          </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  value={newLead.owner}
+                  onChange={(event) => setNewLead((current) => ({ ...current, owner: event.target.value }))}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  placeholder="Owner"
+                />
+                <select
+                  value={newLead.channel}
+                  onChange={(event) =>
+                    setNewLead((current) => ({ ...current, channel: event.target.value as CRMLeadChannel }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="SMS">SMS</option>
+                  <option value="Webchat">Webchat</option>
+                  <option value="Facebook">Facebook</option>
+                  <option value="Instagram">Instagram</option>
+                  <option value="Phone">Phone</option>
+                </select>
+              </div>
+              <input
+                value={newLead.source}
+                onChange={(event) => setNewLead((current) => ({ ...current, source: event.target.value }))}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Lead source"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={addLead}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+            >
+              <Plus size={14} /> Add Lead
+            </button>
+          </section>
         </div>
+      </section>
 
-        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-5">
-          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-            <Bot size={14} /> Message Templates
-          </div>
-          <div className="mt-3 space-y-3">
-            {templates.map((template) => (
-              <div key={template.id} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
-                <div className="text-sm font-semibold text-slate-900">{template.title}</div>
-                <div className="mt-1 text-xs text-slate-600">{template.body}</div>
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-12">
+        <div className="space-y-5 xl:col-span-8">
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">UPS Queue</h3>
+                <p className="text-xs text-slate-500">Unattended, be-back, and quote follow-up lanes in one view.</p>
+              </div>
+              <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-600">
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">Active {upsStats.active}</span>
+                <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-rose-700">Hot {upsStats.hot}</span>
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700">Done {upsStats.completed}</span>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+                <input
+                  value={upsDraft.customer}
+                  onChange={(event) => setUpsDraft((current) => ({ ...current, customer: event.target.value }))}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  placeholder="Customer"
+                />
+                <input
+                  value={upsDraft.task}
+                  onChange={(event) => setUpsDraft((current) => ({ ...current, task: event.target.value }))}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") addUpsItem();
+                  }}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  placeholder="Next action"
+                />
+                <input
+                  value={upsDraft.owner}
+                  onChange={(event) => setUpsDraft((current) => ({ ...current, owner: event.target.value }))}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  placeholder="Owner"
+                />
+                <input
+                  type="date"
+                  value={upsDraft.dueAt}
+                  onChange={(event) => setUpsDraft((current) => ({ ...current, dueAt: event.target.value }))}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+                <select
+                  value={upsDraft.priority}
+                  onChange={(event) =>
+                    setUpsDraft((current) => ({
+                      ...current,
+                      priority: event.target.value as UpsPriority,
+                    }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="Hot">Hot</option>
+                  <option value="Today">Today</option>
+                  <option value="Nurture">Nurture</option>
+                </select>
+                <select
+                  value={upsDraft.lane}
+                  onChange={(event) =>
+                    setUpsDraft((current) => ({
+                      ...current,
+                      lane: event.target.value as UpsLane,
+                    }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="Unattended">Unattended</option>
+                  <option value="Be-Back">Be-Back</option>
+                  <option value="Quote Follow-up">Quote Follow-up</option>
+                </select>
+                <select
+                  value={upsDraft.channel}
+                  onChange={(event) =>
+                    setUpsDraft((current) => ({
+                      ...current,
+                      channel: event.target.value as CRMLeadChannel,
+                    }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="SMS">SMS</option>
+                  <option value="Webchat">Webchat</option>
+                  <option value="Facebook">Facebook</option>
+                  <option value="Instagram">Instagram</option>
+                  <option value="Phone">Phone</option>
+                </select>
                 <button
                   type="button"
-                  onClick={() => copyTemplate(template.id, template.body)}
-                  className="mt-2 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700"
+                  onClick={addUpsItem}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
                 >
-                  {copiedTemplate === template.id ? "Copied" : "Copy template"}
+                  <Plus size={14} /> Add UPS Item
                 </button>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+            </div>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-5">
-          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-            <UsersRound size={14} /> Team Ownership
-          </div>
-          <p className="mt-3 text-sm text-slate-600">
-            Every lead has a named owner so accountability is visible and measurable.
-          </p>
+            <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
+              {UPS_LANES.map((lane) => (
+                <div key={lane} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${upsLaneClass(lane)}`}>
+                      {lane}
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500">{upsByLane[lane].length}</span>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {!upsByLane[lane].length ? (
+                      <div className="rounded-xl border border-dashed border-slate-300 bg-white px-3 py-3 text-xs text-slate-500">
+                        No active items.
+                      </div>
+                    ) : (
+                      upsByLane[lane].map((item) => (
+                        <div key={item.id} className="rounded-xl border border-slate-200 bg-white px-3 py-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="text-sm font-semibold text-slate-900">{item.customer}</div>
+                              <div className="mt-1 text-xs text-slate-600">{item.task}</div>
+                            </div>
+                            <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${upsPriorityClass(item.priority)}`}>
+                              {item.priority}
+                            </span>
+                          </div>
+                          <div className="mt-2 text-[11px] text-slate-500">
+                            {item.owner} · Due {item.dueAt} · {item.channel}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => toggleUpsItem(item.id)}
+                            className="mt-2 inline-flex rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold text-white"
+                          >
+                            Done
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {!!completedUps.length && (
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recently Completed</div>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {completedUps.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => toggleUpsItem(item.id)}
+                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-600"
+                    >
+                      <span className="line-through">{item.customer} - {item.task}</span>
+                      <span className="rounded-full border border-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                        Reopen
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+                <UsersRound size={14} /> Team Ownership
+              </div>
+              <p className="mt-2 text-sm text-slate-600">
+                Owner name is visible everywhere so reps know who is accountable for next action.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+                <CalendarCheck2 size={14} /> Follow-up Discipline
+              </div>
+              <p className="mt-2 text-sm text-slate-600">
+                Today-first queue keeps urgency visible and prevents leads from going stale.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+                <UserRound size={14} /> Contact Context
+              </div>
+              <p className="mt-2 text-sm text-slate-600">
+                Contact 360 and message snippets keep every outreach personal and consistent.
+              </p>
+            </div>
+          </section>
         </div>
-        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-5">
-          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-            <CalendarCheck2 size={14} /> Follow-up Discipline
-          </div>
-          <p className="mt-3 text-sm text-slate-600">
-            Prioritized queue and overdue flags help reps close loops faster and reduce leakage.
-          </p>
-        </div>
-        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-5">
-          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-            <UserRound size={14} /> Contact Intelligence
-          </div>
-          <p className="mt-3 text-sm text-slate-600">
-            Notes, budget, source, and intent make each conversation more relevant and conversion-focused.
-          </p>
+
+        <div className="space-y-5 xl:col-span-4">
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+              <MessageSquare size={14} /> Unified Inbox Snapshot
+            </div>
+            <div className="mt-3 space-y-2">
+              {inboxItems.map((lead) => (
+                <button
+                  key={lead.id}
+                  type="button"
+                  onClick={() => setSelectedLeadId(lead.id)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-semibold text-slate-900">{lead.name}</div>
+                    <div className="text-[11px] text-slate-500">{lead.channel}</div>
+                  </div>
+                  <div className="mt-1 text-xs text-slate-600">{lead.lastMessage}</div>
+                  <div className="mt-1 text-[11px] text-slate-400">Last touch: {lead.lastTouch}</div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+              <Activity size={14} /> Automation Rules
+            </div>
+            <div className="mt-3 space-y-3">
+              {automations.map((rule) => (
+                <div key={rule.id} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">{rule.label}</div>
+                      <div className="mt-1 text-xs text-slate-600">{rule.description}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleAutomation(rule.id)}
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
+                        rule.enabled ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-700"
+                      }`}
+                    >
+                      {rule.enabled ? "ON" : "OFF"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+              <Bot size={14} /> Message Templates
+            </div>
+            <div className="mt-3 space-y-3">
+              {templates.map((template) => (
+                <div key={template.id} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                  <div className="text-sm font-semibold text-slate-900">{template.title}</div>
+                  <div className="mt-1 text-xs text-slate-600">{template.body}</div>
+                  <button
+                    type="button"
+                    onClick={() => copyTemplate(template.id, template.body)}
+                    className="mt-2 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700"
+                  >
+                    {copiedTemplate === template.id ? "Copied" : "Copy template"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </section>
     </div>
