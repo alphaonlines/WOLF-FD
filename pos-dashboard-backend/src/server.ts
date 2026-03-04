@@ -25,6 +25,7 @@ import { registerReportRoutes } from "./routes/reportRoutes";
 import { registerAnalyticsRoutes } from "./routes/analyticsRoutes";
 import { registerSalesDetailRoutes } from "./routes/salesDetailRoutes";
 import { registerInsightsRoutes } from "./routes/insightsRoutes";
+import { registerSystemRoutes } from "./routes/systemRoutes";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -39,6 +40,8 @@ app.use(express.json());
 const uploadsDir = path.resolve(__dirname, "..", "incoming");
 fs.mkdirSync(uploadsDir, { recursive: true });
 const execFileAsync = promisify(execFile);
+const importerPath = path.resolve(__dirname, "..", "importer", "import_pos_xlsx.py");
+const pythonBin = process.env.POS_IMPORT_PYTHON || "python";
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -440,12 +443,6 @@ async function ensureCrmSchema() {
   `);
 }
 
-// Health
-app.get("/health", async (_req, res) => {
-  const r = await pool.query("SELECT 1 AS ok");
-  res.json({ ok: true, db: r.rows[0].ok });
-});
-
 registerAuthRoutes({
   app,
   pool,
@@ -506,59 +503,6 @@ registerAdminRoutes({
   },
 });
 
-app.post("/api/import/upload", upload.array("files", 25), async (req, res) => {
-  const rawFiles = (req as any).files as Array<{ originalname: string; filename: string; size: number }> | undefined;
-  const files = Array.isArray(rawFiles) ? rawFiles : [];
-  if (!files.length) {
-    res.status(400).json({ ok: false, error: "No files uploaded" });
-    return;
-  }
-  const importerPath = path.resolve(__dirname, "..", "importer", "import_pos_xlsx.py");
-  const pythonBin = process.env.POS_IMPORT_PYTHON || "python";
-  let importOutput = "";
-  let importError = "";
-  const tempDir = fs.mkdtempSync(path.join(uploadsDir, "upload-"));
-  try {
-    for (const file of files) {
-      const src = path.join(uploadsDir, file.filename);
-      const dest = path.join(tempDir, file.filename);
-      if (fs.existsSync(src)) {
-        fs.renameSync(src, dest);
-      }
-    }
-    const { stdout, stderr } = await execFileAsync(
-      pythonBin,
-      [importerPath, "--incoming", tempDir, "--no-move"],
-      { timeout: 5 * 60 * 1000 }
-    );
-    importOutput = stdout?.toString() || "";
-    importError = stderr?.toString() || "";
-  } catch (err: any) {
-    importError = err?.stderr?.toString?.() || String(err?.message || err);
-  } finally {
-    try {
-      fs.rmSync(tempDir, { recursive: true, force: true });
-    } catch {
-      // ignore cleanup errors
-    }
-  }
-
-  res.json({
-    ok: true,
-    saved_to: uploadsDir,
-    files: files.map((f) => ({
-      original_name: f.originalname,
-      stored_name: f.filename,
-      size: f.size,
-    })),
-    import: {
-      ok: importError ? false : true,
-      stdout: importOutput,
-      stderr: importError,
-    },
-  });
-});
-
 registerTaskRoutes(app, pool);
 registerCrmRoutes(app, pool);
 registerReportRoutes({ app, pool, prefixedDateField });
@@ -573,6 +517,15 @@ registerInsightsRoutes({
   safeTotalFinanceAmt: SAFE_TOTAL_FINANCE_AMT,
   safeFinanceBalance: SAFE_FINANCE_BALANCE,
   safeFinanceFee: SAFE_FINANCE_FEE,
+});
+registerSystemRoutes({
+  app,
+  pool,
+  upload,
+  uploadsDir,
+  importerPath,
+  pythonBin,
+  execFileAsync,
 });
 
 const port = Number(process.env.PORT || 5057);
