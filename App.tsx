@@ -11,7 +11,6 @@ import {
   Sun,
   UploadCloud,
   Monitor,
-  Home,
   ClipboardList,
   Bot,
   LogOut,
@@ -42,7 +41,7 @@ import { canAccessTab, getTabTitle, Tab } from './components/app/tabs';
 import { DASHBOARD_CARD_PERMISSION_BY_ID, FEATURE_PERMISSION_KEYS, hasPermission } from './components/app/permissions';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
+  const [activeTab, setActiveTab] = useState<Tab>(Tab.CRM);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
@@ -365,15 +364,6 @@ const App: React.FC = () => {
                 label="CRM"
                 isActive={activeTab === Tab.CRM}
                 onClick={() => setActiveTab(Tab.CRM)}
-                isOpen={sidebarOpen}
-              />
-            )}
-            {canView(Tab.DASHBOARD) && (
-              <NavItem
-                icon={<Home size={20} />}
-                label="Dashboard"
-                isActive={activeTab === Tab.DASHBOARD}
-                onClick={() => setActiveTab(Tab.DASHBOARD)}
                 isOpen={sidebarOpen}
               />
             )}
