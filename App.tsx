@@ -246,6 +246,12 @@ const App: React.FC = () => {
     }
   };
 
+  const openChangePasswordModal = () => {
+    setPasswordModalOpen(true);
+    setPasswordMessage(null);
+    setPasswordError(null);
+  };
+
   const closeUpdatePanel = () => {
     setUpdatePanelClosing(true);
     window.setTimeout(() => {
@@ -289,7 +295,7 @@ const App: React.FC = () => {
       case Tab.TASKS:
         return <TaskManager />;
       case Tab.ADMIN:
-        return <OwnerSettings />;
+        return <OwnerSettings onOpenChangePassword={openChangePasswordModal} />;
       default:
         return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
     }
@@ -583,17 +589,6 @@ const App: React.FC = () => {
                 title="Toggle night mode"
               >
                 {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-              <button
-                onClick={() => {
-                  setPasswordModalOpen(true);
-                  setPasswordMessage(null);
-                  setPasswordError(null);
-                }}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                title="Change your password"
-              >
-                Change Password
               </button>
               <button
                 onClick={handleLogout}

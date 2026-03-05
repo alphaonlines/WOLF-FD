@@ -4,16 +4,31 @@ import AccessPermissions from "./settings/AccessPermissions";
 
 type SettingsPanel = "users" | "permissions";
 
-const OwnerSettings: React.FC = () => {
+type OwnerSettingsProps = {
+  onOpenChangePassword: () => void;
+};
+
+const OwnerSettings: React.FC<OwnerSettingsProps> = ({ onOpenChangePassword }) => {
   const [panel, setPanel] = useState<SettingsPanel>("users");
 
   return (
     <div className="space-y-6">
       <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-slate-900">Owner Settings</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Manage employee accounts and role-based access to modules and dashboard cards.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">Owner Settings</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Manage employee accounts and role-based access to modules and dashboard cards.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenChangePassword}
+            className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Change Password
+          </button>
+        </div>
         <div className="mt-4 inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
           <button
             type="button"
