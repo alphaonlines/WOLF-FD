@@ -196,7 +196,7 @@ const seedUpsList: UpsItem[] = [
   },
 ];
 
-const FLOOR_SALESPEOPLE = ["Alex", "Jordan", "Taylor", "Morgan", "Jamie"];
+const FLOOR_SALESPEOPLE = ["Alex", "Jordan", "Taylor", "Morgan", "Jamie", "Kassia", "Stephanie"];
 const LOCATION_OPTIONS = ["Camp", "Base", "G1", "FD7", "FD5"];
 
 const seedAutomations: CRMAutomationRule[] = [
