@@ -21,13 +21,7 @@ import {
 } from "../services/crmApi";
 import {
   normalizeUpsList,
-  priorityRank,
   type UpsItem,
-  type UpsLane,
-  type UpsPriority,
-  UPS_LANES,
-  upsLaneClass,
-  upsPriorityClass,
 } from "./crmUpsUtils";
 
 type CRMSyncMode = "POS_DB" | "LOCAL_STORAGE";
@@ -180,6 +174,8 @@ const seedUpsList: UpsItem[] = [
   },
 ];
 
+const FLOOR_SALESPEOPLE = ["Alex", "Jordan", "Taylor", "Morgan", "Jamie"];
+
 const seedAutomations: CRMAutomationRule[] = [
   {
     id: "auto-1",
@@ -242,12 +238,10 @@ const CRMWorkspace: React.FC = () => {
   const [upsDraft, setUpsDraft] = useState({
     customer: "",
     task: "",
-    owner: "Unassigned",
-    lane: "Unattended" as UpsLane,
-    priority: "Today" as UpsPriority,
-    dueAt: todayIso(),
+    owner: FLOOR_SALESPEOPLE[0],
     channel: "SMS" as CRMLeadChannel,
   });
+  const [assignmentDrafts, setAssignmentDrafts] = useState<Record<string, string>>({});
   const [automations, setAutomations] = useState<CRMAutomationRule[]>(() => readLocal(AUTOMATION_KEY, seedAutomations));
   const [selectedLeadId, setSelectedLeadId] = useState<string>(() => readLocal(LEAD_KEY, seedLeads)[0]?.id ?? "");
   const [copiedTemplate, setCopiedTemplate] = useState<string | null>(null);
@@ -408,37 +402,67 @@ const CRMWorkspace: React.FC = () => {
       .slice(0, 7);
   }, [leads]);
 
-  const upsStats = useMemo(() => {
-    const active = upsList.filter((item) => !item.done).length;
-    const unattended = upsList.filter((item) => !item.done && item.lane === "Unattended").length;
-    const hot = upsList.filter((item) => !item.done && item.priority === "Hot").length;
-    const completed = upsList.filter((item) => item.done).length;
-    return { active, unattended, hot, completed };
-  }, [upsList]);
-
   const orderedUpsList = useMemo(() => {
     return [...upsList].sort((a, b) => {
       if (a.done !== b.done) return a.done ? 1 : -1;
-      const byPriority = priorityRank[a.priority] - priorityRank[b.priority];
-      if (byPriority !== 0) return byPriority;
-      return a.dueAt.localeCompare(b.dueAt);
+      const aAssigned = a.owner.trim() && a.owner !== "Unassigned";
+      const bAssigned = b.owner.trim() && b.owner !== "Unassigned";
+      if (aAssigned !== bAssigned) return aAssigned ? -1 : 1;
+      const aStart = a.startedAt || "";
+      const bStart = b.startedAt || "";
+      if (aStart !== bStart) return bStart.localeCompare(aStart);
+      return b.dueAt.localeCompare(a.dueAt);
     });
   }, [upsList]);
 
-  const upsByLane = useMemo(() => {
-    const grouped: Record<UpsLane, UpsItem[]> = {
-      Unattended: [],
-      "Be-Back": [],
-      "Quote Follow-up": [],
-    };
-    for (const item of orderedUpsList) {
-      const laneBucket = grouped[item.lane as UpsLane];
-      if (!item.done && laneBucket) laneBucket.push(item);
-    }
-    return grouped;
-  }, [orderedUpsList]);
+  const activeUps = useMemo(() => orderedUpsList.filter((item) => !item.done), [orderedUpsList]);
+  const waitingUps = useMemo(
+    () => activeUps.filter((item) => !item.owner.trim() || item.owner === "Unassigned"),
+    [activeUps]
+  );
+  const engagedUps = useMemo(
+    () => activeUps.filter((item) => item.owner.trim() && item.owner !== "Unassigned"),
+    [activeUps]
+  );
+  const completedUps = useMemo(() => orderedUpsList.filter((item) => item.done).slice(0, 8), [orderedUpsList]);
 
-  const completedUps = useMemo(() => orderedUpsList.filter((item) => item.done).slice(0, 6), [orderedUpsList]);
+  const floorSalespeople = useMemo(() => {
+    const set = new Set<string>(FLOOR_SALESPEOPLE);
+    for (const lead of leads) {
+      const owner = String(lead.owner || "").trim();
+      if (!owner || owner === "Unassigned") continue;
+      set.add(owner);
+    }
+    for (const item of upsList) {
+      const owner = String(item.owner || "").trim();
+      if (!owner || owner === "Unassigned") continue;
+      set.add(owner);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [leads, upsList]);
+
+  const floorStatus = useMemo(() => {
+    return floorSalespeople.map((rep) => {
+      const assignments = engagedUps.filter((item) => item.owner === rep);
+      const activeCustomer = assignments[0] || null;
+      return {
+        rep,
+        assignments,
+        activeCustomer,
+        isDown: Boolean(activeCustomer),
+      };
+    });
+  }, [floorSalespeople, engagedUps]);
+
+  const upsStats = useMemo(() => {
+    const active = activeUps.length;
+    const waiting = waitingUps.length;
+    const engaged = engagedUps.length;
+    const repsDown = floorStatus.filter((row) => row.isDown).length;
+    const completed = upsList.filter((item) => item.done).length;
+    return { active, waiting, engaged, repsDown, completed };
+  }, [activeUps.length, waitingUps.length, engagedUps.length, floorStatus, upsList]);
+
   const topFollowUps = useMemo(() => followUps.slice(0, 6), [followUps]);
   const focusUpsItems = useMemo(() => orderedUpsList.filter((item) => !item.done).slice(0, 6), [orderedUpsList]);
   const nextFollowUpLead = topFollowUps[0] ?? null;
@@ -513,33 +537,55 @@ const CRMWorkspace: React.FC = () => {
           ? {
               ...item,
               done: !item.done,
+              startedAt:
+                item.done && item.owner && item.owner !== "Unassigned"
+                  ? item.startedAt || new Date().toISOString()
+                  : item.startedAt,
             }
           : item
       )
     );
   };
 
+  const assignUpsItem = (id: string, owner: string) => {
+    const normalizedOwner = owner.trim() || "Unassigned";
+    setUpsList((current) =>
+      current.map((item) => {
+        if (item.id !== id) return item;
+        const assigned = normalizedOwner !== "Unassigned";
+        return {
+          ...item,
+          owner: normalizedOwner,
+          lane: assigned ? "Quote Follow-up" : "Unattended",
+          priority: assigned ? "Hot" : item.priority,
+          startedAt: assigned ? item.startedAt || new Date().toISOString() : undefined,
+        };
+      })
+    );
+  };
+
   const addUpsItem = () => {
-    if (!upsDraft.customer.trim() || !upsDraft.task.trim()) return;
+    if (!upsDraft.customer.trim()) return;
+    const owner = upsDraft.owner.trim() || "Unassigned";
+    const assigned = owner !== "Unassigned";
     const created: UpsItem = {
       id: `ups-${Date.now()}`,
       customer: upsDraft.customer.trim(),
-      task: upsDraft.task.trim(),
-      owner: upsDraft.owner.trim() || "Unassigned",
-      lane: upsDraft.lane,
-      priority: upsDraft.priority,
-      dueAt: upsDraft.dueAt || todayIso(),
+      task: upsDraft.task.trim() || "Showroom walk-in customer",
+      owner,
+      lane: assigned ? "Quote Follow-up" : "Unattended",
+      priority: assigned ? "Hot" : "Today",
+      dueAt: todayIso(),
       channel: upsDraft.channel,
       done: false,
+      startedAt: assigned ? new Date().toISOString() : undefined,
     };
     setUpsList((current) => [created, ...current]);
     setUpsDraft((current) => ({
       ...current,
       customer: "",
       task: "",
-      dueAt: todayIso(),
-      priority: "Today",
-      lane: "Unattended",
+      owner: FLOOR_SALESPEOPLE[0],
       channel: "SMS",
     }));
   };
@@ -576,6 +622,13 @@ const CRMWorkspace: React.FC = () => {
     } catch {
       setCopiedTemplate(null);
     }
+  };
+
+  const formatStartedAt = (value?: string) => {
+    if (!value) return "just now";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "just now";
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   };
 
   return (
@@ -730,7 +783,9 @@ const CRMWorkspace: React.FC = () => {
                       <div>
                         <div className="text-sm font-semibold text-slate-900">{item.customer}</div>
                         <div className="mt-1 text-xs text-slate-600">{item.task}</div>
-                        <div className="mt-1 text-[11px] text-slate-500">{item.owner} · {item.lane}</div>
+                        <div className="mt-1 text-[11px] text-slate-500">
+                          {item.owner === "Unassigned" ? "Waiting for rep assignment" : `${item.owner} · Down since ${formatStartedAt(item.startedAt)}`}
+                        </div>
                       </div>
                       <button
                         type="button"
@@ -1070,12 +1125,13 @@ const CRMWorkspace: React.FC = () => {
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">UPS Queue</h3>
-                <p className="text-xs text-slate-500">Unattended, be-back, and quote follow-up lanes in one view.</p>
+                <h3 className="text-lg font-semibold text-slate-900">Showroom Up List</h3>
+                <p className="text-xs text-slate-500">Log walk-ins, assign reps, and track who is currently down with a customer.</p>
               </div>
               <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-600">
                 <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">Active {upsStats.active}</span>
-                <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-rose-700">Hot {upsStats.hot}</span>
+                <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-violet-700">Waiting {upsStats.waiting}</span>
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-700">Down Reps {upsStats.repsDown}</span>
                 <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700">Done {upsStats.completed}</span>
               </div>
             </div>
@@ -1086,7 +1142,7 @@ const CRMWorkspace: React.FC = () => {
                   value={upsDraft.customer}
                   onChange={(event) => setUpsDraft((current) => ({ ...current, customer: event.target.value }))}
                   className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                  placeholder="Customer"
+                  placeholder="Customer name"
                 />
                 <input
                   value={upsDraft.task}
@@ -1095,47 +1151,24 @@ const CRMWorkspace: React.FC = () => {
                     if (event.key === "Enter") addUpsItem();
                   }}
                   className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                  placeholder="Next action"
+                  placeholder="Notes (optional)"
                 />
-                <input
+                <select
                   value={upsDraft.owner}
-                  onChange={(event) => setUpsDraft((current) => ({ ...current, owner: event.target.value }))}
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                  placeholder="Owner"
-                />
-                <input
-                  type="date"
-                  value={upsDraft.dueAt}
-                  onChange={(event) => setUpsDraft((current) => ({ ...current, dueAt: event.target.value }))}
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                />
-                <select
-                  value={upsDraft.priority}
                   onChange={(event) =>
                     setUpsDraft((current) => ({
                       ...current,
-                      priority: event.target.value as UpsPriority,
+                      owner: event.target.value,
                     }))
                   }
                   className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
                 >
-                  <option value="Hot">Hot</option>
-                  <option value="Today">Today</option>
-                  <option value="Nurture">Nurture</option>
-                </select>
-                <select
-                  value={upsDraft.lane}
-                  onChange={(event) =>
-                    setUpsDraft((current) => ({
-                      ...current,
-                      lane: event.target.value as UpsLane,
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                >
-                  <option value="Unattended">Unattended</option>
-                  <option value="Be-Back">Be-Back</option>
-                  <option value="Quote Follow-up">Quote Follow-up</option>
+                  <option value="Unassigned">Unassigned / waiting</option>
+                  {floorSalespeople.map((rep) => (
+                    <option key={rep} value={rep}>
+                      {rep}
+                    </option>
+                  ))}
                 </select>
                 <select
                   value={upsDraft.channel}
@@ -1158,53 +1191,165 @@ const CRMWorkspace: React.FC = () => {
                   onClick={addUpsItem}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
                 >
-                  <Plus size={14} /> Add UPS Item
+                  <Plus size={14} /> Check In Customer
                 </button>
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
-              {UPS_LANES.map((lane) => (
-                <div key={lane} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="flex items-center justify-between">
-                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${upsLaneClass(lane)}`}>
-                      {lane}
-                    </span>
-                    <span className="text-xs font-semibold text-slate-500">{upsByLane[lane].length}</span>
-                  </div>
-                  <div className="mt-3 space-y-2">
-                    {!upsByLane[lane].length ? (
-                      <div className="rounded-xl border border-dashed border-slate-300 bg-white px-3 py-3 text-xs text-slate-500">
-                        No active items.
+            <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-12">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 xl:col-span-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-slate-900">Sales Floor Status</h4>
+                  <span className="text-xs text-slate-500">{floorStatus.length} reps</span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {floorStatus.map((row) => (
+                    <div key={row.rep} className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm font-semibold text-slate-900">{row.rep}</div>
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                            row.isDown
+                              ? "border-amber-200 bg-amber-50 text-amber-700"
+                              : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          }`}
+                        >
+                          {row.isDown ? "DOWN / WORKING" : "AVAILABLE"}
+                        </span>
                       </div>
-                    ) : (
-                      upsByLane[lane].map((item) => (
+                      <div className="mt-1 text-[11px] text-slate-500">
+                        {row.activeCustomer
+                          ? `With ${row.activeCustomer.customer} since ${formatStartedAt(row.activeCustomer.startedAt)}`
+                          : "Ready for next walk-in"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 xl:col-span-8">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-slate-900">Active Floor Customers</h4>
+                  <span className="text-xs text-slate-500">{engagedUps.length} in progress</span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {!engagedUps.length ? (
+                    <div className="rounded-xl border border-dashed border-slate-300 bg-white px-3 py-3 text-xs text-slate-500">
+                      No customers are currently assigned to a rep.
+                    </div>
+                  ) : (
+                    engagedUps.map((item) => {
+                      const nextOwner = assignmentDrafts[item.id] || item.owner;
+                      return (
                         <div key={item.id} className="rounded-xl border border-slate-200 bg-white px-3 py-3">
-                          <div className="flex items-start justify-between gap-2">
+                          <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                             <div>
                               <div className="text-sm font-semibold text-slate-900">{item.customer}</div>
                               <div className="mt-1 text-xs text-slate-600">{item.task}</div>
+                              <div className="mt-1 text-[11px] text-slate-500">
+                                {item.owner} · {item.channel} · Started {formatStartedAt(item.startedAt)}
+                              </div>
                             </div>
-                            <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${upsPriorityClass(item.priority)}`}>
-                              {item.priority}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <select
+                                value={nextOwner}
+                                onChange={(event) =>
+                                  setAssignmentDrafts((current) => ({
+                                    ...current,
+                                    [item.id]: event.target.value,
+                                  }))
+                                }
+                                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+                              >
+                                {floorSalespeople.map((rep) => (
+                                  <option key={rep} value={rep}>
+                                    {rep}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => assignUpsItem(item.id, nextOwner)}
+                                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700"
+                              >
+                                Transfer
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => assignUpsItem(item.id, "Unassigned")}
+                                className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-[11px] font-semibold text-violet-700"
+                              >
+                                Back to Queue
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => toggleUpsItem(item.id)}
+                                className="rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold text-white"
+                              >
+                                Mark Complete
+                              </button>
+                            </div>
                           </div>
-                          <div className="mt-2 text-[11px] text-slate-500">
-                            {item.owner} · Due {item.dueAt} · {item.channel}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => toggleUpsItem(item.id)}
-                            className="mt-2 inline-flex rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold text-white"
-                          >
-                            Done
-                          </button>
                         </div>
-                      ))
-                    )}
-                  </div>
+                      );
+                    })
+                  )}
                 </div>
-              ))}
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-slate-900">Waiting Queue</h4>
+                <span className="text-xs text-slate-500">{waitingUps.length} waiting</span>
+              </div>
+              <div className="mt-3 space-y-2">
+                {!waitingUps.length ? (
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-white px-3 py-3 text-xs text-slate-500">
+                    No customers waiting for assignment.
+                  </div>
+                ) : (
+                  waitingUps.map((item) => {
+                    const queuedOwner = assignmentDrafts[item.id] || floorSalespeople[0] || "Unassigned";
+                    return (
+                      <div key={item.id} className="rounded-xl border border-slate-200 bg-white px-3 py-3">
+                        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900">{item.customer}</div>
+                            <div className="mt-1 text-xs text-slate-600">{item.task}</div>
+                            <div className="mt-1 text-[11px] text-slate-500">{item.channel} · Checked in {item.dueAt}</div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <select
+                              value={queuedOwner}
+                              onChange={(event) =>
+                                setAssignmentDrafts((current) => ({
+                                  ...current,
+                                  [item.id]: event.target.value,
+                                }))
+                              }
+                              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+                            >
+                              {floorSalespeople.map((rep) => (
+                                <option key={rep} value={rep}>
+                                  {rep}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => assignUpsItem(item.id, queuedOwner)}
+                              className="rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold text-white"
+                            >
+                              Assign Rep
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
 
             {!!completedUps.length && (

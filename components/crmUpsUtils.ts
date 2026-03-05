@@ -13,6 +13,7 @@ export type UpsItem = {
   dueAt: string;
   channel: CRMLeadChannel;
   done: boolean;
+  startedAt?: string;
 };
 
 export const UPS_LANES: UpsLane[] = ["Unattended", "Be-Back", "Quote Follow-up"];
@@ -47,7 +48,7 @@ export const normalizeUpsList = (raw: unknown, fallback: UpsItem[], todayIso: ()
   if (!Array.isArray(raw) || !raw.length) return fallback;
 
   const normalized = raw
-    .map((entry, index) => {
+    .map((entry, index): UpsItem | null => {
       if (!entry || typeof entry !== "object") return null;
       const item = entry as Record<string, unknown>;
       const legacyTitle = typeof item.title === "string" ? item.title.trim() : "";
@@ -68,12 +69,16 @@ export const normalizeUpsList = (raw: unknown, fallback: UpsItem[], todayIso: ()
           : todayIso();
       const channel = isLeadChannel(item.channel) ? item.channel : "SMS";
       const done = item.done === true;
+      const startedAt =
+        typeof item.startedAt === "string" && item.startedAt.trim()
+          ? item.startedAt
+          : undefined;
       const id =
         typeof item.id === "string" && item.id.trim()
           ? item.id
           : `ups-${Date.now()}-${index}`;
 
-      return {
+      const normalizedItem: UpsItem = {
         id,
         customer,
         task,
@@ -84,6 +89,8 @@ export const normalizeUpsList = (raw: unknown, fallback: UpsItem[], todayIso: ()
         channel,
         done,
       };
+      if (startedAt) normalizedItem.startedAt = startedAt;
+      return normalizedItem;
     })
     .filter((item): item is UpsItem => item !== null);
 
