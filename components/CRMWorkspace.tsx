@@ -12,6 +12,8 @@ import {
 import type {
   AuthUser,
   CRMAutomationRule,
+  CRMCustomerAccount,
+  CRMCustomerOrder,
   CRMLead,
   CRMLeadChannel,
   CRMLeadStage,
@@ -30,6 +32,7 @@ import {
   fetchCrmOwnersFromApi,
   fetchCrmUpsFromApi,
   fetchCrmUpsQueueFromApi,
+  findCrmCustomerAccount,
   joinCrmUpsQueueInApi,
   leaveCrmUpsQueueInApi,
   startCrmUpsQueueCustomerInApi,
@@ -266,6 +269,11 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const [upsRepQueue, setUpsRepQueue] = useState<CRMUpsQueueItem[]>(() => readLocal(UPS_REP_QUEUE_KEY, [] as CRMUpsQueueItem[]));
   const [selectedUpsStore, setSelectedUpsStore] = useState<string>(DEFAULT_STORES[0]);
   const [upsStartDrafts, setUpsStartDrafts] = useState<Record<string, { customer: string; type: UpsQueueCustomerType }>>({});
+  const [customerLookup, setCustomerLookup] = useState({ phone: "", email: "" });
+  const [customerLookupBusy, setCustomerLookupBusy] = useState(false);
+  const [customerLookupMsg, setCustomerLookupMsg] = useState<string | null>(null);
+  const [customerAccounts, setCustomerAccounts] = useState<CRMCustomerAccount[]>([]);
+  const [customerAccountOrders, setCustomerAccountOrders] = useState<CRMCustomerOrder[]>([]);
   const [upsDraft, setUpsDraft] = useState({
     customer: "",
     task: "",
@@ -865,6 +873,29 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     });
   };
 
+  const handleCustomerLookup = async () => {
+    const phone = customerLookup.phone.trim();
+    const email = customerLookup.email.trim();
+    if (!phone && !email) {
+      setCustomerLookupMsg("Enter a phone or email to search.");
+      return;
+    }
+    setCustomerLookupBusy(true);
+    setCustomerLookupMsg(null);
+    try {
+      const result = await findCrmCustomerAccount({ phone, email });
+      setCustomerAccounts(result.customers);
+      setCustomerAccountOrders(result.orders);
+      setCustomerLookupMsg(
+        `Found ${result.customers.length} account${result.customers.length === 1 ? "" : "s"} and ${result.orders.length} order${result.orders.length === 1 ? "" : "s"}.`
+      );
+    } catch (err: any) {
+      setCustomerLookupMsg(String(err?.message || "Customer search failed."));
+    } finally {
+      setCustomerLookupBusy(false);
+    }
+  };
+
   const toggleAutomation = (id: string) => {
     const currentRule = automations.find((item) => item.id === id);
     if (!currentRule) return;
@@ -1213,6 +1244,98 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                 );
               })
             )}
+          </div>
+        </section>
+      </section>
+
+      <section className={`${focusMode ? "hidden " : ""}`}>
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Search Customer Account</h3>
+              <p className="text-xs text-slate-500">Pull up a customer profile and linked sales history.</p>
+            </div>
+            {customerLookupMsg && <div className="text-xs font-semibold text-slate-600">{customerLookupMsg}</div>}
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
+            <input
+              value={customerLookup.phone}
+              onChange={(event) => setCustomerLookup((current) => ({ ...current, phone: event.target.value }))}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+              placeholder="Phone"
+            />
+            <input
+              value={customerLookup.email}
+              onChange={(event) => setCustomerLookup((current) => ({ ...current, email: event.target.value }))}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+              placeholder="Email"
+            />
+            <button
+              type="button"
+              disabled={customerLookupBusy}
+              onClick={() => void handleCustomerLookup()}
+              className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {customerLookupBusy ? "Searching..." : "Search Customer"}
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Customer Accounts</div>
+              {!customerAccounts.length ? (
+                <div className="mt-2 rounded-xl border border-dashed border-slate-300 bg-white px-3 py-3 text-xs text-slate-500">
+                  No customer loaded yet.
+                </div>
+              ) : (
+                <div className="mt-2 space-y-2">
+                  {customerAccounts.map((account) => (
+                    <div key={account.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">
+                      <div className="font-semibold text-slate-900">{account.name || "Unknown Customer"}</div>
+                      <div>{account.phone || "No phone"} {account.email ? `• ${account.email}` : ""}</div>
+                      <div className="text-slate-500">Store: {account.store || "FD7"}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Sales Orders</div>
+              {!customerAccountOrders.length ? (
+                <div className="mt-2 rounded-xl border border-dashed border-slate-300 bg-white px-3 py-3 text-xs text-slate-500">
+                  No linked orders found.
+                </div>
+              ) : (
+                <div className="mt-2 overflow-x-auto">
+                  <table className="min-w-full text-xs">
+                    <thead>
+                      <tr className="text-left text-slate-500">
+                        <th className="px-2 py-1">Sale ID</th>
+                        <th className="px-2 py-1">Customer</th>
+                        <th className="px-2 py-1">Sale Date</th>
+                        <th className="px-2 py-1">Delivered</th>
+                        <th className="px-2 py-1">Store</th>
+                        <th className="px-2 py-1">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customerAccountOrders.slice(0, 30).map((order) => (
+                        <tr key={order.saleId} className="border-t border-slate-200 text-slate-700">
+                          <td className="px-2 py-1">{order.saleId}</td>
+                          <td className="px-2 py-1">{order.customerName || "-"}</td>
+                          <td className="px-2 py-1">{order.saleDate || "-"}</td>
+                          <td className="px-2 py-1">{order.deliveryConfirmedDate || "-"}</td>
+                          <td className="px-2 py-1">{order.location || "-"}</td>
+                          <td className="px-2 py-1">{order.grandTotal === null ? "-" : `$${Number(order.grandTotal).toFixed(2)}`}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </section>
