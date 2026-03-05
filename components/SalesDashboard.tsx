@@ -1431,7 +1431,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
       <div className="fd-print-hide">
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-3 text-blue-800 fd-print-hide">
           <Database size={18} className="text-blue-500" />
-          <span className="text-sm font-medium">All figures are based on sale date.</span>
+          <span className="text-sm font-medium">All figures are based on delivered date.</span>
         </div>
       {(selectedSalesperson || selectedStore || searchHint) && (
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center fd-print-hide">

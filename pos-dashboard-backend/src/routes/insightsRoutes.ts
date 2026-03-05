@@ -27,9 +27,9 @@ export function registerInsightsRoutes({
   app.get("/api/available-years", async (_req, res) => {
     const sql = `
     SELECT DISTINCT year FROM (
-      SELECT EXTRACT(YEAR FROM sale_date)::int AS year
+      SELECT EXTRACT(YEAR FROM delivery_confirmed_date)::int AS year
       FROM pos_sales
-      WHERE sale_date IS NOT NULL
+      WHERE delivery_confirmed_date IS NOT NULL
     ) years
     ORDER BY year;
   `;
