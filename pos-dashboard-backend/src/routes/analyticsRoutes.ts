@@ -52,7 +52,7 @@ export function registerAnalyticsRoutes({
       s AS (
         SELECT
           p.sale_id,
-          p.sale_date,
+          s.delivery_confirmed_date AS sale_date,
           p.salesperson,
           COALESCE(p.location, s.location) AS location,
           s.receipt_no,

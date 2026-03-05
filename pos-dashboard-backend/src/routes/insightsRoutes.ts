@@ -50,7 +50,7 @@ export function registerInsightsRoutes({
     WITH s AS (
       SELECT
         sale_id,
-        sale_date,
+        delivery_confirmed_date AS sale_date,
         salesperson,
         location,
         receipt_no,
@@ -62,8 +62,8 @@ export function registerInsightsRoutes({
         ${safeFinanceFee}::numeric AS finance_fee,
         raw_source_file
       FROM pos_sales
-    WHERE sale_date >= $1
-      AND sale_date < $2
+    WHERE delivery_confirmed_date >= $1
+      AND delivery_confirmed_date < $2
         AND ($4::text IS NULL OR salesperson ILIKE ('%' || $4 || '%'))
     ),
     stats AS (
@@ -229,12 +229,12 @@ export function registerInsightsRoutes({
 
     const sql = `
     SELECT
-      date_trunc('week', sale_date)::date AS week,
+      date_trunc('week', delivery_confirmed_date)::date AS week,
       ROUND(SUM(${safeGrandTotal})::numeric, 2) AS sales,
       ROUND(SUM(${safeProfit})::numeric, 2) AS profit
     FROM pos_sales
-    WHERE sale_date >= $1
-      AND sale_date < $2
+    WHERE delivery_confirmed_date >= $1
+      AND delivery_confirmed_date < $2
       AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
     GROUP BY 1
     ORDER BY 1;

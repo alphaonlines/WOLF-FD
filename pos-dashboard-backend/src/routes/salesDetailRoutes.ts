@@ -80,7 +80,7 @@ export function registerSalesDetailRoutes({
     )
     SELECT
       p.sale_id,
-      p.sale_date,
+      s.delivery_confirmed_date AS sale_date,
       p.salesperson,
       COALESCE(p.location, s.location) AS location,
       s.receipt_no,
@@ -111,11 +111,11 @@ export function registerSalesDetailRoutes({
     LEFT JOIN item_totals ON item_totals.sale_id = p.sale_id
     LEFT JOIN pro_items ON pro_items.sale_id = p.sale_id
     LEFT JOIN people_counts ON people_counts.sale_id = p.sale_id
-    WHERE s.sale_date >= $1
-      AND s.sale_date < $2
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
       AND p.salesperson ILIKE ('%' || $3 || '%')
       AND ($4::text IS NULL OR COALESCE(p.location, s.location) ILIKE ('%' || $4 || '%'))
-    ORDER BY s.sale_date DESC, p.sale_id DESC
+    ORDER BY ${prefixedDateField("s")} DESC, p.sale_id DESC
     LIMIT $5;
   `;
 
