@@ -40,6 +40,7 @@ type CRMSyncMode = "POS_DB" | "LOCAL_STORAGE";
 const LEAD_KEY = "fd_crm_leads_v1";
 const AUTOMATION_KEY = "fd_crm_automations_v1";
 const UPS_KEY = "fd_crm_ups_list_v1";
+const UPS_REP_QUEUE_KEY = "fd_crm_rep_ups_queue_v1";
 
 const STAGES: CRMLeadStage[] = ["New", "Contacted", "Appointment", "Quoted", "Won", "Lost"];
 
@@ -186,6 +187,20 @@ const seedUpsList: UpsItem[] = [
 ];
 
 const FLOOR_SALESPEOPLE = ["Alex", "Jordan", "Taylor", "Morgan", "Jamie"];
+const DEFAULT_STORES = ["FD7", "FD5", "FD51"];
+
+type UpsCustomerType = "Regular Up" | "B-Back";
+
+type UpsRepQueueItem = {
+  id: string;
+  rep: string;
+  store: string;
+  status: "waiting" | "working";
+  checkedInAt: string;
+  currentCustomer?: string;
+  currentCustomerType?: UpsCustomerType;
+  startedAt?: string;
+};
 
 const seedAutomations: CRMAutomationRule[] = [
   {
@@ -253,6 +268,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const [focusMode, setFocusMode] = useState(false);
   const [leads, setLeads] = useState<CRMLead[]>(() => readLocal(LEAD_KEY, seedLeads));
   const [upsList, setUpsList] = useState<UpsItem[]>(() => normalizeUpsList(readLocal(UPS_KEY, seedUpsList), seedUpsList, todayIso));
+  const [upsRepQueue, setUpsRepQueue] = useState<UpsRepQueueItem[]>(() => readLocal(UPS_REP_QUEUE_KEY, [] as UpsRepQueueItem[]));
+  const [selectedUpsStore, setSelectedUpsStore] = useState<string>(DEFAULT_STORES[0]);
+  const [upsStartDrafts, setUpsStartDrafts] = useState<Record<string, { customer: string; type: UpsCustomerType }>>({});
   const [upsDraft, setUpsDraft] = useState({
     customer: "",
     task: "",
@@ -400,6 +418,14 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
 
   useEffect(() => {
     try {
+      localStorage.setItem(UPS_REP_QUEUE_KEY, JSON.stringify(upsRepQueue));
+    } catch {
+      // ignore storage failures
+    }
+  }, [upsRepQueue]);
+
+  useEffect(() => {
+    try {
       localStorage.setItem(AUTOMATION_KEY, JSON.stringify(automations));
     } catch {
       // ignore storage failures
@@ -511,6 +537,30 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   }, [owners, leads, upsList]);
 
   const ownerOptions = useMemo(() => ["Unassigned", ...floorSalespeople], [floorSalespeople]);
+
+  const upsStoreOptions = useMemo(() => {
+    const set = new Set<string>(DEFAULT_STORES);
+    for (const lead of leads) {
+      const store = String(lead.store || "").trim();
+      if (store) set.add(store);
+    }
+    for (const item of upsRepQueue) {
+      const store = String(item.store || "").trim();
+      if (store) set.add(store);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [leads, upsRepQueue]);
+
+  useEffect(() => {
+    if (!upsStoreOptions.length) return;
+    if (upsStoreOptions.includes(selectedUpsStore)) return;
+    setSelectedUpsStore(upsStoreOptions[0]);
+  }, [selectedUpsStore, upsStoreOptions]);
+
+  const selectedStoreQueue = useMemo(
+    () => upsRepQueue.filter((item) => item.store === selectedUpsStore),
+    [upsRepQueue, selectedUpsStore]
+  );
 
   const floorStatus = useMemo(() => {
     return floorSalespeople.map((rep) => {
@@ -693,6 +743,86 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
       owner: "Unassigned",
       channel: "SMS",
     }));
+  };
+
+  const updateSelectedStoreQueue = (updater: (storeQueue: UpsRepQueueItem[]) => UpsRepQueueItem[]) => {
+    setUpsRepQueue((current) => {
+      const storeQueue = current.filter((item) => item.store === selectedUpsStore);
+      const otherStores = current.filter((item) => item.store !== selectedUpsStore);
+      return [...otherStores, ...updater(storeQueue)];
+    });
+  };
+
+  const joinUpsQueueAsMe = () => {
+    const me = authUser.name.trim();
+    if (!me) return;
+    updateSelectedStoreQueue((storeQueue) => {
+      const alreadyInQueue = storeQueue.some((item) => item.rep.toLowerCase() === me.toLowerCase());
+      if (alreadyInQueue) return storeQueue;
+      return [
+        ...storeQueue,
+        {
+          id: `ups-rep-${Date.now()}`,
+          rep: me,
+          store: selectedUpsStore,
+          status: "waiting",
+          checkedInAt: new Date().toISOString(),
+        },
+      ];
+    });
+  };
+
+  const leaveUpsQueue = (id: string) => {
+    updateSelectedStoreQueue((storeQueue) => storeQueue.filter((item) => item.id !== id));
+  };
+
+  const startUpsCustomer = (id: string) => {
+    const draft = upsStartDrafts[id];
+    const customerName = draft?.customer?.trim() || "";
+    const customerType = (draft?.type || "Regular Up") as UpsCustomerType;
+    if (!customerName) return;
+
+    updateSelectedStoreQueue((storeQueue) =>
+      storeQueue.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              status: "working",
+              currentCustomer: customerName,
+              currentCustomerType: customerType,
+              startedAt: new Date().toISOString(),
+            }
+          : item
+      )
+    );
+
+    setUpsStartDrafts((current) => ({
+      ...current,
+      [id]: {
+        customer: "",
+        type: "Regular Up",
+      },
+    }));
+  };
+
+  const completeUpsCustomer = (id: string) => {
+    updateSelectedStoreQueue((storeQueue) => {
+      const idx = storeQueue.findIndex((item) => item.id === id);
+      if (idx < 0) return storeQueue;
+      const completed = storeQueue[idx];
+      const resetRep: UpsRepQueueItem = {
+        ...completed,
+        status: "waiting",
+        currentCustomer: undefined,
+        currentCustomerType: undefined,
+        startedAt: undefined,
+      };
+      const others = storeQueue.filter((item) => item.id !== id);
+      if (completed.currentCustomerType === "B-Back") {
+        return [resetRep, ...others];
+      }
+      return [...others, resetRep];
+    });
   };
 
   const toggleAutomation = (id: string) => {
@@ -1259,6 +1389,134 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
 
       <section className={`${focusMode ? "hidden " : ""}grid grid-cols-1 gap-5 xl:grid-cols-12`}>
         <div className="space-y-5 xl:col-span-8">
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">UPS Rep Rotation</h3>
+                <p className="text-xs text-slate-500">
+                  Pick your store, join the line, then mark customer type as Regular Up or B-Back.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={selectedUpsStore}
+                  onChange={(event) => setSelectedUpsStore(event.target.value)}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                >
+                  {upsStoreOptions.map((store) => (
+                    <option key={store} value={store}>
+                      {store}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={joinUpsQueueAsMe}
+                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  <Plus size={14} /> Join As {authUser.name}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-600">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                Queue: {selectedStoreQueue.length}
+              </span>
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700">
+                Waiting: {selectedStoreQueue.filter((item) => item.status === "waiting").length}
+              </span>
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-700">
+                Working: {selectedStoreQueue.filter((item) => item.status === "working").length}
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {!selectedStoreQueue.length ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-sm text-slate-500">
+                  No reps in the UPS line for {selectedUpsStore} yet.
+                </div>
+              ) : (
+                selectedStoreQueue.map((entry, index) => {
+                  const draft = upsStartDrafts[entry.id] || { customer: "", type: "Regular Up" as UpsCustomerType };
+                  return (
+                    <div key={entry.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-slate-900">
+                            #{index + 1} {entry.rep}
+                          </div>
+                          <div className="mt-1 text-[11px] text-slate-500">
+                            {entry.status === "working"
+                              ? `Working with ${entry.currentCustomer || "customer"} (${entry.currentCustomerType || "Regular Up"}) since ${formatStartedAt(entry.startedAt)}`
+                              : `Checked in ${formatStartedAt(entry.checkedInAt)} · Waiting`}
+                          </div>
+                        </div>
+
+                        {entry.status === "waiting" ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <input
+                              value={draft.customer}
+                              onChange={(event) =>
+                                setUpsStartDrafts((current) => ({
+                                  ...current,
+                                  [entry.id]: {
+                                    ...draft,
+                                    customer: event.target.value,
+                                  },
+                                }))
+                              }
+                              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+                              placeholder="Customer name"
+                            />
+                            <select
+                              value={draft.type}
+                              onChange={(event) =>
+                                setUpsStartDrafts((current) => ({
+                                  ...current,
+                                  [entry.id]: {
+                                    ...draft,
+                                    type: event.target.value as UpsCustomerType,
+                                  },
+                                }))
+                              }
+                              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+                            >
+                              <option value="Regular Up">Regular Up</option>
+                              <option value="B-Back">B-Back</option>
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => startUpsCustomer(entry.id)}
+                              className="rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold text-white"
+                            >
+                              Start Customer
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => leaveUpsQueue(entry.id)}
+                              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700"
+                            >
+                              Leave Line
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => completeUpsCustomer(entry.id)}
+                            className="rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold text-white"
+                          >
+                            Complete Customer
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </section>
+
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
