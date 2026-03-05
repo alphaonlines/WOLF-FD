@@ -1,4 +1,5 @@
 import type { UserRole } from '../../types';
+import { hasPermission, MODULE_PERMISSION_KEYS } from './permissions';
 
 export enum Tab {
   DASHBOARD = 'DASHBOARD',
@@ -11,20 +12,20 @@ export enum Tab {
   ADMIN = 'ADMIN',
 }
 
-export const TAB_ACCESS: Record<Tab, UserRole[]> = {
-  [Tab.DASHBOARD]: ['Owner', 'Manager', 'Sales', 'Marketing'],
-  [Tab.SALES]: ['Owner', 'Manager'],
-  [Tab.CRM]: ['Owner', 'Manager', 'Sales'],
-  [Tab.SOCIAL]: ['Owner', 'Manager', 'Marketing'],
-  [Tab.KIOSKS]: ['Owner', 'Manager'],
-  [Tab.MESSAGE_BOARD]: ['Owner', 'Manager', 'Sales', 'Marketing'],
-  [Tab.TASKS]: ['Owner', 'Manager', 'Sales', 'Marketing'],
-  [Tab.ADMIN]: ['Owner'],
+export const TAB_PERMISSION_KEYS: Record<Tab, string> = {
+  [Tab.DASHBOARD]: MODULE_PERMISSION_KEYS.DASHBOARD,
+  [Tab.SALES]: MODULE_PERMISSION_KEYS.SALES,
+  [Tab.CRM]: MODULE_PERMISSION_KEYS.CRM,
+  [Tab.SOCIAL]: MODULE_PERMISSION_KEYS.SOCIAL,
+  [Tab.KIOSKS]: MODULE_PERMISSION_KEYS.KIOSKS,
+  [Tab.MESSAGE_BOARD]: MODULE_PERMISSION_KEYS.MESSAGE_BOARD,
+  [Tab.TASKS]: MODULE_PERMISSION_KEYS.TASKS,
+  [Tab.ADMIN]: MODULE_PERMISSION_KEYS.SETTINGS,
 };
 
-export const canAccessTab = (roles: UserRole[], tab: Tab): boolean => {
-  const allowed = TAB_ACCESS[tab] || [];
-  return roles.some((role) => allowed.includes(role));
+export const canAccessTab = (roles: UserRole[], permissions: string[], tab: Tab): boolean => {
+  const permissionKey = TAB_PERMISSION_KEYS[tab];
+  return hasPermission(roles, permissions, permissionKey);
 };
 
 export const getTabTitle = (tab: Tab): string => {
@@ -42,7 +43,7 @@ export const getTabTitle = (tab: Tab): string => {
     case Tab.MESSAGE_BOARD:
       return 'Message Board';
     case Tab.ADMIN:
-      return 'Admin Users';
+      return 'Settings';
     case Tab.TASKS:
       return 'Tasks';
     default:

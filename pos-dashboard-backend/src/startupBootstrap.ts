@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import { PERMISSION_CATALOG, getRoleDefaultPermissionKeys } from "./permissionCatalog";
 
 type RunStartupBootstrapDeps = {
   pool: Pool;
@@ -85,6 +86,27 @@ async function ensureAuthSchema(pool: Pool) {
   await pool.query(`ALTER TABLE auth_sessions ALTER COLUMN last_seen_at SET DEFAULT now();`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_id ON auth_sessions(user_id);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS role_permissions (
+      role_id         BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+      permission_key  TEXT NOT NULL,
+      allowed         BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (role_id, permission_key)
+    );
+  `);
+  await pool.query(`ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS role_id BIGINT;`);
+  await pool.query(`ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS permission_key TEXT;`);
+  await pool.query(`ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS allowed BOOLEAN;`);
+  await pool.query(`ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE role_permissions ALTER COLUMN allowed SET DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE role_permissions ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE role_permissions ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_role_permissions_role_id ON role_permissions(role_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_role_permissions_key ON role_permissions(permission_key);`);
 }
 
 async function ensureDefaultRoles(pool: Pool) {
@@ -104,6 +126,28 @@ async function ensureDefaultRoles(pool: Pool) {
       `,
       [role.role_key, role.label]
     );
+  }
+}
+
+async function ensureDefaultRolePermissions(pool: Pool) {
+  const roles = await pool.query("SELECT id, role_key FROM roles");
+  const roleRows = Array.isArray(roles.rows) ? roles.rows : [];
+  for (const role of roleRows) {
+    const roleId = Number(role.id);
+    const roleKey = String(role.role_key || "");
+    if (!Number.isFinite(roleId) || !roleKey) continue;
+    const defaults = new Set(getRoleDefaultPermissionKeys(roleKey));
+    for (const permission of PERMISSION_CATALOG) {
+      const allowed = defaults.has(permission.key);
+      await pool.query(
+        `
+          INSERT INTO role_permissions (role_id, permission_key, allowed, created_at, updated_at)
+          VALUES ($1, $2, $3, now(), now())
+          ON CONFLICT (role_id, permission_key) DO NOTHING
+        `,
+        [roleId, permission.key, allowed]
+      );
+    }
   }
 }
 
@@ -187,6 +231,7 @@ async function ensureCrmSchema(pool: Pool) {
 export async function runStartupBootstrap(deps: RunStartupBootstrapDeps) {
   await ensureAuthSchema(deps.pool);
   await ensureDefaultRoles(deps.pool);
+  await ensureDefaultRolePermissions(deps.pool);
   await ensureDefaultAuthUser(deps);
   await ensureCrmSchema(deps.pool);
 }

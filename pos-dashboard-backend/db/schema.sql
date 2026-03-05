@@ -382,3 +382,25 @@ ALTER TABLE user_roles ALTER COLUMN created_at SET DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON user_roles(role_id);
+
+CREATE TABLE IF NOT EXISTS role_permissions (
+  role_id         BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  permission_key  TEXT NOT NULL,
+  allowed         BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (role_id, permission_key)
+);
+
+ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS role_id BIGINT;
+ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS permission_key TEXT;
+ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS allowed BOOLEAN;
+ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
+ALTER TABLE role_permissions ALTER COLUMN allowed SET DEFAULT FALSE;
+ALTER TABLE role_permissions ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE role_permissions ALTER COLUMN updated_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_role_permissions_role_id ON role_permissions(role_id);
+CREATE INDEX IF NOT EXISTS idx_role_permissions_key ON role_permissions(permission_key);

@@ -1,12 +1,14 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseTaskIdParam } from "../parsers";
+import { PERMISSION_CATALOG, isValidPermissionKey } from "../permissionCatalog";
 
 type AuthUserLike = {
   id: string;
   name: string;
   email: string;
   roles: string[];
+  permissions: string[];
 };
 
 type AdminRoutesDeps = {
@@ -36,6 +38,79 @@ export function registerAdminRoutes({
         label: String(x.label ?? ""),
       })),
     });
+  });
+
+  app.get("/api/admin/permissions", requireOwner, async (_req, res) => {
+    const rolesResult = await pool.query("SELECT id, role_key, label FROM roles ORDER BY role_key ASC");
+    const permissionRows = await pool.query(
+      "SELECT role_id, permission_key, allowed FROM role_permissions ORDER BY role_id ASC, permission_key ASC"
+    );
+
+    const catalogKeys = PERMISSION_CATALOG.map((entry) => entry.key);
+    const byRoleId = new Map<number, Record<string, boolean>>();
+    for (const row of permissionRows.rows) {
+      const roleId = Number(row.role_id);
+      const key = String(row.permission_key || "");
+      if (!Number.isFinite(roleId) || !key || !isValidPermissionKey(key)) continue;
+      const allowed = Boolean(row.allowed);
+      const map = byRoleId.get(roleId) || {};
+      map[key] = allowed;
+      byRoleId.set(roleId, map);
+    }
+
+    const rows = rolesResult.rows.map((role: any) => {
+      const roleId = Number(role.id);
+      const rolePermissions = byRoleId.get(roleId) || {};
+      const fullMap: Record<string, boolean> = {};
+      for (const key of catalogKeys) fullMap[key] = Boolean(rolePermissions[key]);
+      return {
+        role_key: String(role.role_key || ""),
+        label: String(role.label || role.role_key || ""),
+        permissions: fullMap,
+      };
+    });
+
+    res.json({
+      catalog: PERMISSION_CATALOG,
+      rows,
+    });
+  });
+
+  app.patch("/api/admin/permissions/:roleKey", requireOwner, async (req, res) => {
+    const roleKey = String(req.params.roleKey || "").trim();
+    if (!roleKey) return res.status(400).json({ ok: false, error: "invalid role key" });
+
+    const roleRow = await pool.query("SELECT id, role_key FROM roles WHERE role_key = $1 LIMIT 1", [roleKey]);
+    if (!roleRow.rows.length) return res.status(404).json({ ok: false, error: "role not found" });
+    const roleId = Number(roleRow.rows[0].id);
+    if (!Number.isFinite(roleId)) return res.status(400).json({ ok: false, error: "invalid role id" });
+
+    const rawPermissions = req.body?.permissions;
+    if (!rawPermissions || typeof rawPermissions !== "object" || Array.isArray(rawPermissions)) {
+      return res.status(400).json({ ok: false, error: "permissions object is required" });
+    }
+
+    const updates: Array<{ key: string; allowed: boolean }> = [];
+    for (const [key, value] of Object.entries(rawPermissions)) {
+      const permissionKey = String(key || "").trim();
+      if (!permissionKey || !isValidPermissionKey(permissionKey)) continue;
+      updates.push({ key: permissionKey, allowed: Boolean(value) });
+    }
+    if (!updates.length) return res.status(400).json({ ok: false, error: "no valid permissions provided" });
+
+    for (const update of updates) {
+      await pool.query(
+        `
+          INSERT INTO role_permissions (role_id, permission_key, allowed, created_at, updated_at)
+          VALUES ($1, $2, $3, now(), now())
+          ON CONFLICT (role_id, permission_key)
+          DO UPDATE SET allowed = EXCLUDED.allowed, updated_at = now()
+        `,
+        [roleId, update.key, update.allowed]
+      );
+    }
+
+    res.json({ ok: true });
   });
 
   app.get("/api/admin/users", requireOwner, async (_req, res) => {

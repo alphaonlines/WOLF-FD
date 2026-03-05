@@ -64,6 +64,7 @@ const toRouteAuthUser = (user: AuthUserView | null | undefined) => {
     name: String(user.name),
     email: String(user.email),
     roles: (user.roles || []).map((role) => String(role)),
+    permissions: (user.permissions || []).map((permission) => String(permission)),
   };
 };
 

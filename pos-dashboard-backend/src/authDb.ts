@@ -29,11 +29,16 @@ export function createAuthDbHelpers({
       COALESCE(
         ARRAY_AGG(DISTINCT r.role_key) FILTER (WHERE r.role_key IS NOT NULL),
         ARRAY[]::text[]
-      ) AS roles
+      ) AS roles,
+      COALESCE(
+        ARRAY_AGG(DISTINCT rp.permission_key) FILTER (WHERE rp.permission_key IS NOT NULL AND rp.allowed = TRUE),
+        ARRAY[]::text[]
+      ) AS permissions
     FROM auth_sessions s
     JOIN users u ON u.id = s.user_id
     LEFT JOIN user_roles ur ON ur.user_id = u.id
     LEFT JOIN roles r ON r.id = ur.role_id
+    LEFT JOIN role_permissions rp ON rp.role_id = r.id
     WHERE s.token_hash = $1
       AND s.expires_at > now()
       AND u.active = TRUE
@@ -89,10 +94,15 @@ export function createAuthDbHelpers({
       COALESCE(
         ARRAY_AGG(DISTINCT r.role_key) FILTER (WHERE r.role_key IS NOT NULL),
         ARRAY[]::text[]
-      ) AS roles
+      ) AS roles,
+      COALESCE(
+        ARRAY_AGG(DISTINCT rp.permission_key) FILTER (WHERE rp.permission_key IS NOT NULL AND rp.allowed = TRUE),
+        ARRAY[]::text[]
+      ) AS permissions
     FROM users u
     LEFT JOIN user_roles ur ON ur.user_id = u.id
     LEFT JOIN roles r ON r.id = ur.role_id
+    LEFT JOIN role_permissions rp ON rp.role_id = r.id
     WHERE u.id = $1
     GROUP BY u.id, u.name, u.email
     LIMIT 1;

@@ -8,6 +8,7 @@ type AuthResponse = {
     name?: string;
     email?: string;
     roles?: string[];
+    permissions?: string[];
   } | null;
 };
 
@@ -22,6 +23,7 @@ const mapUser = (raw: AuthResponse["user"]): AuthUser | null => {
     name: name || email,
     email,
     roles: (Array.isArray(raw.roles) ? raw.roles.map((r) => String(r)) : []) as UserRole[],
+    permissions: Array.isArray(raw.permissions) ? raw.permissions.map((permission) => String(permission)) : [],
   };
 };
 

@@ -15,7 +15,7 @@ import {
   ClipboardList,
   Bot,
   LogOut,
-  Users,
+  Settings,
 } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import WorkAdvertising from './components/WorkAdvertising';
@@ -26,7 +26,7 @@ import CRMWorkspace from './components/CRMWorkspace';
 import MessageBoard from './components/MessageBoard';
 import WolfBot from './components/WolfBot';
 import TaskManager from './components/TaskManager';
-import AdminUsers from './components/AdminUsers';
+import OwnerSettings from './components/OwnerSettings';
 import type { AuthUser, UserRole } from './types';
 import {
   changeCurrentPassword,
@@ -39,6 +39,7 @@ import LoadingOverlay from './components/app/LoadingOverlay';
 import NavItem from './components/app/NavItem';
 import { APP_THEME_STYLES } from './components/app/themeStyles';
 import { canAccessTab, getTabTitle, Tab } from './components/app/tabs';
+import { DASHBOARD_CARD_PERMISSION_BY_ID, FEATURE_PERMISSION_KEYS, hasPermission } from './components/app/permissions';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
@@ -171,7 +172,9 @@ const App: React.FC = () => {
   }, [activeTab]);
 
   const userRoles = (authUser?.roles || []) as UserRole[];
-  const availableTabs = (Object.values(Tab) as Tab[]).filter((tab) => canAccessTab(userRoles, tab));
+  const userPermissions = authUser?.permissions || [];
+  const canUsePermission = (permissionKey: string) => hasPermission(userRoles, userPermissions, permissionKey);
+  const availableTabs = (Object.values(Tab) as Tab[]).filter((tab) => canAccessTab(userRoles, userPermissions, tab));
 
   useEffect(() => {
     if (!authUser) return;
@@ -256,13 +259,20 @@ const App: React.FC = () => {
       case Tab.DASHBOARD:
         return (
           <DashboardOverview
+            canViewCard={(cardId) => {
+              const permissionKey = DASHBOARD_CARD_PERMISSION_BY_ID[cardId];
+              if (!permissionKey) return true;
+              return canUsePermission(permissionKey);
+            }}
             onNavigate={(tab) => {
-              if (tab === 'SALES') setActiveTab(Tab.SALES);
-              if (tab === 'TASKS') setActiveTab(Tab.TASKS);
-              if (tab === 'CRM') setActiveTab(Tab.CRM);
-              if (tab === 'SOCIAL') setActiveTab(Tab.SOCIAL);
-              if (tab === 'KIOSKS') setActiveTab(Tab.KIOSKS);
-              if (tab === 'UPDATE') setUpdatePanelOpen(true);
+              if (tab === 'SALES' && canAccessTab(userRoles, userPermissions, Tab.SALES)) setActiveTab(Tab.SALES);
+              if (tab === 'TASKS' && canAccessTab(userRoles, userPermissions, Tab.TASKS)) setActiveTab(Tab.TASKS);
+              if (tab === 'CRM' && canAccessTab(userRoles, userPermissions, Tab.CRM)) setActiveTab(Tab.CRM);
+              if (tab === 'SOCIAL' && canAccessTab(userRoles, userPermissions, Tab.SOCIAL)) setActiveTab(Tab.SOCIAL);
+              if (tab === 'KIOSKS' && canAccessTab(userRoles, userPermissions, Tab.KIOSKS)) setActiveTab(Tab.KIOSKS);
+              if (tab === 'UPDATE' && canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL)) {
+                setUpdatePanelOpen(true);
+              }
             }}
           />
         );
@@ -279,7 +289,7 @@ const App: React.FC = () => {
       case Tab.TASKS:
         return <TaskManager />;
       case Tab.ADMIN:
-        return <AdminUsers />;
+        return <OwnerSettings />;
       default:
         return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
     }
@@ -307,7 +317,7 @@ const App: React.FC = () => {
     );
   }
 
-  const canView = (tab: Tab) => canAccessTab(userRoles, tab);
+  const canView = (tab: Tab) => canAccessTab(userRoles, userPermissions, tab);
 
   return (
     <div
@@ -408,8 +418,8 @@ const App: React.FC = () => {
             )}
             {canView(Tab.ADMIN) && (
               <NavItem
-                icon={<Users size={20} />}
-                label="Admin Users"
+                icon={<Settings size={20} />}
+                label="Settings"
                 isActive={activeTab === Tab.ADMIN}
                 onClick={() => setActiveTab(Tab.ADMIN)}
                 isOpen={sidebarOpen}
@@ -445,7 +455,7 @@ const App: React.FC = () => {
             />
           </nav>
 
-          {canView(Tab.KIOSKS) && (
+          {canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL) && (
             <div className="p-3 border-t border-white/10">
               <button
                 onClick={() => {
@@ -712,7 +722,7 @@ const App: React.FC = () => {
             </div>
           </>
         )}
-        {updatePanelOpen && (
+        {updatePanelOpen && canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL) && (
           <>
             <div
               className={`fixed inset-0 z-20 backdrop-blur-sm animate-[overlayDarken_1.6s_ease_forwards] ${

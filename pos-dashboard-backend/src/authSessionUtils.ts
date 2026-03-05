@@ -5,6 +5,7 @@ export type AuthUserView = {
   name: string;
   email: string;
   roles: (typeof VALID_USER_ROLES)[number][];
+  permissions: string[];
 };
 
 export function normalizeRoleList(raw: any): (typeof VALID_USER_ROLES)[number][] {
@@ -28,11 +29,21 @@ export function hasAnyRole(user: AuthUserView | null | undefined, roles: string[
 }
 
 export function buildAuthUser(row: any): AuthUserView {
+  const permissionsRaw = Array.isArray(row?.permissions) ? row.permissions : [];
+  const permissionSet = new Set<string>();
+  const permissions: string[] = [];
+  for (const item of permissionsRaw) {
+    const key = String(item || "").trim();
+    if (!key || permissionSet.has(key)) continue;
+    permissionSet.add(key);
+    permissions.push(key);
+  }
   return {
     id: String(row.id ?? ""),
     name: String(row.name ?? ""),
     email: String(row.email ?? ""),
     roles: normalizeRoleList(row.roles),
+    permissions,
   };
 }
 

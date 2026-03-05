@@ -6,6 +6,7 @@ type AuthUserLike = {
   name: string;
   email: string;
   roles: string[];
+  permissions: string[];
 };
 
 type RegisterAuthRoutesDeps = {

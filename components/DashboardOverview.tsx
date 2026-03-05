@@ -62,9 +62,10 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
 
 type DashboardOverviewProps = {
   onNavigate: (tab: string) => void;
+  canViewCard?: (cardId: string) => boolean;
 };
 
-const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => {
+const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canViewCard }) => {
   const [order, setOrder] = useState<string[]>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -178,13 +179,18 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
     []
   );
 
+  const visibleCards = useMemo(() => {
+    if (!canViewCard) return cards;
+    return cards.filter((card) => canViewCard(card.id));
+  }, [cards, canViewCard]);
+
   const orderedCards = useMemo(() => {
-    if (!order.length) return cards;
-    const map = new Map(cards.map((card) => [card.id, card]));
+    if (!order.length) return visibleCards;
+    const map = new Map(visibleCards.map((card) => [card.id, card]));
     const arranged = order.map((id) => map.get(id)).filter(Boolean) as SnapshotCard[];
-    const remaining = cards.filter((card) => !order.includes(card.id));
+    const remaining = visibleCards.filter((card) => !order.includes(card.id));
     return [...arranged, ...remaining];
-  }, [cards, order]);
+  }, [visibleCards, order]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),

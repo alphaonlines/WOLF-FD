@@ -90,6 +90,7 @@ export interface AuthUser {
   name: string;
   email: string;
   roles: UserRole[];
+  permissions: string[];
 }
 
 export interface ManagedUser {
@@ -100,4 +101,19 @@ export interface ManagedUser {
   roles: UserRole[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export type PermissionScope = "module" | "dashboard_card" | "feature";
+
+export interface PermissionCatalogEntry {
+  key: string;
+  label: string;
+  scope: PermissionScope;
+  description: string;
+}
+
+export interface RolePermissionRow {
+  roleKey: UserRole;
+  label: string;
+  permissions: Record<string, boolean>;
 }
