@@ -17,6 +17,7 @@ type AuthUserLike = {
 
 const UPS_LANES = ["Unattended", "Be-Back", "Quote Follow-up"] as const;
 const UPS_PRIORITIES = ["Hot", "Today", "Nurture"] as const;
+const UPS_QUEUE_CUSTOMER_TYPES = ["Regular Up", "B-Back"] as const;
 
 function parseUpsLane(value: any): (typeof UPS_LANES)[number] | null {
   if (!value || typeof value !== "string") return null;
@@ -28,6 +29,12 @@ function parseUpsPriority(value: any): (typeof UPS_PRIORITIES)[number] | null {
   if (!value || typeof value !== "string") return null;
   const priority = value.trim();
   return UPS_PRIORITIES.includes(priority as any) ? (priority as any) : null;
+}
+
+function parseUpsQueueCustomerType(value: any): (typeof UPS_QUEUE_CUSTOMER_TYPES)[number] | null {
+  if (!value || typeof value !== "string") return null;
+  const type = value.trim();
+  return UPS_QUEUE_CUSTOMER_TYPES.includes(type as any) ? (type as any) : null;
 }
 
 function authUserFromReq(req: any): AuthUserLike | null {
@@ -130,6 +137,23 @@ function mapUpsRow(row: any) {
     due_at: row.due_at ? String(row.due_at).slice(0, 10) : null,
     channel: String(row.channel ?? "SMS"),
     done: Boolean(row.done),
+    started_at: row.started_at ? String(row.started_at) : null,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function mapUpsQueueRow(row: any) {
+  return {
+    id: String(row.id ?? ""),
+    store: String(row.store ?? "FD7"),
+    rep: String(row.rep ?? ""),
+    rep_user_id: row.rep_user_id === null || row.rep_user_id === undefined ? null : String(row.rep_user_id),
+    status: String(row.status ?? "waiting"),
+    queue_position: Number(row.queue_position ?? 0),
+    checked_in_at: row.checked_in_at ? String(row.checked_in_at) : null,
+    current_customer: row.current_customer ? String(row.current_customer) : null,
+    current_customer_type: row.current_customer_type ? String(row.current_customer_type) : null,
     started_at: row.started_at ? String(row.started_at) : null,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -645,6 +669,234 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     if (!r.rows.length) return res.status(404).json({ error: "not found" });
 
     res.json({ row: mapUpsRow(r.rows[0]) });
+  });
+
+  app.get("/api/crm/ups-queue", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const storeRaw = typeof req.query?.store === "string" ? req.query.store.trim() : "";
+    const values: any[] = [];
+    const where: string[] = [];
+    if (storeRaw) {
+      values.push(storeRaw);
+      where.push(`store = $${values.length}`);
+    }
+    if (isSalesOnly(user)) {
+      values.push(Number(user.id));
+      where.push(`rep_user_id = $${values.length}`);
+    }
+    const sql = `
+      SELECT
+        id,
+        store,
+        rep,
+        rep_user_id,
+        status,
+        queue_position,
+        checked_in_at,
+        current_customer,
+        current_customer_type,
+        started_at,
+        created_at,
+        updated_at
+      FROM crm_ups_queue
+      ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+      ORDER BY store ASC, queue_position ASC, checked_in_at ASC;
+    `;
+    const r = await pool.query(sql, values);
+    res.json({ rows: r.rows.map(mapUpsQueueRow) });
+  });
+
+  app.post("/api/crm/ups-queue", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const store = typeof req.body?.store === "string" && req.body.store.trim() ? req.body.store.trim() : "FD7";
+    const repUserId = Number(user.id);
+    const repName = user.name || user.email;
+
+    const existing = await pool.query(
+      `SELECT id FROM crm_ups_queue WHERE store = $1 AND rep_user_id = $2 LIMIT 1`,
+      [store, repUserId]
+    );
+    if (existing.rows.length) {
+      const row = await pool.query(
+        `
+        SELECT
+          id, store, rep, rep_user_id, status, queue_position, checked_in_at,
+          current_customer, current_customer_type, started_at, created_at, updated_at
+        FROM crm_ups_queue
+        WHERE id = $1
+      `,
+        [existing.rows[0].id]
+      );
+      return res.status(200).json({ row: mapUpsQueueRow(row.rows[0]) });
+    }
+
+    const maxPos = await pool.query(`SELECT COALESCE(MAX(queue_position), 0)::int AS max_pos FROM crm_ups_queue WHERE store = $1`, [
+      store,
+    ]);
+    const nextPos = Number(maxPos.rows[0]?.max_pos ?? 0) + 1;
+    const id = parseCrmLeadId(req.body?.id) ?? `ups-rep-${Date.now()}`;
+
+    const r = await pool.query(
+      `
+      INSERT INTO crm_ups_queue (
+        id, store, rep, rep_user_id, status, queue_position, checked_in_at,
+        current_customer, current_customer_type, started_at, created_at, updated_at
+      )
+      VALUES ($1, $2, $3, $4::bigint, 'waiting', $5, now(), NULL, NULL, NULL, now(), now())
+      RETURNING
+        id, store, rep, rep_user_id, status, queue_position, checked_in_at,
+        current_customer, current_customer_type, started_at, created_at, updated_at
+    `,
+      [id, store, repName, repUserId, nextPos]
+    );
+    res.status(201).json({ row: mapUpsQueueRow(r.rows[0]) });
+  });
+
+  app.post("/api/crm/ups-queue/:id/start", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+    const id = parseCrmLeadId(req.params.id);
+    if (!id) return res.status(400).json({ error: "invalid id" });
+
+    const customer = typeof req.body?.customer === "string" ? req.body.customer.trim() : "";
+    if (!customer) return res.status(400).json({ error: "customer is required" });
+    const customerType = parseUpsQueueCustomerType(req.body?.customer_type) ?? "Regular Up";
+
+    const row = await pool.query(`SELECT rep_user_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
+    if (!row.rows.length) return res.status(404).json({ error: "not found" });
+    if (isSalesOnly(user) && Number(row.rows[0].rep_user_id) !== Number(user.id)) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+
+    const r = await pool.query(
+      `
+      UPDATE crm_ups_queue
+      SET
+        status = 'working',
+        current_customer = $1,
+        current_customer_type = $2,
+        started_at = now(),
+        updated_at = now()
+      WHERE id = $3
+      RETURNING
+        id, store, rep, rep_user_id, status, queue_position, checked_in_at,
+        current_customer, current_customer_type, started_at, created_at, updated_at
+    `,
+      [customer, customerType, id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: "not found" });
+    res.json({ row: mapUpsQueueRow(r.rows[0]) });
+  });
+
+  app.post("/api/crm/ups-queue/:id/complete", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+    const id = parseCrmLeadId(req.params.id);
+    if (!id) return res.status(400).json({ error: "invalid id" });
+
+    const row = await pool.query(
+      `SELECT id, store, rep_user_id, current_customer_type FROM crm_ups_queue WHERE id = $1 LIMIT 1`,
+      [id]
+    );
+    if (!row.rows.length) return res.status(404).json({ error: "not found" });
+    const target = row.rows[0];
+    if (isSalesOnly(user) && Number(target.rep_user_id) !== Number(user.id)) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+
+    const moveToFront = String(target.current_customer_type || "") === "B-Back";
+    const store = String(target.store || "FD7");
+
+    if (moveToFront) {
+      await pool.query(`UPDATE crm_ups_queue SET queue_position = queue_position + 1 WHERE store = $1 AND id <> $2`, [store, id]);
+      await pool.query(
+        `
+        UPDATE crm_ups_queue
+        SET
+          status = 'waiting',
+          current_customer = NULL,
+          current_customer_type = NULL,
+          started_at = NULL,
+          queue_position = 1,
+          updated_at = now()
+        WHERE id = $1
+      `,
+        [id]
+      );
+    } else {
+      const maxPos = await pool.query(`SELECT COALESCE(MAX(queue_position), 0)::int AS max_pos FROM crm_ups_queue WHERE store = $1`, [
+        store,
+      ]);
+      const nextPos = Number(maxPos.rows[0]?.max_pos ?? 1);
+      await pool.query(
+        `
+        UPDATE crm_ups_queue
+        SET
+          status = 'waiting',
+          current_customer = NULL,
+          current_customer_type = NULL,
+          started_at = NULL,
+          queue_position = $2,
+          updated_at = now()
+        WHERE id = $1
+      `,
+        [id, nextPos]
+      );
+    }
+
+    const reordered = await pool.query(
+      `
+      WITH ranked AS (
+        SELECT id, ROW_NUMBER() OVER (PARTITION BY store ORDER BY queue_position ASC, checked_in_at ASC) AS rn
+        FROM crm_ups_queue
+        WHERE store = $1
+      )
+      UPDATE crm_ups_queue q
+      SET queue_position = ranked.rn, updated_at = now()
+      FROM ranked
+      WHERE q.id = ranked.id
+      RETURNING
+        q.id, q.store, q.rep, q.rep_user_id, q.status, q.queue_position, q.checked_in_at,
+        q.current_customer, q.current_customer_type, q.started_at, q.created_at, q.updated_at
+    `,
+      [store]
+    );
+    res.json({ rows: reordered.rows.map(mapUpsQueueRow) });
+  });
+
+  app.delete("/api/crm/ups-queue/:id", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+    const id = parseCrmLeadId(req.params.id);
+    if (!id) return res.status(400).json({ error: "invalid id" });
+
+    const row = await pool.query(`SELECT store, rep_user_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
+    if (!row.rows.length) return res.status(404).json({ error: "not found" });
+    if (isSalesOnly(user) && Number(row.rows[0].rep_user_id) !== Number(user.id)) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+    const store = String(row.rows[0].store || "FD7");
+
+    await pool.query(`DELETE FROM crm_ups_queue WHERE id = $1`, [id]);
+    await pool.query(
+      `
+      WITH ranked AS (
+        SELECT id, ROW_NUMBER() OVER (PARTITION BY store ORDER BY queue_position ASC, checked_in_at ASC) AS rn
+        FROM crm_ups_queue
+        WHERE store = $1
+      )
+      UPDATE crm_ups_queue q
+      SET queue_position = ranked.rn, updated_at = now()
+      FROM ranked
+      WHERE q.id = ranked.id
+    `,
+      [store]
+    );
+    res.json({ ok: true });
   });
 
   app.get("/api/crm/automations", async (_req, res) => {

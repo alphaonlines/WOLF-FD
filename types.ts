@@ -94,6 +94,22 @@ export interface CRMUpsItem {
   startedAt?: string;
 }
 
+export type UpsQueueStatus = "waiting" | "working";
+export type UpsQueueCustomerType = "Regular Up" | "B-Back";
+
+export interface CRMUpsQueueItem {
+  id: string;
+  store: string;
+  rep: string;
+  repUserId: string | null;
+  status: UpsQueueStatus;
+  queuePosition: number;
+  checkedInAt: string | null;
+  currentCustomer: string | null;
+  currentCustomerType: UpsQueueCustomerType | null;
+  startedAt: string | null;
+}
+
 export interface CRMOwnerOption {
   id: string;
   name: string;

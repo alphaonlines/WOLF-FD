@@ -16,16 +16,23 @@ import type {
   CRMLeadChannel,
   CRMLeadStage,
   CRMOwnerOption,
+  CRMUpsQueueItem,
+  UpsQueueCustomerType,
 } from "../types";
 import { checkPosBackendHealthy } from "../services/posBackendApi";
 import {
   createCrmAutomationInApi,
   createCrmLeadInApi,
   createCrmUpsInApi,
+  completeCrmUpsQueueCustomerInApi,
   fetchCrmAutomationsFromApi,
   fetchCrmLeadsFromApi,
   fetchCrmOwnersFromApi,
   fetchCrmUpsFromApi,
+  fetchCrmUpsQueueFromApi,
+  joinCrmUpsQueueInApi,
+  leaveCrmUpsQueueInApi,
+  startCrmUpsQueueCustomerInApi,
   updateCrmAutomationInApi,
   updateCrmLeadInApi,
   updateCrmUpsInApi,
@@ -189,19 +196,6 @@ const seedUpsList: UpsItem[] = [
 const FLOOR_SALESPEOPLE = ["Alex", "Jordan", "Taylor", "Morgan", "Jamie"];
 const DEFAULT_STORES = ["FD7", "FD5", "FD51"];
 
-type UpsCustomerType = "Regular Up" | "B-Back";
-
-type UpsRepQueueItem = {
-  id: string;
-  rep: string;
-  store: string;
-  status: "waiting" | "working";
-  checkedInAt: string;
-  currentCustomer?: string;
-  currentCustomerType?: UpsCustomerType;
-  startedAt?: string;
-};
-
 const seedAutomations: CRMAutomationRule[] = [
   {
     id: "auto-1",
@@ -268,9 +262,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const [focusMode, setFocusMode] = useState(false);
   const [leads, setLeads] = useState<CRMLead[]>(() => readLocal(LEAD_KEY, seedLeads));
   const [upsList, setUpsList] = useState<UpsItem[]>(() => normalizeUpsList(readLocal(UPS_KEY, seedUpsList), seedUpsList, todayIso));
-  const [upsRepQueue, setUpsRepQueue] = useState<UpsRepQueueItem[]>(() => readLocal(UPS_REP_QUEUE_KEY, [] as UpsRepQueueItem[]));
+  const [upsRepQueue, setUpsRepQueue] = useState<CRMUpsQueueItem[]>(() => readLocal(UPS_REP_QUEUE_KEY, [] as CRMUpsQueueItem[]));
   const [selectedUpsStore, setSelectedUpsStore] = useState<string>(DEFAULT_STORES[0]);
-  const [upsStartDrafts, setUpsStartDrafts] = useState<Record<string, { customer: string; type: UpsCustomerType }>>({});
+  const [upsStartDrafts, setUpsStartDrafts] = useState<Record<string, { customer: string; type: UpsQueueCustomerType }>>({});
   const [upsDraft, setUpsDraft] = useState({
     customer: "",
     task: "",
@@ -353,17 +347,19 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
           await seedApiIfEmpty();
         }
 
-        const [freshLeads, freshAutomations, freshUps, freshOwners] = await Promise.all([
+        const [freshLeads, freshAutomations, freshUps, freshOwners, freshUpsQueue] = await Promise.all([
           fetchCrmLeadsFromApi(leadScope),
           fetchCrmAutomationsFromApi(),
           fetchCrmUpsFromApi(),
           fetchCrmOwnersFromApi(),
+          fetchCrmUpsQueueFromApi(selectedUpsStore),
         ]);
         if (stopped) return;
         setLeads(freshLeads.length ? freshLeads : isSalesOnly ? [] : seedLeads);
         setAutomations(freshAutomations.length ? freshAutomations : seedAutomations);
         setUpsList(freshUps.length ? normalizeUpsList(freshUps, seedUpsList, todayIso) : seedUpsList);
         setOwners(freshOwners);
+        setUpsRepQueue(freshUpsQueue);
       } catch (err) {
         console.warn("CRM sync failed; using local storage fallback:", err);
         if (!stopped) setSyncMode("LOCAL_STORAGE");
@@ -392,7 +388,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
       stopped = true;
       if (pollId !== null) window.clearInterval(pollId);
     };
-  }, [leadScope, isSalesOnly]);
+  }, [leadScope, isSalesOnly, selectedUpsStore]);
 
   useEffect(() => {
     if (isSalesOnly && leadScope !== "my") {
@@ -558,7 +554,13 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   }, [selectedUpsStore, upsStoreOptions]);
 
   const selectedStoreQueue = useMemo(
-    () => upsRepQueue.filter((item) => item.store === selectedUpsStore),
+    () =>
+      upsRepQueue
+        .filter((item) => item.store === selectedUpsStore)
+        .sort((a, b) => {
+          if (a.queuePosition !== b.queuePosition) return a.queuePosition - b.queuePosition;
+          return String(a.checkedInAt || "").localeCompare(String(b.checkedInAt || ""));
+        }),
     [upsRepQueue, selectedUpsStore]
   );
 
@@ -745,17 +747,31 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     }));
   };
 
-  const updateSelectedStoreQueue = (updater: (storeQueue: UpsRepQueueItem[]) => UpsRepQueueItem[]) => {
+  const updateSelectedStoreQueue = (updater: (storeQueue: CRMUpsQueueItem[]) => CRMUpsQueueItem[]) => {
     setUpsRepQueue((current) => {
       const storeQueue = current.filter((item) => item.store === selectedUpsStore);
       const otherStores = current.filter((item) => item.store !== selectedUpsStore);
-      return [...otherStores, ...updater(storeQueue)];
+      const updatedStore = updater(storeQueue).map((item, index) => ({
+        ...item,
+        queuePosition: index + 1,
+      }));
+      return [...otherStores, ...updatedStore];
     });
   };
 
   const joinUpsQueueAsMe = () => {
     const me = authUser.name.trim();
     if (!me) return;
+    if (syncMode === "POS_DB") {
+      void joinCrmUpsQueueInApi(selectedUpsStore)
+        .then(() => fetchCrmUpsQueueFromApi(selectedUpsStore))
+        .then((rows) => setUpsRepQueue(rows))
+        .catch((err) => {
+          console.warn("Failed to join UPS queue via API; switching to local mode:", err);
+          setSyncMode("LOCAL_STORAGE");
+        });
+      return;
+    }
     updateSelectedStoreQueue((storeQueue) => {
       const alreadyInQueue = storeQueue.some((item) => item.rep.toLowerCase() === me.toLowerCase());
       if (alreadyInQueue) return storeQueue;
@@ -766,21 +782,54 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
           rep: me,
           store: selectedUpsStore,
           status: "waiting",
+          queuePosition: storeQueue.length + 1,
+          repUserId: authUser.id,
           checkedInAt: new Date().toISOString(),
+          currentCustomer: null,
+          currentCustomerType: null,
+          startedAt: null,
         },
       ];
     });
   };
 
   const leaveUpsQueue = (id: string) => {
+    if (syncMode === "POS_DB") {
+      void leaveCrmUpsQueueInApi(id)
+        .then(() => fetchCrmUpsQueueFromApi(selectedUpsStore))
+        .then((rows) => setUpsRepQueue(rows))
+        .catch((err) => {
+          console.warn("Failed to leave UPS queue via API; switching to local mode:", err);
+          setSyncMode("LOCAL_STORAGE");
+        });
+      return;
+    }
     updateSelectedStoreQueue((storeQueue) => storeQueue.filter((item) => item.id !== id));
   };
 
   const startUpsCustomer = (id: string) => {
     const draft = upsStartDrafts[id];
     const customerName = draft?.customer?.trim() || "";
-    const customerType = (draft?.type || "Regular Up") as UpsCustomerType;
+    const customerType = (draft?.type || "Regular Up") as UpsQueueCustomerType;
     if (!customerName) return;
+
+    if (syncMode === "POS_DB") {
+      void startCrmUpsQueueCustomerInApi(id, { customer: customerName, customerType })
+        .then(() => fetchCrmUpsQueueFromApi(selectedUpsStore))
+        .then((rows) => setUpsRepQueue(rows))
+        .catch((err) => {
+          console.warn("Failed to start UPS customer via API; switching to local mode:", err);
+          setSyncMode("LOCAL_STORAGE");
+        });
+      setUpsStartDrafts((current) => ({
+        ...current,
+        [id]: {
+          customer: "",
+          type: "Regular Up",
+        },
+      }));
+      return;
+    }
 
     updateSelectedStoreQueue((storeQueue) =>
       storeQueue.map((item) =>
@@ -806,16 +855,26 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   };
 
   const completeUpsCustomer = (id: string) => {
+    if (syncMode === "POS_DB") {
+      void completeCrmUpsQueueCustomerInApi(id)
+        .then((rows) => setUpsRepQueue(rows))
+        .catch((err) => {
+          console.warn("Failed to complete UPS customer via API; switching to local mode:", err);
+          setSyncMode("LOCAL_STORAGE");
+        });
+      return;
+    }
+
     updateSelectedStoreQueue((storeQueue) => {
       const idx = storeQueue.findIndex((item) => item.id === id);
       if (idx < 0) return storeQueue;
       const completed = storeQueue[idx];
-      const resetRep: UpsRepQueueItem = {
+      const resetRep: CRMUpsQueueItem = {
         ...completed,
         status: "waiting",
-        currentCustomer: undefined,
-        currentCustomerType: undefined,
-        startedAt: undefined,
+        currentCustomer: null,
+        currentCustomerType: null,
+        startedAt: null,
       };
       const others = storeQueue.filter((item) => item.id !== id);
       if (completed.currentCustomerType === "B-Back") {
@@ -859,7 +918,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     }
   };
 
-  const formatStartedAt = (value?: string) => {
+  const formatStartedAt = (value?: string | null) => {
     if (!value) return "just now";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "just now";
@@ -1438,7 +1497,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                 </div>
               ) : (
                 selectedStoreQueue.map((entry, index) => {
-                  const draft = upsStartDrafts[entry.id] || { customer: "", type: "Regular Up" as UpsCustomerType };
+                  const draft = upsStartDrafts[entry.id] || { customer: "", type: "Regular Up" as UpsQueueCustomerType };
                   return (
                     <div key={entry.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
                       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
@@ -1476,7 +1535,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                                   ...current,
                                   [entry.id]: {
                                     ...draft,
-                                    type: event.target.value as UpsCustomerType,
+                                    type: event.target.value as UpsQueueCustomerType,
                                   },
                                 }))
                               }

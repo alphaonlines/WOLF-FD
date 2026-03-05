@@ -271,6 +271,41 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_done ON crm_ups_items(done, updated_at DESC);`);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS crm_ups_queue (
+      id                    TEXT PRIMARY KEY,
+      store                 TEXT NOT NULL DEFAULT 'FD7',
+      rep                   TEXT NOT NULL,
+      rep_user_id           BIGINT NOT NULL,
+      status                TEXT NOT NULL DEFAULT 'waiting',
+      queue_position        INTEGER NOT NULL DEFAULT 1,
+      checked_in_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+      current_customer      TEXT NULL,
+      current_customer_type TEXT NULL,
+      started_at            TIMESTAMPTZ NULL,
+      created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS store TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS rep TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS rep_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS status TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS queue_position INTEGER;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_customer TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_customer_type TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN store SET DEFAULT 'FD7';`);
+  await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN status SET DEFAULT 'waiting';`);
+  await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN checked_in_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_queue_store_pos ON crm_ups_queue(store, queue_position ASC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_queue_rep_user_id ON crm_ups_queue(rep_user_id);`);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS board_posts (
       id             BIGSERIAL PRIMARY KEY,
       channel        TEXT NOT NULL DEFAULT 'announcements',
