@@ -359,6 +359,15 @@ const App: React.FC = () => {
           </button>
 
           <nav className="flex-1 py-6 px-3 space-y-1.5">
+            {canView(Tab.CRM) && (
+              <NavItem
+                icon={<MessageSquare size={20} />}
+                label="CRM"
+                isActive={activeTab === Tab.CRM}
+                onClick={() => setActiveTab(Tab.CRM)}
+                isOpen={sidebarOpen}
+              />
+            )}
             {canView(Tab.DASHBOARD) && (
               <NavItem
                 icon={<Home size={20} />}
@@ -374,15 +383,6 @@ const App: React.FC = () => {
                 label="Sales Analysis"
                 isActive={activeTab === Tab.SALES}
                 onClick={() => setActiveTab(Tab.SALES)}
-                isOpen={sidebarOpen}
-              />
-            )}
-            {canView(Tab.CRM) && (
-              <NavItem
-                icon={<MessageSquare size={20} />}
-                label="CRM"
-                isActive={activeTab === Tab.CRM}
-                onClick={() => setActiveTab(Tab.CRM)}
                 isOpen={sidebarOpen}
               />
             )}
