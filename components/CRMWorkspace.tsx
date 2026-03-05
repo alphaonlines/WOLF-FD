@@ -36,6 +36,7 @@ import {
   joinCrmUpsQueueInApi,
   leaveCrmUpsQueueInApi,
   startCrmUpsQueueCustomerInApi,
+  upsertCrmCustomerAccount,
   updateCrmAutomationInApi,
   updateCrmLeadInApi,
   updateCrmUpsInApi,
@@ -269,6 +270,13 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const [upsRepQueue, setUpsRepQueue] = useState<CRMUpsQueueItem[]>(() => readLocal(UPS_REP_QUEUE_KEY, [] as CRMUpsQueueItem[]));
   const [selectedUpsStore, setSelectedUpsStore] = useState<string>(LOCATION_OPTIONS[0]);
   const [upsStartDrafts, setUpsStartDrafts] = useState<Record<string, { customer: string; type: UpsQueueCustomerType }>>({});
+  const [customerForm, setCustomerForm] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
+    comments: "",
+  });
   const [customerLookup, setCustomerLookup] = useState({ phone: "", email: "" });
   const [customerLookupBusy, setCustomerLookupBusy] = useState(false);
   const [customerLookupMsg, setCustomerLookupMsg] = useState<string | null>(null);
@@ -885,6 +893,47 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     }
   };
 
+  const handleCustomerSave = async () => {
+    const firstName = customerForm.firstName.trim();
+    const lastName = customerForm.lastName.trim();
+    const phone = customerForm.phone.trim();
+    const email = customerForm.email.trim();
+    const comments = customerForm.comments.trim();
+    const fullName = `${firstName} ${lastName}`.replace(/\s+/g, " ").trim();
+
+    if (!fullName) {
+      setCustomerLookupMsg("First and/or last name is required.");
+      return;
+    }
+    if (!phone && !email) {
+      setCustomerLookupMsg("Phone or email is required.");
+      return;
+    }
+
+    setCustomerLookupBusy(true);
+    setCustomerLookupMsg(null);
+    try {
+      const result = await upsertCrmCustomerAccount({
+        name: fullName,
+        phone,
+        email,
+        notes: comments,
+        store: selectedUpsStore,
+      });
+      setCustomerAccounts([result.customer]);
+      setCustomerAccountOrders(result.orders);
+      setCustomerLookup({
+        phone: result.customer.phone || phone,
+        email: result.customer.email || email,
+      });
+      setCustomerLookupMsg(`Saved ${result.customer.name}. Linked ${result.orders.length} sales order(s).`);
+    } catch (err: any) {
+      setCustomerLookupMsg(String(err?.message || "Customer save failed."));
+    } finally {
+      setCustomerLookupBusy(false);
+    }
+  };
+
   const toggleAutomation = (id: string) => {
     const currentRule = automations.find((item) => item.id === id);
     if (!currentRule) return;
@@ -1247,6 +1296,50 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
             {customerLookupMsg && <div className="text-xs font-semibold text-slate-600">{customerLookupMsg}</div>}
           </div>
 
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Add / Update Customer</div>
+            <div className="mt-2 grid grid-cols-1 gap-3 lg:grid-cols-2">
+              <input
+                value={customerForm.firstName}
+                onChange={(event) => setCustomerForm((current) => ({ ...current, firstName: event.target.value }))}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                placeholder="First name"
+              />
+              <input
+                value={customerForm.lastName}
+                onChange={(event) => setCustomerForm((current) => ({ ...current, lastName: event.target.value }))}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                placeholder="Last name"
+              />
+              <input
+                value={customerForm.phone}
+                onChange={(event) => setCustomerForm((current) => ({ ...current, phone: event.target.value }))}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                placeholder="Phone"
+              />
+              <input
+                value={customerForm.email}
+                onChange={(event) => setCustomerForm((current) => ({ ...current, email: event.target.value }))}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                placeholder="Email"
+              />
+              <input
+                value={customerForm.comments}
+                onChange={(event) => setCustomerForm((current) => ({ ...current, comments: event.target.value }))}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm lg:col-span-2"
+                placeholder="Comments"
+              />
+            </div>
+            <button
+              type="button"
+              disabled={customerLookupBusy}
+              onClick={() => void handleCustomerSave()}
+              className="mt-3 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {customerLookupBusy ? "Saving..." : "Save Customer"}
+            </button>
+          </div>
+
           <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
             <input
               value={customerLookup.phone}
@@ -1284,6 +1377,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                       <div className="font-semibold text-slate-900">{account.name || "Unknown Customer"}</div>
                       <div>{account.phone || "No phone"} {account.email ? `• ${account.email}` : ""}</div>
                       <div className="text-slate-500">Store: {account.store || "FD7"}</div>
+                      {account.notes ? <div className="mt-1 text-slate-500">Comments: {account.notes}</div> : null}
                     </div>
                   ))}
                 </div>
