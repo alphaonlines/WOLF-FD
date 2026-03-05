@@ -33,5 +33,7 @@ export const SAFE_FINANCE_BALANCE = `
   END
 `;
 
-export const ITEM_DATE_FIELD = "sale_date";
-export const prefixedDateField = (p: string) => `${p}.sale_date`;
+// Sales analytics should be booked on delivery date (when revenue is realized),
+// not original sale date.
+export const ITEM_DATE_FIELD = "delivery_confirmed_date";
+export const prefixedDateField = (p: string) => `${p}.delivery_confirmed_date`;
