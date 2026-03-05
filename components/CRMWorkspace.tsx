@@ -1448,13 +1448,12 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
 
       <section className={`${focusMode ? "hidden " : ""}grid grid-cols-1 gap-5 xl:grid-cols-12`}>
         <div className="space-y-5 xl:col-span-8">
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-sm">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">UPS Rep Rotation</h3>
-                <p className="text-xs text-slate-500">
-                  Pick your store, join the line, then mark customer type as Regular Up or B-Back.
-                </p>
+                <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Top Priority</div>
+                <h3 className="text-xl font-semibold text-slate-900">UPS Command Board</h3>
+                <p className="text-xs text-slate-500">Fast store-level line control. Regular Up sends rep to the back. B-Back sends rep to the front.</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <select
@@ -1473,42 +1472,67 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                   onClick={joinUpsQueueAsMe}
                   className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
                 >
-                  <Plus size={14} /> Join As {authUser.name}
+                  <Plus size={14} /> Join Line
                 </button>
               </div>
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-600">
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
-                Queue: {selectedStoreQueue.length}
-              </span>
-              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700">
-                Waiting: {selectedStoreQueue.filter((item) => item.status === "waiting").length}
-              </span>
-              <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-700">
-                Working: {selectedStoreQueue.filter((item) => item.status === "working").length}
-              </span>
+            <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-slate-500">Total Reps</div>
+                <div className="text-lg font-semibold text-slate-900">{selectedStoreQueue.length}</div>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-emerald-700">Waiting</div>
+                <div className="text-lg font-semibold text-emerald-900">
+                  {selectedStoreQueue.filter((item) => item.status === "waiting").length}
+                </div>
+              </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-amber-700">Working</div>
+                <div className="text-lg font-semibold text-amber-900">
+                  {selectedStoreQueue.filter((item) => item.status === "working").length}
+                </div>
+              </div>
+              <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-blue-700">My Spot</div>
+                <div className="text-lg font-semibold text-blue-900">
+                  {Math.max(
+                    selectedStoreQueue.findIndex((item) => item.rep.toLowerCase() === authUser.name.toLowerCase()) + 1,
+                    0
+                  ) || "-"}
+                </div>
+              </div>
             </div>
 
             <div className="mt-4 space-y-2">
               {!selectedStoreQueue.length ? (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-sm text-slate-500">
-                  No reps in the UPS line for {selectedUpsStore} yet.
+                  No reps are in the line for {selectedUpsStore} yet.
                 </div>
               ) : (
                 selectedStoreQueue.map((entry, index) => {
                   const draft = upsStartDrafts[entry.id] || { customer: "", type: "Regular Up" as UpsQueueCustomerType };
                   return (
-                    <div key={entry.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
-                      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                    <div key={entry.id} className="rounded-2xl border border-slate-200 bg-white px-3 py-3">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
-                          <div className="text-sm font-semibold text-slate-900">
-                            #{index + 1} {entry.rep}
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm font-semibold text-slate-900">#{index + 1} {entry.rep}</div>
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                                entry.status === "working"
+                                  ? "border-amber-200 bg-amber-50 text-amber-700"
+                                  : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              }`}
+                            >
+                              {entry.status === "working" ? "WORKING" : "WAITING"}
+                            </span>
                           </div>
                           <div className="mt-1 text-[11px] text-slate-500">
                             {entry.status === "working"
-                              ? `Working with ${entry.currentCustomer || "customer"} (${entry.currentCustomerType || "Regular Up"}) since ${formatStartedAt(entry.startedAt)}`
-                              : `Checked in ${formatStartedAt(entry.checkedInAt)} · Waiting`}
+                              ? `${entry.currentCustomer || "Customer"} (${entry.currentCustomerType || "Regular Up"}) since ${formatStartedAt(entry.startedAt)}`
+                              : `Checked in ${formatStartedAt(entry.checkedInAt)} · Ready for next customer`}
                           </div>
                         </div>
 
@@ -1526,7 +1550,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                                 }))
                               }
                               className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
-                              placeholder="Customer name"
+                              placeholder="Customer"
                             />
                             <select
                               value={draft.type}
@@ -1549,14 +1573,14 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                               onClick={() => startUpsCustomer(entry.id)}
                               className="rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold text-white"
                             >
-                              Start Customer
+                              Start
                             </button>
                             <button
                               type="button"
                               onClick={() => leaveUpsQueue(entry.id)}
                               className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700"
                             >
-                              Leave Line
+                              Leave
                             </button>
                           </div>
                         ) : (
@@ -1565,7 +1589,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                             onClick={() => completeUpsCustomer(entry.id)}
                             className="rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold text-white"
                           >
-                            Complete Customer
+                            Complete
                           </button>
                         )}
                       </div>
@@ -1574,258 +1598,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                 })
               )}
             </div>
-          </section>
-
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">Showroom Up List</h3>
-                <p className="text-xs text-slate-500">Log walk-ins, assign reps, and track who is currently down with a customer.</p>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-600">
-                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">Active {upsStats.active}</span>
-                <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-violet-700">Waiting {upsStats.waiting}</span>
-                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-700">Down Reps {upsStats.repsDown}</span>
-                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700">Done {upsStats.completed}</span>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
-                <input
-                  value={upsDraft.customer}
-                  onChange={(event) => setUpsDraft((current) => ({ ...current, customer: event.target.value }))}
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                  placeholder="Customer name"
-                />
-                <input
-                  value={upsDraft.task}
-                  onChange={(event) => setUpsDraft((current) => ({ ...current, task: event.target.value }))}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") addUpsItem();
-                  }}
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                  placeholder="Notes (optional)"
-                />
-                <select
-                  value={upsDraft.owner}
-                  onChange={(event) =>
-                    setUpsDraft((current) => ({
-                      ...current,
-                      owner: event.target.value,
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                >
-                  <option value="Unassigned">Unassigned / waiting</option>
-                  {floorSalespeople.map((rep) => (
-                    <option key={rep} value={rep}>
-                      {rep}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={upsDraft.channel}
-                  onChange={(event) =>
-                    setUpsDraft((current) => ({
-                      ...current,
-                      channel: event.target.value as CRMLeadChannel,
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                >
-                  <option value="SMS">SMS</option>
-                  <option value="Webchat">Webchat</option>
-                  <option value="Facebook">Facebook</option>
-                  <option value="Instagram">Instagram</option>
-                  <option value="Phone">Phone</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={addUpsItem}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-                >
-                  <Plus size={14} /> Check In Customer
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-12">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 xl:col-span-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-slate-900">Sales Floor Status</h4>
-                  <span className="text-xs text-slate-500">{floorStatus.length} reps</span>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {floorStatus.map((row) => (
-                    <div key={row.rep} className="rounded-xl border border-slate-200 bg-white px-3 py-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="text-sm font-semibold text-slate-900">{row.rep}</div>
-                        <span
-                          className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                            row.isDown
-                              ? "border-amber-200 bg-amber-50 text-amber-700"
-                              : "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          }`}
-                        >
-                          {row.isDown ? "DOWN / WORKING" : "AVAILABLE"}
-                        </span>
-                      </div>
-                      <div className="mt-1 text-[11px] text-slate-500">
-                        {row.activeCustomer
-                          ? `With ${row.activeCustomer.customer} since ${formatStartedAt(row.activeCustomer.startedAt)}`
-                          : "Ready for next walk-in"}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 xl:col-span-8">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-slate-900">Active Floor Customers</h4>
-                  <span className="text-xs text-slate-500">{engagedUps.length} in progress</span>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {!engagedUps.length ? (
-                    <div className="rounded-xl border border-dashed border-slate-300 bg-white px-3 py-3 text-xs text-slate-500">
-                      No customers are currently assigned to a rep.
-                    </div>
-                  ) : (
-                    engagedUps.map((item) => {
-                      const nextOwner = assignmentDrafts[item.id] || item.owner;
-                      return (
-                        <div key={item.id} className="rounded-xl border border-slate-200 bg-white px-3 py-3">
-                          <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-                            <div>
-                              <div className="text-sm font-semibold text-slate-900">{item.customer}</div>
-                              <div className="mt-1 text-xs text-slate-600">{item.task}</div>
-                              <div className="mt-1 text-[11px] text-slate-500">
-                                {item.owner} · {item.channel} · Started {formatStartedAt(item.startedAt)}
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <select
-                                value={nextOwner}
-                                onChange={(event) =>
-                                  setAssignmentDrafts((current) => ({
-                                    ...current,
-                                    [item.id]: event.target.value,
-                                  }))
-                                }
-                                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
-                              >
-                                {floorSalespeople.map((rep) => (
-                                  <option key={rep} value={rep}>
-                                    {rep}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                type="button"
-                                onClick={() => assignUpsItem(item.id, nextOwner)}
-                                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700"
-                              >
-                                Transfer
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => assignUpsItem(item.id, "Unassigned")}
-                                className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-[11px] font-semibold text-violet-700"
-                              >
-                                Back to Queue
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => toggleUpsItem(item.id)}
-                                className="rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold text-white"
-                              >
-                                Mark Complete
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-slate-900">Waiting Queue</h4>
-                <span className="text-xs text-slate-500">{waitingUps.length} waiting</span>
-              </div>
-              <div className="mt-3 space-y-2">
-                {!waitingUps.length ? (
-                  <div className="rounded-xl border border-dashed border-slate-300 bg-white px-3 py-3 text-xs text-slate-500">
-                    No customers waiting for assignment.
-                  </div>
-                ) : (
-                  waitingUps.map((item) => {
-                    const queuedOwner = assignmentDrafts[item.id] || floorSalespeople[0] || "Unassigned";
-                    return (
-                      <div key={item.id} className="rounded-xl border border-slate-200 bg-white px-3 py-3">
-                        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-                          <div>
-                            <div className="text-sm font-semibold text-slate-900">{item.customer}</div>
-                            <div className="mt-1 text-xs text-slate-600">{item.task}</div>
-                            <div className="mt-1 text-[11px] text-slate-500">{item.channel} · Checked in {item.dueAt}</div>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <select
-                              value={queuedOwner}
-                              onChange={(event) =>
-                                setAssignmentDrafts((current) => ({
-                                  ...current,
-                                  [item.id]: event.target.value,
-                                }))
-                              }
-                              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
-                            >
-                              {floorSalespeople.map((rep) => (
-                                <option key={rep} value={rep}>
-                                  {rep}
-                                </option>
-                              ))}
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => assignUpsItem(item.id, queuedOwner)}
-                              className="rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold text-white"
-                            >
-                              Assign Rep
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {!!completedUps.length && (
-              <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recently Completed</div>
-                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {completedUps.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => toggleUpsItem(item.id)}
-                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-600"
-                    >
-                      <span className="line-through">{item.customer} - {item.task}</span>
-                      <span className="rounded-full border border-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-                        Reopen
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </section>
 
           <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
