@@ -1,0 +1,724 @@
+import type { Express } from "express";
+import type { Pool } from "pg";
+import {
+  parseCrmBool,
+  parseCrmChannel,
+  parseCrmDate,
+  parseCrmLeadId,
+  parseCrmStage,
+} from "../parsers";
+
+type AuthUserLike = {
+  id: string;
+  name: string;
+  email: string;
+  roles: string[];
+};
+
+const UPS_LANES = ["Unattended", "Be-Back", "Quote Follow-up"] as const;
+const UPS_PRIORITIES = ["Hot", "Today", "Nurture"] as const;
+
+function parseUpsLane(value: any): (typeof UPS_LANES)[number] | null {
+  if (!value || typeof value !== "string") return null;
+  const lane = value.trim();
+  return UPS_LANES.includes(lane as any) ? (lane as any) : null;
+}
+
+function parseUpsPriority(value: any): (typeof UPS_PRIORITIES)[number] | null {
+  if (!value || typeof value !== "string") return null;
+  const priority = value.trim();
+  return UPS_PRIORITIES.includes(priority as any) ? (priority as any) : null;
+}
+
+function authUserFromReq(req: any): AuthUserLike | null {
+  const user = (req as any).authUser as AuthUserLike | undefined;
+  if (!user || !user.id) return null;
+  return {
+    id: String(user.id),
+    name: String(user.name || ""),
+    email: String(user.email || ""),
+    roles: Array.isArray(user.roles) ? user.roles.map((role) => String(role)) : [],
+  };
+}
+
+function hasAnyRole(user: AuthUserLike | null, roles: string[]): boolean {
+  if (!user) return false;
+  const own = new Set((user.roles || []).map((role) => String(role)));
+  return roles.some((role) => own.has(role));
+}
+
+function isManagerOrOwner(user: AuthUserLike | null): boolean {
+  return hasAnyRole(user, ["Owner", "Manager"]);
+}
+
+function isSalesOnly(user: AuthUserLike | null): boolean {
+  return hasAnyRole(user, ["Sales"]) && !isManagerOrOwner(user);
+}
+
+async function resolveOwner(
+  pool: Pool,
+  ownerUserIdRaw: any,
+  ownerRaw: any
+): Promise<{ ownerUserId: number | null; ownerName: string }> {
+  const ownerUserId =
+    ownerUserIdRaw === null || ownerUserIdRaw === undefined || ownerUserIdRaw === ""
+      ? null
+      : Number(ownerUserIdRaw);
+  if (ownerUserId !== null && Number.isFinite(ownerUserId) && ownerUserId > 0) {
+    const userRow = await pool.query(
+      "SELECT id, name, email FROM users WHERE id = $1 AND active = TRUE LIMIT 1",
+      [ownerUserId]
+    );
+    if (userRow.rows.length) {
+      return {
+        ownerUserId: Number(userRow.rows[0].id),
+        ownerName: String(userRow.rows[0].name || userRow.rows[0].email || "Unassigned"),
+      };
+    }
+  }
+
+  const ownerName = typeof ownerRaw === "string" && ownerRaw.trim() ? ownerRaw.trim() : "Unassigned";
+  return {
+    ownerUserId: null,
+    ownerName,
+  };
+}
+
+function mapLeadRow(row: any) {
+  return {
+    id: String(row.id ?? ""),
+    name: String(row.name ?? ""),
+    phone: String(row.phone ?? ""),
+    channel: String(row.channel ?? "SMS"),
+    source: String(row.source ?? ""),
+    interest: String(row.interest ?? ""),
+    budget: String(row.budget ?? ""),
+    store: String(row.store ?? ""),
+    owner: String(row.owner ?? "Unassigned"),
+    owner_user_id: row.owner_user_id === null || row.owner_user_id === undefined ? null : String(row.owner_user_id),
+    stage: String(row.stage ?? "New"),
+    next_action: String(row.next_action ?? ""),
+    due_date: row.due_date ? String(row.due_date).slice(0, 10) : null,
+    last_message: String(row.last_message ?? ""),
+    last_touch: String(row.last_touch ?? ""),
+    notes: String(row.notes ?? ""),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function mapAutomationRow(row: any) {
+  return {
+    id: String(row.id ?? ""),
+    label: String(row.label ?? ""),
+    description: String(row.description ?? ""),
+    enabled: Boolean(row.enabled),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function mapUpsRow(row: any) {
+  return {
+    id: String(row.id ?? ""),
+    customer: String(row.customer ?? ""),
+    task: String(row.task ?? ""),
+    owner: String(row.owner ?? "Unassigned"),
+    owner_user_id: row.owner_user_id === null || row.owner_user_id === undefined ? null : String(row.owner_user_id),
+    lane: String(row.lane ?? "Unattended"),
+    priority: String(row.priority ?? "Today"),
+    due_at: row.due_at ? String(row.due_at).slice(0, 10) : null,
+    channel: String(row.channel ?? "SMS"),
+    done: Boolean(row.done),
+    started_at: row.started_at ? String(row.started_at) : null,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+export function registerCrmRoutes(app: Express, pool: Pool) {
+  app.get("/api/crm/owners", async (_req, res) => {
+    const sql = `
+      SELECT
+        u.id,
+        u.name,
+        u.email,
+        COALESCE(
+          ARRAY_AGG(DISTINCT r.role_key) FILTER (WHERE r.role_key IS NOT NULL),
+          ARRAY[]::text[]
+        ) AS roles
+      FROM users u
+      LEFT JOIN user_roles ur ON ur.user_id = u.id
+      LEFT JOIN roles r ON r.id = ur.role_id
+      WHERE u.active = TRUE
+      GROUP BY u.id, u.name, u.email
+      HAVING bool_or(r.role_key IN ('Owner', 'Manager', 'Sales'))
+      ORDER BY lower(u.name) ASC, lower(u.email) ASC;
+    `;
+    const r = await pool.query(sql);
+    res.json({
+      rows: r.rows.map((row: any) => ({
+        id: String(row.id ?? ""),
+        name: String(row.name ?? ""),
+        email: String(row.email ?? ""),
+        roles: Array.isArray(row.roles) ? row.roles.map((role: any) => String(role)) : [],
+      })),
+    });
+  });
+
+  app.get("/api/crm/leads", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const scope = String(req.query?.scope || "team").toLowerCase() === "my" ? "my" : "team";
+    const salesOnly = isSalesOnly(user);
+    const values: any[] = [];
+    const where: string[] = [];
+
+    if (salesOnly || scope === "my") {
+      values.push(Number(user.id));
+      where.push(`owner_user_id = $${values.length}`);
+    }
+
+    const sql = `
+      SELECT
+        id,
+        name,
+        phone,
+        channel,
+        source,
+        interest,
+        budget,
+        store,
+        owner,
+        owner_user_id,
+        stage,
+        next_action,
+        due_date,
+        last_message,
+        last_touch,
+        notes,
+        created_at,
+        updated_at
+      FROM crm_leads
+      ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+      ORDER BY
+        CASE stage
+          WHEN 'New' THEN 1
+          WHEN 'Contacted' THEN 2
+          WHEN 'Appointment' THEN 3
+          WHEN 'Quoted' THEN 4
+          WHEN 'Won' THEN 5
+          WHEN 'Lost' THEN 6
+          ELSE 99
+        END ASC,
+        due_date ASC NULLS LAST,
+        updated_at DESC,
+        id ASC;
+    `;
+    const r = await pool.query(sql, values);
+    res.json({ rows: r.rows.map(mapLeadRow) });
+  });
+
+  app.post("/api/crm/leads", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const id = parseCrmLeadId(req.body?.id) ?? `lead-${Date.now()}`;
+    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : "";
+    if (!name || !phone) return res.status(400).json({ error: "name and phone are required" });
+
+    const channel = parseCrmChannel(req.body?.channel) ?? "SMS";
+    const source = typeof req.body?.source === "string" && req.body.source.trim() ? req.body.source.trim() : "Website";
+    const interest = typeof req.body?.interest === "string" ? req.body.interest.trim() : "";
+    const budget =
+      typeof req.body?.budget === "string" && req.body.budget.trim() ? req.body.budget.trim() : "Unspecified";
+    const store = typeof req.body?.store === "string" && req.body.store.trim() ? req.body.store.trim() : "FD7";
+    const stage = parseCrmStage(req.body?.stage) ?? "New";
+    const nextAction =
+      typeof req.body?.next_action === "string" && req.body.next_action.trim()
+        ? req.body.next_action.trim()
+        : "First contact";
+    const dueDate = parseCrmDate(req.body?.due_date);
+    const lastMessage = typeof req.body?.last_message === "string" ? req.body.last_message.trim() : "";
+    const lastTouch = typeof req.body?.last_touch === "string" ? req.body.last_touch.trim() : "";
+    const notes = typeof req.body?.notes === "string" ? req.body.notes.trim() : "";
+
+    const ownerResult = await resolveOwner(pool, req.body?.owner_user_id, req.body?.owner);
+    let ownerUserId = ownerResult.ownerUserId;
+    let ownerName = ownerResult.ownerName;
+
+    if (isSalesOnly(user)) {
+      ownerUserId = Number(user.id);
+      ownerName = user.name || user.email;
+    }
+
+    const sql = `
+      INSERT INTO crm_leads (
+        id, name, phone, channel, source, interest, budget, store, owner, owner_user_id, stage,
+        next_action, due_date, last_message, last_touch, notes, created_at, updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::bigint, $11, $12, $13::date, $14, $15, $16, now(), now())
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        phone = EXCLUDED.phone,
+        channel = EXCLUDED.channel,
+        source = EXCLUDED.source,
+        interest = EXCLUDED.interest,
+        budget = EXCLUDED.budget,
+        store = EXCLUDED.store,
+        owner = EXCLUDED.owner,
+        owner_user_id = EXCLUDED.owner_user_id,
+        stage = EXCLUDED.stage,
+        next_action = EXCLUDED.next_action,
+        due_date = EXCLUDED.due_date,
+        last_message = EXCLUDED.last_message,
+        last_touch = EXCLUDED.last_touch,
+        notes = EXCLUDED.notes,
+        updated_at = now()
+      RETURNING
+        id, name, phone, channel, source, interest, budget, store, owner, owner_user_id, stage,
+        next_action, due_date, last_message, last_touch, notes, created_at, updated_at;
+    `;
+    const r = await pool.query(sql, [
+      id,
+      name,
+      phone,
+      channel,
+      source,
+      interest,
+      budget,
+      store,
+      ownerName,
+      ownerUserId,
+      stage,
+      nextAction,
+      dueDate,
+      lastMessage,
+      lastTouch,
+      notes,
+    ]);
+    res.status(201).json({ row: mapLeadRow(r.rows[0]) });
+  });
+
+  app.patch("/api/crm/leads/:id/assign", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const id = parseCrmLeadId(req.params.id);
+    if (!id) return res.status(400).json({ error: "invalid id" });
+
+    const existing = await pool.query("SELECT owner_user_id FROM crm_leads WHERE id = $1 LIMIT 1", [id]);
+    if (!existing.rows.length) return res.status(404).json({ error: "not found" });
+
+    const salesOnly = isSalesOnly(user);
+    const currentOwnerUserId =
+      existing.rows[0].owner_user_id === null || existing.rows[0].owner_user_id === undefined
+        ? null
+        : Number(existing.rows[0].owner_user_id);
+    const ownerResult = await resolveOwner(pool, req.body?.owner_user_id, req.body?.owner);
+
+    if (salesOnly) {
+      if (currentOwnerUserId !== null && currentOwnerUserId !== Number(user.id)) {
+        return res.status(403).json({ error: "forbidden" });
+      }
+      if (ownerResult.ownerUserId !== Number(user.id)) {
+        return res.status(403).json({ error: "sales can only assign leads to themselves" });
+      }
+    }
+
+    const r = await pool.query(
+      `
+        UPDATE crm_leads
+        SET owner = $1, owner_user_id = $2::bigint, updated_at = now()
+        WHERE id = $3
+        RETURNING
+          id, name, phone, channel, source, interest, budget, store, owner, owner_user_id, stage,
+          next_action, due_date, last_message, last_touch, notes, created_at, updated_at
+      `,
+      [ownerResult.ownerName, ownerResult.ownerUserId, id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: "not found" });
+
+    res.json({ row: mapLeadRow(r.rows[0]) });
+  });
+
+  app.patch("/api/crm/leads/:id", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const id = parseCrmLeadId(req.params.id);
+    if (!id) return res.status(400).json({ error: "invalid id" });
+
+    if (isSalesOnly(user)) {
+      const own = await pool.query("SELECT owner_user_id FROM crm_leads WHERE id = $1 LIMIT 1", [id]);
+      if (!own.rows.length) return res.status(404).json({ error: "not found" });
+      const ownerUserId =
+        own.rows[0].owner_user_id === null || own.rows[0].owner_user_id === undefined
+          ? null
+          : Number(own.rows[0].owner_user_id);
+      if (ownerUserId !== Number(user.id)) {
+        return res.status(403).json({ error: "forbidden" });
+      }
+    }
+
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    const textField = (name: string, value: any, fallbackEmpty = true) => {
+      if (value === undefined) return;
+      if (typeof value !== "string") return;
+      const trimmed = value.trim();
+      values.push(fallbackEmpty ? trimmed : trimmed || null);
+      fields.push(`${name} = $${values.length}`);
+    };
+
+    textField("name", req.body?.name);
+    textField("phone", req.body?.phone);
+    textField("source", req.body?.source);
+    textField("interest", req.body?.interest);
+    textField("budget", req.body?.budget);
+    textField("store", req.body?.store);
+    textField("next_action", req.body?.next_action);
+    textField("last_message", req.body?.last_message);
+    textField("last_touch", req.body?.last_touch);
+    textField("notes", req.body?.notes);
+
+    if (req.body?.owner !== undefined || req.body?.owner_user_id !== undefined) {
+      const ownerResult = await resolveOwner(pool, req.body?.owner_user_id, req.body?.owner);
+      values.push(ownerResult.ownerName);
+      fields.push(`owner = $${values.length}`);
+      values.push(ownerResult.ownerUserId);
+      fields.push(`owner_user_id = $${values.length}::bigint`);
+    }
+
+    if (req.body?.channel !== undefined) {
+      const channel = parseCrmChannel(req.body?.channel);
+      if (!channel) return res.status(400).json({ error: "invalid channel" });
+      values.push(channel);
+      fields.push(`channel = $${values.length}`);
+    }
+
+    if (req.body?.stage !== undefined) {
+      const stage = parseCrmStage(req.body?.stage);
+      if (!stage) return res.status(400).json({ error: "invalid stage" });
+      values.push(stage);
+      fields.push(`stage = $${values.length}`);
+    }
+
+    if (req.body?.due_date !== undefined) {
+      const dueDate = req.body?.due_date === "" ? null : parseCrmDate(req.body?.due_date);
+      if (req.body?.due_date !== "" && req.body?.due_date !== null && dueDate === null) {
+        return res.status(400).json({ error: "invalid due_date" });
+      }
+      values.push(dueDate);
+      fields.push(`due_date = $${values.length}::date`);
+    }
+
+    if (!fields.length) return res.status(400).json({ error: "no fields to update" });
+
+    values.push(id);
+    const sql = `
+      UPDATE crm_leads
+      SET ${fields.join(", ")}, updated_at = now()
+      WHERE id = $${values.length}
+      RETURNING
+        id, name, phone, channel, source, interest, budget, store, owner, owner_user_id, stage,
+        next_action, due_date, last_message, last_touch, notes, created_at, updated_at;
+    `;
+    const r = await pool.query(sql, values);
+    if (!r.rows.length) return res.status(404).json({ error: "not found" });
+
+    res.json({ row: mapLeadRow(r.rows[0]) });
+  });
+
+  app.get("/api/crm/ups", async (_req, res) => {
+    const sql = `
+      SELECT
+        id,
+        customer,
+        task,
+        owner,
+        owner_user_id,
+        lane,
+        priority,
+        due_at,
+        channel,
+        done,
+        started_at,
+        created_at,
+        updated_at
+      FROM crm_ups_items
+      ORDER BY done ASC, started_at DESC NULLS LAST, due_at DESC NULLS LAST, updated_at DESC;
+    `;
+    const r = await pool.query(sql);
+    res.json({ rows: r.rows.map(mapUpsRow) });
+  });
+
+  app.post("/api/crm/ups", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const id = parseCrmLeadId(req.body?.id) ?? `ups-${Date.now()}`;
+    const customer = typeof req.body?.customer === "string" ? req.body.customer.trim() : "";
+    const task = typeof req.body?.task === "string" ? req.body.task.trim() : "";
+    if (!customer) return res.status(400).json({ error: "customer is required" });
+
+    const lane = parseUpsLane(req.body?.lane) ?? "Unattended";
+    const priority = parseUpsPriority(req.body?.priority) ?? "Today";
+    const dueAt = parseCrmDate(req.body?.due_at) ?? new Date().toISOString().slice(0, 10);
+    const channel = parseCrmChannel(req.body?.channel) ?? "SMS";
+    const done = parseCrmBool(req.body?.done) ?? false;
+    const startedAt = typeof req.body?.started_at === "string" && req.body.started_at.trim() ? req.body.started_at : null;
+
+    const ownerResult = await resolveOwner(pool, req.body?.owner_user_id, req.body?.owner);
+
+    if (isSalesOnly(user) && ownerResult.ownerUserId !== null && ownerResult.ownerUserId !== Number(user.id)) {
+      return res.status(403).json({ error: "sales can only assign to themselves" });
+    }
+
+    const sql = `
+      INSERT INTO crm_ups_items (
+        id, customer, task, owner, owner_user_id, lane, priority, due_at,
+        channel, done, started_at, created_at, updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5::bigint, $6, $7, $8::date, $9, $10, $11::timestamptz, now(), now())
+      ON CONFLICT (id) DO UPDATE SET
+        customer = EXCLUDED.customer,
+        task = EXCLUDED.task,
+        owner = EXCLUDED.owner,
+        owner_user_id = EXCLUDED.owner_user_id,
+        lane = EXCLUDED.lane,
+        priority = EXCLUDED.priority,
+        due_at = EXCLUDED.due_at,
+        channel = EXCLUDED.channel,
+        done = EXCLUDED.done,
+        started_at = EXCLUDED.started_at,
+        updated_at = now()
+      RETURNING
+        id,
+        customer,
+        task,
+        owner,
+        owner_user_id,
+        lane,
+        priority,
+        due_at,
+        channel,
+        done,
+        started_at,
+        created_at,
+        updated_at;
+    `;
+    const r = await pool.query(sql, [
+      id,
+      customer,
+      task || "Showroom walk-in customer",
+      ownerResult.ownerName,
+      ownerResult.ownerUserId,
+      lane,
+      priority,
+      dueAt,
+      channel,
+      done,
+      startedAt,
+    ]);
+    res.status(201).json({ row: mapUpsRow(r.rows[0]) });
+  });
+
+  app.patch("/api/crm/ups/:id", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const id = parseCrmLeadId(req.params.id);
+    if (!id) return res.status(400).json({ error: "invalid id" });
+
+    const current = await pool.query("SELECT owner_user_id FROM crm_ups_items WHERE id = $1 LIMIT 1", [id]);
+    if (!current.rows.length) return res.status(404).json({ error: "not found" });
+
+    if (isSalesOnly(user)) {
+      const currentOwnerUserId =
+        current.rows[0].owner_user_id === null || current.rows[0].owner_user_id === undefined
+          ? null
+          : Number(current.rows[0].owner_user_id);
+      if (currentOwnerUserId !== null && currentOwnerUserId !== Number(user.id)) {
+        return res.status(403).json({ error: "forbidden" });
+      }
+    }
+
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    const textField = (name: string, value: any) => {
+      if (value === undefined) return;
+      if (typeof value !== "string") return;
+      values.push(value.trim());
+      fields.push(`${name} = $${values.length}`);
+    };
+
+    textField("customer", req.body?.customer);
+    textField("task", req.body?.task);
+
+    if (req.body?.owner !== undefined || req.body?.owner_user_id !== undefined) {
+      const ownerResult = await resolveOwner(pool, req.body?.owner_user_id, req.body?.owner);
+      if (isSalesOnly(user) && ownerResult.ownerUserId !== null && ownerResult.ownerUserId !== Number(user.id)) {
+        return res.status(403).json({ error: "sales can only assign to themselves" });
+      }
+      values.push(ownerResult.ownerName);
+      fields.push(`owner = $${values.length}`);
+      values.push(ownerResult.ownerUserId);
+      fields.push(`owner_user_id = $${values.length}::bigint`);
+    }
+
+    if (req.body?.lane !== undefined) {
+      const lane = parseUpsLane(req.body?.lane);
+      if (!lane) return res.status(400).json({ error: "invalid lane" });
+      values.push(lane);
+      fields.push(`lane = $${values.length}`);
+    }
+
+    if (req.body?.priority !== undefined) {
+      const priority = parseUpsPriority(req.body?.priority);
+      if (!priority) return res.status(400).json({ error: "invalid priority" });
+      values.push(priority);
+      fields.push(`priority = $${values.length}`);
+    }
+
+    if (req.body?.due_at !== undefined) {
+      const dueAt = req.body?.due_at === "" ? null : parseCrmDate(req.body?.due_at);
+      if (req.body?.due_at !== "" && req.body?.due_at !== null && dueAt === null) {
+        return res.status(400).json({ error: "invalid due_at" });
+      }
+      values.push(dueAt);
+      fields.push(`due_at = $${values.length}::date`);
+    }
+
+    if (req.body?.channel !== undefined) {
+      const channel = parseCrmChannel(req.body?.channel);
+      if (!channel) return res.status(400).json({ error: "invalid channel" });
+      values.push(channel);
+      fields.push(`channel = $${values.length}`);
+    }
+
+    if (req.body?.done !== undefined) {
+      const done = parseCrmBool(req.body?.done);
+      if (done === null) return res.status(400).json({ error: "invalid done" });
+      values.push(done);
+      fields.push(`done = $${values.length}`);
+    }
+
+    if (req.body?.started_at !== undefined) {
+      const startedAt =
+        req.body?.started_at === null || req.body?.started_at === ""
+          ? null
+          : typeof req.body?.started_at === "string"
+            ? req.body.started_at
+            : null;
+      values.push(startedAt);
+      fields.push(`started_at = $${values.length}::timestamptz`);
+    }
+
+    if (!fields.length) return res.status(400).json({ error: "no fields to update" });
+
+    values.push(id);
+    const sql = `
+      UPDATE crm_ups_items
+      SET ${fields.join(", ")}, updated_at = now()
+      WHERE id = $${values.length}
+      RETURNING
+        id,
+        customer,
+        task,
+        owner,
+        owner_user_id,
+        lane,
+        priority,
+        due_at,
+        channel,
+        done,
+        started_at,
+        created_at,
+        updated_at;
+    `;
+    const r = await pool.query(sql, values);
+    if (!r.rows.length) return res.status(404).json({ error: "not found" });
+
+    res.json({ row: mapUpsRow(r.rows[0]) });
+  });
+
+  app.get("/api/crm/automations", async (_req, res) => {
+    const sql = `
+      SELECT id, label, description, enabled, created_at, updated_at
+      FROM crm_automations
+      ORDER BY id ASC;
+    `;
+    const r = await pool.query(sql);
+    res.json({ rows: r.rows.map(mapAutomationRow) });
+  });
+
+  app.post("/api/crm/automations", async (req, res) => {
+    const id = parseCrmLeadId(req.body?.id) ?? `auto-${Date.now()}`;
+    const label = typeof req.body?.label === "string" ? req.body.label.trim() : "";
+    if (!label) return res.status(400).json({ error: "label is required" });
+
+    const description = typeof req.body?.description === "string" ? req.body.description.trim() : "";
+    const enabled = parseCrmBool(req.body?.enabled) ?? true;
+
+    const sql = `
+      INSERT INTO crm_automations (id, label, description, enabled, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, now(), now())
+      ON CONFLICT (id) DO UPDATE SET
+        label = EXCLUDED.label,
+        description = EXCLUDED.description,
+        enabled = EXCLUDED.enabled,
+        updated_at = now()
+      RETURNING id, label, description, enabled, created_at, updated_at;
+    `;
+    const r = await pool.query(sql, [id, label, description, enabled]);
+    res.status(201).json({ row: mapAutomationRow(r.rows[0]) });
+  });
+
+  app.patch("/api/crm/automations/:id", async (req, res) => {
+    const id = parseCrmLeadId(req.params.id);
+    if (!id) return res.status(400).json({ error: "invalid id" });
+
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    if (req.body?.label !== undefined) {
+      if (typeof req.body?.label !== "string" || !req.body?.label.trim()) {
+        return res.status(400).json({ error: "invalid label" });
+      }
+      values.push(req.body.label.trim());
+      fields.push(`label = $${values.length}`);
+    }
+
+    if (req.body?.description !== undefined) {
+      if (typeof req.body?.description !== "string") return res.status(400).json({ error: "invalid description" });
+      values.push(req.body.description.trim());
+      fields.push(`description = $${values.length}`);
+    }
+
+    if (req.body?.enabled !== undefined) {
+      const enabled = parseCrmBool(req.body?.enabled);
+      if (enabled === null) return res.status(400).json({ error: "invalid enabled value" });
+      values.push(enabled);
+      fields.push(`enabled = $${values.length}`);
+    }
+
+    if (!fields.length) return res.status(400).json({ error: "no fields to update" });
+
+    values.push(id);
+    const sql = `
+      UPDATE crm_automations
+      SET ${fields.join(", ")}, updated_at = now()
+      WHERE id = $${values.length}
+      RETURNING id, label, description, enabled, created_at, updated_at;
+    `;
+    const r = await pool.query(sql, values);
+    if (!r.rows.length) return res.status(404).json({ error: "not found" });
+
+    res.json({ row: mapAutomationRow(r.rows[0]) });
+  });
+}

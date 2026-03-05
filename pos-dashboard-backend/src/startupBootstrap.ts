@@ -203,6 +203,7 @@ async function ensureCrmSchema(pool: Pool) {
       budget       TEXT NOT NULL DEFAULT 'Unspecified',
       store        TEXT NOT NULL DEFAULT 'FD7',
       owner        TEXT NOT NULL DEFAULT 'Unassigned',
+      owner_user_id BIGINT NULL,
       stage        TEXT NOT NULL DEFAULT 'New',
       next_action  TEXT NOT NULL DEFAULT 'First contact',
       due_date     DATE NULL,
@@ -213,8 +214,10 @@ async function ensureCrmSchema(pool: Pool) {
       updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
+  await pool.query(`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS owner_user_id BIGINT;`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_stage_due ON crm_leads(stage, due_date, id);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_owner ON crm_leads(owner);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_owner_user_id ON crm_leads(owner_user_id);`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS crm_automations (
@@ -226,6 +229,96 @@ async function ensureCrmSchema(pool: Pool) {
       updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS crm_ups_items (
+      id            TEXT PRIMARY KEY,
+      customer      TEXT NOT NULL,
+      task          TEXT NOT NULL DEFAULT '',
+      owner         TEXT NOT NULL DEFAULT 'Unassigned',
+      owner_user_id BIGINT NULL,
+      lane          TEXT NOT NULL DEFAULT 'Unattended',
+      priority      TEXT NOT NULL DEFAULT 'Today',
+      due_at        DATE NULL,
+      channel       TEXT NOT NULL DEFAULT 'SMS',
+      done          BOOLEAN NOT NULL DEFAULT FALSE,
+      started_at    TIMESTAMPTZ NULL,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS customer TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS task TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS owner TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS owner_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS lane TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS priority TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS due_at DATE;`);
+  await pool.query(`ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS channel TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS done BOOLEAN;`);
+  await pool.query(`ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_items ALTER COLUMN task SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_items ALTER COLUMN owner SET DEFAULT 'Unassigned';`);
+  await pool.query(`ALTER TABLE crm_ups_items ALTER COLUMN lane SET DEFAULT 'Unattended';`);
+  await pool.query(`ALTER TABLE crm_ups_items ALTER COLUMN priority SET DEFAULT 'Today';`);
+  await pool.query(`ALTER TABLE crm_ups_items ALTER COLUMN channel SET DEFAULT 'SMS';`);
+  await pool.query(`ALTER TABLE crm_ups_items ALTER COLUMN done SET DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE crm_ups_items ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE crm_ups_items ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_owner_user_id ON crm_ups_items(owner_user_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_done ON crm_ups_items(done, updated_at DESC);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS board_posts (
+      id             BIGSERIAL PRIMARY KEY,
+      channel        TEXT NOT NULL DEFAULT 'announcements',
+      body           TEXT NOT NULL,
+      priority       BOOLEAN NOT NULL DEFAULT FALSE,
+      author_name    TEXT NOT NULL,
+      author_email   TEXT NOT NULL,
+      author_user_id BIGINT NULL,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS channel TEXT;`);
+  await pool.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS body TEXT;`);
+  await pool.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS priority BOOLEAN;`);
+  await pool.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS author_name TEXT;`);
+  await pool.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS author_email TEXT;`);
+  await pool.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS author_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE board_posts ALTER COLUMN channel SET DEFAULT 'announcements';`);
+  await pool.query(`ALTER TABLE board_posts ALTER COLUMN priority SET DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE board_posts ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE board_posts ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_board_posts_channel_created ON board_posts(channel, created_at DESC);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS board_comments (
+      id             BIGSERIAL PRIMARY KEY,
+      post_id        BIGINT NOT NULL REFERENCES board_posts(id) ON DELETE CASCADE,
+      body           TEXT NOT NULL,
+      author_name    TEXT NOT NULL,
+      author_email   TEXT NOT NULL,
+      author_user_id BIGINT NULL,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS post_id BIGINT;`);
+  await pool.query(`ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS body TEXT;`);
+  await pool.query(`ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS author_name TEXT;`);
+  await pool.query(`ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS author_email TEXT;`);
+  await pool.query(`ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS author_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE board_comments ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE board_comments ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_board_comments_post_id_created ON board_comments(post_id, created_at ASC);`);
 }
 
 export async function runStartupBootstrap(deps: RunStartupBootstrapDeps) {

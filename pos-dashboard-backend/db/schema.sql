@@ -239,6 +239,7 @@ CREATE TABLE IF NOT EXISTS crm_leads (
   budget       TEXT NOT NULL DEFAULT 'Unspecified',
   store        TEXT NOT NULL DEFAULT 'FD7',
   owner        TEXT NOT NULL DEFAULT 'Unassigned',
+  owner_user_id BIGINT NULL,
   stage        TEXT NOT NULL DEFAULT 'New',
   next_action  TEXT NOT NULL DEFAULT 'First contact',
   due_date     DATE NULL,
@@ -257,6 +258,7 @@ ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS interest TEXT;
 ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS budget TEXT;
 ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS store TEXT;
 ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS owner TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS owner_user_id BIGINT;
 ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS stage TEXT;
 ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS next_action TEXT;
 ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS due_date DATE;
@@ -281,6 +283,7 @@ ALTER TABLE crm_leads ALTER COLUMN updated_at SET DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_crm_leads_stage_due ON crm_leads(stage, due_date, id);
 CREATE INDEX IF NOT EXISTS idx_crm_leads_owner ON crm_leads(owner);
+CREATE INDEX IF NOT EXISTS idx_crm_leads_owner_user_id ON crm_leads(owner_user_id);
 
 CREATE TABLE IF NOT EXISTS crm_automations (
   id          TEXT PRIMARY KEY,
@@ -301,6 +304,99 @@ ALTER TABLE crm_automations ALTER COLUMN description SET DEFAULT '';
 ALTER TABLE crm_automations ALTER COLUMN enabled SET DEFAULT TRUE;
 ALTER TABLE crm_automations ALTER COLUMN created_at SET DEFAULT now();
 ALTER TABLE crm_automations ALTER COLUMN updated_at SET DEFAULT now();
+
+CREATE TABLE IF NOT EXISTS crm_ups_items (
+  id            TEXT PRIMARY KEY,
+  customer      TEXT NOT NULL,
+  task          TEXT NOT NULL DEFAULT '',
+  owner         TEXT NOT NULL DEFAULT 'Unassigned',
+  owner_user_id BIGINT NULL,
+  lane          TEXT NOT NULL DEFAULT 'Unattended',
+  priority      TEXT NOT NULL DEFAULT 'Today',
+  due_at        DATE NULL,
+  channel       TEXT NOT NULL DEFAULT 'SMS',
+  done          BOOLEAN NOT NULL DEFAULT FALSE,
+  started_at    TIMESTAMPTZ NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS customer TEXT;
+ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS task TEXT;
+ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS owner TEXT;
+ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS owner_user_id BIGINT;
+ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS lane TEXT;
+ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS priority TEXT;
+ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS due_at DATE;
+ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS channel TEXT;
+ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS done BOOLEAN;
+ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;
+ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE crm_ups_items ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
+ALTER TABLE crm_ups_items ALTER COLUMN task SET DEFAULT '';
+ALTER TABLE crm_ups_items ALTER COLUMN owner SET DEFAULT 'Unassigned';
+ALTER TABLE crm_ups_items ALTER COLUMN lane SET DEFAULT 'Unattended';
+ALTER TABLE crm_ups_items ALTER COLUMN priority SET DEFAULT 'Today';
+ALTER TABLE crm_ups_items ALTER COLUMN channel SET DEFAULT 'SMS';
+ALTER TABLE crm_ups_items ALTER COLUMN done SET DEFAULT FALSE;
+ALTER TABLE crm_ups_items ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE crm_ups_items ALTER COLUMN updated_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_crm_ups_owner_user_id ON crm_ups_items(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_crm_ups_done ON crm_ups_items(done, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS board_posts (
+  id             BIGSERIAL PRIMARY KEY,
+  channel        TEXT NOT NULL DEFAULT 'announcements',
+  body           TEXT NOT NULL,
+  priority       BOOLEAN NOT NULL DEFAULT FALSE,
+  author_name    TEXT NOT NULL,
+  author_email   TEXT NOT NULL,
+  author_user_id BIGINT NULL,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS channel TEXT;
+ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS body TEXT;
+ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS priority BOOLEAN;
+ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS author_name TEXT;
+ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS author_email TEXT;
+ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS author_user_id BIGINT;
+ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
+ALTER TABLE board_posts ALTER COLUMN channel SET DEFAULT 'announcements';
+ALTER TABLE board_posts ALTER COLUMN priority SET DEFAULT FALSE;
+ALTER TABLE board_posts ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE board_posts ALTER COLUMN updated_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_board_posts_channel_created ON board_posts(channel, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS board_comments (
+  id             BIGSERIAL PRIMARY KEY,
+  post_id        BIGINT NOT NULL REFERENCES board_posts(id) ON DELETE CASCADE,
+  body           TEXT NOT NULL,
+  author_name    TEXT NOT NULL,
+  author_email   TEXT NOT NULL,
+  author_user_id BIGINT NULL,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS post_id BIGINT;
+ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS body TEXT;
+ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS author_name TEXT;
+ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS author_email TEXT;
+ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS author_user_id BIGINT;
+ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE board_comments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
+ALTER TABLE board_comments ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE board_comments ALTER COLUMN updated_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_board_comments_post_id_created ON board_comments(post_id, created_at ASC);
 
 -- Employee auth/session foundation
 CREATE TABLE IF NOT EXISTS users (

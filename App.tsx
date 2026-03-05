@@ -285,13 +285,13 @@ const App: React.FC = () => {
       case Tab.SALES:
         return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
       case Tab.CRM:
-        return <CRMWorkspace />;
+        return <CRMWorkspace authUser={authUser!} />;
       case Tab.SOCIAL:
         return <WorkAdvertising />;
       case Tab.KIOSKS:
         return <KiosksStatus />;
       case Tab.MESSAGE_BOARD:
-        return <MessageBoard />;
+        return <MessageBoard authUser={authUser!} />;
       case Tab.TASKS:
         return <TaskManager />;
       case Tab.ADMIN:

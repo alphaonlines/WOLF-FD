@@ -68,12 +68,37 @@ export interface CRMLead {
   budget: string;
   store: string;
   owner: string;
+  ownerUserId?: string | null;
   stage: CRMLeadStage;
   nextAction: string;
   dueDate: string;
   lastMessage: string;
   lastTouch: string;
   notes: string;
+}
+
+export type CRMUpsLane = "Unattended" | "Be-Back" | "Quote Follow-up";
+export type CRMUpsPriority = "Hot" | "Today" | "Nurture";
+
+export interface CRMUpsItem {
+  id: string;
+  customer: string;
+  task: string;
+  owner: string;
+  ownerUserId?: string | null;
+  lane: CRMUpsLane;
+  priority: CRMUpsPriority;
+  dueAt: string;
+  channel: CRMLeadChannel;
+  done: boolean;
+  startedAt?: string;
+}
+
+export interface CRMOwnerOption {
+  id: string;
+  name: string;
+  email: string;
+  roles: UserRole[];
 }
 
 export interface CRMAutomationRule {
@@ -116,4 +141,23 @@ export interface RolePermissionRow {
   roleKey: UserRole;
   label: string;
   permissions: Record<string, boolean>;
+}
+
+export interface BoardPost {
+  id: string;
+  channel: string;
+  body: string;
+  priority: boolean;
+  authorName: string;
+  authorEmail: string;
+  createdAt: string;
+}
+
+export interface BoardComment {
+  id: string;
+  postId: string;
+  body: string;
+  authorName: string;
+  authorEmail: string;
+  createdAt: string;
 }

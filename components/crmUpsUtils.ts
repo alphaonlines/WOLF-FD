@@ -1,20 +1,8 @@
-import type { CRMLeadChannel } from "../types";
+import type { CRMLeadChannel, CRMUpsItem, CRMUpsLane, CRMUpsPriority } from "../types";
 
-export type UpsPriority = "Hot" | "Today" | "Nurture";
-export type UpsLane = "Unattended" | "Be-Back" | "Quote Follow-up";
-
-export type UpsItem = {
-  id: string;
-  customer: string;
-  task: string;
-  owner: string;
-  lane: UpsLane;
-  priority: UpsPriority;
-  dueAt: string;
-  channel: CRMLeadChannel;
-  done: boolean;
-  startedAt?: string;
-};
+export type UpsPriority = CRMUpsPriority;
+export type UpsLane = CRMUpsLane;
+export type UpsItem = CRMUpsItem;
 
 export const UPS_LANES: UpsLane[] = ["Unattended", "Be-Back", "Quote Follow-up"];
 export const UPS_PRIORITIES: UpsPriority[] = ["Hot", "Today", "Nurture"];
@@ -61,6 +49,8 @@ export const normalizeUpsList = (raw: unknown, fallback: UpsItem[], todayIso: ()
           ? item.task.trim()
           : legacyTitle || "Follow up";
       const owner = typeof item.owner === "string" && item.owner.trim() ? item.owner.trim() : "Unassigned";
+      const ownerUserId =
+        typeof item.ownerUserId === "string" && item.ownerUserId.trim() ? item.ownerUserId.trim() : undefined;
       const lane = isUpsLane(item.lane) ? item.lane : "Unattended";
       const priority = isUpsPriority(item.priority) ? item.priority : "Today";
       const dueAt =
@@ -90,6 +80,7 @@ export const normalizeUpsList = (raw: unknown, fallback: UpsItem[], todayIso: ()
         done,
       };
       if (startedAt) normalizedItem.startedAt = startedAt;
+      if (ownerUserId) normalizedItem.ownerUserId = ownerUserId;
       return normalizedItem;
     })
     .filter((item): item is UpsItem => item !== null);

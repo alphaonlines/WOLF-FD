@@ -9,7 +9,7 @@ import {
   SAFE_PROFIT,
   SAFE_TOTAL_FINANCE_AMT,
 } from "./sqlFields";
-import { registerCrmRoutes } from "./routes/crmRoutes";
+import { registerCrmRoutes } from "./routes/crmRoutesV2";
 import { registerTaskRoutes } from "./routes/tasksRoutes";
 import { registerAdminRoutes } from "./routes/adminRoutes";
 import { registerAuthRoutes } from "./routes/authRoutes";
@@ -18,6 +18,7 @@ import { registerAnalyticsRoutes } from "./routes/analyticsRoutes";
 import { registerSalesDetailRoutes } from "./routes/salesDetailRoutes";
 import { registerInsightsRoutes } from "./routes/insightsRoutes";
 import { registerSystemRoutes } from "./routes/systemRoutes";
+import { registerBoardRoutes } from "./routes/boardRoutes";
 import {
   type AuthUserView,
   buildAuthUser,
@@ -139,6 +140,7 @@ export function registerAllRoutes({
 
   registerTaskRoutes(app, pool);
   registerCrmRoutes(app, pool);
+  registerBoardRoutes(app, pool);
   registerReportRoutes({ app, pool, prefixedDateField });
   registerAnalyticsRoutes({ app, pool, itemDateField: ITEM_DATE_FIELD, prefixedDateField });
   registerSalesDetailRoutes({ app, pool, itemDateField: ITEM_DATE_FIELD, prefixedDateField });

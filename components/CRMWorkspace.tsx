@@ -9,15 +9,26 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
-import type { CRMAutomationRule, CRMLead, CRMLeadChannel, CRMLeadStage } from "../types";
+import type {
+  AuthUser,
+  CRMAutomationRule,
+  CRMLead,
+  CRMLeadChannel,
+  CRMLeadStage,
+  CRMOwnerOption,
+} from "../types";
 import { checkPosBackendHealthy } from "../services/posBackendApi";
 import {
   createCrmAutomationInApi,
   createCrmLeadInApi,
+  createCrmUpsInApi,
   fetchCrmAutomationsFromApi,
   fetchCrmLeadsFromApi,
+  fetchCrmOwnersFromApi,
+  fetchCrmUpsFromApi,
   updateCrmAutomationInApi,
   updateCrmLeadInApi,
+  updateCrmUpsInApi,
 } from "../services/crmApi";
 import {
   normalizeUpsList,
@@ -230,7 +241,14 @@ const stagePillClass = (stage: CRMLeadStage) => {
   return "border-slate-200 bg-slate-50 text-slate-700";
 };
 
-const CRMWorkspace: React.FC = () => {
+type CRMWorkspaceProps = {
+  authUser: AuthUser;
+};
+
+const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
+  const isManager = authUser.roles.includes("Owner") || authUser.roles.includes("Manager");
+  const isSalesOnly = authUser.roles.includes("Sales") && !isManager;
+  const [leadScope, setLeadScope] = useState<"my" | "team">(isSalesOnly ? "my" : "team");
   const [syncMode, setSyncMode] = useState<CRMSyncMode>("LOCAL_STORAGE");
   const [focusMode, setFocusMode] = useState(false);
   const [leads, setLeads] = useState<CRMLead[]>(() => readLocal(LEAD_KEY, seedLeads));
@@ -238,10 +256,11 @@ const CRMWorkspace: React.FC = () => {
   const [upsDraft, setUpsDraft] = useState({
     customer: "",
     task: "",
-    owner: FLOOR_SALESPEOPLE[0],
+    owner: "Unassigned",
     channel: "SMS" as CRMLeadChannel,
   });
   const [assignmentDrafts, setAssignmentDrafts] = useState<Record<string, string>>({});
+  const [owners, setOwners] = useState<CRMOwnerOption[]>([]);
   const [automations, setAutomations] = useState<CRMAutomationRule[]>(() => readLocal(AUTOMATION_KEY, seedAutomations));
   const [selectedLeadId, setSelectedLeadId] = useState<string>(() => readLocal(LEAD_KEY, seedLeads)[0]?.id ?? "");
   const [copiedTemplate, setCopiedTemplate] = useState<string | null>(null);
@@ -261,9 +280,13 @@ const CRMWorkspace: React.FC = () => {
     let pollId: number | null = null;
 
     const seedApiIfEmpty = async () => {
-      const [apiLeads, apiAutomations] = await Promise.all([fetchCrmLeadsFromApi(), fetchCrmAutomationsFromApi()]);
+      const [apiLeads, apiAutomations, apiUps] = await Promise.all([
+        fetchCrmLeadsFromApi(leadScope),
+        fetchCrmAutomationsFromApi(),
+        fetchCrmUpsFromApi(),
+      ]);
 
-      if (!apiLeads.length) {
+      if (!apiLeads.length && !isSalesOnly) {
         await Promise.all(
           seedLeads.map(async (lead) => {
             try {
@@ -286,20 +309,43 @@ const CRMWorkspace: React.FC = () => {
           })
         );
       }
+
+      if (!apiUps.length) {
+        await Promise.all(
+          seedUpsList.map(async (item) => {
+            try {
+              await createCrmUpsInApi(item);
+            } catch {
+              // If another client seeded first, ignore duplicate inserts.
+            }
+          })
+        );
+      }
     };
 
     const loadFromApi = async () => {
       try {
-        const [apiLeads, apiAutomations] = await Promise.all([fetchCrmLeadsFromApi(), fetchCrmAutomationsFromApi()]);
+        const [apiLeads, apiAutomations, apiUps] = await Promise.all([
+          fetchCrmLeadsFromApi(leadScope),
+          fetchCrmAutomationsFromApi(),
+          fetchCrmUpsFromApi(),
+        ]);
 
-        if (!apiLeads.length || !apiAutomations.length) {
+        if ((!apiLeads.length && !isSalesOnly) || !apiAutomations.length || !apiUps.length) {
           await seedApiIfEmpty();
         }
 
-        const [freshLeads, freshAutomations] = await Promise.all([fetchCrmLeadsFromApi(), fetchCrmAutomationsFromApi()]);
+        const [freshLeads, freshAutomations, freshUps, freshOwners] = await Promise.all([
+          fetchCrmLeadsFromApi(leadScope),
+          fetchCrmAutomationsFromApi(),
+          fetchCrmUpsFromApi(),
+          fetchCrmOwnersFromApi(),
+        ]);
         if (stopped) return;
-        setLeads(freshLeads.length ? freshLeads : seedLeads);
+        setLeads(freshLeads.length ? freshLeads : isSalesOnly ? [] : seedLeads);
         setAutomations(freshAutomations.length ? freshAutomations : seedAutomations);
+        setUpsList(freshUps.length ? normalizeUpsList(freshUps, seedUpsList, todayIso) : seedUpsList);
+        setOwners(freshOwners);
       } catch (err) {
         console.warn("CRM sync failed; using local storage fallback:", err);
         if (!stopped) setSyncMode("LOCAL_STORAGE");
@@ -328,7 +374,13 @@ const CRMWorkspace: React.FC = () => {
       stopped = true;
       if (pollId !== null) window.clearInterval(pollId);
     };
-  }, []);
+  }, [leadScope, isSalesOnly]);
+
+  useEffect(() => {
+    if (isSalesOnly && leadScope !== "my") {
+      setLeadScope("my");
+    }
+  }, [isSalesOnly, leadScope]);
 
   useEffect(() => {
     try {
@@ -374,6 +426,17 @@ const CRMWorkspace: React.FC = () => {
     () => leads.find((lead) => lead.id === selectedLeadId) ?? null,
     [leads, selectedLeadId]
   );
+
+  const ownerLookup = useMemo(() => {
+    const byName = new Map<string, CRMOwnerOption>();
+    const byId = new Map<string, CRMOwnerOption>();
+    for (const owner of owners) {
+      if (owner.id) byId.set(owner.id, owner);
+      if (owner.name) byName.set(owner.name.toLowerCase(), owner);
+      if (owner.email) byName.set(owner.email.toLowerCase(), owner);
+    }
+    return { byName, byId };
+  }, [owners]);
 
   const leadsByStage = useMemo(() => {
     const grouped: Record<CRMLeadStage, CRMLead[]> = {
@@ -428,6 +491,12 @@ const CRMWorkspace: React.FC = () => {
 
   const floorSalespeople = useMemo(() => {
     const set = new Set<string>(FLOOR_SALESPEOPLE);
+    for (const owner of owners) {
+      const canOwnLeads = owner.roles.includes("Owner") || owner.roles.includes("Manager") || owner.roles.includes("Sales");
+      if (!canOwnLeads) continue;
+      const name = owner.name.trim();
+      if (name) set.add(name);
+    }
     for (const lead of leads) {
       const owner = String(lead.owner || "").trim();
       if (!owner || owner === "Unassigned") continue;
@@ -439,7 +508,9 @@ const CRMWorkspace: React.FC = () => {
       set.add(owner);
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [leads, upsList]);
+  }, [owners, leads, upsList]);
+
+  const ownerOptions = useMemo(() => ["Unassigned", ...floorSalespeople], [floorSalespeople]);
 
   const floorStatus = useMemo(() => {
     return floorSalespeople.map((rep) => {
@@ -468,19 +539,25 @@ const CRMWorkspace: React.FC = () => {
   const nextFollowUpLead = topFollowUps[0] ?? null;
 
   const updateLead = (id: string, patch: Partial<CRMLead>) => {
+    const ownerPatch = patch.owner !== undefined ? ownerLookup.byName.get(String(patch.owner).toLowerCase()) : null;
+    const normalizedPatch =
+      ownerPatch && patch.ownerUserId === undefined
+        ? { ...patch, owner: ownerPatch.name, ownerUserId: ownerPatch.id }
+        : patch;
+
     setLeads((current) =>
       current.map((lead) =>
         lead.id === id
           ? {
               ...lead,
-              ...patch,
+              ...normalizedPatch,
             }
           : lead
       )
     );
 
     if (syncMode === "POS_DB") {
-      void updateCrmLeadInApi(id, patch).catch((err) => {
+      void updateCrmLeadInApi(id, normalizedPatch).catch((err) => {
         console.warn("Failed to update CRM lead in API; switching to local mode:", err);
         setSyncMode("LOCAL_STORAGE");
       });
@@ -490,6 +567,7 @@ const CRMWorkspace: React.FC = () => {
   const addLead = () => {
     if (!newLead.name.trim() || !newLead.phone.trim() || !newLead.interest.trim()) return;
 
+    const ownerOption = ownerLookup.byName.get(String(newLead.owner || "").toLowerCase());
     const created: CRMLead = {
       id: `lead-${Date.now()}`,
       name: newLead.name.trim(),
@@ -499,7 +577,8 @@ const CRMWorkspace: React.FC = () => {
       interest: newLead.interest.trim(),
       budget: newLead.budget.trim() || "Unspecified",
       store: newLead.store.trim() || "FD7",
-      owner: newLead.owner.trim() || "Unassigned",
+      owner: ownerOption?.name || newLead.owner.trim() || "Unassigned",
+      ownerUserId: ownerOption?.id || null,
       stage: "New",
       nextAction: "First contact",
       dueDate: todayIso(),
@@ -531,48 +610,68 @@ const CRMWorkspace: React.FC = () => {
   };
 
   const toggleUpsItem = (id: string) => {
-    setUpsList((current) =>
-      current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              done: !item.done,
-              startedAt:
-                item.done && item.owner && item.owner !== "Unassigned"
-                  ? item.startedAt || new Date().toISOString()
-                  : item.startedAt,
-            }
-          : item
-      )
-    );
+    const currentItem = upsList.find((item) => item.id === id);
+    if (!currentItem) return;
+    const nextItem: UpsItem = {
+      ...currentItem,
+      done: !currentItem.done,
+      startedAt:
+        currentItem.done && currentItem.owner && currentItem.owner !== "Unassigned"
+          ? currentItem.startedAt || new Date().toISOString()
+          : currentItem.startedAt,
+    };
+    setUpsList((current) => current.map((item) => (item.id === id ? nextItem : item)));
+    if (syncMode === "POS_DB") {
+      void updateCrmUpsInApi(id, {
+        done: nextItem.done,
+        startedAt: nextItem.startedAt,
+      }).catch((err) => {
+        console.warn("Failed to update CRM UPS item in API; switching to local mode:", err);
+        setSyncMode("LOCAL_STORAGE");
+      });
+    }
   };
 
   const assignUpsItem = (id: string, owner: string) => {
     const normalizedOwner = owner.trim() || "Unassigned";
-    setUpsList((current) =>
-      current.map((item) => {
-        if (item.id !== id) return item;
-        const assigned = normalizedOwner !== "Unassigned";
-        return {
-          ...item,
-          owner: normalizedOwner,
-          lane: assigned ? "Quote Follow-up" : "Unattended",
-          priority: assigned ? "Hot" : item.priority,
-          startedAt: assigned ? item.startedAt || new Date().toISOString() : undefined,
-        };
-      })
-    );
+    const ownerOption = ownerLookup.byName.get(normalizedOwner.toLowerCase()) || ownerLookup.byId.get(normalizedOwner);
+    const currentItem = upsList.find((item) => item.id === id);
+    if (!currentItem) return;
+    const assigned = normalizedOwner !== "Unassigned";
+    const nextItem: UpsItem = {
+      ...currentItem,
+      owner: ownerOption?.name || normalizedOwner,
+      ownerUserId: ownerOption?.id || null,
+      lane: assigned ? "Quote Follow-up" : "Unattended",
+      priority: assigned ? "Hot" : currentItem.priority,
+      startedAt: assigned ? currentItem.startedAt || new Date().toISOString() : undefined,
+    };
+    setUpsList((current) => current.map((item) => (item.id === id ? nextItem : item)));
+    if (syncMode === "POS_DB") {
+      void updateCrmUpsInApi(id, {
+        owner: nextItem.owner,
+        ownerUserId: nextItem.ownerUserId,
+        lane: nextItem.lane,
+        priority: nextItem.priority,
+        startedAt: nextItem.startedAt,
+      }).catch((err) => {
+        console.warn("Failed to assign CRM UPS item in API; switching to local mode:", err);
+        setSyncMode("LOCAL_STORAGE");
+      });
+    }
   };
 
   const addUpsItem = () => {
     if (!upsDraft.customer.trim()) return;
     const owner = upsDraft.owner.trim() || "Unassigned";
     const assigned = owner !== "Unassigned";
+    const ownerOption = ownerLookup.byName.get(owner.toLowerCase()) || ownerLookup.byId.get(owner);
     const created: UpsItem = {
       id: `ups-${Date.now()}`,
       customer: upsDraft.customer.trim(),
       task: upsDraft.task.trim() || "Showroom walk-in customer",
-      owner,
+      owner: ownerOption?.name || owner,
+      ownerUserId: ownerOption?.id || null,
       lane: assigned ? "Quote Follow-up" : "Unattended",
       priority: assigned ? "Hot" : "Today",
       dueAt: todayIso(),
@@ -581,11 +680,17 @@ const CRMWorkspace: React.FC = () => {
       startedAt: assigned ? new Date().toISOString() : undefined,
     };
     setUpsList((current) => [created, ...current]);
+    if (syncMode === "POS_DB") {
+      void createCrmUpsInApi(created).catch((err) => {
+        console.warn("Failed to create CRM UPS item in API; switching to local mode:", err);
+        setSyncMode("LOCAL_STORAGE");
+      });
+    }
     setUpsDraft((current) => ({
       ...current,
       customer: "",
       task: "",
-      owner: FLOOR_SALESPEOPLE[0],
+      owner: "Unassigned",
       channel: "SMS",
     }));
   };
@@ -685,6 +790,28 @@ const CRMWorkspace: React.FC = () => {
             >
               {focusMode ? "Full CRM Mode" : "Focused Rep Mode"}
             </button>
+            <div className="inline-flex items-center rounded-full border border-slate-300 bg-white p-1 text-xs font-semibold text-slate-700">
+              <button
+                type="button"
+                onClick={() => setLeadScope("my")}
+                className={`rounded-full px-3 py-1 ${
+                  leadScope === "my" ? "bg-slate-900 text-white" : "text-slate-600"
+                }`}
+              >
+                My Leads
+              </button>
+              {!isSalesOnly && (
+                <button
+                  type="button"
+                  onClick={() => setLeadScope("team")}
+                  className={`rounded-full px-3 py-1 ${
+                    leadScope === "team" ? "bg-slate-900 text-white" : "text-slate-600"
+                  }`}
+                >
+                  Team Leads
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1011,12 +1138,17 @@ const CRMWorkspace: React.FC = () => {
                     className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
                     placeholder="Store"
                   />
-                  <input
+                  <select
                     value={selectedLead.owner}
                     onChange={(event) => updateLead(selectedLead.id, { owner: event.target.value })}
                     className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                    placeholder="Owner"
-                  />
+                  >
+                    {ownerOptions.map((owner) => (
+                      <option key={owner} value={owner}>
+                        {owner}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <input
                   value={selectedLead.nextAction}
@@ -1082,12 +1214,17 @@ const CRMWorkspace: React.FC = () => {
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <input
+                <select
                   value={newLead.owner}
                   onChange={(event) => setNewLead((current) => ({ ...current, owner: event.target.value }))}
                   className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                  placeholder="Owner"
-                />
+                >
+                  {ownerOptions.map((owner) => (
+                    <option key={owner} value={owner}>
+                      {owner}
+                    </option>
+                  ))}
+                </select>
                 <select
                   value={newLead.channel}
                   onChange={(event) =>
