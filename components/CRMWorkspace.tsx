@@ -451,16 +451,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     }
   }, [leads, selectedLeadId]);
 
-  const stats = useMemo(() => {
-    const open = leads.filter((lead) => !["Won", "Lost"].includes(lead.stage)).length;
-    const appointments = leads.filter((lead) => lead.stage === "Appointment").length;
-    const quoted = leads.filter((lead) => lead.stage === "Quoted").length;
-    const won = leads.filter((lead) => lead.stage === "Won").length;
-    const today = todayIso();
-    const overdue = leads.filter((lead) => !["Won", "Lost"].includes(lead.stage) && lead.dueDate < today).length;
-    return { open, appointments, quoted, won, overdue };
-  }, [leads]);
-
   const selectedLead = useMemo(
     () => leads.find((lead) => lead.id === selectedLeadId) ?? null,
     [leads, selectedLeadId]
@@ -594,18 +584,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     });
   }, [floorSalespeople, engagedUps]);
 
-  const upsStats = useMemo(() => {
-    const active = activeUps.length;
-    const waiting = waitingUps.length;
-    const engaged = engagedUps.length;
-    const repsDown = floorStatus.filter((row) => row.isDown).length;
-    const completed = upsList.filter((item) => item.done).length;
-    return { active, waiting, engaged, repsDown, completed };
-  }, [activeUps.length, waitingUps.length, engagedUps.length, floorStatus, upsList]);
-
   const topFollowUps = useMemo(() => followUps.slice(0, 6), [followUps]);
   const focusUpsItems = useMemo(() => orderedUpsList.filter((item) => !item.done).slice(0, 6), [orderedUpsList]);
-  const nextFollowUpLead = topFollowUps[0] ?? null;
 
   const updateLead = (id: string, patch: Partial<CRMLead>) => {
     const ownerPatch = patch.owner !== undefined ? ownerLookup.byName.get(String(patch.owner).toLowerCase()) : null;
@@ -1005,109 +985,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-3xl border border-slate-200 bg-gradient-to-r from-white via-slate-50 to-emerald-50/60 p-6 shadow-sm md:p-8">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div className="space-y-2">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-500">CRM Command Center</div>
-            <h2 className="text-2xl font-semibold text-slate-900 md:text-3xl">Daily Lead Flow</h2>
-            <p className="max-w-2xl text-sm text-slate-600">
-              Focuses the team on today&apos;s follow-ups first, then pipeline movement, then communication systems.
-            </p>
-            <div
-              className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${
-                syncMode === "POS_DB"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : "border-amber-200 bg-amber-50 text-amber-700"
-              }`}
-            >
-              {syncMode === "POS_DB" ? "Sync: POS DB (shared)" : "Sync: Browser fallback"}
-            </div>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              onClick={() => {
-                if (!nextFollowUpLead) return;
-                setSelectedLeadId(nextFollowUpLead.id);
-                updateLead(nextFollowUpLead.id, { stage: "Contacted", lastTouch: `${todayIso()} 09:00` });
-              }}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-            >
-              <PhoneCall size={15} /> Call Next Up
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (selectedLead) {
-                  updateLead(selectedLead.id, { stage: "Contacted", lastTouch: `${todayIso()} 09:00` });
-                }
-              }}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-            >
-              Mark Selected Contacted
-            </button>
-            {showLegacyCards && (
-              <button
-                type="button"
-                onClick={() => setFocusMode((current) => !current)}
-                className={`inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold ${
-                  focusMode
-                    ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                    : "border-slate-300 bg-white text-slate-700"
-                }`}
-              >
-                {focusMode ? "Full CRM Mode" : "Focused Rep Mode"}
-              </button>
-            )}
-            <div className="inline-flex items-center rounded-full border border-slate-300 bg-white p-1 text-xs font-semibold text-slate-700">
-              <button
-                type="button"
-                onClick={() => setLeadScope("my")}
-                className={`rounded-full px-3 py-1 ${
-                  leadScope === "my" ? "bg-slate-900 text-white" : "text-slate-600"
-                }`}
-              >
-                My Leads
-              </button>
-              {!isSalesOnly && (
-                <button
-                  type="button"
-                  onClick={() => setLeadScope("team")}
-                  className={`rounded-full px-3 py-1 ${
-                    leadScope === "team" ? "bg-slate-900 text-white" : "text-slate-600"
-                  }`}
-                >
-                  Team Leads
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-5">
-          <div className="rounded-2xl border border-slate-200 bg-white/90 p-4">
-            <div className="text-[11px] uppercase tracking-wide text-slate-500">Open Leads</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-900">{stats.open}</div>
-          </div>
-          <div className="rounded-2xl border border-violet-200 bg-violet-50/80 p-4">
-            <div className="text-[11px] uppercase tracking-wide text-violet-700">Appointments</div>
-            <div className="mt-1 text-2xl font-semibold text-violet-900">{stats.appointments}</div>
-          </div>
-          <div className="rounded-2xl border border-blue-200 bg-blue-50/80 p-4">
-            <div className="text-[11px] uppercase tracking-wide text-blue-700">Quoted</div>
-            <div className="mt-1 text-2xl font-semibold text-blue-900">{stats.quoted}</div>
-          </div>
-          <div className="rounded-2xl border border-rose-200 bg-rose-50/80 p-4">
-            <div className="text-[11px] uppercase tracking-wide text-rose-700">Overdue</div>
-            <div className="mt-1 text-2xl font-semibold text-rose-900">{stats.overdue}</div>
-          </div>
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4">
-            <div className="text-[11px] uppercase tracking-wide text-emerald-700">Active UPS</div>
-            <div className="mt-1 text-2xl font-semibold text-emerald-900">{upsStats.active}</div>
-          </div>
-        </div>
-      </section>
-
       {showLegacyCards && (
       <section className={`${focusMode ? "" : "hidden"} grid grid-cols-1 gap-4 xl:grid-cols-12`}>
         <div className="space-y-4 xl:col-span-7">
