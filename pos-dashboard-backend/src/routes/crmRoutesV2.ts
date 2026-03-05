@@ -160,6 +160,41 @@ function mapUpsQueueRow(row: any) {
   };
 }
 
+function normalizePhone(value: string): string {
+  const digits = value.replace(/\D+/g, "");
+  if (digits.length <= 10) return digits;
+  return digits.slice(-10);
+}
+
+function mapCustomerRow(row: any) {
+  return {
+    id: String(row.id ?? ""),
+    name: String(row.name ?? ""),
+    phone: String(row.phone ?? ""),
+    email: String(row.email ?? ""),
+    store: String(row.store ?? "FD7"),
+    notes: String(row.notes ?? ""),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function mapCustomerOrderRow(row: any) {
+  return {
+    sale_id: String(row.sale_id ?? ""),
+    sale_date: row.sale_date ? String(row.sale_date).slice(0, 10) : null,
+    delivery_confirmed_date: row.delivery_confirmed_date ? String(row.delivery_confirmed_date).slice(0, 10) : null,
+    est_delivery_date: row.est_delivery_date ? String(row.est_delivery_date).slice(0, 10) : null,
+    location: String(row.location ?? ""),
+    salesperson: String(row.salesperson ?? ""),
+    receipt_no: String(row.receipt_no ?? ""),
+    customer_name: String(row.customer_name ?? ""),
+    phone: String(row.phone ?? ""),
+    grand_total: row.grand_total ?? null,
+    sale_status: String(row.sale_status ?? ""),
+  };
+}
+
 export function registerCrmRoutes(app: Express, pool: Pool) {
   app.get("/api/crm/owners", async (_req, res) => {
     const sql = `
@@ -897,6 +932,141 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       [store]
     );
     res.json({ ok: true });
+  });
+
+  app.get("/api/crm/customers/find", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const phoneRaw = typeof req.query?.phone === "string" ? req.query.phone.trim() : "";
+    const emailRaw = typeof req.query?.email === "string" ? req.query.email.trim().toLowerCase() : "";
+    const phoneNorm = normalizePhone(phoneRaw);
+
+    if (!phoneNorm && !emailRaw) {
+      return res.status(400).json({ error: "phone or email is required" });
+    }
+
+    const customerRes = await pool.query(
+      `
+      SELECT id, name, phone, email, store, notes, created_at, updated_at
+      FROM crm_customers
+      WHERE
+        ($1::text <> '' AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') LIKE ('%' || $1 || '%'))
+        OR ($2::text <> '' AND lower(COALESCE(email, '')) = $2)
+      ORDER BY updated_at DESC
+      LIMIT 25
+    `,
+      [phoneNorm, emailRaw]
+    );
+
+    const salesRes = await pool.query(
+      `
+      SELECT
+        sale_id,
+        sale_date,
+        delivery_confirmed_date,
+        est_delivery_date,
+        location,
+        salesperson,
+        receipt_no,
+        customer_name,
+        phone,
+        grand_total,
+        sale_status
+      FROM pos_sales
+      WHERE
+        ($1::text <> '' AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') LIKE ('%' || $1 || '%'))
+      ORDER BY delivery_confirmed_date DESC NULLS LAST, sale_date DESC NULLS LAST
+      LIMIT 100
+    `,
+      [phoneNorm]
+    );
+
+    res.json({
+      customers: customerRes.rows.map(mapCustomerRow),
+      orders: salesRes.rows.map(mapCustomerOrderRow),
+      matched_by: {
+        phone: Boolean(phoneNorm),
+        email: Boolean(emailRaw),
+      },
+    });
+  });
+
+  app.post("/api/crm/customers/upsert", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : "";
+    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    const store = typeof req.body?.store === "string" && req.body.store.trim() ? req.body.store.trim() : "FD7";
+    const notes = typeof req.body?.notes === "string" ? req.body.notes.trim() : "";
+
+    if (!name) return res.status(400).json({ error: "name is required" });
+    if (!phone && !email) return res.status(400).json({ error: "phone or email is required" });
+
+    const phoneNorm = normalizePhone(phone);
+    const existing = await pool.query(
+      `
+      SELECT id
+      FROM crm_customers
+      WHERE
+        ($1::text <> '' AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') LIKE ('%' || $1 || '%'))
+        OR ($2::text <> '' AND lower(COALESCE(email, '')) = $2)
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `,
+      [phoneNorm, email]
+    );
+
+    const id = existing.rows[0]?.id ? String(existing.rows[0].id) : `cust-${Date.now()}`;
+    const customerRes = await pool.query(
+      `
+      INSERT INTO crm_customers (id, name, phone, email, store, notes, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, now(), now())
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        phone = EXCLUDED.phone,
+        email = EXCLUDED.email,
+        store = EXCLUDED.store,
+        notes = EXCLUDED.notes,
+        updated_at = now()
+      RETURNING id, name, phone, email, store, notes, created_at, updated_at
+    `,
+      [id, name, phone, email, store, notes]
+    );
+
+    const orderRes = await pool.query(
+      `
+      SELECT
+        sale_id,
+        sale_date,
+        delivery_confirmed_date,
+        est_delivery_date,
+        location,
+        salesperson,
+        receipt_no,
+        customer_name,
+        phone,
+        grand_total,
+        sale_status
+      FROM pos_sales
+      WHERE
+        ($1::text <> '' AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') LIKE ('%' || $1 || '%'))
+      ORDER BY delivery_confirmed_date DESC NULLS LAST, sale_date DESC NULLS LAST
+      LIMIT 100
+    `,
+      [normalizePhone(phone)]
+    );
+
+    res.status(existing.rows.length ? 200 : 201).json({
+      customer: mapCustomerRow(customerRes.rows[0]),
+      orders: orderRes.rows.map(mapCustomerOrderRow),
+      linked: {
+        by_phone: Boolean(normalizePhone(phone)),
+        by_email: Boolean(email),
+      },
+    });
   });
 
   app.get("/api/crm/automations", async (_req, res) => {

@@ -346,6 +346,71 @@ ALTER TABLE crm_ups_items ALTER COLUMN updated_at SET DEFAULT now();
 CREATE INDEX IF NOT EXISTS idx_crm_ups_owner_user_id ON crm_ups_items(owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_crm_ups_done ON crm_ups_items(done, updated_at DESC);
 
+CREATE TABLE IF NOT EXISTS crm_ups_queue (
+  id                    TEXT PRIMARY KEY,
+  store                 TEXT NOT NULL DEFAULT 'FD7',
+  rep                   TEXT NOT NULL,
+  rep_user_id           BIGINT NOT NULL,
+  status                TEXT NOT NULL DEFAULT 'waiting',
+  queue_position        INTEGER NOT NULL DEFAULT 1,
+  checked_in_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  current_customer      TEXT NULL,
+  current_customer_type TEXT NULL,
+  started_at            TIMESTAMPTZ NULL,
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS store TEXT;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS rep TEXT;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS rep_user_id BIGINT;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS status TEXT;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS queue_position INTEGER;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMPTZ;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_customer TEXT;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_customer_type TEXT;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
+ALTER TABLE crm_ups_queue ALTER COLUMN store SET DEFAULT 'FD7';
+ALTER TABLE crm_ups_queue ALTER COLUMN status SET DEFAULT 'waiting';
+ALTER TABLE crm_ups_queue ALTER COLUMN checked_in_at SET DEFAULT now();
+ALTER TABLE crm_ups_queue ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE crm_ups_queue ALTER COLUMN updated_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_crm_ups_queue_store_pos ON crm_ups_queue(store, queue_position ASC);
+CREATE INDEX IF NOT EXISTS idx_crm_ups_queue_rep_user_id ON crm_ups_queue(rep_user_id);
+
+CREATE TABLE IF NOT EXISTS crm_customers (
+  id          TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  phone       TEXT NOT NULL DEFAULT '',
+  email       TEXT NOT NULL DEFAULT '',
+  store       TEXT NOT NULL DEFAULT 'FD7',
+  notes       TEXT NOT NULL DEFAULT '',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS store TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
+ALTER TABLE crm_customers ALTER COLUMN phone SET DEFAULT '';
+ALTER TABLE crm_customers ALTER COLUMN email SET DEFAULT '';
+ALTER TABLE crm_customers ALTER COLUMN store SET DEFAULT 'FD7';
+ALTER TABLE crm_customers ALTER COLUMN notes SET DEFAULT '';
+ALTER TABLE crm_customers ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE crm_customers ALTER COLUMN updated_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_crm_customers_phone ON crm_customers(phone);
+CREATE INDEX IF NOT EXISTS idx_crm_customers_email_lower ON crm_customers((lower(email)));
+
 CREATE TABLE IF NOT EXISTS board_posts (
   id             BIGSERIAL PRIMARY KEY,
   channel        TEXT NOT NULL DEFAULT 'announcements',

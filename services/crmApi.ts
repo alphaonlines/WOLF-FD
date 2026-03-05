@@ -1,4 +1,12 @@
-import type { CRMAutomationRule, CRMLead, CRMOwnerOption, CRMUpsItem, CRMUpsQueueItem } from "../types";
+import type {
+  CRMAutomationRule,
+  CRMCustomerAccount,
+  CRMCustomerOrder,
+  CRMLead,
+  CRMOwnerOption,
+  CRMUpsItem,
+  CRMUpsQueueItem,
+} from "../types";
 import { getPosApiBaseUrl } from "./posBackendApi";
 
 type ApiLeadRow = {
@@ -326,4 +334,66 @@ export async function leaveCrmUpsQueueInApi(id: string): Promise<void> {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
   });
+}
+
+const mapCustomerAccount = (row: any): CRMCustomerAccount => ({
+  id: String(row.id ?? ""),
+  name: String(row.name ?? ""),
+  phone: String(row.phone ?? ""),
+  email: String(row.email ?? ""),
+  store: String(row.store ?? "FD7"),
+  notes: String(row.notes ?? ""),
+});
+
+const mapCustomerOrder = (row: any): CRMCustomerOrder => ({
+  saleId: String(row.sale_id ?? ""),
+  saleDate: row.sale_date ? String(row.sale_date) : null,
+  deliveryConfirmedDate: row.delivery_confirmed_date ? String(row.delivery_confirmed_date) : null,
+  estDeliveryDate: row.est_delivery_date ? String(row.est_delivery_date) : null,
+  location: String(row.location ?? ""),
+  salesperson: String(row.salesperson ?? ""),
+  receiptNo: String(row.receipt_no ?? ""),
+  customerName: String(row.customer_name ?? ""),
+  phone: String(row.phone ?? ""),
+  grandTotal: row.grand_total === null || row.grand_total === undefined ? null : Number(row.grand_total),
+  saleStatus: String(row.sale_status ?? ""),
+});
+
+export async function findCrmCustomerAccount(params: {
+  phone?: string;
+  email?: string;
+}): Promise<{ customers: CRMCustomerAccount[]; orders: CRMCustomerOrder[] }> {
+  const qs = new URLSearchParams();
+  if (params.phone && params.phone.trim()) qs.set("phone", params.phone.trim());
+  if (params.email && params.email.trim()) qs.set("email", params.email.trim());
+  const json = await fetchJson(`/api/crm/customers/find?${qs.toString()}`);
+  const customers = Array.isArray((json as any)?.customers) ? (json as any).customers : [];
+  const orders = Array.isArray((json as any)?.orders) ? (json as any).orders : [];
+  return {
+    customers: customers.map(mapCustomerAccount),
+    orders: orders.map(mapCustomerOrder),
+  };
+}
+
+export async function upsertCrmCustomerAccount(payload: {
+  name: string;
+  phone?: string;
+  email?: string;
+  store?: string;
+  notes?: string;
+}): Promise<{ customer: CRMCustomerAccount; orders: CRMCustomerOrder[] }> {
+  const json = await fetchJson("/api/crm/customers/upsert", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: payload.name,
+      phone: payload.phone || "",
+      email: payload.email || "",
+      store: payload.store || "FD7",
+      notes: payload.notes || "",
+    }),
+  });
+  const customer = mapCustomerAccount((json as any)?.customer || {});
+  const orders = Array.isArray((json as any)?.orders) ? (json as any).orders.map(mapCustomerOrder) : [];
+  return { customer, orders };
 }

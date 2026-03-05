@@ -110,6 +110,29 @@ export interface CRMUpsQueueItem {
   startedAt: string | null;
 }
 
+export interface CRMCustomerOrder {
+  saleId: string;
+  saleDate: string | null;
+  deliveryConfirmedDate: string | null;
+  estDeliveryDate: string | null;
+  location: string;
+  salesperson: string;
+  receiptNo: string;
+  customerName: string;
+  phone: string;
+  grandTotal: number | null;
+  saleStatus: string;
+}
+
+export interface CRMCustomerAccount {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  store: string;
+  notes: string;
+}
+
 export interface CRMOwnerOption {
   id: string;
   name: string;

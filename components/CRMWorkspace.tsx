@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import type {
   AuthUser,
+  CRMCustomerAccount,
+  CRMCustomerOrder,
   CRMAutomationRule,
   CRMLead,
   CRMLeadChannel,
@@ -30,8 +32,10 @@ import {
   fetchCrmOwnersFromApi,
   fetchCrmUpsFromApi,
   fetchCrmUpsQueueFromApi,
+  findCrmCustomerAccount,
   joinCrmUpsQueueInApi,
   leaveCrmUpsQueueInApi,
+  upsertCrmCustomerAccount,
   startCrmUpsQueueCustomerInApi,
   updateCrmAutomationInApi,
   updateCrmLeadInApi,
@@ -255,6 +259,7 @@ type CRMWorkspaceProps = {
 };
 
 const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
+  const showLegacyCards = false;
   const isManager = authUser.roles.includes("Owner") || authUser.roles.includes("Manager");
   const isSalesOnly = authUser.roles.includes("Sales") && !isManager;
   const [leadScope, setLeadScope] = useState<"my" | "team">(isSalesOnly ? "my" : "team");
@@ -265,6 +270,18 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const [upsRepQueue, setUpsRepQueue] = useState<CRMUpsQueueItem[]>(() => readLocal(UPS_REP_QUEUE_KEY, [] as CRMUpsQueueItem[]));
   const [selectedUpsStore, setSelectedUpsStore] = useState<string>(DEFAULT_STORES[0]);
   const [upsStartDrafts, setUpsStartDrafts] = useState<Record<string, { customer: string; type: UpsQueueCustomerType }>>({});
+  const [customerDraft, setCustomerDraft] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    store: DEFAULT_STORES[0],
+    notes: "",
+  });
+  const [customerSearch, setCustomerSearch] = useState({ phone: "", email: "" });
+  const [customerMatches, setCustomerMatches] = useState<CRMCustomerAccount[]>([]);
+  const [customerOrders, setCustomerOrders] = useState<CRMCustomerOrder[]>([]);
+  const [customerBusy, setCustomerBusy] = useState(false);
+  const [customerMsg, setCustomerMsg] = useState<string | null>(null);
   const [upsDraft, setUpsDraft] = useState({
     customer: "",
     task: "",
@@ -812,6 +829,11 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     const customerName = draft?.customer?.trim() || "";
     const customerType = (draft?.type || "Regular Up") as UpsQueueCustomerType;
     if (!customerName) return;
+    setCustomerDraft((current) => ({
+      ...current,
+      name: current.name || customerName,
+      store: selectedUpsStore,
+    }));
 
     if (syncMode === "POS_DB") {
       void startCrmUpsQueueCustomerInApi(id, { customer: customerName, customerType })
@@ -882,6 +904,62 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
       }
       return [...others, resetRep];
     });
+  };
+
+  const handleCustomerLookup = async () => {
+    const phone = customerSearch.phone.trim();
+    const email = customerSearch.email.trim();
+    if (!phone && !email) {
+      setCustomerMsg("Enter phone or email to search.");
+      return;
+    }
+    setCustomerBusy(true);
+    setCustomerMsg(null);
+    try {
+      const result = await findCrmCustomerAccount({ phone, email });
+      setCustomerMatches(result.customers);
+      setCustomerOrders(result.orders);
+      setCustomerMsg(
+        `Found ${result.customers.length} account${result.customers.length === 1 ? "" : "s"} and ${result.orders.length} order${result.orders.length === 1 ? "" : "s"}.`
+      );
+    } catch (err: any) {
+      setCustomerMsg(String(err?.message || "Customer lookup failed."));
+    } finally {
+      setCustomerBusy(false);
+    }
+  };
+
+  const handleCustomerUpsert = async () => {
+    if (!customerDraft.name.trim()) {
+      setCustomerMsg("Customer name is required.");
+      return;
+    }
+    if (!customerDraft.phone.trim() && !customerDraft.email.trim()) {
+      setCustomerMsg("Phone or email is required.");
+      return;
+    }
+    setCustomerBusy(true);
+    setCustomerMsg(null);
+    try {
+      const result = await upsertCrmCustomerAccount({
+        name: customerDraft.name.trim(),
+        phone: customerDraft.phone.trim(),
+        email: customerDraft.email.trim(),
+        store: customerDraft.store.trim() || selectedUpsStore,
+        notes: customerDraft.notes.trim(),
+      });
+      setCustomerMatches([result.customer]);
+      setCustomerOrders(result.orders);
+      setCustomerMsg(`Saved ${result.customer.name}. Linked ${result.orders.length} sales order(s).`);
+      setCustomerSearch({
+        phone: result.customer.phone || "",
+        email: result.customer.email || "",
+      });
+    } catch (err: any) {
+      setCustomerMsg(String(err?.message || "Saving customer failed."));
+    } finally {
+      setCustomerBusy(false);
+    }
   };
 
   const toggleAutomation = (id: string) => {
@@ -968,17 +1046,19 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
             >
               Mark Selected Contacted
             </button>
-            <button
-              type="button"
-              onClick={() => setFocusMode((current) => !current)}
-              className={`inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold ${
-                focusMode
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                  : "border-slate-300 bg-white text-slate-700"
-              }`}
-            >
-              {focusMode ? "Full CRM Mode" : "Focused Rep Mode"}
-            </button>
+            {showLegacyCards && (
+              <button
+                type="button"
+                onClick={() => setFocusMode((current) => !current)}
+                className={`inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold ${
+                  focusMode
+                    ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                    : "border-slate-300 bg-white text-slate-700"
+                }`}
+              >
+                {focusMode ? "Full CRM Mode" : "Focused Rep Mode"}
+              </button>
+            )}
             <div className="inline-flex items-center rounded-full border border-slate-300 bg-white p-1 text-xs font-semibold text-slate-700">
               <button
                 type="button"
@@ -1028,6 +1108,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
         </div>
       </section>
 
+      {showLegacyCards && (
       <section className={`${focusMode ? "" : "hidden"} grid grid-cols-1 gap-4 xl:grid-cols-12`}>
         <div className="space-y-4 xl:col-span-7">
           <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -1180,6 +1261,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
           </section>
         </div>
       </section>
+      )}
 
       <section className={`${focusMode ? "hidden " : ""}`}>
         <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-sm">
@@ -1335,6 +1417,143 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
         </section>
       </section>
 
+      <section className={`${focusMode ? "hidden " : ""}`}>
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Customer Account + Sales Match</h3>
+              <p className="text-xs text-slate-500">
+                Save from UPS and tie records together by phone/email. Orders auto-link by phone today.
+              </p>
+            </div>
+            {customerMsg && <div className="text-xs font-semibold text-slate-600">{customerMsg}</div>}
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Create / Update Account</div>
+              <div className="mt-2 grid grid-cols-1 gap-2">
+                <input
+                  value={customerDraft.name}
+                  onChange={(e) => setCustomerDraft((c) => ({ ...c, name: e.target.value }))}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                  placeholder="Customer name"
+                />
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                  <input
+                    value={customerDraft.phone}
+                    onChange={(e) => setCustomerDraft((c) => ({ ...c, phone: e.target.value }))}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                    placeholder="Phone"
+                  />
+                  <input
+                    value={customerDraft.email}
+                    onChange={(e) => setCustomerDraft((c) => ({ ...c, email: e.target.value }))}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                    placeholder="Email"
+                  />
+                </div>
+                <input
+                  value={customerDraft.store}
+                  onChange={(e) => setCustomerDraft((c) => ({ ...c, store: e.target.value }))}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                  placeholder="Store"
+                />
+                <input
+                  value={customerDraft.notes}
+                  onChange={(e) => setCustomerDraft((c) => ({ ...c, notes: e.target.value }))}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                  placeholder="Notes"
+                />
+                <button
+                  type="button"
+                  disabled={customerBusy}
+                  onClick={() => void handleCustomerUpsert()}
+                  className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {customerBusy ? "Saving..." : "Save Customer"}
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Find + Link Existing</div>
+              <div className="mt-2 grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                  <input
+                    value={customerSearch.phone}
+                    onChange={(e) => setCustomerSearch((c) => ({ ...c, phone: e.target.value }))}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                    placeholder="Search phone"
+                  />
+                  <input
+                    value={customerSearch.email}
+                    onChange={(e) => setCustomerSearch((c) => ({ ...c, email: e.target.value }))}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                    placeholder="Search email"
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={customerBusy}
+                  onClick={() => void handleCustomerLookup()}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                >
+                  {customerBusy ? "Searching..." : "Find Customer"}
+                </button>
+                {!!customerMatches.length && (
+                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">
+                    {customerMatches.map((match) => (
+                      <div key={match.id}>{match.name} • {match.phone || "No phone"} • {match.email || "No email"}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recent Sales Orders</div>
+            {!customerOrders.length ? (
+              <div className="mt-2 rounded-xl border border-dashed border-slate-300 bg-white px-3 py-3 text-xs text-slate-500">
+                No linked orders yet.
+              </div>
+            ) : (
+              <div className="mt-2 overflow-x-auto">
+                <table className="min-w-full text-xs">
+                  <thead>
+                    <tr className="text-left text-slate-500">
+                      <th className="px-2 py-1">Sale ID</th>
+                      <th className="px-2 py-1">Customer</th>
+                      <th className="px-2 py-1">Sale Date</th>
+                      <th className="px-2 py-1">Delivered</th>
+                      <th className="px-2 py-1">Store</th>
+                      <th className="px-2 py-1">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customerOrders.slice(0, 25).map((order) => (
+                      <tr key={order.saleId} className="border-t border-slate-200 text-slate-700">
+                        <td className="px-2 py-1">{order.saleId}</td>
+                        <td className="px-2 py-1">{order.customerName}</td>
+                        <td className="px-2 py-1">{order.saleDate || "-"}</td>
+                        <td className="px-2 py-1">{order.deliveryConfirmedDate || "-"}</td>
+                        <td className="px-2 py-1">{order.location || "-"}</td>
+                        <td className="px-2 py-1">
+                          {order.grandTotal === null ? "-" : `$${Number(order.grandTotal).toFixed(2)}`}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </section>
+      </section>
+
+      {showLegacyCards && (
+      <>
       <section className={`${focusMode ? "hidden " : ""}grid grid-cols-1 gap-5 xl:grid-cols-12`}>
         <div className="space-y-5 xl:col-span-8">
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -1703,6 +1922,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
           </section>
         </div>
       </section>
+      </>
+      )}
     </div>
   );
 };
