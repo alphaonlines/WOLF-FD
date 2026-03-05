@@ -115,7 +115,7 @@ const seedLeads: CRMLead[] = [
     source: "Social Posts",
     interest: "Dining Set",
     budget: "$1,500-$2,500",
-    store: "FD51",
+    store: "G1",
     owner: "Taylor",
     stage: "Appointment",
     nextAction: "Prepare dining package quote",
@@ -197,7 +197,7 @@ const seedUpsList: UpsItem[] = [
 ];
 
 const FLOOR_SALESPEOPLE = ["Alex", "Jordan", "Taylor", "Morgan", "Jamie"];
-const DEFAULT_STORES = ["FD7", "FD5", "FD51"];
+const LOCATION_OPTIONS = ["Camp", "Base", "G1", "FD7", "FD5"];
 
 const seedAutomations: CRMAutomationRule[] = [
   {
@@ -267,7 +267,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const [leads, setLeads] = useState<CRMLead[]>(() => readLocal(LEAD_KEY, seedLeads));
   const [upsList, setUpsList] = useState<UpsItem[]>(() => normalizeUpsList(readLocal(UPS_KEY, seedUpsList), seedUpsList, todayIso));
   const [upsRepQueue, setUpsRepQueue] = useState<CRMUpsQueueItem[]>(() => readLocal(UPS_REP_QUEUE_KEY, [] as CRMUpsQueueItem[]));
-  const [selectedUpsStore, setSelectedUpsStore] = useState<string>(DEFAULT_STORES[0]);
+  const [selectedUpsStore, setSelectedUpsStore] = useState<string>(LOCATION_OPTIONS[0]);
   const [upsStartDrafts, setUpsStartDrafts] = useState<Record<string, { customer: string; type: UpsQueueCustomerType }>>({});
   const [customerLookup, setCustomerLookup] = useState({ phone: "", email: "" });
   const [customerLookupBusy, setCustomerLookupBusy] = useState(false);
@@ -533,18 +533,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
 
   const ownerOptions = useMemo(() => ["Unassigned", ...floorSalespeople], [floorSalespeople]);
 
-  const upsStoreOptions = useMemo(() => {
-    const set = new Set<string>(DEFAULT_STORES);
-    for (const lead of leads) {
-      const store = String(lead.store || "").trim();
-      if (store) set.add(store);
-    }
-    for (const item of upsRepQueue) {
-      const store = String(item.store || "").trim();
-      if (store) set.add(store);
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [leads, upsRepQueue]);
+  const upsStoreOptions = useMemo(() => LOCATION_OPTIONS, []);
 
   useEffect(() => {
     if (!upsStoreOptions.length) return;
