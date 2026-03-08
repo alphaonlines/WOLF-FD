@@ -15,6 +15,11 @@ type AuthUserLike = {
   roles: string[];
 };
 
+type SqlClauseBuild = {
+  clause: string;
+  values: any[];
+};
+
 const UPS_LANES = ["Unattended", "Be-Back", "Quote Follow-up"] as const;
 const UPS_PRIORITIES = ["Hot", "Today", "Nurture"] as const;
 const UPS_QUEUE_CUSTOMER_TYPES = ["Regular Up", "B-Back"] as const;
@@ -154,6 +159,7 @@ function mapUpsQueueRow(row: any) {
     checked_in_at: row.checked_in_at ? String(row.checked_in_at) : null,
     current_customer: row.current_customer ? String(row.current_customer) : null,
     current_customer_type: row.current_customer_type ? String(row.current_customer_type) : null,
+    current_customer_details: row.current_customer_details ? String(row.current_customer_details) : null,
     started_at: row.started_at ? String(row.started_at) : null,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -164,6 +170,26 @@ function normalizePhone(value: string): string {
   const digits = value.replace(/\D+/g, "");
   if (digits.length <= 10) return digits;
   return digits.slice(-10);
+}
+
+function buildLooseSearchClause(columns: string[], query: string, phoneDigits: string): SqlClauseBuild {
+  const values: any[] = [];
+  const conditions: string[] = [];
+  const normalized = query.trim().toLowerCase();
+  if (normalized) {
+    values.push(`%${normalized}%`);
+    const token = `$${values.length}`;
+    conditions.push(`(${columns.map((column) => `lower(COALESCE(${column}, '')) LIKE ${token}`).join(" OR ")})`);
+  }
+  if (phoneDigits) {
+    values.push(`%${phoneDigits}%`);
+    const token = `$${values.length}`;
+    conditions.push(`regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') LIKE ${token}`);
+  }
+  return {
+    clause: conditions.length ? conditions.join(" OR ") : "FALSE",
+    values,
+  };
 }
 
 function mapCustomerRow(row: any) {
@@ -732,6 +758,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         checked_in_at,
         current_customer,
         current_customer_type,
+        current_customer_details,
         started_at,
         created_at,
         updated_at
@@ -760,7 +787,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         `
         SELECT
           id, store, rep, rep_user_id, status, queue_position, checked_in_at,
-          current_customer, current_customer_type, started_at, created_at, updated_at
+          current_customer, current_customer_type, current_customer_details, started_at, created_at, updated_at
         FROM crm_ups_queue
         WHERE id = $1
       `,
@@ -779,12 +806,12 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       `
       INSERT INTO crm_ups_queue (
         id, store, rep, rep_user_id, status, queue_position, checked_in_at,
-        current_customer, current_customer_type, started_at, created_at, updated_at
+        current_customer, current_customer_type, current_customer_details, started_at, created_at, updated_at
       )
-      VALUES ($1, $2, $3, $4::bigint, 'waiting', $5, now(), NULL, NULL, NULL, now(), now())
+      VALUES ($1, $2, $3, $4::bigint, 'waiting', $5, now(), NULL, NULL, NULL, NULL, now(), now())
       RETURNING
         id, store, rep, rep_user_id, status, queue_position, checked_in_at,
-        current_customer, current_customer_type, started_at, created_at, updated_at
+        current_customer, current_customer_type, current_customer_details, started_at, created_at, updated_at
     `,
       [id, store, repName, repUserId, nextPos]
     );
@@ -800,6 +827,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     const customer = typeof req.body?.customer === "string" ? req.body.customer.trim() : "";
     if (!customer) return res.status(400).json({ error: "customer is required" });
     const customerType = parseUpsQueueCustomerType(req.body?.customer_type) ?? "Regular Up";
+    const customerDetails = typeof req.body?.customer_details === "string" ? req.body.customer_details.trim() : "";
 
     const row = await pool.query(`SELECT rep_user_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
     if (!row.rows.length) return res.status(404).json({ error: "not found" });
@@ -814,14 +842,71 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         status = 'working',
         current_customer = $1,
         current_customer_type = $2,
+        current_customer_details = $3,
         started_at = now(),
         updated_at = now()
-      WHERE id = $3
+      WHERE id = $4
       RETURNING
         id, store, rep, rep_user_id, status, queue_position, checked_in_at,
-        current_customer, current_customer_type, started_at, created_at, updated_at
+        current_customer, current_customer_type, current_customer_details, started_at, created_at, updated_at
     `,
-      [customer, customerType, id]
+      [customer, customerType, customerDetails, id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: "not found" });
+    res.json({ row: mapUpsQueueRow(r.rows[0]) });
+  });
+
+  app.patch("/api/crm/ups-queue/:id/customer", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+    const id = parseCrmLeadId(req.params.id);
+    if (!id) return res.status(400).json({ error: "invalid id" });
+
+    const row = await pool.query(`SELECT rep_user_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
+    if (!row.rows.length) return res.status(404).json({ error: "not found" });
+    if (isSalesOnly(user) && Number(row.rows[0].rep_user_id) !== Number(user.id)) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    if (req.body?.customer !== undefined) {
+      if (typeof req.body.customer !== "string" || !req.body.customer.trim()) {
+        return res.status(400).json({ error: "customer is required" });
+      }
+      values.push(req.body.customer.trim());
+      fields.push(`current_customer = $${values.length}`);
+    }
+
+    if (req.body?.customer_type !== undefined) {
+      const customerType = parseUpsQueueCustomerType(req.body.customer_type);
+      if (!customerType) return res.status(400).json({ error: "invalid customer_type" });
+      values.push(customerType);
+      fields.push(`current_customer_type = $${values.length}`);
+    }
+
+    if (req.body?.customer_details !== undefined) {
+      if (typeof req.body.customer_details !== "string") {
+        return res.status(400).json({ error: "invalid customer_details" });
+      }
+      values.push(req.body.customer_details.trim());
+      fields.push(`current_customer_details = $${values.length}`);
+    }
+
+    if (!fields.length) return res.status(400).json({ error: "no fields to update" });
+
+    values.push(id);
+    const r = await pool.query(
+      `
+      UPDATE crm_ups_queue
+      SET ${fields.join(", ")}, updated_at = now()
+      WHERE id = $${values.length}
+      RETURNING
+        id, store, rep, rep_user_id, status, queue_position, checked_in_at,
+        current_customer, current_customer_type, current_customer_details, started_at, created_at, updated_at
+      `,
+      values
     );
     if (!r.rows.length) return res.status(404).json({ error: "not found" });
     res.json({ row: mapUpsQueueRow(r.rows[0]) });
@@ -855,6 +940,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
           status = 'waiting',
           current_customer = NULL,
           current_customer_type = NULL,
+          current_customer_details = NULL,
           started_at = NULL,
           queue_position = 1,
           updated_at = now()
@@ -874,6 +960,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
           status = 'waiting',
           current_customer = NULL,
           current_customer_type = NULL,
+          current_customer_details = NULL,
           started_at = NULL,
           queue_position = $2,
           updated_at = now()
@@ -896,7 +983,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       WHERE q.id = ranked.id
       RETURNING
         q.id, q.store, q.rep, q.rep_user_id, q.status, q.queue_position, q.checked_in_at,
-        q.current_customer, q.current_customer_type, q.started_at, q.created_at, q.updated_at
+        q.current_customer, q.current_customer_type, q.current_customer_details, q.started_at, q.created_at, q.updated_at
     `,
       [store]
     );
@@ -989,6 +1076,89 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         phone: Boolean(phoneNorm),
         email: Boolean(emailRaw),
       },
+    });
+  });
+
+  app.get("/api/crm/search", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const queryRaw = typeof req.query?.q === "string" ? req.query.q.trim() : "";
+    const phoneDigits = normalizePhone(queryRaw);
+    if (!queryRaw) return res.status(400).json({ error: "q is required" });
+
+    const customerSearch = buildLooseSearchClause(["name", "email", "store", "notes"], queryRaw, phoneDigits);
+    const leadSearch = buildLooseSearchClause(
+      ["name", "source", "interest", "store", "owner", "notes", "last_message", "next_action"],
+      queryRaw,
+      phoneDigits
+    );
+
+    const orderValues: any[] = [`%${queryRaw.toLowerCase()}%`];
+    const orderParts: string[] = [
+      "(lower(COALESCE(customer_name, '')) LIKE $1 OR lower(COALESCE(receipt_no, '')) LIKE $1 OR lower(COALESCE(location, '')) LIKE $1 OR lower(COALESCE(salesperson, '')) LIKE $1)",
+    ];
+    if (phoneDigits) {
+      orderValues.push(`%${phoneDigits}%`);
+      orderParts.push(`regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') LIKE $${orderValues.length}`);
+    }
+
+    const customersRes = await pool.query(
+      `
+      SELECT id, name, phone, email, store, notes, created_at, updated_at
+      FROM crm_customers
+      WHERE ${customerSearch.clause}
+      ORDER BY updated_at DESC, lower(name) ASC
+      LIMIT 20
+      `,
+      customerSearch.values
+    );
+
+    const leadValues = [...leadSearch.values];
+    const leadWhereParts = [leadSearch.clause];
+    if (isSalesOnly(user)) {
+      leadValues.push(Number(user.id));
+      leadWhereParts.push(`owner_user_id = $${leadValues.length}`);
+    }
+    const leadsRes = await pool.query(
+      `
+      SELECT
+        id, name, phone, channel, source, interest, budget, store, owner, owner_user_id, stage,
+        next_action, due_date, last_message, last_touch, notes, created_at, updated_at
+      FROM crm_leads
+      WHERE ${leadWhereParts.join(" AND ")}
+      ORDER BY updated_at DESC, due_date ASC NULLS LAST
+      LIMIT 20
+      `,
+      leadValues
+    );
+
+    const ordersRes = await pool.query(
+      `
+      SELECT
+        sale_id,
+        sale_date,
+        delivery_confirmed_date,
+        est_delivery_date,
+        location,
+        salesperson,
+        receipt_no,
+        customer_name,
+        phone,
+        grand_total,
+        sale_status
+      FROM pos_sales
+      WHERE ${orderParts.join(" OR ")}
+      ORDER BY delivery_confirmed_date DESC NULLS LAST, sale_date DESC NULLS LAST
+      LIMIT 30
+      `,
+      orderValues
+    );
+
+    res.json({
+      customers: customersRes.rows.map(mapCustomerRow),
+      leads: leadsRes.rows.map(mapLeadRow),
+      orders: ordersRes.rows.map(mapCustomerOrderRow),
     });
   });
 

@@ -107,6 +107,7 @@ export interface CRMUpsQueueItem {
   checkedInAt: string | null;
   currentCustomer: string | null;
   currentCustomerType: UpsQueueCustomerType | null;
+  currentCustomerDetails: string | null;
   startedAt: string | null;
 }
 
@@ -131,6 +132,12 @@ export interface CRMCustomerAccount {
   email: string;
   store: string;
   notes: string;
+}
+
+export interface CRMSearchResult {
+  customers: CRMCustomerAccount[];
+  leads: CRMLead[];
+  orders: CRMCustomerOrder[];
 }
 
 export interface CRMOwnerOption {

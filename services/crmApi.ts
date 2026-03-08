@@ -4,6 +4,7 @@ import type {
   CRMCustomerOrder,
   CRMLead,
   CRMOwnerOption,
+  CRMSearchResult,
   CRMUpsItem,
   CRMUpsQueueItem,
 } from "../types";
@@ -59,6 +60,7 @@ type ApiUpsQueueRow = {
   checked_in_at?: string | null;
   current_customer?: string | null;
   current_customer_type?: string | null;
+  current_customer_details?: string | null;
   started_at?: string | null;
 };
 
@@ -134,6 +136,7 @@ const mapUpsQueue = (row: ApiUpsQueueRow): CRMUpsQueueItem => ({
   currentCustomerType: row.current_customer_type
     ? (String(row.current_customer_type) as CRMUpsQueueItem["currentCustomerType"])
     : null,
+  currentCustomerDetails: row.current_customer_details ? String(row.current_customer_details) : null,
   startedAt: row.started_at ? String(row.started_at) : null,
 });
 
@@ -306,7 +309,7 @@ export async function joinCrmUpsQueueInApi(store: string): Promise<CRMUpsQueueIt
 
 export async function startCrmUpsQueueCustomerInApi(
   id: string,
-  payload: { customer: string; customerType: "Regular Up" | "B-Back" }
+  payload: { customer: string; customerType: "Regular Up" | "B-Back"; details?: string }
 ): Promise<CRMUpsQueueItem> {
   const json = await fetchJson(`/api/crm/ups-queue/${encodeURIComponent(id)}/start`, {
     method: "POST",
@@ -314,7 +317,25 @@ export async function startCrmUpsQueueCustomerInApi(
     body: JSON.stringify({
       customer: payload.customer,
       customer_type: payload.customerType,
+      customer_details: payload.details || "",
     }),
+  });
+  return mapUpsQueue((json as any)?.row as ApiUpsQueueRow);
+}
+
+export async function updateCrmUpsQueueCustomerInApi(
+  id: string,
+  payload: { customer?: string; customerType?: "Regular Up" | "B-Back"; details?: string }
+): Promise<CRMUpsQueueItem> {
+  const body: Record<string, string> = {};
+  if (payload.customer !== undefined) body.customer = payload.customer;
+  if (payload.customerType !== undefined) body.customer_type = payload.customerType;
+  if (payload.details !== undefined) body.customer_details = payload.details;
+
+  const json = await fetchJson(`/api/crm/ups-queue/${encodeURIComponent(id)}/customer`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
   return mapUpsQueue((json as any)?.row as ApiUpsQueueRow);
 }
@@ -396,4 +417,18 @@ export async function upsertCrmCustomerAccount(payload: {
   const customer = mapCustomerAccount((json as any)?.customer || {});
   const orders = Array.isArray((json as any)?.orders) ? (json as any).orders.map(mapCustomerOrder) : [];
   return { customer, orders };
+}
+
+export async function searchCrmRecords(query: string): Promise<CRMSearchResult> {
+  const qs = new URLSearchParams();
+  qs.set("q", query.trim());
+  const json = await fetchJson(`/api/crm/search?${qs.toString()}`);
+  const customers = Array.isArray((json as any)?.customers) ? (json as any).customers : [];
+  const leads = Array.isArray((json as any)?.leads) ? (json as any).leads : [];
+  const orders = Array.isArray((json as any)?.orders) ? (json as any).orders : [];
+  return {
+    customers: customers.map(mapCustomerAccount),
+    leads: leads.map((row: any) => mapLead(row as ApiLeadRow)),
+    orders: orders.map(mapCustomerOrder),
+  };
 }

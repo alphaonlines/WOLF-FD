@@ -294,6 +294,7 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_customer TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_customer_type TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_customer_details TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
@@ -332,6 +333,10 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_customers ALTER COLUMN updated_at SET DEFAULT now();`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_phone ON crm_customers(phone);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_email_lower ON crm_customers((lower(email)));`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_name_lower ON crm_customers((lower(name)));`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_notes_lower ON crm_customers((lower(notes)));`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_name_lower ON crm_leads((lower(name)));`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_notes_lower ON crm_leads((lower(notes)));`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS board_posts (
