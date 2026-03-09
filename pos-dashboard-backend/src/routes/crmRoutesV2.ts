@@ -833,13 +833,18 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     const customerType = parseUpsQueueCustomerType(req.body?.customer_type) ?? "Regular Up";
     const customerDetails = typeof req.body?.customer_details === "string" ? req.body.customer_details.trim() : "";
 
-    const row = await pool.query(`SELECT rep_user_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
+    const row = await pool.query(`SELECT rep_user_id, store FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
     if (!row.rows.length) return res.status(404).json({ error: "not found" });
     if (isSalesOnly(user) && Number(row.rows[0].rep_user_id) !== Number(user.id)) {
       return res.status(403).json({ error: "forbidden" });
     }
+    const store = String(row.rows[0].store || "FD7");
+    const maxPos = await pool.query(`SELECT COALESCE(MAX(queue_position), 0)::int AS max_pos FROM crm_ups_queue WHERE store = $1`, [
+      store,
+    ]);
+    const nextPos = Number(maxPos.rows[0]?.max_pos ?? 1) + 1;
 
-    const r = await pool.query(
+    await pool.query(
       `
       UPDATE crm_ups_queue
       SET
@@ -847,17 +852,42 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         current_customer = $1,
         current_customer_type = $2,
         current_customer_details = $3,
+        queue_position = $4,
         started_at = now(),
         updated_at = now()
-      WHERE id = $4
-      RETURNING
+      WHERE id = $5
+    `,
+      [customer, customerType, customerDetails, nextPos, id]
+    );
+
+    await pool.query(
+      `
+      WITH ranked AS (
+        SELECT id, ROW_NUMBER() OVER (PARTITION BY store ORDER BY queue_position ASC, checked_in_at ASC) AS rn
+        FROM crm_ups_queue
+        WHERE store = $1
+      )
+      UPDATE crm_ups_queue q
+      SET queue_position = ranked.rn, updated_at = now()
+      FROM ranked
+      WHERE q.id = ranked.id
+    `,
+      [store]
+    );
+
+    const refreshed = await pool.query(
+      `
+      SELECT
         id, store, rep, rep_user_id, status, queue_position, checked_in_at,
         current_customer, current_customer_type, current_customer_details, started_at, created_at, updated_at
+      FROM crm_ups_queue
+      WHERE id = $1
+      LIMIT 1
     `,
-      [customer, customerType, customerDetails, id]
+      [id]
     );
-    if (!r.rows.length) return res.status(404).json({ error: "not found" });
-    res.json({ row: mapUpsQueueRow(r.rows[0]) });
+    if (!refreshed.rows.length) return res.status(404).json({ error: "not found" });
+    res.json({ row: mapUpsQueueRow(refreshed.rows[0]) });
   });
 
   app.patch("/api/crm/ups-queue/:id/customer", async (req, res) => {
@@ -932,47 +962,21 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       return res.status(403).json({ error: "forbidden" });
     }
 
-    const moveToFront = String(target.current_customer_type || "") === "B-Back";
     const store = String(target.store || "FD7");
-
-    if (moveToFront) {
-      await pool.query(`UPDATE crm_ups_queue SET queue_position = queue_position + 1 WHERE store = $1 AND id <> $2`, [store, id]);
-      await pool.query(
-        `
-        UPDATE crm_ups_queue
-        SET
-          status = 'waiting',
-          current_customer = NULL,
-          current_customer_type = NULL,
-          current_customer_details = NULL,
-          started_at = NULL,
-          queue_position = 1,
-          updated_at = now()
-        WHERE id = $1
-      `,
-        [id]
-      );
-    } else {
-      const maxPos = await pool.query(`SELECT COALESCE(MAX(queue_position), 0)::int AS max_pos FROM crm_ups_queue WHERE store = $1`, [
-        store,
-      ]);
-      const nextPos = Number(maxPos.rows[0]?.max_pos ?? 1);
-      await pool.query(
-        `
-        UPDATE crm_ups_queue
-        SET
-          status = 'waiting',
-          current_customer = NULL,
-          current_customer_type = NULL,
-          current_customer_details = NULL,
-          started_at = NULL,
-          queue_position = $2,
-          updated_at = now()
-        WHERE id = $1
-      `,
-        [id, nextPos]
-      );
-    }
+    await pool.query(
+      `
+      UPDATE crm_ups_queue
+      SET
+        status = 'waiting',
+        current_customer = NULL,
+        current_customer_type = NULL,
+        current_customer_details = NULL,
+        started_at = NULL,
+        updated_at = now()
+      WHERE id = $1
+    `,
+      [id]
+    );
 
     const reordered = await pool.query(
       `

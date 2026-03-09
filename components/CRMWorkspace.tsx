@@ -285,7 +285,11 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
         customerType: startDraft.customerType,
         details: startDraft.customer.trim(),
       });
-      setQueue((current) => current.map((entry) => (entry.id === row.id ? row : entry)));
+      setQueue((current) =>
+        current
+          .map((entry) => (entry.id === row.id ? row : entry))
+          .sort((a, b) => a.queuePosition - b.queuePosition)
+      );
       setDraft((current) => ({
         ...current,
         queueId: row.id,
@@ -296,6 +300,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
         ownerUserId: row.repUserId || current.ownerUserId,
       }));
       setSelectedQueueId(row.id);
+      setStartDrafts((current) => ({
+        ...current,
+        [item.id]: { customer: "", customerType: "Regular Up" },
+      }));
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to start customer.");
     } finally {
@@ -308,8 +316,12 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     setErrorMessage(null);
     try {
       const rows = await completeCrmUpsQueueCustomerInApi(item.id);
-      setQueue(rows);
+      setQueue([...rows].sort((a, b) => a.queuePosition - b.queuePosition));
       setDraft(buildDraft(authUser, selectedStore));
+      setStartDrafts((current) => ({
+        ...current,
+        [item.id]: { customer: "", customerType: "Regular Up" },
+      }));
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to complete customer.");
     }
