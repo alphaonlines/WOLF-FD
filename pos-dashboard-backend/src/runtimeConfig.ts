@@ -23,3 +23,11 @@ export const PUBLIC_AUTH_PATHS = new Set(["/auth/login", "/auth/logout", "/auth/
 
 export const PYTHON_BIN = process.env.POS_IMPORT_PYTHON || "python";
 export const PORT = Number(process.env.PORT || 5057);
+export const SOCIAL_PUBLIC_BASE_URL =
+  envString("SOCIAL_PUBLIC_BASE_URL", "https://furnituredistributors.wolf.discount/fd/api") ||
+  "https://furnituredistributors.wolf.discount/fd/api";
+export const SOCIAL_SCHEDULER_ENABLED = (envString("SOCIAL_SCHEDULER_ENABLED", "true") || "true").toLowerCase() !== "false";
+export const SOCIAL_SCHEDULER_INTERVAL_MS = Math.max(
+  Number(envString("SOCIAL_SCHEDULER_INTERVAL_MS", "60000")) || 60000,
+  15000
+);

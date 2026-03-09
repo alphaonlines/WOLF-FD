@@ -19,6 +19,7 @@ import { registerSalesDetailRoutes } from "./routes/salesDetailRoutes";
 import { registerInsightsRoutes } from "./routes/insightsRoutes";
 import { registerSystemRoutes } from "./routes/systemRoutes";
 import { registerBoardRoutes } from "./routes/boardRoutes";
+import { registerPublicSocialRoutes, registerSocialRoutes } from "./routes/socialRoutes";
 import {
   type AuthUserView,
   buildAuthUser,
@@ -48,6 +49,9 @@ type RegisterAllRoutesDeps = {
   importerPath: string;
   pythonBin: string;
   execFileAsync: ExecFileAsyncLike;
+  socialUploadsDir: string;
+  socialPublicBaseUrl: string;
+  runSocialDueJobsOnce: (maxJobs?: number) => Promise<number>;
   authCookieName: string;
   authSessionDays: number;
   authCookieSecureMode: string;
@@ -77,6 +81,9 @@ export function registerAllRoutes({
   importerPath,
   pythonBin,
   execFileAsync,
+  socialUploadsDir,
+  socialPublicBaseUrl,
+  runSocialDueJobsOnce,
   authCookieName,
   authSessionDays,
   authCookieSecureMode,
@@ -86,6 +93,12 @@ export function registerAllRoutes({
   sha256Hex,
   createSessionToken,
 }: RegisterAllRoutesDeps) {
+  registerPublicSocialRoutes({
+    app,
+    pool,
+    socialUploadsDir,
+  });
+
   const { currentAuthUserFromReq, setUserRolesByKeys, loadAuthUserById } = createAuthDbHelpers({
     pool,
     authCookieName,
@@ -141,6 +154,13 @@ export function registerAllRoutes({
   registerTaskRoutes(app, pool);
   registerCrmRoutes(app, pool);
   registerBoardRoutes(app, pool);
+  registerSocialRoutes({
+    app,
+    pool,
+    socialUploadsDir,
+    publicBaseUrl: socialPublicBaseUrl,
+    runSocialDueJobsOnce,
+  });
   registerReportRoutes({ app, pool, prefixedDateField });
   registerAnalyticsRoutes({ app, pool, itemDateField: ITEM_DATE_FIELD, prefixedDateField });
   registerSalesDetailRoutes({ app, pool, itemDateField: ITEM_DATE_FIELD, prefixedDateField });

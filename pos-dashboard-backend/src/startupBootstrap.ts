@@ -338,6 +338,191 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_notes_lower ON crm_customers((lower(notes)));`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_name_lower ON crm_leads((lower(name)));`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_notes_lower ON crm_leads((lower(notes)));`);
+}
+
+async function ensureSocialSchema(pool: Pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS social_assets (
+      id               BIGSERIAL PRIMARY KEY,
+      storage_name     TEXT NOT NULL,
+      original_name    TEXT NOT NULL,
+      mime_type        TEXT NOT NULL DEFAULT 'application/octet-stream',
+      file_size_bytes  BIGINT NOT NULL DEFAULT 0,
+      asset_kind       TEXT NOT NULL DEFAULT 'image',
+      created_by_user_id BIGINT NULL,
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE social_assets ADD COLUMN IF NOT EXISTS storage_name TEXT;`);
+  await pool.query(`ALTER TABLE social_assets ADD COLUMN IF NOT EXISTS original_name TEXT;`);
+  await pool.query(`ALTER TABLE social_assets ADD COLUMN IF NOT EXISTS mime_type TEXT;`);
+  await pool.query(`ALTER TABLE social_assets ADD COLUMN IF NOT EXISTS file_size_bytes BIGINT;`);
+  await pool.query(`ALTER TABLE social_assets ADD COLUMN IF NOT EXISTS asset_kind TEXT;`);
+  await pool.query(`ALTER TABLE social_assets ADD COLUMN IF NOT EXISTS created_by_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE social_assets ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_assets ALTER COLUMN mime_type SET DEFAULT 'application/octet-stream';`);
+  await pool.query(`ALTER TABLE social_assets ALTER COLUMN file_size_bytes SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE social_assets ALTER COLUMN asset_kind SET DEFAULT 'image';`);
+  await pool.query(`ALTER TABLE social_assets ALTER COLUMN created_at SET DEFAULT now();`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS social_accounts (
+      id                BIGSERIAL PRIMARY KEY,
+      platform          TEXT NOT NULL UNIQUE,
+      label             TEXT NOT NULL DEFAULT '',
+      external_id       TEXT NOT NULL DEFAULT '',
+      access_token      TEXT NOT NULL DEFAULT '',
+      refresh_token     TEXT NOT NULL DEFAULT '',
+      token_expires_at  TIMESTAMPTZ NULL,
+      active            BOOLEAN NOT NULL DEFAULT FALSE,
+      config_json       JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS platform TEXT;`);
+  await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS label TEXT;`);
+  await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS external_id TEXT;`);
+  await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS access_token TEXT;`);
+  await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS refresh_token TEXT;`);
+  await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS token_expires_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS active BOOLEAN;`);
+  await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS config_json JSONB;`);
+  await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_accounts ALTER COLUMN label SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE social_accounts ALTER COLUMN external_id SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE social_accounts ALTER COLUMN access_token SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE social_accounts ALTER COLUMN refresh_token SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE social_accounts ALTER COLUMN active SET DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE social_accounts ALTER COLUMN config_json SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE social_accounts ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE social_accounts ALTER COLUMN updated_at SET DEFAULT now();`);
+
+  await pool.query(`
+    INSERT INTO social_accounts (platform, label, active, created_at, updated_at)
+    VALUES
+      ('facebook', 'Facebook Page', FALSE, now(), now()),
+      ('instagram', 'Instagram Professional', FALSE, now(), now()),
+      ('google', 'Google Business Profile', FALSE, now(), now())
+    ON CONFLICT (platform) DO NOTHING;
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS social_posts (
+      id                  BIGSERIAL PRIMARY KEY,
+      title               TEXT NOT NULL DEFAULT '',
+      caption             TEXT NOT NULL DEFAULT '',
+      status              TEXT NOT NULL DEFAULT 'draft',
+      scheduled_for       TIMESTAMPTZ NULL,
+      timezone            TEXT NOT NULL DEFAULT 'America/New_York',
+      link_url            TEXT NOT NULL DEFAULT '',
+      cta_label           TEXT NOT NULL DEFAULT 'LEARN_MORE',
+      google_topic_type   TEXT NOT NULL DEFAULT 'STANDARD',
+      google_event_title  TEXT NOT NULL DEFAULT '',
+      google_event_start  TIMESTAMPTZ NULL,
+      google_event_end    TIMESTAMPTZ NULL,
+      platforms           TEXT[] NOT NULL DEFAULT '{}'::text[],
+      asset_id            BIGINT NULL REFERENCES social_assets(id) ON DELETE SET NULL,
+      created_by_user_id  BIGINT NULL,
+      updated_by_user_id  BIGINT NULL,
+      published_at        TIMESTAMPTZ NULL,
+      last_error          TEXT NOT NULL DEFAULT '',
+      created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS title TEXT;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS caption TEXT;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS status TEXT;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS scheduled_for TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS timezone TEXT;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS link_url TEXT;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS cta_label TEXT;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS google_topic_type TEXT;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS google_event_title TEXT;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS google_event_start TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS google_event_end TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS platforms TEXT[];`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS asset_id BIGINT;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS created_by_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS updated_by_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS last_error TEXT;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN title SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN caption SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN status SET DEFAULT 'draft';`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN timezone SET DEFAULT 'America/New_York';`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN link_url SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN cta_label SET DEFAULT 'LEARN_MORE';`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN google_topic_type SET DEFAULT 'STANDARD';`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN google_event_title SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN platforms SET DEFAULT '{}'::text[];`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN last_error SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_social_posts_status_schedule ON social_posts(status, scheduled_for ASC NULLS LAST);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_social_posts_created_at ON social_posts(created_at DESC);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS social_publish_jobs (
+      id                BIGSERIAL PRIMARY KEY,
+      post_id           BIGINT NOT NULL REFERENCES social_posts(id) ON DELETE CASCADE,
+      platform          TEXT NOT NULL,
+      status            TEXT NOT NULL DEFAULT 'scheduled',
+      scheduled_for     TIMESTAMPTZ NOT NULL,
+      attempt_count     INTEGER NOT NULL DEFAULT 0,
+      provider_post_id  TEXT NULL,
+      provider_response JSONB NOT NULL DEFAULT '{}'::jsonb,
+      last_error        TEXT NOT NULL DEFAULT '',
+      started_at        TIMESTAMPTZ NULL,
+      finished_at       TIMESTAMPTZ NULL,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS post_id BIGINT;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS platform TEXT;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS status TEXT;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS scheduled_for TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS attempt_count INTEGER;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS provider_post_id TEXT;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS provider_response JSONB;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS last_error TEXT;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS finished_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ALTER COLUMN status SET DEFAULT 'scheduled';`);
+  await pool.query(`ALTER TABLE social_publish_jobs ALTER COLUMN attempt_count SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ALTER COLUMN provider_response SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ALTER COLUMN last_error SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE social_publish_jobs ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE social_publish_jobs ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_social_jobs_due ON social_publish_jobs(status, scheduled_for ASC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_social_jobs_post_id ON social_publish_jobs(post_id, created_at DESC);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS social_publish_logs (
+      id          BIGSERIAL PRIMARY KEY,
+      job_id       BIGINT NOT NULL REFERENCES social_publish_jobs(id) ON DELETE CASCADE,
+      level        TEXT NOT NULL DEFAULT 'info',
+      message      TEXT NOT NULL,
+      meta_json    JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE social_publish_logs ADD COLUMN IF NOT EXISTS job_id BIGINT;`);
+  await pool.query(`ALTER TABLE social_publish_logs ADD COLUMN IF NOT EXISTS level TEXT;`);
+  await pool.query(`ALTER TABLE social_publish_logs ADD COLUMN IF NOT EXISTS message TEXT;`);
+  await pool.query(`ALTER TABLE social_publish_logs ADD COLUMN IF NOT EXISTS meta_json JSONB;`);
+  await pool.query(`ALTER TABLE social_publish_logs ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_publish_logs ALTER COLUMN level SET DEFAULT 'info';`);
+  await pool.query(`ALTER TABLE social_publish_logs ALTER COLUMN meta_json SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE social_publish_logs ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_social_logs_job_id_created ON social_publish_logs(job_id, created_at ASC);`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS board_posts (
@@ -396,4 +581,5 @@ export async function runStartupBootstrap(deps: RunStartupBootstrapDeps) {
   await ensureDefaultRolePermissions(deps.pool);
   await ensureDefaultAuthUser(deps);
   await ensureCrmSchema(deps.pool);
+  await ensureSocialSchema(deps.pool);
 }

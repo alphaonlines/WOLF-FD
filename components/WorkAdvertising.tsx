@@ -1,1273 +1,994 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { startTransition, useEffect, useMemo, useState } from "react";
 import {
-  BarChart3,
-  Calendar,
-  FileUp,
-  Filter,
-  Flame,
-  LayoutList,
-  LineChart as LineChartIcon,
-  Search,
-  Sparkles,
-  Star,
-  Tag,
+  CalendarClock,
+  CheckCircle2,
+  Clock3,
+  ImageUp,
+  Link as LinkIcon,
+  RefreshCcw,
+  Save,
+  Send,
+  Settings2,
   UploadCloud,
-  X,
+  XCircle,
 } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import * as XLSX from "xlsx";
 import type {
-  PendingUpload,
-  PlatformFilter,
-  PostRecord,
-  TabKey,
-  TrendMetric,
-} from "./workAdvertising/types";
+  SocialAccount,
+  SocialPlatform,
+  SocialPostRecord,
+} from "../services/socialApi";
 import {
-  buildPostFromRow,
-  DAY_NAMES,
-  dedupePosts,
-  demoPosts,
-  durationBucket,
-  formatCompact,
-  formatDayKey,
-  formatDelta,
-  normalizePostType,
-  platformMatch,
-  summarize,
-} from "./workAdvertising/utils";
+  cancelSocialPost,
+  createSocialPost,
+  fetchSocialAccounts,
+  fetchSocialPosts,
+  publishSocialPostNow,
+  scheduleSocialPost,
+  updateSocialPost,
+  uploadSocialAsset,
+  upsertSocialAccount,
+} from "../services/socialApi";
+
+type ComposerForm = {
+  id: string | null;
+  title: string;
+  caption: string;
+  scheduledForLocal: string;
+  timezone: string;
+  linkUrl: string;
+  ctaLabel: string;
+  googleTopicType: string;
+  googleEventTitle: string;
+  googleEventStartLocal: string;
+  googleEventEndLocal: string;
+  platforms: SocialPlatform[];
+  asset: {
+    id: string;
+    originalName: string;
+    publicUrl: string;
+    assetKind: string;
+  } | null;
+};
+
+type AccountDraft = {
+  label: string;
+  externalId: string;
+  accessToken: string;
+  refreshToken: string;
+  tokenExpiresAt: string;
+  active: boolean;
+};
+
+const PLATFORM_OPTIONS: Array<{ id: SocialPlatform; label: string }> = [
+  { id: "facebook", label: "Facebook" },
+  { id: "instagram", label: "Instagram" },
+  { id: "google", label: "Google" },
+];
+
+const emptyForm = (): ComposerForm => ({
+  id: null,
+  title: "",
+  caption: "",
+  scheduledForLocal: "",
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York",
+  linkUrl: "",
+  ctaLabel: "LEARN_MORE",
+  googleTopicType: "STANDARD",
+  googleEventTitle: "",
+  googleEventStartLocal: "",
+  googleEventEndLocal: "",
+  platforms: ["facebook", "instagram"],
+  asset: null,
+});
+
+const toLocalInputValue = (iso: string | null | undefined) => {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60000);
+  return local.toISOString().slice(0, 16);
+};
+
+const fromLocalInputValue = (localValue: string) => {
+  if (!localValue) return null;
+  const date = new Date(localValue);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
+const formatWhen = (iso: string | null | undefined) => {
+  if (!iso) return "Not scheduled";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "Invalid date";
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+const makeAccountDrafts = (accounts: SocialAccount[]) => {
+  const result = {} as Record<SocialPlatform, AccountDraft>;
+  for (const platform of PLATFORM_OPTIONS.map((item) => item.id)) {
+    const account = accounts.find((item) => item.platform === platform);
+    result[platform] = {
+      label: account?.label || "",
+      externalId: account?.externalId || "",
+      accessToken: "",
+      refreshToken: "",
+      tokenExpiresAt: toLocalInputValue(account?.tokenExpiresAt || null),
+      active: Boolean(account?.active),
+    };
+  }
+  return result;
+};
 
 const WorkAdvertising: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [allPosts, setAllPosts] = useState<PostRecord[]>(demoPosts);
-  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("both");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [topPerformersOnly, setTopPerformersOnly] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [pendingUpload, setPendingUpload] = useState<PendingUpload | null>(null);
-  const [combineUpload, setCombineUpload] = useState(true);
-  const [isDragging, setIsDragging] = useState(false);
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
-  const [postMeta, setPostMeta] = useState<Record<string, { tags: string; notes: string }>>({});
-  const [trendMetrics, setTrendMetrics] = useState<Record<TrendMetric, boolean>>({
-    reach: true,
-    engagements: true,
-    engagementRate: false,
-    views: true,
-  });
+  const [posts, setPosts] = useState<SocialPostRecord[]>([]);
+  const [accounts, setAccounts] = useState<SocialAccount[]>([]);
+  const [accountDrafts, setAccountDrafts] = useState<Record<SocialPlatform, AccountDraft>>(() =>
+    makeAccountDrafts([])
+  );
+  const [form, setForm] = useState<ComposerForm>(() => emptyForm());
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [platformFilter, setPlatformFilter] = useState<string>("all");
+  const [query, setQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const globalRange = useMemo(() => {
-    if (!allPosts.length) return { min: "", max: "" };
-    const keys = allPosts.map((post) => post.dayKey).sort();
-    return { min: keys[0], max: keys[keys.length - 1] };
-  }, [allPosts]);
+  const loadWorkspace = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [nextPosts, nextAccounts] = await Promise.all([fetchSocialPosts(), fetchSocialAccounts()]);
+      startTransition(() => {
+        setPosts(nextPosts);
+        setAccounts(nextAccounts);
+        setAccountDrafts(makeAccountDrafts(nextAccounts));
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load social workspace.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!globalRange.min || !globalRange.max) return;
-    setStartDate((current) => (current ? current : globalRange.min));
-    setEndDate((current) => (current ? current : globalRange.max));
-  }, [globalRange.min, globalRange.max]);
-
-  const typeOptions = useMemo(() => {
-    const types = new Set<string>();
-    for (const post of allPosts) {
-      types.add(normalizePostType(post.postType));
-    }
-    return Array.from(types).sort();
-  }, [allPosts]);
-
-  const nonDateFiltered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return allPosts.filter((post) => {
-      if (!platformMatch(post.platform, platformFilter)) return false;
-      if (typeFilter !== "all" && normalizePostType(post.postType) !== typeFilter) return false;
-      if (q) {
-        const text = `${post.title} ${post.description}`.toLowerCase();
-        if (!text.includes(q)) return false;
-      }
-      return true;
-    });
-  }, [allPosts, platformFilter, typeFilter, searchQuery]);
-
-  const baseFiltered = useMemo(() => {
-    return nonDateFiltered.filter((post) => {
-      if (startDate && post.dayKey < startDate) return false;
-      if (endDate && post.dayKey > endDate) return false;
-      return true;
-    });
-  }, [nonDateFiltered, startDate, endDate]);
-
-  const averageEngagementRate = useMemo(() => {
-    if (!baseFiltered.length) return 0;
-    const total = baseFiltered.reduce((sum, post) => sum + post.engagementRate, 0);
-    return total / baseFiltered.length;
-  }, [baseFiltered]);
+    void loadWorkspace();
+  }, []);
 
   const filteredPosts = useMemo(() => {
-    const sorted = [...baseFiltered].sort((a, b) => b.publishTime.getTime() - a.publishTime.getTime());
-    if (!topPerformersOnly) return sorted;
-    return sorted.filter((post) => post.engagementRate >= averageEngagementRate);
-  }, [baseFiltered, topPerformersOnly, averageEngagementRate]);
-
-  const periodDays = useMemo(() => {
-    if (!startDate || !endDate) return 0;
-    const start = new Date(`${startDate}T12:00:00`);
-    const end = new Date(`${endDate}T12:00:00`);
-    const diff = Math.floor((end.getTime() - start.getTime()) / 86400000) + 1;
-    return Math.max(diff, 1);
-  }, [startDate, endDate]);
-
-  const previousRange = useMemo(() => {
-    if (!startDate || !periodDays) return null;
-    const start = new Date(`${startDate}T12:00:00`);
-    const previousEnd = new Date(start);
-    previousEnd.setDate(previousEnd.getDate() - 1);
-    const previousStart = new Date(previousEnd);
-    previousStart.setDate(previousStart.getDate() - (periodDays - 1));
-    return {
-      start: formatDayKey(previousStart),
-      end: formatDayKey(previousEnd),
-    };
-  }, [startDate, periodDays]);
-
-  const previousPosts = useMemo(() => {
-    if (!previousRange) return [] as PostRecord[];
-    const records = nonDateFiltered.filter((post) => {
-      if (post.dayKey < previousRange.start) return false;
-      if (post.dayKey > previousRange.end) return false;
-      return true;
+    const q = query.trim().toLowerCase();
+    return posts.filter((post) => {
+      if (statusFilter !== "all" && post.status !== statusFilter) return false;
+      if (platformFilter !== "all" && !post.platforms.includes(platformFilter as SocialPlatform)) return false;
+      if (!q) return true;
+      return `${post.title} ${post.caption}`.toLowerCase().includes(q);
     });
-    if (!topPerformersOnly) return records;
-    const prevAvg = records.length
-      ? records.reduce((sum, post) => sum + post.engagementRate, 0) / records.length
-      : 0;
-    return records.filter((post) => post.engagementRate >= prevAvg);
-  }, [nonDateFiltered, previousRange, topPerformersOnly]);
+  }, [posts, platformFilter, query, statusFilter]);
 
-  const currentSummary = useMemo(() => summarize(filteredPosts), [filteredPosts]);
-  const previousSummary = useMemo(() => summarize(previousPosts), [previousPosts]);
-
-  const dayKeysInRange = useMemo(() => {
-    if (startDate && endDate) {
-      const keys: string[] = [];
-      const cursor = new Date(`${startDate}T12:00:00`);
-      const end = new Date(`${endDate}T12:00:00`);
-      while (cursor.getTime() <= end.getTime()) {
-        keys.push(formatDayKey(cursor));
-        cursor.setDate(cursor.getDate() + 1);
-      }
-      return keys;
-    }
-    return Array.from(new Set(filteredPosts.map((post) => post.dayKey))).sort();
-  }, [filteredPosts, startDate, endDate]);
-
-  const trendsData = useMemo(() => {
-    return dayKeysInRange.map((key) => {
-      const dayPosts = filteredPosts.filter((post) => post.dayKey === key);
-      const daySummary = summarize(dayPosts);
-      const topPost = [...dayPosts].sort((a, b) => b.engagements - a.engagements)[0];
-      const date = new Date(`${key}T12:00:00`);
-      return {
-        key,
-        day: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-        reach: Math.round(daySummary.reach),
-        engagements: Math.round(daySummary.engagements),
-        engagementRate: Number(daySummary.engagementRate.toFixed(2)),
-        views: Math.round(daySummary.views),
-        topPostTitle: topPost ? topPost.title : "No posts",
-      };
-    });
-  }, [dayKeysInRange, filteredPosts]);
-
-  const topPosts = useMemo(() => {
-    return [...filteredPosts]
-      .sort((a, b) => b.engagements - a.engagements)
-      .slice(0, 20);
-  }, [filteredPosts]);
-
-  const benchmark = useMemo(() => {
-    if (!filteredPosts.length) {
-      return {
-        shares: 0,
-        saves: 0,
-        views: 0,
-        clicks: 0,
-        engagementRate: 0,
-      };
-    }
-    const total = filteredPosts.reduce(
-      (acc, post) => {
-        acc.shares += post.shares;
-        acc.saves += post.saves;
-        acc.views += post.views;
-        acc.clicks += post.linkClicks;
-        acc.engagementRate += post.engagementRate;
-        return acc;
-      },
-      { shares: 0, saves: 0, views: 0, clicks: 0, engagementRate: 0 }
-    );
-
-    const count = filteredPosts.length;
+  const summary = useMemo(() => {
     return {
-      shares: total.shares / count,
-      saves: total.saves / count,
-      views: total.views / count,
-      clicks: total.clicks / count,
-      engagementRate: total.engagementRate / count,
+      total: posts.length,
+      scheduled: posts.filter((post) => post.status === "scheduled").length,
+      published: posts.filter((post) => post.status === "published").length,
+      failed: posts.filter((post) => post.status === "failed").length,
     };
-  }, [filteredPosts]);
+  }, [posts]);
 
-  const getWhyWorkedTags = useCallback(
-    (post: PostRecord): string[] => {
-      const tags: string[] = [];
-      if (post.shares >= benchmark.shares * 1.35 && post.shares > 0) tags.push("High share rate");
-      if (post.saves >= benchmark.saves * 1.35 && post.saves > 0) tags.push("Strong saves");
-      if (post.views >= benchmark.views * 1.3 && post.durationSec > 0) tags.push("Above avg watch time");
-      if (post.linkClicks >= benchmark.clicks * 1.35 && post.linkClicks > 0) tags.push("Clicks heavy");
-      if (post.engagementRate >= benchmark.engagementRate * 1.3 && post.reach < currentSummary.reach / Math.max(filteredPosts.length, 1)) {
-        tags.push("Late bloomer");
-      }
-      return tags.slice(0, 3);
-    },
-    [benchmark, currentSummary.reach, filteredPosts.length]
-  );
+  const setField = <K extends keyof ComposerForm>(key: K, value: ComposerForm[K]) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
 
-  const typeComparison = useMemo(() => {
-    const buckets = new Map<string, { count: number; reach: number; engagementRate: number }>();
-    for (const post of filteredPosts) {
-      const key = normalizePostType(post.postType);
-      const current = buckets.get(key) ?? { count: 0, reach: 0, engagementRate: 0 };
-      current.count += 1;
-      current.reach += post.reach;
-      current.engagementRate += post.engagementRate;
-      buckets.set(key, current);
+  const replacePostInState = (next: SocialPostRecord | null) => {
+    if (!next) return;
+    setPosts((current) => {
+      const exists = current.some((item) => item.id === next.id);
+      const updated = exists ? current.map((item) => (item.id === next.id ? next : item)) : [next, ...current];
+      return [...updated].sort((a, b) => {
+        const aTime = new Date(a.scheduledFor || a.createdAt).getTime();
+        const bTime = new Date(b.scheduledFor || b.createdAt).getTime();
+        return bTime - aTime;
+      });
+    });
+  };
+
+  const loadPostIntoComposer = (post: SocialPostRecord) => {
+    setMessage(null);
+    setError(null);
+    setForm({
+      id: post.id,
+      title: post.title,
+      caption: post.caption,
+      scheduledForLocal: toLocalInputValue(post.scheduledFor),
+      timezone: post.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York",
+      linkUrl: post.linkUrl || "",
+      ctaLabel: post.ctaLabel || "LEARN_MORE",
+      googleTopicType: post.googleTopicType || "STANDARD",
+      googleEventTitle: post.googleEventTitle || "",
+      googleEventStartLocal: toLocalInputValue(post.googleEventStart),
+      googleEventEndLocal: toLocalInputValue(post.googleEventEnd),
+      platforms: post.platforms.length ? post.platforms : ["facebook"],
+      asset: post.asset
+        ? {
+            id: post.asset.id,
+            originalName: post.asset.originalName,
+            publicUrl: post.asset.publicUrl,
+            assetKind: post.asset.assetKind,
+          }
+        : null,
+    });
+  };
+
+  const resetComposer = () => {
+    setForm(emptyForm());
+    setMessage(null);
+    setError(null);
+  };
+
+  const saveDraft = async () => {
+    setBusyKey("save");
+    setError(null);
+    setMessage(null);
+    try {
+      const payload = {
+        title: form.title,
+        caption: form.caption,
+        status: "draft" as const,
+        scheduledFor: fromLocalInputValue(form.scheduledForLocal),
+        timezone: form.timezone,
+        linkUrl: form.linkUrl,
+        ctaLabel: form.ctaLabel,
+        googleTopicType: form.googleTopicType,
+        googleEventTitle: form.googleEventTitle,
+        googleEventStart: fromLocalInputValue(form.googleEventStartLocal),
+        googleEventEnd: fromLocalInputValue(form.googleEventEndLocal),
+        platforms: form.platforms,
+        assetId: form.asset?.id || null,
+      };
+      const next = form.id ? await updateSocialPost(form.id, payload) : await createSocialPost(payload);
+      replacePostInState(next);
+      if (next) loadPostIntoComposer(next);
+      setMessage("Draft saved to your server.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to save draft.");
+    } finally {
+      setBusyKey(null);
     }
-    return Array.from(buckets.entries()).map(([type, value]) => ({
-      type,
-      avgReach: Math.round(value.reach / Math.max(value.count, 1)),
-      avgEngagementRate: Number((value.engagementRate / Math.max(value.count, 1)).toFixed(2)),
-    }));
-  }, [filteredPosts]);
+  };
 
-  const durationComparison = useMemo(() => {
-    const buckets = new Map<string, { count: number; engagementRate: number }>();
-    for (const post of filteredPosts.filter((item) => item.durationSec > 0)) {
-      const key = durationBucket(post.durationSec);
-      const current = buckets.get(key) ?? { count: 0, engagementRate: 0 };
-      current.count += 1;
-      current.engagementRate += post.engagementRate;
-      buckets.set(key, current);
+  const schedulePost = async () => {
+    setBusyKey("schedule");
+    setError(null);
+    setMessage(null);
+    try {
+      const scheduledFor = fromLocalInputValue(form.scheduledForLocal);
+      if (!scheduledFor) throw new Error("Choose a schedule date and time first.");
+      const basePayload = {
+        title: form.title,
+        caption: form.caption,
+        status: "draft" as const,
+        scheduledFor,
+        timezone: form.timezone,
+        linkUrl: form.linkUrl,
+        ctaLabel: form.ctaLabel,
+        googleTopicType: form.googleTopicType,
+        googleEventTitle: form.googleEventTitle,
+        googleEventStart: fromLocalInputValue(form.googleEventStartLocal),
+        googleEventEnd: fromLocalInputValue(form.googleEventEndLocal),
+        platforms: form.platforms,
+        assetId: form.asset?.id || null,
+      };
+      const draft = form.id ? await updateSocialPost(form.id, basePayload) : await createSocialPost(basePayload);
+      if (!draft) throw new Error("Unable to stage draft for scheduling.");
+      const next = await scheduleSocialPost(draft.id, {
+        scheduledFor,
+        platforms: form.platforms,
+      });
+      replacePostInState(next);
+      if (next) loadPostIntoComposer(next);
+      setMessage("Post scheduled. It will stay on your server until publish time.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to schedule post.");
+    } finally {
+      setBusyKey(null);
     }
+  };
 
-    const order = ["0-10s", "11-20s", "21-30s", "31-60s", "60s+"];
-    return order
-      .map((bucket) => {
-        const value = buckets.get(bucket);
-        return {
-          bucket,
-          avgEngagementRate: value ? Number((value.engagementRate / value.count).toFixed(2)) : 0,
-        };
-      })
-      .filter((item) => item.avgEngagementRate > 0);
-  }, [filteredPosts]);
-
-  const funnelData = useMemo(() => {
-    const intentValue =
-      platformFilter === "instagram"
-        ? currentSummary.follows + currentSummary.saves
-        : currentSummary.linkClicks;
-    const intentLabel = platformFilter === "instagram" ? "Follows + Saves" : "Link Clicks";
-    return [
-      { stage: "Reach", value: currentSummary.reach },
-      { stage: "Engagement", value: currentSummary.engagements },
-      { stage: intentLabel, value: intentValue },
-    ];
-  }, [currentSummary, platformFilter]);
-
-  const heatMap = useMemo(() => {
-    const matrix = Array.from({ length: 7 }, () =>
-      Array.from({ length: 24 }, () => ({ total: 0, count: 0 }))
-    );
-
-    for (const post of filteredPosts) {
-      const slot = matrix[post.dayOfWeek][post.hour];
-      slot.total += post.engagementRate;
-      slot.count += 1;
+  const publishNow = async () => {
+    setBusyKey("publish");
+    setError(null);
+    setMessage(null);
+    try {
+      const basePayload = {
+        title: form.title,
+        caption: form.caption,
+        status: "draft" as const,
+        scheduledFor: fromLocalInputValue(form.scheduledForLocal),
+        timezone: form.timezone,
+        linkUrl: form.linkUrl,
+        ctaLabel: form.ctaLabel,
+        googleTopicType: form.googleTopicType,
+        googleEventTitle: form.googleEventTitle,
+        googleEventStart: fromLocalInputValue(form.googleEventStartLocal),
+        googleEventEnd: fromLocalInputValue(form.googleEventEndLocal),
+        platforms: form.platforms,
+        assetId: form.asset?.id || null,
+      };
+      const draft = form.id ? await updateSocialPost(form.id, basePayload) : await createSocialPost(basePayload);
+      if (!draft) throw new Error("Unable to stage post for publishing.");
+      const next = await publishSocialPostNow(draft.id, {
+        platforms: form.platforms,
+      });
+      replacePostInState(next);
+      if (next) loadPostIntoComposer(next);
+      setMessage("Publish started. Any provider errors will show on the post card.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to publish now.");
+    } finally {
+      setBusyKey(null);
     }
+  };
 
-    return matrix.map((row) => row.map((cell) => (cell.count ? cell.total / cell.count : 0)));
-  }, [filteredPosts]);
-
-  const heatMax = useMemo(() => {
-    return heatMap.reduce((max, row) => {
-      const localMax = row.reduce((a, b) => Math.max(a, b), 0);
-      return Math.max(max, localMax);
-    }, 0);
-  }, [heatMap]);
-
-  const recommendations = useMemo(() => {
-    if (filteredPosts.length < 4) {
-      return ["Upload a little more data to unlock recommendation rules."];
+  const uploadAsset = async (file: File | null) => {
+    if (!file) return;
+    setBusyKey("asset");
+    setError(null);
+    setMessage(null);
+    try {
+      const asset = await uploadSocialAsset(file);
+      if (!asset) throw new Error("Asset upload did not return a stored file.");
+      setForm((current) => ({
+        ...current,
+        asset: {
+          id: asset.id,
+          originalName: asset.originalName,
+          publicUrl: asset.publicUrl,
+          assetKind: asset.assetKind,
+        },
+      }));
+      setMessage(`Stored ${asset.originalName} on the server and linked it to the composer.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to upload asset.");
+    } finally {
+      setBusyKey(null);
     }
+  };
 
-    const insights: string[] = [];
-
-    const short = filteredPosts.filter((post) => post.captionLength > 0 && post.captionLength <= 120);
-    const long = filteredPosts.filter((post) => post.captionLength > 120);
-    if (short.length >= 2 && long.length >= 2) {
-      const shortEr = short.reduce((sum, post) => sum + post.engagementRate, 0) / short.length;
-      const longEr = long.reduce((sum, post) => sum + post.engagementRate, 0) / long.length;
-      if (shortEr > longEr * 1.12) {
-        insights.push(`Posts under 120 chars are outperforming longer captions by ${(shortEr - longEr).toFixed(1)} engagement-rate points.`);
-      }
+  const saveAccount = async (platform: SocialPlatform) => {
+    setBusyKey(`account-${platform}`);
+    setError(null);
+    setMessage(null);
+    try {
+      const draft = accountDrafts[platform];
+      const next = await upsertSocialAccount(platform, {
+        label: draft.label,
+        externalId: draft.externalId,
+        accessToken: draft.accessToken,
+        refreshToken: draft.refreshToken,
+        tokenExpiresAt: fromLocalInputValue(draft.tokenExpiresAt),
+        active: draft.active,
+        configJson: {},
+      });
+      if (!next) throw new Error(`Unable to save ${platform} account settings.`);
+      setAccounts((current) => {
+        const exists = current.some((item) => item.platform === platform);
+        return exists ? current.map((item) => (item.platform === platform ? next : item)) : [...current, next];
+      });
+      setAccountDrafts((current) => ({
+        ...current,
+        [platform]: {
+          ...current[platform],
+          accessToken: "",
+          refreshToken: "",
+          label: next.label,
+          externalId: next.externalId,
+          tokenExpiresAt: toLocalInputValue(next.tokenExpiresAt),
+          active: next.active,
+        },
+      }));
+      setMessage(`${platform[0].toUpperCase()}${platform.slice(1)} connection saved.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Unable to save ${platform} account.`);
+    } finally {
+      setBusyKey(null);
     }
+  };
 
-    const wedToFri = filteredPosts.filter((post) => [3, 4, 5].includes(post.dayOfWeek));
-    const monday = filteredPosts.filter((post) => post.dayOfWeek === 1);
-    if (wedToFri.length >= 2 && monday.length >= 2) {
-      const wedFriReach = wedToFri.reduce((sum, post) => sum + post.reach, 0) / wedToFri.length;
-      const mondayReach = monday.reduce((sum, post) => sum + post.reach, 0) / monday.length;
-      if (wedFriReach > mondayReach * 1.15) {
-        insights.push(`Wed-Fri posts are averaging ${Math.round(wedFriReach - mondayReach)} more reach than Monday posts.`);
-      }
-    }
-
-    const priceLanguage = filteredPosts.filter((post) => /sale|off|%|clearance|deal|save/i.test(`${post.title} ${post.description}`));
-    const plainLanguage = filteredPosts.filter((post) => !/sale|off|%|clearance|deal|save/i.test(`${post.title} ${post.description}`));
-    if (priceLanguage.length >= 2 && plainLanguage.length >= 2) {
-      const promoClicks = priceLanguage.reduce((sum, post) => sum + post.linkClicks, 0) / priceLanguage.length;
-      const plainClicks = plainLanguage.reduce((sum, post) => sum + post.linkClicks, 0) / plainLanguage.length;
-      if (promoClicks > plainClicks * 1.2) {
-        insights.push(`Pricing language is driving stronger click intent (+${(promoClicks - plainClicks).toFixed(1)} link clicks per post).`);
-      }
-    }
-
-    return insights.length ? insights : ["No strong pattern yet. Keep uploading monthly exports to improve recommendations."];
-  }, [filteredPosts]);
-
-  const campaignData = useMemo(() => {
-    const groups = new Map<string, PostRecord[]>();
-
-    for (const post of filteredPosts) {
-      const rawTags = postMeta[post.id]?.tags ?? "";
-      const tags = rawTags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean);
-
-      for (const tag of tags) {
-        const current = groups.get(tag) ?? [];
-        current.push(post);
-        groups.set(tag, current);
-      }
-    }
-
-    return Array.from(groups.entries())
-      .map(([name, posts]) => {
-        const summary = summarize(posts);
-        const best = [...posts].sort((a, b) => b.engagementRate - a.engagementRate)[0];
-        return {
-          name,
-          posts: posts.length,
-          reach: summary.reach,
-          engagements: summary.engagements,
-          bestPost: best?.title ?? "",
-        };
-      })
-      .sort((a, b) => b.reach - a.reach);
-  }, [filteredPosts, postMeta]);
-
-  const selectedPost = useMemo(() => {
-    if (!selectedPostId) return null;
-    return allPosts.find((post) => post.id === selectedPostId) ?? null;
-  }, [allPosts, selectedPostId]);
-
-  const updateSelectedPostMeta = (field: "tags" | "notes", value: string) => {
-    if (!selectedPost) return;
-    setPostMeta((current) => {
-      const existing = current[selectedPost.id] ?? { tags: "", notes: "" };
+  const togglePlatform = (platform: SocialPlatform) => {
+    setForm((current) => {
+      const exists = current.platforms.includes(platform);
+      const nextPlatforms = exists
+        ? current.platforms.filter((item) => item !== platform)
+        : [...current.platforms, platform];
       return {
         ...current,
-        [selectedPost.id]: {
-          ...existing,
-          [field]: value,
-        },
+        platforms: nextPlatforms,
       };
     });
   };
-
-  const parseUploadFiles = useCallback(
-    async (files: File[]) => {
-      if (!files.length) return;
-
-      const parsed: PostRecord[] = [];
-
-      for (const file of files) {
-        const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: "array" });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-
-        rows.forEach((row, index) => {
-          const mapped = buildPostFromRow(row, `${file.name}-${index}`);
-          if (mapped) parsed.push(mapped);
-        });
-      }
-
-      const deduped = dedupePosts(parsed);
-      const missingPermalink = deduped.filter((post) => !post.permalink).length;
-      const fileNames = files.map((file) => file.name);
-      const platforms = Array.from(new Set(deduped.map((post) => post.platform)));
-
-      let rangeLabel = "No valid dates found";
-      if (deduped.length) {
-        const keys = deduped.map((post) => post.dayKey).sort();
-        rangeLabel = `${keys[0]} to ${keys[keys.length - 1]}`;
-      }
-
-      const existingRange = allPosts.length
-        ? {
-            min: allPosts.map((post) => post.dayKey).sort()[0],
-            max: allPosts.map((post) => post.dayKey).sort().slice(-1)[0],
-          }
-        : null;
-
-      const overlap = Boolean(
-        existingRange &&
-          deduped.length &&
-          deduped.some((post) => post.dayKey >= existingRange.min && post.dayKey <= existingRange.max)
-      );
-
-      setPendingUpload({
-        records: deduped,
-        fileNames,
-        platforms,
-        rangeLabel,
-        issues: {
-          missingPermalink,
-          duplicates: parsed.length - deduped.length,
-          overlap,
-        },
-      });
-      setActiveTab("upload");
-    },
-    [allPosts]
-  );
-
-  const applyUpload = () => {
-    if (!pendingUpload) return;
-    const next = combineUpload ? dedupePosts([...allPosts, ...pendingUpload.records]) : pendingUpload.records;
-    setAllPosts(next);
-    setPendingUpload(null);
-  };
-
-  const onDrop = async (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDragging(false);
-    const files = Array.from(event.dataTransfer.files).filter((file) => file.name.toLowerCase().endsWith(".csv"));
-    await parseUploadFiles(files);
-  };
-
-  const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []).filter((file) => file.name.toLowerCase().endsWith(".csv"));
-    await parseUploadFiles(files);
-    event.target.value = "";
-  };
-
-  const toggleTrendMetric = (metric: TrendMetric) => {
-    setTrendMetrics((current) => {
-      const activeCount = Object.values(current).filter(Boolean).length;
-      if (current[metric] && activeCount === 1) return current;
-      return { ...current, [metric]: !current[metric] };
-    });
-  };
-
-  const kpis = [
-    {
-      label: "Reach",
-      value: formatCompact(currentSummary.reach),
-      delta: formatDelta(currentSummary.reach, previousSummary.reach),
-    },
-    {
-      label: "Views / Plays",
-      value: formatCompact(currentSummary.views),
-      delta: formatDelta(currentSummary.views, previousSummary.views),
-    },
-    {
-      label: "Engagements",
-      value: formatCompact(currentSummary.engagements),
-      delta: formatDelta(currentSummary.engagements, previousSummary.engagements),
-    },
-    {
-      label: "Engagement Rate",
-      value: `${currentSummary.engagementRate.toFixed(2)}%`,
-      delta: formatDelta(currentSummary.engagementRate, previousSummary.engagementRate),
-    },
-    {
-      label: "Link Clicks",
-      value: formatCompact(currentSummary.linkClicks),
-      delta: formatDelta(currentSummary.linkClicks, previousSummary.linkClicks),
-    },
-    {
-      label: "Saves",
-      value: formatCompact(currentSummary.saves),
-      delta: formatDelta(currentSummary.saves, previousSummary.saves),
-    },
-    {
-      label: "Follows Gained",
-      value: formatCompact(currentSummary.follows),
-      delta: formatDelta(currentSummary.follows, previousSummary.follows),
-    },
-  ];
-
-  const heatColor = (value: number): string => {
-    if (value <= 0 || heatMax <= 0) return "rgba(148, 163, 184, 0.18)";
-    const intensity = Math.min(value / heatMax, 1);
-    const alpha = 0.22 + intensity * 0.72;
-    return `rgba(15,118,110,${alpha.toFixed(2)})`;
-  };
-
-  const metricButtons: Array<{ key: TrendMetric; label: string }> = [
-    { key: "reach", label: "Reach" },
-    { key: "engagements", label: "Engagements" },
-    { key: "engagementRate", label: "Engagement rate" },
-    { key: "views", label: "Views" },
-  ];
-
-  const renderTabButton = (key: TabKey, label: string, icon: React.ReactNode) => (
-    <button
-      key={key}
-      type="button"
-      onClick={() => setActiveTab(key)}
-      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-        activeTab === key
-          ? "bg-slate-900 text-white"
-          : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
-  );
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6 md:p-8">
-        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Coming Soon</div>
-        <h2 className="mt-2 text-2xl font-semibold text-amber-950">Social planning is coming soon.</h2>
-        <p className="mt-2 text-sm text-amber-900/80">
-          This page is currently a placeholder while the full planning workflow is being built.
-        </p>
-      </section>
-
-      <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6 md:p-8">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="text-xs uppercase tracking-wide text-slate-500">Social Media Command Center</div>
-            <h2 className="text-2xl font-semibold text-slate-900">Social Posts Planner</h2>
-            <p className="text-sm text-slate-500">
-              Premium front-end analytics: upload exports, track trends, and spot what content converts.
+            <div className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">Social Scheduler</div>
+            <h2 className="mt-2 text-3xl font-semibold text-slate-900">Create once, store on your server, publish on schedule.</h2>
+            <p className="mt-2 max-w-3xl text-sm text-slate-600">
+              Upload Canva images or videos, paste your copy, pick Facebook, Instagram, and Google Business Profile,
+              and let WOLF FD hold the draft until the exact publish time.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => setActiveTab("upload")}
+              onClick={() => void loadWorkspace()}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+            >
+              <RefreshCcw size={15} /> Refresh
+            </button>
+            <button
+              type="button"
+              onClick={resetComposer}
               className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
             >
-              <UploadCloud size={16} /> Upload Data
+              <UploadCloud size={15} /> New Draft
             </button>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600"
-            >
-              <FileUp size={16} /> Quick CSV Import
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              multiple
-              className="hidden"
-              onChange={onFileChange}
-            />
           </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <div className="text-xs uppercase tracking-wide text-slate-500">Date Range</div>
-            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
-                <Calendar size={14} />
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(event) => setStartDate(event.target.value)}
-                  className="bg-transparent outline-none"
-                />
-              </label>
-              <span className="text-xs text-slate-400">to</span>
-              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
-                <Calendar size={14} />
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(event) => setEndDate(event.target.value)}
-                  className="bg-transparent outline-none"
-                />
-              </label>
-            </div>
-            <div className="mt-2 text-xs text-slate-500">
-              Compared to previous {periodDays || 0} day{periodDays === 1 ? "" : "s"}.
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <div className="text-xs uppercase tracking-wide text-slate-500">Platform View</div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {[
-                { key: "both", label: "Both" },
-                { key: "facebook", label: "Facebook" },
-                { key: "instagram", label: "Instagram" },
-              ].map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => setPlatformFilter(item.key as PlatformFilter)}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                    platformFilter === item.key
-                      ? "bg-slate-900 text-white"
-                      : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-[220px_minmax(0,1fr)_auto_auto]">
-          <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
-            <Filter size={14} />
-            <select
-              value={typeFilter}
-              onChange={(event) => setTypeFilter(event.target.value)}
-              className="w-full bg-transparent outline-none"
-            >
-              <option value="all">All post types</option>
-              {typeOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
-            <Search size={14} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search titles or captions"
-              className="w-full bg-transparent outline-none"
-            />
-          </label>
-
-          <button
-            type="button"
-            onClick={() => setTopPerformersOnly((current) => !current)}
-            className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
-              topPerformersOnly
-                ? "bg-emerald-600 text-white"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            <Flame size={14} />
-            Only top performers
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setTypeFilter("all");
-              setSearchQuery("");
-              setTopPerformersOnly(false);
-            }}
-            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-          >
-            Reset
-          </button>
         </div>
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {kpis.map((kpi) => (
-          <div key={kpi.label} className="bg-white border border-slate-100 rounded-3xl shadow-sm p-5">
-            <div className="text-xs uppercase tracking-wide text-slate-500">{kpi.label}</div>
-            <div className="mt-2 text-2xl font-semibold text-slate-900">{kpi.value}</div>
-            <div className="mt-2 text-xs text-slate-500">{kpi.delta} vs previous period</div>
-          </div>
-        ))}
-      </section>
-
-      <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-5">
-        <div className="flex flex-wrap gap-2">
-          {renderTabButton("overview", "Overview", <Sparkles size={15} />)}
-          {renderTabButton("trends", "Trends", <LineChartIcon size={15} />)}
-          {renderTabButton("library", "Content Library", <LayoutList size={15} />)}
-          {renderTabButton("timing", "Timing & Insights", <BarChart3 size={15} />)}
-          {renderTabButton("campaigns", "Campaigns", <Tag size={15} />)}
-          {renderTabButton("upload", "Upload & Data", <UploadCloud size={15} />)}
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Total Posts</div>
+          <div className="mt-2 text-3xl font-semibold text-slate-900">{summary.total}</div>
+        </div>
+        <div className="rounded-3xl border border-blue-200 bg-blue-50 p-5 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-blue-700">Scheduled</div>
+          <div className="mt-2 text-3xl font-semibold text-blue-950">{summary.scheduled}</div>
+        </div>
+        <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-emerald-700">Published</div>
+          <div className="mt-2 text-3xl font-semibold text-emerald-950">{summary.published}</div>
+        </div>
+        <div className="rounded-3xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-rose-700">Failed</div>
+          <div className="mt-2 text-3xl font-semibold text-rose-950">{summary.failed}</div>
         </div>
       </section>
 
-      {activeTab === "overview" && (
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900">Reach + Engagement Trend</h3>
-              <span className="text-xs text-slate-500">Hover to see the top post that day</span>
-            </div>
-            <div className="mt-4 h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendsData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    content={({ active, payload, label }) => {
-                      if (!active || !payload?.length) return null;
-                      const point = payload[0].payload as {
-                        topPostTitle: string;
-                        reach: number;
-                        engagements: number;
-                      };
-                      return (
-                        <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs shadow-lg">
-                          <div className="font-semibold text-slate-900">{label}</div>
-                          <div className="mt-1 text-slate-600">Reach: {point.reach.toLocaleString()}</div>
-                          <div className="text-slate-600">Engagements: {point.engagements.toLocaleString()}</div>
-                          <div className="mt-2 text-slate-500">Top post: {point.topPostTitle}</div>
-                        </div>
-                      );
-                    }}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="reach" stroke="#0f172a" strokeWidth={2} dot={false} name="Reach" />
-                  <Line
-                    type="monotone"
-                    dataKey="engagements"
-                    stroke="#0d9488"
-                    strokeWidth={2}
-                    dot={false}
-                    name="Engagements"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-5">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-slate-900">Stars Leaderboard</h4>
-                <Star size={15} className="text-amber-500" />
-              </div>
-              <div className="mt-3 space-y-3">
-                {topPosts.slice(0, 5).map((post, index) => (
-                  <button
-                    key={`${post.id}-${index}`}
-                    type="button"
-                    onClick={() => {
-                      setSelectedPostId(post.id);
-                      setActiveTab("library");
-                    }}
-                    className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-3 text-left hover:border-slate-300"
-                  >
-                    <div className="text-xs text-slate-500">#{index + 1} · {post.platform}</div>
-                    <div className="mt-1 text-sm font-semibold text-slate-900">{post.title}</div>
-                    <div className="mt-1 text-xs text-slate-600">
-                      {post.engagements.toLocaleString()} engagements · {post.engagementRate.toFixed(2)}% ER
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-5">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-slate-900">Intent Funnel</h4>
-                <BarChart3 size={15} className="text-slate-500" />
-              </div>
-              <div className="mt-3 h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={funnelData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="stage" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#0f766e" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
+      {(message || error) && (
+        <section
+          className={`rounded-3xl border p-4 text-sm shadow-sm ${
+            error ? "border-rose-200 bg-rose-50 text-rose-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"
+          }`}
+        >
+          {error || message}
         </section>
       )}
 
-      {activeTab === "trends" && (
-        <section className="space-y-6">
-          <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <h3 className="text-lg font-semibold text-slate-900">Metric Trends Over Time</h3>
-              <div className="flex flex-wrap gap-2">
-                {metricButtons.map((metric) => (
-                  <button
-                    key={metric.key}
-                    type="button"
-                    onClick={() => toggleTrendMetric(metric.key)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      trendMetrics[metric.key]
-                        ? "bg-slate-900 text-white"
-                        : "bg-white text-slate-600 border border-slate-200"
-                    }`}
-                  >
-                    {metric.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="mt-4 h-96">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendsData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Legend />
-                  {trendMetrics.reach && (
-                    <Line type="monotone" dataKey="reach" stroke="#0f172a" strokeWidth={2} dot={false} name="Reach" />
-                  )}
-                  {trendMetrics.engagements && (
-                    <Line
-                      type="monotone"
-                      dataKey="engagements"
-                      stroke="#0d9488"
-                      strokeWidth={2}
-                      dot={false}
-                      name="Engagements"
-                    />
-                  )}
-                  {trendMetrics.engagementRate && (
-                    <Line
-                      type="monotone"
-                      dataKey="engagementRate"
-                      stroke="#ea580c"
-                      strokeWidth={2}
-                      dot={false}
-                      name="Engagement rate"
-                    />
-                  )}
-                  {trendMetrics.views && (
-                    <Line type="monotone" dataKey="views" stroke="#7c3aed" strokeWidth={2} dot={false} name="Views" />
-                  )}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-              <h4 className="text-md font-semibold text-slate-900">Content Type Comparison</h4>
-              <div className="mt-4 h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={typeComparison}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="type" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="avgReach" fill="#0f172a" radius={[6, 6, 0, 0]} name="Avg reach" />
-                    <Bar dataKey="avgEngagementRate" fill="#0d9488" radius={[6, 6, 0, 0]} name="Avg ER" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-              <h4 className="text-md font-semibold text-slate-900">Video Duration Buckets</h4>
-              <div className="mt-4 h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={durationComparison}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="bucket" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Bar dataKey="avgEngagementRate" fill="#ea580c" radius={[6, 6, 0, 0]} name="Avg ER" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              {durationComparison.length > 0 && (
-                <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                  {(() => {
-                    const top = [...durationComparison].sort((a, b) => b.avgEngagementRate - a.avgEngagementRate)[0];
-                    return `${top.bucket} videos are currently your top performer.`;
-                  })()}
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {activeTab === "library" && (
-        <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.2fr)_420px]">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">Top Content Library</h3>
-            <span className="text-xs text-slate-500">Click a row to open post detail drawer</span>
-          </div>
-
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th className="py-2 pr-3">Post</th>
-                  <th className="py-2 pr-3">Date</th>
-                  <th className="py-2 pr-3">Type</th>
-                  <th className="py-2 pr-3">Reach</th>
-                  <th className="py-2 pr-3">Engagements</th>
-                  <th className="py-2 pr-3">ER</th>
-                  <th className="py-2 pr-3">Clicks</th>
-                  <th className="py-2 pr-3">Saves</th>
-                  <th className="py-2 pr-3">Follows</th>
-                  <th className="py-2">Why it worked</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topPosts.map((post) => {
-                  const tags = getWhyWorkedTags(post);
-                  const barWidth =
-                    topPosts.length > 0
-                      ? (post.engagements / Math.max(...topPosts.map((item) => item.engagements), 1)) * 100
-                      : 0;
-                  return (
-                    <tr
-                      key={`${post.id}-${post.dayKey}`}
-                      className="cursor-pointer border-b border-slate-100 hover:bg-slate-50"
-                      onClick={() => setSelectedPostId(post.id)}
-                    >
-                      <td className="py-3 pr-3">
-                        <div className="font-semibold text-slate-900">{post.title}</div>
-                        <div className="text-xs text-slate-500">{post.platform}</div>
-                      </td>
-                      <td className="py-3 pr-3 text-slate-600">{post.dayKey}</td>
-                      <td className="py-3 pr-3 text-slate-600">{normalizePostType(post.postType)}</td>
-                      <td className="py-3 pr-3 text-slate-600">{post.reach.toLocaleString()}</td>
-                      <td className="py-3 pr-3">
-                        <div className="text-slate-600">{post.engagements.toLocaleString()}</div>
-                        <div className="mt-1 h-1.5 rounded-full bg-slate-200">
-                          <div className="h-1.5 rounded-full bg-slate-900" style={{ width: `${barWidth}%` }} />
-                        </div>
-                      </td>
-                      <td className="py-3 pr-3 text-slate-600">{post.engagementRate.toFixed(2)}%</td>
-                      <td className="py-3 pr-3 text-slate-600">{post.linkClicks.toLocaleString()}</td>
-                      <td className="py-3 pr-3 text-slate-600">{post.saves.toLocaleString()}</td>
-                      <td className="py-3 pr-3 text-slate-600">{post.follows.toLocaleString()}</td>
-                      <td className="py-3 text-slate-600">
-                        <div className="flex flex-wrap gap-1">
-                          {tags.length ? (
-                            tags.map((tag) => (
-                              <span
-                                key={`${post.id}-${tag}`}
-                                className="inline-flex rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs"
-                              >
-                                {tag}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-slate-400">No standout rule yet</span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      {activeTab === "timing" && (
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-slate-900">Best Time to Post Heatmap</h3>
-            <p className="text-sm text-slate-500">Day of week vs posting hour (color = average engagement rate)</p>
-            <div className="mt-4 overflow-x-auto">
-              <div className="min-w-[880px] space-y-2">
-                <div className="grid grid-cols-[68px_repeat(24,minmax(0,1fr))] gap-1 text-[10px] text-slate-400">
-                  <div />
-                  {Array.from({ length: 24 }).map((_, hour) => (
-                    <div key={`hour-label-${hour}`} className="text-center">
-                      {hour}
-                    </div>
-                  ))}
-                </div>
-                {heatMap.map((row, day) => (
-                  <div key={`day-${DAY_NAMES[day]}`} className="grid grid-cols-[68px_repeat(24,minmax(0,1fr))] gap-1">
-                    <div className="flex items-center text-xs font-semibold text-slate-600">{DAY_NAMES[day]}</div>
-                    {row.map((value, hour) => (
-                      <div
-                        key={`cell-${day}-${hour}`}
-                        className="h-7 rounded"
-                        style={{ backgroundColor: heatColor(value) }}
-                        title={`${DAY_NAMES[day]} ${hour}:00 · ${value.toFixed(2)}% avg ER`}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
+            <div>
+              <div className="text-xs uppercase tracking-wide text-slate-500">Composer</div>
+              <h3 className="text-xl font-semibold text-slate-900">
+                {form.id ? "Edit Scheduled Draft" : "Create Social Draft"}
+              </h3>
             </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-5">
-              <h4 className="text-sm font-semibold text-slate-900">Rule-Based Recommendations</h4>
-              <div className="mt-3 space-y-2 text-sm text-slate-600">
-                {recommendations.map((insight, index) => (
-                  <div key={`insight-${index}`} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                    {insight}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-5">
-              <h4 className="text-sm font-semibold text-slate-900">Stars Scoreboard</h4>
-              <div className="mt-3 space-y-2 text-sm text-slate-600">
-                {topPosts.slice(0, 5).map((post) => (
-                  <div key={`score-${post.id}`} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                    <div className="font-semibold text-slate-900">{post.title}</div>
-                    <div className="text-xs text-slate-500">
-                      {post.reach.toLocaleString()} reach · {post.comments.toLocaleString()} comments · {post.shares.toLocaleString()} shares
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {activeTab === "campaigns" && (
-        <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">Campaign Tracking</h3>
-            <div className="text-xs text-slate-500">Use post tags in the detail drawer to build campaign rollups</div>
-          </div>
-
-          {campaignData.length === 0 ? (
-            <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
-              No campaign tags yet. Open a post from Content Library and add tags like
-              <span className="font-semibold"> Presidents Day</span>,
-              <span className="font-semibold"> Clearance</span>, or
-              <span className="font-semibold"> Tax + Delivery</span>.
-            </div>
-          ) : (
-            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {campaignData.map((campaign) => (
-                <div key={campaign.name} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-semibold text-slate-900">{campaign.name}</h4>
-                    <span className="text-xs text-slate-500">{campaign.posts} posts</span>
-                  </div>
-                  <div className="mt-2 text-xs text-slate-600">Reach: {campaign.reach.toLocaleString()}</div>
-                  <div className="text-xs text-slate-600">Engagements: {campaign.engagements.toLocaleString()}</div>
-                  <div className="mt-2 text-xs text-slate-500">Best post: {campaign.bestPost}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {activeTab === "upload" && (
-        <section className="space-y-6">
-          <div
-            className={`rounded-3xl border-2 border-dashed p-8 text-center transition-colors ${
-              isDragging ? "border-emerald-500 bg-emerald-50" : "border-slate-300 bg-white"
-            }`}
-            onDragOver={(event) => {
-              event.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={onDrop}
-          >
-            <UploadCloud className="mx-auto text-slate-500" size={30} />
-            <h3 className="mt-3 text-lg font-semibold text-slate-900">Upload Social Export CSVs</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              Drag and drop files here, or choose files manually. We auto-detect platform + date range.
-            </p>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-            >
-              <FileUp size={15} /> Select CSV Files
-            </button>
-          </div>
-
-          {pendingUpload && (
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <h4 className="text-md font-semibold text-slate-900">Upload Preview</h4>
-                  <div className="mt-1 text-sm text-slate-600">
-                    Files: {pendingUpload.fileNames.join(", ")}
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Platforms: {pendingUpload.platforms.join(", ") || "Unknown"} · Range: {pendingUpload.rangeLabel} · Posts: {pendingUpload.records.length}
-                  </div>
-                </div>
-                <label className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-                  <input
-                    type="checkbox"
-                    checked={combineUpload}
-                    onChange={(event) => setCombineUpload(event.target.checked)}
-                  />
-                  Combine with existing data
-                </label>
-              </div>
-
-              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Missing permalink</div>
-                  <div className="mt-1 text-xl font-semibold text-slate-900">{pendingUpload.issues.missingPermalink}</div>
-                </div>
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Duplicate rows</div>
-                  <div className="mt-1 text-xl font-semibold text-slate-900">{pendingUpload.issues.duplicates}</div>
-                </div>
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Date overlap</div>
-                  <div className="mt-1 text-xl font-semibold text-slate-900">
-                    {pendingUpload.issues.overlap ? "Yes" : "No"}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={applyUpload}
-                  className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Apply Upload
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPendingUpload(null)}
-                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600"
-                >
-                  Clear Preview
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
-      )}
-
-      {selectedPost && (
-        <div className="fixed inset-0 z-40 flex justify-end bg-slate-900/30">
-          <div className="h-full w-full max-w-md bg-white border-l border-slate-200 shadow-xl p-5 overflow-y-auto">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-xs uppercase tracking-wide text-slate-500">Post Detail</div>
-                <h4 className="text-lg font-semibold text-slate-900">{selectedPost.title}</h4>
-                <div className="text-xs text-slate-500">
-                  {selectedPost.platform} · {selectedPost.dayKey} · {normalizePostType(selectedPost.postType)}
-                </div>
-              </div>
+            {form.id && (
               <button
                 type="button"
-                onClick={() => setSelectedPostId(null)}
-                className="rounded-full border border-slate-200 p-1 text-slate-600"
+                onClick={resetComposer}
+                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600"
               >
-                <X size={16} />
+                Clear Selection
               </button>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-              <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">Reach: {selectedPost.reach.toLocaleString()}</div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                Engagements: {selectedPost.engagements.toLocaleString()}
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">ER: {selectedPost.engagementRate.toFixed(2)}%</div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                Link clicks: {selectedPost.linkClicks.toLocaleString()}
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
-              {selectedPost.description || "No description captured from export."}
-            </div>
-
-            <div className="mt-4 space-y-2">
-              <label className="block text-xs uppercase tracking-wide text-slate-500">Campaign tags (comma separated)</label>
-              <input
-                type="text"
-                value={postMeta[selectedPost.id]?.tags ?? ""}
-                onChange={(event) => updateSelectedPostMeta("tags", event.target.value)}
-                placeholder="Presidents Day, Clearance, Lifestyle"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
-              />
-            </div>
-
-            <div className="mt-4 space-y-2">
-              <label className="block text-xs uppercase tracking-wide text-slate-500">Notes</label>
-              <textarea
-                value={postMeta[selectedPost.id]?.notes ?? ""}
-                onChange={(event) => updateSelectedPostMeta("notes", event.target.value)}
-                placeholder="Boosted $20, in-store photo, promo language, etc."
-                rows={4}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
-              />
-            </div>
-
-            {selectedPost.permalink && (
-              <a
-                href={selectedPost.permalink}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-4 inline-flex rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-              >
-                Open post link
-              </a>
             )}
           </div>
+
+          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <label className="block">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Title</div>
+              <input
+                type="text"
+                value={form.title}
+                onChange={(event) => setField("title", event.target.value)}
+                placeholder="Weekend sofa promo"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
+              />
+            </label>
+
+            <label className="block">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Link URL</div>
+              <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <LinkIcon size={15} className="text-slate-400" />
+                <input
+                  type="url"
+                  value={form.linkUrl}
+                  onChange={(event) => setField("linkUrl", event.target.value)}
+                  placeholder="https://..."
+                  className="w-full bg-transparent text-sm outline-none"
+                />
+              </div>
+            </label>
+          </div>
+
+          <label className="mt-4 block">
+            <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Caption / Copy</div>
+            <textarea
+              value={form.caption}
+              onChange={(event) => setField("caption", event.target.value)}
+              placeholder="Paste your caption here..."
+              rows={7}
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
+            />
+          </label>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <label className="block">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Schedule</div>
+              <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <CalendarClock size={15} className="text-slate-400" />
+                <input
+                  type="datetime-local"
+                  value={form.scheduledForLocal}
+                  onChange={(event) => setField("scheduledForLocal", event.target.value)}
+                  className="w-full bg-transparent text-sm outline-none"
+                />
+              </div>
+            </label>
+
+            <label className="block">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Google CTA</div>
+              <select
+                value={form.ctaLabel}
+                onChange={(event) => setField("ctaLabel", event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+              >
+                <option value="LEARN_MORE">Learn More</option>
+                <option value="SHOP">Shop</option>
+                <option value="BOOK">Book</option>
+                <option value="ORDER">Order</option>
+                <option value="SIGN_UP">Sign Up</option>
+                <option value="CALL">Call</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Google Post Type</div>
+              <select
+                value={form.googleTopicType}
+                onChange={(event) => setField("googleTopicType", event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+              >
+                <option value="STANDARD">Standard</option>
+                <option value="EVENT">Event</option>
+                <option value="OFFER">Offer</option>
+                <option value="ALERT">Alert</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Timezone</div>
+              <input
+                type="text"
+                value={form.timezone}
+                onChange={(event) => setField("timezone", event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
+              />
+            </label>
+          </div>
+
+          {(form.googleTopicType === "EVENT" || form.googleTopicType === "OFFER") && (
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+              <label className="block">
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Event Title</div>
+                <input
+                  type="text"
+                  value={form.googleEventTitle}
+                  onChange={(event) => setField("googleEventTitle", event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
+                />
+              </label>
+              <label className="block">
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Event Start</div>
+                <input
+                  type="datetime-local"
+                  value={form.googleEventStartLocal}
+                  onChange={(event) => setField("googleEventStartLocal", event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+                />
+              </label>
+              <label className="block">
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Event End</div>
+                <input
+                  type="datetime-local"
+                  value={form.googleEventEndLocal}
+                  onChange={(event) => setField("googleEventEndLocal", event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+                />
+              </label>
+            </div>
+          )}
+
+          <div className="mt-4">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Platforms</div>
+            <div className="flex flex-wrap gap-2">
+              {PLATFORM_OPTIONS.map((platform) => {
+                const selected = form.platforms.includes(platform.id);
+                return (
+                  <button
+                    key={platform.id}
+                    type="button"
+                    onClick={() => togglePlatform(platform.id)}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                      selected
+                        ? "bg-slate-900 text-white"
+                        : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {platform.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Media Asset</div>
+                {form.asset ? (
+                  <div className="mt-2">
+                    <div className="text-sm font-semibold text-slate-900">{form.asset.originalName}</div>
+                    <div className="text-xs text-slate-500">
+                      Stored on server as {form.asset.assetKind}. Meta will fetch this public URL at publish time.
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 text-sm text-slate-500">No image or video linked yet.</div>
+                )}
+              </div>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200">
+                <ImageUp size={15} />
+                {busyKey === "asset" ? "Uploading..." : "Upload Asset"}
+                <input
+                  type="file"
+                  accept="image/*,video/*,.gif"
+                  className="hidden"
+                  onChange={(event) => void uploadAsset(event.target.files?.[0] || null)}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => void saveDraft()}
+              disabled={busyKey !== null}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-60"
+            >
+              <Save size={15} /> Save Draft
+            </button>
+            <button
+              type="button"
+              onClick={() => void schedulePost()}
+              disabled={busyKey !== null}
+              className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              <Clock3 size={15} /> Schedule
+            </button>
+            <button
+              type="button"
+              onClick={() => void publishNow()}
+              disabled={busyKey !== null}
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              <Send size={15} /> Publish Now
+            </button>
+          </div>
         </div>
-      )}
+
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Settings2 size={16} className="text-slate-500" />
+              <h3 className="text-lg font-semibold text-slate-900">Platform Connections</h3>
+            </div>
+            <div className="mt-4 space-y-5">
+              {PLATFORM_OPTIONS.map((platform) => {
+                const saved = accounts.find((item) => item.platform === platform.id);
+                const draft = accountDrafts[platform.id];
+                return (
+                  <div key={platform.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-900">{platform.label}</div>
+                        <div className="text-xs text-slate-500">
+                          {platform.id === "facebook" && "Use your Facebook Page ID."}
+                          {platform.id === "instagram" && "Use your Instagram professional account ID."}
+                          {platform.id === "google" && "Use accounts/{accountId}/locations/{locationId}."}
+                        </div>
+                      </div>
+                      <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={draft?.active || false}
+                          onChange={(event) =>
+                            setAccountDrafts((current) => ({
+                              ...current,
+                              [platform.id]: {
+                                ...current[platform.id],
+                                active: event.target.checked,
+                              },
+                            }))
+                          }
+                        />
+                        Active
+                      </label>
+                    </div>
+
+                    <div className="mt-3 space-y-3">
+                      <input
+                        type="text"
+                        value={draft?.label || ""}
+                        onChange={(event) =>
+                          setAccountDrafts((current) => ({
+                            ...current,
+                            [platform.id]: {
+                              ...current[platform.id],
+                              label: event.target.value,
+                            },
+                          }))
+                        }
+                        placeholder={`${platform.label} label`}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400"
+                      />
+                      <input
+                        type="text"
+                        value={draft?.externalId || ""}
+                        onChange={(event) =>
+                          setAccountDrafts((current) => ({
+                            ...current,
+                            [platform.id]: {
+                              ...current[platform.id],
+                              externalId: event.target.value,
+                            },
+                          }))
+                        }
+                        placeholder={
+                          platform.id === "google" ? "accounts/123/locations/456" : "External account/page ID"
+                        }
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400"
+                      />
+                      <input
+                        type="password"
+                        value={draft?.accessToken || ""}
+                        onChange={(event) =>
+                          setAccountDrafts((current) => ({
+                            ...current,
+                            [platform.id]: {
+                              ...current[platform.id],
+                              accessToken: event.target.value,
+                            },
+                          }))
+                        }
+                        placeholder={saved?.accessTokenConfigured ? `Token saved: ${saved.tokenPreview}` : "Access token"}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400"
+                      />
+                      <input
+                        type="datetime-local"
+                        value={draft?.tokenExpiresAt || ""}
+                        onChange={(event) =>
+                          setAccountDrafts((current) => ({
+                            ...current,
+                            [platform.id]: {
+                              ...current[platform.id],
+                              tokenExpiresAt: event.target.value,
+                            },
+                          }))
+                        }
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => void saveAccount(platform.id)}
+                      disabled={busyKey !== null}
+                      className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                      <Save size={14} /> {busyKey === `account-${platform.id}` ? "Saving..." : "Save Connection"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+            <h4 className="text-sm font-semibold text-amber-950">Platform notes</h4>
+            <div className="mt-2 space-y-2 text-sm text-amber-900/90">
+              <div>Facebook supports scheduled posting and media uploads to Pages.</div>
+              <div>Instagram requires a public media URL at publish time, so uploads stay on this server first.</div>
+              <div>Google is treated as Google Business Profile local posts in this release.</div>
+              <div>GIFs should usually be exported from Canva as MP4 if you want Instagram support.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-wide text-slate-500">Post Queue</div>
+            <h3 className="text-xl font-semibold text-slate-900">Drafts, scheduled posts, and publish results</h3>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+            >
+              <option value="all">All statuses</option>
+              <option value="draft">Draft</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="publishing">Publishing</option>
+              <option value="published">Published</option>
+              <option value="failed">Failed</option>
+            </select>
+            <select
+              value={platformFilter}
+              onChange={(event) => setPlatformFilter(event.target.value)}
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+            >
+              <option value="all">All platforms</option>
+              {PLATFORM_OPTIONS.map((platform) => (
+                <option key={platform.id} value={platform.id}>
+                  {platform.label}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search drafts"
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
+            />
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          {isLoading ? (
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
+              Loading social scheduler...
+            </div>
+          ) : filteredPosts.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+              No posts match this view yet.
+            </div>
+          ) : (
+            filteredPosts.map((post) => (
+              <div
+                key={post.id}
+                className={`rounded-3xl border p-5 transition-colors ${
+                  form.id === post.id ? "border-slate-900 bg-slate-50" : "border-slate-200 bg-white"
+                }`}
+              >
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+                        {post.status}
+                      </span>
+                      {post.platforms.map((platform) => (
+                        <span
+                          key={`${post.id}-${platform}`}
+                          className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600"
+                        >
+                          {platform}
+                        </span>
+                      ))}
+                    </div>
+                    <div>
+                      <div className="text-lg font-semibold text-slate-900">{post.title || "Untitled post"}</div>
+                      <div className="mt-1 line-clamp-2 max-w-3xl text-sm text-slate-600">{post.caption || "No caption yet."}</div>
+                    </div>
+                    <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+                      <span>Scheduled: {formatWhen(post.scheduledFor)}</span>
+                      <span>Updated: {formatWhen(post.updatedAt)}</span>
+                      {post.asset && <span>Asset: {post.asset.originalName}</span>}
+                    </div>
+                    {post.lastError && (
+                      <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                        {post.lastError}
+                      </div>
+                    )}
+                    {post.jobs.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {post.jobs.slice(0, 4).map((job) => (
+                          <span
+                            key={job.id}
+                            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600"
+                          >
+                            {job.platform}: {job.status}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 xl:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => loadPostIntoComposer(post)}
+                      className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setBusyKey(`publish-${post.id}`);
+                        setError(null);
+                        setMessage(null);
+                        try {
+                          const next = await publishSocialPostNow(post.id, {
+                            platforms: post.platforms,
+                          });
+                          replacePostInState(next);
+                          if (form.id === post.id && next) loadPostIntoComposer(next);
+                          setMessage("Publish started. Check the job badges for live status.");
+                        } catch (err) {
+                          setError(err instanceof Error ? err.message : "Unable to publish post.");
+                        } finally {
+                          setBusyKey(null);
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+                    >
+                      <CheckCircle2 size={14} /> Publish
+                    </button>
+                    {post.status === "scheduled" && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setBusyKey(`cancel-${post.id}`);
+                          try {
+                            const next = await cancelSocialPost(post.id);
+                            replacePostInState(next);
+                            if (form.id === post.id && next) loadPostIntoComposer(next);
+                            setMessage("Scheduled publish cancelled.");
+                            setError(null);
+                          } catch (err) {
+                            setError(err instanceof Error ? err.message : "Unable to cancel schedule.");
+                          } finally {
+                            setBusyKey(null);
+                          }
+                        }}
+                        disabled={busyKey === `cancel-${post.id}`}
+                        className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 disabled:opacity-60"
+                      >
+                        <XCircle size={14} /> Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
     </div>
   );
 };
