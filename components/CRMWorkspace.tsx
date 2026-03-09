@@ -38,7 +38,8 @@ type CustomerDraft = {
   leadId: string | null;
   accountId: string | null;
   queueId: string | null;
-  name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   email: string;
   store: string;
@@ -66,7 +67,8 @@ const buildDraft = (authUser: AuthUser, store: string): CustomerDraft => ({
   leadId: null,
   accountId: null,
   queueId: null,
-  name: "",
+  firstName: "",
+  lastName: "",
   phone: "",
   email: "",
   store,
@@ -88,6 +90,19 @@ const formatTime = (value: string | null) => {
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 };
+
+const splitName = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return { firstName: "", lastName: "" };
+  const parts = trimmed.split(/\s+/);
+  return {
+    firstName: parts[0] || "",
+    lastName: parts.slice(1).join(" "),
+  };
+};
+
+const combineName = (firstName: string, lastName: string) =>
+  `${firstName.trim()} ${lastName.trim()}`.trim();
 
 const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const isManager = authUser.roles.includes("Owner") || authUser.roles.includes("Manager");
@@ -167,7 +182,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
       store: selectedQueueItem.store || current.store,
       owner: selectedQueueItem.rep || current.owner,
       ownerUserId: selectedQueueItem.repUserId || current.ownerUserId,
-      name: selectedQueueItem.currentCustomer || current.name,
+      ...splitName(selectedQueueItem.currentCustomer || combineName(current.firstName, current.lastName)),
       visualDescription: selectedQueueItem.currentCustomerDetails || current.visualDescription,
       notes: current.notes || selectedQueueItem.currentCustomerDetails || "",
     }));
@@ -182,7 +197,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
       leadId: lead.id,
       accountId: null,
       queueId: null,
-      name: lead.name,
+      ...splitName(lead.name),
       phone: lead.phone,
       email: "",
       store: lead.store || selectedStore,
@@ -203,7 +218,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     setDraft((current) => ({
       ...current,
       accountId: customer.id,
-      name: customer.name,
+      ...splitName(customer.name),
       phone: customer.phone || current.phone,
       email: customer.email || current.email,
       store: customer.store || current.store,
@@ -214,7 +229,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const applyOrder = (order: CRMCustomerOrder) => {
     setDraft((current) => ({
       ...current,
-      name: order.customerName || current.name,
+      ...splitName(order.customerName || combineName(current.firstName, current.lastName)),
       phone: order.phone || current.phone,
       store: order.location || current.store,
     }));
@@ -293,7 +308,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
       setDraft((current) => ({
         ...current,
         queueId: row.id,
-        name: row.currentCustomer || current.name,
+        ...splitName(row.currentCustomer || combineName(current.firstName, current.lastName)),
         visualDescription: row.currentCustomerDetails || current.visualDescription,
         store: row.store || current.store,
         owner: row.rep || current.owner,
@@ -334,7 +349,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     setErrorMessage(null);
     try {
       const row = await updateCrmUpsQueueCustomerInApi(draft.queueId, {
-        customer: draft.name.trim(),
+        customer: combineName(draft.firstName, draft.lastName),
         details: draft.visualDescription.trim(),
       });
       setQueue((current) => current.map((entry) => (entry.id === row.id ? row : entry)));
@@ -347,13 +362,14 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   };
 
   const handleSaveLead = async () => {
-    if (!draft.name.trim() || !draft.phone.trim()) {
+    const fullName = combineName(draft.firstName, draft.lastName);
+    if (!fullName || !draft.phone.trim()) {
       setErrorMessage("Customer name and phone are required for a lead.");
       return;
     }
     const payload: CRMLead = {
       id: draft.leadId || `lead-${Date.now()}`,
-      name: draft.name.trim(),
+      name: fullName,
       phone: draft.phone.trim(),
       channel: draft.channel,
       source: draft.source.trim() || "Showroom Walk-In",
@@ -390,7 +406,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   };
 
   const handleSaveAccount = async () => {
-    if (!draft.name.trim() || (!draft.phone.trim() && !draft.email.trim())) {
+    const fullName = combineName(draft.firstName, draft.lastName);
+    if (!fullName || (!draft.phone.trim() && !draft.email.trim())) {
       setErrorMessage("Add a name and either a phone number or email for the account.");
       return;
     }
@@ -399,7 +416,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     setErrorMessage(null);
     try {
       const result = await upsertCrmCustomerAccount({
-        name: draft.name.trim(),
+        name: fullName,
         phone: draft.phone.trim(),
         email: draft.email.trim(),
         store: draft.store,
@@ -602,7 +619,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                                   setDraft((current) => ({
                                     ...current,
                                     queueId: item.id,
-                                    name: item.currentCustomer || current.name,
+                                    ...splitName(item.currentCustomer || combineName(current.firstName, current.lastName)),
                                     visualDescription: item.currentCustomerDetails || current.visualDescription,
                                     owner: item.rep || current.owner,
                                     ownerUserId: item.repUserId || current.ownerUserId,
@@ -688,7 +705,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
               </div>
 
               <div className="mt-3 grid gap-2">
-                <input value={draft.name} onChange={(event) => updateDraft("name", event.target.value)} placeholder="Customer name or quick label" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none" />
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={draft.firstName} onChange={(event) => updateDraft("firstName", event.target.value)} placeholder="First name" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none" />
+                  <input value={draft.lastName} onChange={(event) => updateDraft("lastName", event.target.value)} placeholder="Last name" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none" />
+                </div>
                 <input value={draft.visualDescription} onChange={(event) => updateDraft("visualDescription", event.target.value)} placeholder="Visual description" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none" />
                 <div className="grid grid-cols-2 gap-2">
                   <input value={draft.phone} onChange={(event) => updateDraft("phone", event.target.value)} placeholder="Phone" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none" />
