@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Clock3, Search, Users } from "lucide-react";
+import { Search, Users } from "lucide-react";
 import type {
   AuthUser,
   CRMCustomerAccount,
@@ -395,8 +395,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     }
   };
 
-  const quickLeads = leads.filter((lead) => !["Won", "Lost"].includes(lead.stage)).slice(0, 6);
-
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-4 text-slate-100 sm:px-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-4">
@@ -707,23 +705,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-              <div className="mb-3 flex items-center gap-2">
-                <Clock3 className="h-4 w-4 text-slate-400" />
-                <div className="text-sm font-semibold text-white">Quick Leads</div>
-              </div>
-              <div className="space-y-2">
-                {quickLeads.length ? quickLeads.map((lead) => (
-                  <button key={lead.id} onClick={() => applyLead(lead)} className="flex w-full items-center justify-between rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-left">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-white">{lead.name}</div>
-                      <div className="truncate text-xs text-slate-400">{lead.phone} · {lead.nextAction}</div>
-                    </div>
-                    <div className="ml-3 text-xs text-slate-500">{lead.stage}</div>
-                  </button>
-                )) : <div className="text-sm text-slate-400">No open leads.</div>}
-              </div>
-            </div>
           </div>
         </div>
       </div>
