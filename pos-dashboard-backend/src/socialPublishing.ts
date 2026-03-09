@@ -36,6 +36,7 @@ type SocialPostRow = {
   google_event_start: string | null;
   google_event_end: string | null;
   platforms: string[] | null;
+  platform_account_ids: Record<string, any> | null;
   asset_id: number | null;
   published_at: string | null;
   last_error: string;
@@ -45,6 +46,7 @@ type SocialJobRow = {
   id: number;
   post_id: number;
   platform: SocialPlatform;
+  account_id: number | null;
   status: string;
   scheduled_for: string;
   attempt_count: number;
@@ -327,6 +329,7 @@ export function createSocialPublisher({ pool, publicBaseUrl }: CreatePublisherDe
           j.id,
           j.post_id,
           j.platform,
+          j.account_id,
           j.status,
           j.scheduled_for,
           j.attempt_count,
@@ -358,6 +361,7 @@ export function createSocialPublisher({ pool, publicBaseUrl }: CreatePublisherDe
           p.google_event_start,
           p.google_event_end,
           p.platforms,
+          p.platform_account_ids,
           p.asset_id,
           p.published_at,
           p.last_error
@@ -383,10 +387,14 @@ export function createSocialPublisher({ pool, publicBaseUrl }: CreatePublisherDe
           active,
           config_json
         FROM social_accounts
-        WHERE platform = $1 AND active = TRUE
+        WHERE
+          platform = $1
+          AND active = TRUE
+          AND ($2::bigint IS NULL OR id = $2::bigint)
+        ORDER BY id ASC
         LIMIT 1
       `,
-      [job.platform]
+      [job.platform, job.account_id]
     );
     if (!accountResult.rows.length) {
       throw new Error(`No active ${job.platform} social account is configured.`);

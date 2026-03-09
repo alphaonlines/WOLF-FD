@@ -42,6 +42,7 @@ type ComposerForm = {
   googleEventStartLocal: string;
   googleEventEndLocal: string;
   platforms: SocialPlatform[];
+  platformAccountIds: Partial<Record<SocialPlatform, string>>;
   asset: {
     id: string;
     originalName: string;
@@ -51,6 +52,9 @@ type ComposerForm = {
 };
 
 type AccountDraft = {
+  draftKey: string;
+  id: string | null;
+  platform: SocialPlatform;
   label: string;
   externalId: string;
   accessToken: string;
@@ -78,6 +82,7 @@ const emptyForm = (): ComposerForm => ({
   googleEventStartLocal: "",
   googleEventEndLocal: "",
   platforms: ["facebook", "instagram"],
+  platformAccountIds: {},
   asset: null,
 });
 
@@ -109,26 +114,65 @@ const formatWhen = (iso: string | null | undefined) => {
   });
 };
 
-const makeAccountDrafts = (accounts: SocialAccount[]) => {
-  const result = {} as Record<SocialPlatform, AccountDraft>;
+const defaultAccountIds = (accounts: SocialAccount[]) => {
+  const out: Partial<Record<SocialPlatform, string>> = {};
   for (const platform of PLATFORM_OPTIONS.map((item) => item.id)) {
-    const account = accounts.find((item) => item.platform === platform);
-    result[platform] = {
-      label: account?.label || "",
-      externalId: account?.externalId || "",
+    const preferred = accounts.find((item) => item.platform === platform && item.active) || accounts.find((item) => item.platform === platform);
+    if (preferred?.id) out[platform] = preferred.id;
+  }
+  return out;
+};
+
+const makeAccountDrafts = (accounts: SocialAccount[]): AccountDraft[] => {
+  const drafts = accounts.map((account) => ({
+    draftKey: account.id,
+    id: account.id,
+    platform: account.platform,
+    label: account.label || "",
+    externalId: account.externalId || "",
+    accessToken: "",
+    refreshToken: "",
+    tokenExpiresAt: toLocalInputValue(account.tokenExpiresAt || null),
+    active: Boolean(account.active),
+  }));
+
+  for (const platform of ["facebook", "instagram"] as SocialPlatform[]) {
+    if (!drafts.some((draft) => draft.platform === platform)) {
+      drafts.push({
+        draftKey: `new-${platform}`,
+        id: null,
+        platform,
+        label: "",
+        externalId: "",
+        accessToken: "",
+        refreshToken: "",
+        tokenExpiresAt: "",
+        active: false,
+      });
+    }
+  }
+
+  if (!drafts.some((draft) => draft.platform === "google")) {
+    drafts.push({
+      draftKey: "new-google-1",
+      id: null,
+      platform: "google",
+      label: "",
+      externalId: "",
       accessToken: "",
       refreshToken: "",
-      tokenExpiresAt: toLocalInputValue(account?.tokenExpiresAt || null),
-      active: Boolean(account?.active),
-    };
+      tokenExpiresAt: "",
+      active: false,
+    });
   }
-  return result;
+
+  return drafts;
 };
 
 const WorkAdvertising: React.FC = () => {
   const [posts, setPosts] = useState<SocialPostRecord[]>([]);
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
-  const [accountDrafts, setAccountDrafts] = useState<Record<SocialPlatform, AccountDraft>>(() =>
+  const [accountDrafts, setAccountDrafts] = useState<AccountDraft[]>(() =>
     makeAccountDrafts([])
   );
   const [form, setForm] = useState<ComposerForm>(() => emptyForm());
@@ -149,6 +193,13 @@ const WorkAdvertising: React.FC = () => {
         setPosts(nextPosts);
         setAccounts(nextAccounts);
         setAccountDrafts(makeAccountDrafts(nextAccounts));
+        setForm((current) => ({
+          ...current,
+          platformAccountIds: {
+            ...defaultAccountIds(nextAccounts),
+            ...current.platformAccountIds,
+          },
+        }));
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load social workspace.");
@@ -179,6 +230,26 @@ const WorkAdvertising: React.FC = () => {
       failed: posts.filter((post) => post.status === "failed").length,
     };
   }, [posts]);
+
+  const accountsByPlatform = useMemo(
+    () => ({
+      facebook: accounts.filter((item) => item.platform === "facebook"),
+      instagram: accounts.filter((item) => item.platform === "instagram"),
+      google: accounts.filter((item) => item.platform === "google"),
+    }),
+    [accounts]
+  );
+
+  const accountLabelById = useMemo(
+    () =>
+      new Map(
+        accounts.map((account) => [
+          account.id,
+          account.label || account.externalId || `${account.platform} connection`,
+        ])
+      ),
+    [accounts]
+  );
 
   const setField = <K extends keyof ComposerForm>(key: K, value: ComposerForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -213,6 +284,7 @@ const WorkAdvertising: React.FC = () => {
       googleEventStartLocal: toLocalInputValue(post.googleEventStart),
       googleEventEndLocal: toLocalInputValue(post.googleEventEnd),
       platforms: post.platforms.length ? post.platforms : ["facebook"],
+      platformAccountIds: post.platformAccountIds || defaultAccountIds(accounts),
       asset: post.asset
         ? {
             id: post.asset.id,
@@ -225,7 +297,10 @@ const WorkAdvertising: React.FC = () => {
   };
 
   const resetComposer = () => {
-    setForm(emptyForm());
+    setForm({
+      ...emptyForm(),
+      platformAccountIds: defaultAccountIds(accounts),
+    });
     setMessage(null);
     setError(null);
   };
@@ -248,6 +323,7 @@ const WorkAdvertising: React.FC = () => {
         googleEventStart: fromLocalInputValue(form.googleEventStartLocal),
         googleEventEnd: fromLocalInputValue(form.googleEventEndLocal),
         platforms: form.platforms,
+        platformAccountIds: form.platformAccountIds,
         assetId: form.asset?.id || null,
       };
       const next = form.id ? await updateSocialPost(form.id, payload) : await createSocialPost(payload);
@@ -281,6 +357,7 @@ const WorkAdvertising: React.FC = () => {
         googleEventStart: fromLocalInputValue(form.googleEventStartLocal),
         googleEventEnd: fromLocalInputValue(form.googleEventEndLocal),
         platforms: form.platforms,
+        platformAccountIds: form.platformAccountIds,
         assetId: form.asset?.id || null,
       };
       const draft = form.id ? await updateSocialPost(form.id, basePayload) : await createSocialPost(basePayload);
@@ -288,6 +365,7 @@ const WorkAdvertising: React.FC = () => {
       const next = await scheduleSocialPost(draft.id, {
         scheduledFor,
         platforms: form.platforms,
+        platformAccountIds: form.platformAccountIds,
       });
       replacePostInState(next);
       if (next) loadPostIntoComposer(next);
@@ -317,12 +395,14 @@ const WorkAdvertising: React.FC = () => {
         googleEventStart: fromLocalInputValue(form.googleEventStartLocal),
         googleEventEnd: fromLocalInputValue(form.googleEventEndLocal),
         platforms: form.platforms,
+        platformAccountIds: form.platformAccountIds,
         assetId: form.asset?.id || null,
       };
       const draft = form.id ? await updateSocialPost(form.id, basePayload) : await createSocialPost(basePayload);
       if (!draft) throw new Error("Unable to stage post for publishing.");
       const next = await publishSocialPostNow(draft.id, {
         platforms: form.platforms,
+        platformAccountIds: form.platformAccountIds,
       });
       replacePostInState(next);
       if (next) loadPostIntoComposer(next);
@@ -359,13 +439,39 @@ const WorkAdvertising: React.FC = () => {
     }
   };
 
-  const saveAccount = async (platform: SocialPlatform) => {
-    setBusyKey(`account-${platform}`);
+  const updateAccountDraft = (draftKey: string, patch: Partial<AccountDraft>) => {
+    setAccountDrafts((current) =>
+      current.map((draft) => (draft.draftKey === draftKey ? { ...draft, ...patch } : draft))
+    );
+  };
+
+  const addAccountDraft = (platform: SocialPlatform) => {
+    setAccountDrafts((current) => [
+      ...current,
+      {
+        draftKey: `new-${platform}-${Date.now()}`,
+        id: null,
+        platform,
+        label: "",
+        externalId: "",
+        accessToken: "",
+        refreshToken: "",
+        tokenExpiresAt: "",
+        active: false,
+      },
+    ]);
+  };
+
+  const saveAccount = async (draftKey: string) => {
+    const draft = accountDrafts.find((item) => item.draftKey === draftKey);
+    if (!draft) return;
+    setBusyKey(`account-${draftKey}`);
     setError(null);
     setMessage(null);
     try {
-      const draft = accountDrafts[platform];
-      const next = await upsertSocialAccount(platform, {
+      const next = await upsertSocialAccount({
+        id: draft.id,
+        platform: draft.platform,
         label: draft.label,
         externalId: draft.externalId,
         accessToken: draft.accessToken,
@@ -374,26 +480,42 @@ const WorkAdvertising: React.FC = () => {
         active: draft.active,
         configJson: {},
       });
-      if (!next) throw new Error(`Unable to save ${platform} account settings.`);
+      if (!next) throw new Error(`Unable to save ${draft.platform} account settings.`);
       setAccounts((current) => {
-        const exists = current.some((item) => item.platform === platform);
-        return exists ? current.map((item) => (item.platform === platform ? next : item)) : [...current, next];
+        const exists = current.some((item) => item.id === next.id);
+        const updated = exists ? current.map((item) => (item.id === next.id ? next : item)) : [...current, next];
+        return [...updated].sort((a, b) => a.platform.localeCompare(b.platform) || a.label.localeCompare(b.label));
       });
-      setAccountDrafts((current) => ({
+      setAccountDrafts((current) =>
+        current.map((item) =>
+          item.draftKey === draftKey
+            ? {
+                ...item,
+                draftKey: next.id,
+                id: next.id,
+                platform: next.platform,
+                label: next.label,
+                externalId: next.externalId,
+                accessToken: "",
+                refreshToken: "",
+                tokenExpiresAt: toLocalInputValue(next.tokenExpiresAt),
+                active: next.active,
+              }
+            : item
+        )
+      );
+      setForm((current) => ({
         ...current,
-        [platform]: {
-          ...current[platform],
-          accessToken: "",
-          refreshToken: "",
-          label: next.label,
-          externalId: next.externalId,
-          tokenExpiresAt: toLocalInputValue(next.tokenExpiresAt),
-          active: next.active,
+        platformAccountIds: {
+          ...current.platformAccountIds,
+          ...(current.platforms.includes(next.platform) && !current.platformAccountIds[next.platform]
+            ? { [next.platform]: next.id }
+            : {}),
         },
       }));
-      setMessage(`${platform[0].toUpperCase()}${platform.slice(1)} connection saved.`);
+      setMessage(`${draft.platform[0].toUpperCase()}${draft.platform.slice(1)} connection saved.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Unable to save ${platform} account.`);
+      setError(err instanceof Error ? err.message : `Unable to save ${draft.platform} account.`);
     } finally {
       setBusyKey(null);
     }
@@ -405,9 +527,17 @@ const WorkAdvertising: React.FC = () => {
       const nextPlatforms = exists
         ? current.platforms.filter((item) => item !== platform)
         : [...current.platforms, platform];
+      const nextPlatformAccountIds = { ...current.platformAccountIds };
+      if (!exists && !nextPlatformAccountIds[platform]) {
+        const preferred =
+          accounts.find((item) => item.platform === platform && item.active) ||
+          accounts.find((item) => item.platform === platform);
+        if (preferred?.id) nextPlatformAccountIds[platform] = preferred.id;
+      }
       return {
         ...current,
         platforms: nextPlatforms,
+        platformAccountIds: nextPlatformAccountIds,
       };
     });
   };
@@ -641,6 +771,53 @@ const WorkAdvertising: React.FC = () => {
             </div>
           </div>
 
+          {!!form.platforms.length && (
+            <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Platform Destinations</div>
+              <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {form.platforms.map((platformId) => {
+                  const platform = PLATFORM_OPTIONS.find((item) => item.id === platformId);
+                  const options = accountsByPlatform[platformId];
+                  return (
+                    <label key={platformId} className="block">
+                      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        {platform?.label || platformId}
+                      </div>
+                      <select
+                        value={form.platformAccountIds[platformId] || ""}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            platformAccountIds: {
+                              ...current.platformAccountIds,
+                              [platformId]: event.target.value,
+                            },
+                          }))
+                        }
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                      >
+                        <option value="">
+                          {platformId === "google" ? "Choose Google account / location" : `Choose ${platform?.label || platformId} account`}
+                        </option>
+                        {options.map((account) => (
+                          <option key={account.id} value={account.id}>
+                            {account.label || account.externalId || `${platform?.label || platformId} connection`}
+                            {account.active ? "" : " (inactive)"}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {platformId === "google"
+                          ? "Pick the exact Google Business Profile account and location for this post."
+                          : "Pick which saved connection should publish this post."}
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="mt-5 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
@@ -705,109 +882,103 @@ const WorkAdvertising: React.FC = () => {
             </div>
             <div className="mt-4 space-y-5">
               {PLATFORM_OPTIONS.map((platform) => {
-                const saved = accounts.find((item) => item.platform === platform.id);
-                const draft = accountDrafts[platform.id];
+                const drafts = accountDrafts.filter((item) => item.platform === platform.id);
                 return (
                   <div key={platform.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-3">
                       <div>
                         <div className="text-sm font-semibold text-slate-900">{platform.label}</div>
                         <div className="text-xs text-slate-500">
                           {platform.id === "facebook" && "Use your Facebook Page ID."}
                           {platform.id === "instagram" && "Use your Instagram professional account ID."}
-                          {platform.id === "google" && "Use accounts/{accountId}/locations/{locationId}."}
+                          {platform.id === "google" && "Add one or more accounts/{accountId}/locations/{locationId} destinations."}
                         </div>
                       </div>
-                      <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
-                        <input
-                          type="checkbox"
-                          checked={draft?.active || false}
-                          onChange={(event) =>
-                            setAccountDrafts((current) => ({
-                              ...current,
-                              [platform.id]: {
-                                ...current[platform.id],
-                                active: event.target.checked,
-                              },
-                            }))
-                          }
-                        />
-                        Active
-                      </label>
+                      <button
+                        type="button"
+                        onClick={() => addAccountDraft(platform.id)}
+                        className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+                      >
+                        Add {platform.label}
+                      </button>
                     </div>
 
-                    <div className="mt-3 space-y-3">
-                      <input
-                        type="text"
-                        value={draft?.label || ""}
-                        onChange={(event) =>
-                          setAccountDrafts((current) => ({
-                            ...current,
-                            [platform.id]: {
-                              ...current[platform.id],
-                              label: event.target.value,
-                            },
-                          }))
-                        }
-                        placeholder={`${platform.label} label`}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400"
-                      />
-                      <input
-                        type="text"
-                        value={draft?.externalId || ""}
-                        onChange={(event) =>
-                          setAccountDrafts((current) => ({
-                            ...current,
-                            [platform.id]: {
-                              ...current[platform.id],
-                              externalId: event.target.value,
-                            },
-                          }))
-                        }
-                        placeholder={
-                          platform.id === "google" ? "accounts/123/locations/456" : "External account/page ID"
-                        }
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400"
-                      />
-                      <input
-                        type="password"
-                        value={draft?.accessToken || ""}
-                        onChange={(event) =>
-                          setAccountDrafts((current) => ({
-                            ...current,
-                            [platform.id]: {
-                              ...current[platform.id],
-                              accessToken: event.target.value,
-                            },
-                          }))
-                        }
-                        placeholder={saved?.accessTokenConfigured ? `Token saved: ${saved.tokenPreview}` : "Access token"}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400"
-                      />
-                      <input
-                        type="datetime-local"
-                        value={draft?.tokenExpiresAt || ""}
-                        onChange={(event) =>
-                          setAccountDrafts((current) => ({
-                            ...current,
-                            [platform.id]: {
-                              ...current[platform.id],
-                              tokenExpiresAt: event.target.value,
-                            },
-                          }))
-                        }
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400"
-                      />
-                    </div>
+                    <div className="mt-4 space-y-4">
+                      {drafts.map((draft, index) => {
+                        const saved = draft.id ? accounts.find((item) => item.id === draft.id) || null : null;
+                        const buttonLabel =
+                          busyKey === `account-${draft.draftKey}`
+                            ? "Saving..."
+                            : draft.id
+                              ? "Save Changes"
+                              : "Save Connection";
+                        return (
+                          <div key={draft.draftKey} className="rounded-3xl border border-slate-200 bg-white p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                                {platform.label} {index + 1}
+                              </div>
+                              <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
+                                <input
+                                  type="checkbox"
+                                  checked={draft.active}
+                                  onChange={(event) => updateAccountDraft(draft.draftKey, { active: event.target.checked })}
+                                />
+                                Active
+                              </label>
+                            </div>
 
-                    <button
-                      type="button"
-                      onClick={() => void saveAccount(platform.id)}
-                      disabled={busyKey !== null}
-                      className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                    >
-                      <Save size={14} /> {busyKey === `account-${platform.id}` ? "Saving..." : "Save Connection"}
-                    </button>
+                            <div className="mt-3 space-y-3">
+                              <input
+                                type="text"
+                                value={draft.label}
+                                onChange={(event) => updateAccountDraft(draft.draftKey, { label: event.target.value })}
+                                placeholder={`${platform.label} label`}
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
+                              />
+                              <input
+                                type="text"
+                                value={draft.externalId}
+                                onChange={(event) => updateAccountDraft(draft.draftKey, { externalId: event.target.value })}
+                                placeholder={
+                                  platform.id === "google" ? "accounts/123/locations/456" : "External account/page ID"
+                                }
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
+                              />
+                              <input
+                                type="password"
+                                value={draft.accessToken}
+                                onChange={(event) => updateAccountDraft(draft.draftKey, { accessToken: event.target.value })}
+                                placeholder={saved?.accessTokenConfigured ? `Token saved: ${saved.tokenPreview}` : "Access token"}
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
+                              />
+                              <input
+                                type="password"
+                                value={draft.refreshToken}
+                                onChange={(event) => updateAccountDraft(draft.draftKey, { refreshToken: event.target.value })}
+                                placeholder={saved?.refreshTokenConfigured ? "Refresh token saved" : "Refresh token (optional)"}
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
+                              />
+                              <input
+                                type="datetime-local"
+                                value={draft.tokenExpiresAt}
+                                onChange={(event) => updateAccountDraft(draft.draftKey, { tokenExpiresAt: event.target.value })}
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => void saveAccount(draft.draftKey)}
+                              disabled={busyKey !== null}
+                              className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                            >
+                              <Save size={14} /> {buttonLabel}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })}
@@ -900,6 +1071,21 @@ const WorkAdvertising: React.FC = () => {
                         </span>
                       ))}
                     </div>
+                    <div className="flex flex-wrap gap-2">
+                      {post.platforms.map((platform) => {
+                        const accountId = post.platformAccountIds?.[platform];
+                        if (!accountId) return null;
+                        return (
+                          <span
+                            key={`${post.id}-${platform}-account`}
+                            className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
+                          >
+                            {(PLATFORM_OPTIONS.find((item) => item.id === platform)?.label || platform)}:{" "}
+                            {accountLabelById.get(accountId) || `Account ${accountId}`}
+                          </span>
+                        );
+                      })}
+                    </div>
                     <div>
                       <div className="text-lg font-semibold text-slate-900">{post.title || "Untitled post"}</div>
                       <div className="mt-1 line-clamp-2 max-w-3xl text-sm text-slate-600">{post.caption || "No caption yet."}</div>
@@ -945,6 +1131,7 @@ const WorkAdvertising: React.FC = () => {
                         try {
                           const next = await publishSocialPostNow(post.id, {
                             platforms: post.platforms,
+                            platformAccountIds: post.platformAccountIds,
                           });
                           replacePostInState(next);
                           if (form.id === post.id && next) loadPostIntoComposer(next);

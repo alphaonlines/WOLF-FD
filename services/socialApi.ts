@@ -32,6 +32,7 @@ export type SocialPublishJob = {
   id: string;
   postId: string;
   platform: SocialPlatform;
+  accountId: string | null;
   status: string;
   scheduledFor: string;
   attemptCount: number;
@@ -57,6 +58,7 @@ export type SocialPostRecord = {
   googleEventStart: string | null;
   googleEventEnd: string | null;
   platforms: SocialPlatform[];
+  platformAccountIds: Partial<Record<SocialPlatform, string>>;
   asset: SocialAsset | null;
   publishedAt: string | null;
   lastError: string;
@@ -80,6 +82,7 @@ export type SocialPostPayload = {
   googleEventStart?: string | null;
   googleEventEnd?: string | null;
   platforms?: SocialPlatform[];
+  platformAccountIds?: Partial<Record<SocialPlatform, string>>;
   assetId?: string | null;
 };
 
@@ -115,7 +118,9 @@ export async function fetchSocialAccounts() {
   return Array.isArray(json?.rows) ? (json.rows as SocialAccount[]) : [];
 }
 
-export async function upsertSocialAccount(platform: SocialPlatform, payload: {
+export async function upsertSocialAccount(payload: {
+  id?: string | null;
+  platform: SocialPlatform;
   label: string;
   externalId: string;
   accessToken?: string;
@@ -124,7 +129,7 @@ export async function upsertSocialAccount(platform: SocialPlatform, payload: {
   active: boolean;
   configJson?: Record<string, any>;
 }) {
-  const json = await fetchJson(`/api/social/accounts/${platform}`, {
+  const json = await fetchJson(`/api/social/accounts`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -167,7 +172,11 @@ export async function updateSocialPost(id: string, payload: Partial<SocialPostPa
   return (json?.row || null) as SocialPostRecord | null;
 }
 
-export async function scheduleSocialPost(id: string, payload: { scheduledFor: string; platforms: SocialPlatform[] }) {
+export async function scheduleSocialPost(id: string, payload: {
+  scheduledFor: string;
+  platforms: SocialPlatform[];
+  platformAccountIds?: Partial<Record<SocialPlatform, string>>;
+}) {
   const json = await fetchJson(`/api/social/posts/${encodeURIComponent(id)}/schedule`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -176,7 +185,10 @@ export async function scheduleSocialPost(id: string, payload: { scheduledFor: st
   return (json?.row || null) as SocialPostRecord | null;
 }
 
-export async function publishSocialPostNow(id: string, payload: { platforms: SocialPlatform[] }) {
+export async function publishSocialPostNow(id: string, payload: {
+  platforms: SocialPlatform[];
+  platformAccountIds?: Partial<Record<SocialPlatform, string>>;
+}) {
   const json = await fetchJson(`/api/social/posts/${encodeURIComponent(id)}/publish-now`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

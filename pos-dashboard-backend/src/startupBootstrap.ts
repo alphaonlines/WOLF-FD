@@ -390,6 +390,7 @@ async function ensureSocialSchema(pool: Pool) {
   await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS config_json JSONB;`);
   await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE social_accounts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_accounts DROP CONSTRAINT IF EXISTS social_accounts_platform_key;`);
   await pool.query(`ALTER TABLE social_accounts ALTER COLUMN label SET DEFAULT '';`);
   await pool.query(`ALTER TABLE social_accounts ALTER COLUMN external_id SET DEFAULT '';`);
   await pool.query(`ALTER TABLE social_accounts ALTER COLUMN access_token SET DEFAULT '';`);
@@ -398,14 +399,22 @@ async function ensureSocialSchema(pool: Pool) {
   await pool.query(`ALTER TABLE social_accounts ALTER COLUMN config_json SET DEFAULT '{}'::jsonb;`);
   await pool.query(`ALTER TABLE social_accounts ALTER COLUMN created_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE social_accounts ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_social_accounts_platform ON social_accounts(platform, active, updated_at DESC);`);
 
   await pool.query(`
     INSERT INTO social_accounts (platform, label, active, created_at, updated_at)
-    VALUES
-      ('facebook', 'Facebook Page', FALSE, now(), now()),
-      ('instagram', 'Instagram Professional', FALSE, now(), now()),
-      ('google', 'Google Business Profile', FALSE, now(), now())
-    ON CONFLICT (platform) DO NOTHING;
+    SELECT 'facebook', 'Facebook Page', FALSE, now(), now()
+    WHERE NOT EXISTS (SELECT 1 FROM social_accounts WHERE platform = 'facebook');
+  `);
+  await pool.query(`
+    INSERT INTO social_accounts (platform, label, active, created_at, updated_at)
+    SELECT 'instagram', 'Instagram Professional', FALSE, now(), now()
+    WHERE NOT EXISTS (SELECT 1 FROM social_accounts WHERE platform = 'instagram');
+  `);
+  await pool.query(`
+    INSERT INTO social_accounts (platform, label, active, created_at, updated_at)
+    SELECT 'google', 'Google Business Profile', FALSE, now(), now()
+    WHERE NOT EXISTS (SELECT 1 FROM social_accounts WHERE platform = 'google');
   `);
 
   await pool.query(`
@@ -444,6 +453,7 @@ async function ensureSocialSchema(pool: Pool) {
   await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS google_event_start TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS google_event_end TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS platforms TEXT[];`);
+  await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS platform_account_ids JSONB;`);
   await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS asset_id BIGINT;`);
   await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS created_by_user_id BIGINT;`);
   await pool.query(`ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS updated_by_user_id BIGINT;`);
@@ -460,6 +470,7 @@ async function ensureSocialSchema(pool: Pool) {
   await pool.query(`ALTER TABLE social_posts ALTER COLUMN google_topic_type SET DEFAULT 'STANDARD';`);
   await pool.query(`ALTER TABLE social_posts ALTER COLUMN google_event_title SET DEFAULT '';`);
   await pool.query(`ALTER TABLE social_posts ALTER COLUMN platforms SET DEFAULT '{}'::text[];`);
+  await pool.query(`ALTER TABLE social_posts ALTER COLUMN platform_account_ids SET DEFAULT '{}'::jsonb;`);
   await pool.query(`ALTER TABLE social_posts ALTER COLUMN last_error SET DEFAULT '';`);
   await pool.query(`ALTER TABLE social_posts ALTER COLUMN created_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE social_posts ALTER COLUMN updated_at SET DEFAULT now();`);
@@ -487,6 +498,7 @@ async function ensureSocialSchema(pool: Pool) {
   await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS platform TEXT;`);
   await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS status TEXT;`);
   await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS scheduled_for TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS account_id BIGINT;`);
   await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS attempt_count INTEGER;`);
   await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS provider_post_id TEXT;`);
   await pool.query(`ALTER TABLE social_publish_jobs ADD COLUMN IF NOT EXISTS provider_response JSONB;`);
@@ -503,6 +515,7 @@ async function ensureSocialSchema(pool: Pool) {
   await pool.query(`ALTER TABLE social_publish_jobs ALTER COLUMN updated_at SET DEFAULT now();`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_social_jobs_due ON social_publish_jobs(status, scheduled_for ASC);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_social_jobs_post_id ON social_publish_jobs(post_id, created_at DESC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_social_jobs_account_id ON social_publish_jobs(account_id);`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS social_publish_logs (

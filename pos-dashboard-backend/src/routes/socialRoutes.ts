@@ -128,6 +128,7 @@ function mapJobRow(row: any) {
     id: String(row.id ?? ""),
     postId: String(row.post_id ?? ""),
     platform: String(row.platform ?? ""),
+    accountId: row.account_id == null ? null : String(row.account_id),
     status: String(row.status ?? ""),
     scheduledFor: row.scheduled_for,
     attemptCount: Number(row.attempt_count ?? 0),
@@ -155,6 +156,8 @@ function mapPostRow(row: any, asset: any, jobs: any[]) {
     googleEventStart: row.google_event_start || null,
     googleEventEnd: row.google_event_end || null,
     platforms: Array.isArray(row.platforms) ? row.platforms.map((value: any) => String(value)) : [],
+    platformAccountIds:
+      row.platform_account_ids && typeof row.platform_account_ids === "object" ? row.platform_account_ids : {},
     asset,
     publishedAt: row.published_at || null,
     lastError: String(row.last_error ?? ""),
@@ -196,6 +199,7 @@ async function loadPosts(pool: Pool, publicBaseUrl: string, filters?: { status?:
       p.google_event_start,
       p.google_event_end,
       p.platforms,
+      p.platform_account_ids,
       p.asset_id,
       p.published_at,
       p.last_error,
@@ -236,6 +240,7 @@ async function loadPosts(pool: Pool, publicBaseUrl: string, filters?: { status?:
           id,
           post_id,
           platform,
+          account_id,
           status,
           scheduled_for,
           attempt_count,
@@ -264,7 +269,26 @@ async function loadPosts(pool: Pool, publicBaseUrl: string, filters?: { status?:
   );
 }
 
-async function syncJobsForPost(pool: Pool, postId: number, platforms: string[], scheduledForIso: string) {
+function normalizePlatformAccountIds(raw: any) {
+  const out: Record<string, string> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [key, value] of Object.entries(raw as Record<string, any>)) {
+    const platform = String(key || "").trim().toLowerCase();
+    const accountId = String(value || "").trim();
+    if (!SOCIAL_PLATFORMS.includes(platform as any)) continue;
+    if (!accountId) continue;
+    out[platform] = accountId;
+  }
+  return out;
+}
+
+async function syncJobsForPost(
+  pool: Pool,
+  postId: number,
+  platforms: string[],
+  scheduledForIso: string,
+  platformAccountIds: Record<string, string>
+) {
   await pool.query(
     `
       UPDATE social_publish_jobs
@@ -278,11 +302,16 @@ async function syncJobsForPost(pool: Pool, postId: number, platforms: string[], 
     await pool.query(
       `
         INSERT INTO social_publish_jobs (
-          post_id, platform, status, scheduled_for, attempt_count, created_at, updated_at
+          post_id, platform, account_id, status, scheduled_for, attempt_count, created_at, updated_at
         )
-        VALUES ($1, $2, 'scheduled', $3::timestamptz, 0, now(), now())
+        VALUES ($1, $2, $3::bigint, 'scheduled', $4::timestamptz, 0, now(), now())
       `,
-      [postId, platform, scheduledForIso]
+      [
+        postId,
+        platform,
+        platformAccountIds[platform] ? Number(platformAccountIds[platform]) : null,
+        scheduledForIso,
+      ]
     );
   }
 }
@@ -336,17 +365,18 @@ export function registerSocialRoutes({
           created_at,
           updated_at
         FROM social_accounts
-        ORDER BY platform ASC
+        ORDER BY platform ASC, active DESC, updated_at DESC, id DESC
       `
     );
     res.json({ rows: result.rows.map(mapAccountRow) });
   });
 
-  app.post("/api/social/accounts/:platform", async (req, res) => {
+  app.post("/api/social/accounts", async (req, res) => {
     const user = authUserFromReq(req);
     if (!user) return res.status(401).json({ error: "unauthorized" });
 
-    const platform = String(req.params.platform || "").trim().toLowerCase();
+    const accountId = req.body?.id ? Number(req.body.id) : null;
+    const platform = String(req.body?.platform || "").trim().toLowerCase();
     if (!SOCIAL_PLATFORMS.includes(platform as any)) return res.status(400).json({ error: "invalid platform" });
 
     const label = typeof req.body?.label === "string" ? req.body.label.trim() : "";
@@ -357,27 +387,41 @@ export function registerSocialRoutes({
     const active = Boolean(req.body?.active);
     const configJson = req.body?.configJson && typeof req.body.configJson === "object" ? req.body.configJson : {};
 
-    const result = await pool.query(
-      `
-        INSERT INTO social_accounts (
-          platform, label, external_id, access_token, refresh_token, token_expires_at, active, config_json, created_at, updated_at
-        )
-        VALUES ($1, $2, $3, $4, $5, $6::timestamptz, $7, $8::jsonb, now(), now())
-        ON CONFLICT (platform) DO UPDATE
-        SET
-          label = EXCLUDED.label,
-          external_id = EXCLUDED.external_id,
-          access_token = CASE WHEN EXCLUDED.access_token <> '' THEN EXCLUDED.access_token ELSE social_accounts.access_token END,
-          refresh_token = CASE WHEN EXCLUDED.refresh_token <> '' THEN EXCLUDED.refresh_token ELSE social_accounts.refresh_token END,
-          token_expires_at = EXCLUDED.token_expires_at,
-          active = EXCLUDED.active,
-          config_json = EXCLUDED.config_json,
-          updated_at = now()
-        RETURNING
-          id, platform, label, external_id, access_token, refresh_token, token_expires_at, active, config_json, created_at, updated_at
-      `,
-      [platform, label, externalId, accessToken, refreshToken, tokenExpiresAt, active, JSON.stringify(configJson)]
-    );
+    let result;
+    if (accountId && Number.isFinite(accountId)) {
+      result = await pool.query(
+        `
+          UPDATE social_accounts
+          SET
+            platform = $2,
+            label = $3,
+            external_id = $4,
+            access_token = CASE WHEN $5 <> '' THEN $5 ELSE access_token END,
+            refresh_token = CASE WHEN $6 <> '' THEN $6 ELSE refresh_token END,
+            token_expires_at = $7::timestamptz,
+            active = $8,
+            config_json = $9::jsonb,
+            updated_at = now()
+          WHERE id = $1
+          RETURNING
+            id, platform, label, external_id, access_token, refresh_token, token_expires_at, active, config_json, created_at, updated_at
+        `,
+        [accountId, platform, label, externalId, accessToken, refreshToken, tokenExpiresAt, active, JSON.stringify(configJson)]
+      );
+      if (!result.rows.length) return res.status(404).json({ error: "account not found" });
+    } else {
+      result = await pool.query(
+        `
+          INSERT INTO social_accounts (
+            platform, label, external_id, access_token, refresh_token, token_expires_at, active, config_json, created_at, updated_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6::timestamptz, $7, $8::jsonb, now(), now())
+          RETURNING
+            id, platform, label, external_id, access_token, refresh_token, token_expires_at, active, config_json, created_at, updated_at
+        `,
+        [platform, label, externalId, accessToken, refreshToken, tokenExpiresAt, active, JSON.stringify(configJson)]
+      );
+    }
     res.json({ row: mapAccountRow(result.rows[0]) });
   });
 
@@ -435,6 +479,7 @@ export function registerSocialRoutes({
     const linkUrl = typeof req.body?.linkUrl === "string" ? req.body.linkUrl.trim() : "";
     const ctaLabel = normalizeGoogleCta(req.body?.ctaLabel);
     const platforms = normalizePlatforms(req.body?.platforms);
+    const platformAccountIds = normalizePlatformAccountIds(req.body?.platformAccountIds);
     const assetId = req.body?.assetId ? Number(req.body.assetId) : null;
     const googleTopicType = normalizeGoogleTopicType(req.body?.googleTopicType);
     const googleEventTitle = typeof req.body?.googleEventTitle === "string" ? req.body.googleEventTitle.trim() : "";
@@ -461,6 +506,7 @@ export function registerSocialRoutes({
           google_event_start,
           google_event_end,
           platforms,
+          platform_account_ids,
           asset_id,
           created_by_user_id,
           updated_by_user_id,
@@ -468,7 +514,7 @@ export function registerSocialRoutes({
           updated_at
         )
         VALUES (
-          $1, $2, $3, $4::timestamptz, $5, $6, $7, $8, $9, $10::timestamptz, $11::timestamptz, $12::text[], $13, $14, $14, now(), now()
+          $1, $2, $3, $4::timestamptz, $5, $6, $7, $8, $9, $10::timestamptz, $11::timestamptz, $12::text[], $13::jsonb, $14, $15, $15, now(), now()
         )
         RETURNING id
       `,
@@ -485,13 +531,14 @@ export function registerSocialRoutes({
         googleEventStart,
         googleEventEnd,
         platforms,
+        JSON.stringify(platformAccountIds),
         assetId && Number.isFinite(assetId) ? assetId : null,
         Number(user.id),
       ]
     );
     const postId = Number(result.rows[0].id);
     if (status === "scheduled" && scheduledFor && platforms.length) {
-      await syncJobsForPost(pool, postId, platforms, scheduledFor);
+      await syncJobsForPost(pool, postId, platforms, scheduledFor, platformAccountIds);
     }
     const rows = await loadPosts(pool, publicBaseUrl, {});
     const post = rows.find((item: any) => Number(item.id) === postId);
@@ -523,6 +570,10 @@ export function registerSocialRoutes({
     if (req.body?.googleEventStart !== undefined) setField("google_event_start", parseOptionalIso(req.body.googleEventStart));
     if (req.body?.googleEventEnd !== undefined) setField("google_event_end", parseOptionalIso(req.body.googleEventEnd));
     if (req.body?.platforms !== undefined) setField("platforms", normalizePlatforms(req.body.platforms));
+    if (req.body?.platformAccountIds !== undefined) {
+      params.push(JSON.stringify(normalizePlatformAccountIds(req.body.platformAccountIds)));
+      fields.push(`platform_account_ids = $${params.length}::jsonb`);
+    }
     if (req.body?.assetId !== undefined) {
       const assetId = req.body.assetId ? Number(req.body.assetId) : null;
       setField("asset_id", assetId && Number.isFinite(assetId) ? assetId : null);
@@ -556,6 +607,7 @@ export function registerSocialRoutes({
 
     const scheduledFor = parseOptionalIso(req.body?.scheduledFor);
     const platforms = normalizePlatforms(req.body?.platforms);
+    const platformAccountIds = normalizePlatformAccountIds(req.body?.platformAccountIds);
     if (!scheduledFor || !platforms.length) {
       return res.status(400).json({ error: "scheduledFor and at least one platform are required" });
     }
@@ -563,12 +615,12 @@ export function registerSocialRoutes({
     await pool.query(
       `
         UPDATE social_posts
-        SET status = 'scheduled', scheduled_for = $2::timestamptz, platforms = $3::text[], last_error = '', updated_by_user_id = $4, updated_at = now()
+        SET status = 'scheduled', scheduled_for = $2::timestamptz, platforms = $3::text[], platform_account_ids = $4::jsonb, last_error = '', updated_by_user_id = $5, updated_at = now()
         WHERE id = $1
       `,
-      [postId, scheduledFor, platforms, Number(user.id)]
+      [postId, scheduledFor, platforms, JSON.stringify(platformAccountIds), Number(user.id)]
     );
-    await syncJobsForPost(pool, postId, platforms, scheduledFor);
+    await syncJobsForPost(pool, postId, platforms, scheduledFor, platformAccountIds);
     const rows = await loadPosts(pool, publicBaseUrl, {});
     const post = rows.find((item: any) => Number(item.id) === postId);
     res.json({ row: post || null });
@@ -582,7 +634,8 @@ export function registerSocialRoutes({
 
     const when = new Date().toISOString();
     const platforms = normalizePlatforms(req.body?.platforms);
-    const existing = await pool.query("SELECT platforms FROM social_posts WHERE id = $1 LIMIT 1", [postId]);
+    const platformAccountIds = normalizePlatformAccountIds(req.body?.platformAccountIds);
+    const existing = await pool.query("SELECT platforms, platform_account_ids FROM social_posts WHERE id = $1 LIMIT 1", [postId]);
     if (!existing.rows.length) return res.status(404).json({ error: "post not found" });
     const resolvedPlatforms = platforms.length ? platforms : normalizePlatforms(existing.rows[0].platforms);
     if (!resolvedPlatforms.length) return res.status(400).json({ error: "at least one platform is required" });
@@ -590,12 +643,30 @@ export function registerSocialRoutes({
     await pool.query(
       `
         UPDATE social_posts
-        SET status = 'scheduled', scheduled_for = $2::timestamptz, platforms = $3::text[], last_error = '', updated_by_user_id = $4, updated_at = now()
+        SET status = 'scheduled', scheduled_for = $2::timestamptz, platforms = $3::text[], platform_account_ids = $4::jsonb, last_error = '', updated_by_user_id = $5, updated_at = now()
         WHERE id = $1
       `,
-      [postId, when, resolvedPlatforms, Number(user.id)]
+      [
+        postId,
+        when,
+        resolvedPlatforms,
+        JSON.stringify(
+          Object.keys(platformAccountIds).length
+            ? platformAccountIds
+            : normalizePlatformAccountIds(existing.rows[0]?.platform_account_ids)
+        ),
+        Number(user.id),
+      ]
     );
-    await syncJobsForPost(pool, postId, resolvedPlatforms, when);
+    await syncJobsForPost(
+      pool,
+      postId,
+      resolvedPlatforms,
+      when,
+      Object.keys(platformAccountIds).length
+        ? platformAccountIds
+        : normalizePlatformAccountIds(existing.rows[0]?.platform_account_ids)
+    );
     await runSocialDueJobsOnce(10);
     const rows = await loadPosts(pool, publicBaseUrl, {});
     const post = rows.find((item: any) => Number(item.id) === postId);
