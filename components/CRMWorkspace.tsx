@@ -468,6 +468,12 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                   list="crm-ups-name-suggestions"
                   value={manualUpsName}
                   onChange={(event) => setManualUpsName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void handleAddManualQueuePerson();
+                    }
+                  }}
                   placeholder="Add salesperson name"
                   className="min-w-[180px] rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
                 />
