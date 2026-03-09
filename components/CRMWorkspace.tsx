@@ -465,11 +465,17 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <input
+                  list="crm-ups-name-suggestions"
                   value={manualUpsName}
                   onChange={(event) => setManualUpsName(event.target.value)}
                   placeholder="Add salesperson name"
                   className="min-w-[180px] rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
                 />
+                <datalist id="crm-ups-name-suggestions">
+                  {QUICK_UPS_NAMES.map((name) => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
                 <button
                   onClick={() => void handleAddManualQueuePerson()}
                   disabled={joinBusy || syncMode !== "POS_DB"}
@@ -477,16 +483,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                 >
                   Add To List
                 </button>
-                {QUICK_UPS_NAMES.map((name) => (
-                  <button
-                    key={name}
-                    onClick={() => void handleAddManualQueuePerson(name)}
-                    disabled={joinBusy || syncMode !== "POS_DB"}
-                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 disabled:opacity-50"
-                  >
-                    {name}
-                  </button>
-                ))}
               </div>
             </div>
             <div className="grid grid-cols-3 border-b border-slate-800">
