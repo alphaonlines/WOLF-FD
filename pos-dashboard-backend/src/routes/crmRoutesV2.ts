@@ -1076,6 +1076,80 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     res.json({ rows });
   });
 
+  app.patch("/api/crm/ups-queue/:id/reorder", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+    if (!isManagerOrOwner(user)) return res.status(403).json({ error: "forbidden" });
+
+    const id = parseCrmLeadId(req.params.id);
+    if (!id) return res.status(400).json({ error: "invalid id" });
+
+    const direction = typeof req.body?.direction === "string" ? req.body.direction.trim().toLowerCase() : "";
+    if (direction !== "up" && direction !== "down") {
+      return res.status(400).json({ error: "invalid direction" });
+    }
+
+    const row = await pool.query(
+      `
+      SELECT id, store, status, queue_position
+      FROM crm_ups_queue
+      WHERE id = $1
+      LIMIT 1
+    `,
+      [id]
+    );
+    if (!row.rows.length) return res.status(404).json({ error: "not found" });
+
+    const target = row.rows[0];
+    const store = String(target.store || "FD7");
+    const status = String(target.status || "waiting");
+    if (status === "working") {
+      return res.status(400).json({ error: "cannot reorder a salesperson who is with a customer" });
+    }
+
+    const peers = await pool.query(
+      `
+      SELECT id, queue_position
+      FROM crm_ups_queue
+      WHERE store = $1 AND status = $2
+      ORDER BY queue_position ASC, checked_in_at ASC
+    `,
+      [store, status]
+    );
+
+    const ids = peers.rows.map((entry: any) => String(entry.id));
+    const currentIndex = ids.indexOf(id);
+    if (currentIndex === -1) return res.status(404).json({ error: "not found" });
+
+    const swapIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (swapIndex < 0 || swapIndex >= ids.length) {
+      const rows = await reorderUpsQueueStore(pool, store);
+      return res.json({ rows });
+    }
+
+    const otherId = ids[swapIndex];
+    const currentPos = Number(target.queue_position ?? currentIndex + 1);
+    const otherPos = Number(peers.rows[swapIndex]?.queue_position ?? swapIndex + 1);
+
+    await pool.query(
+      `
+      UPDATE crm_ups_queue
+      SET
+        queue_position = CASE
+          WHEN id = $1 THEN $3
+          WHEN id = $2 THEN $4
+          ELSE queue_position
+        END,
+        updated_at = now()
+      WHERE id IN ($1, $2)
+    `,
+      [id, otherId, otherPos, currentPos]
+    );
+
+    const rows = await reorderUpsQueueStore(pool, store);
+    res.json({ rows });
+  });
+
   app.delete("/api/crm/ups-queue/:id", async (req, res) => {
     const user = authUserFromReq(req);
     if (!user) return res.status(401).json({ error: "unauthorized" });

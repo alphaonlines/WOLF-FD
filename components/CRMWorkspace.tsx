@@ -21,6 +21,7 @@ import {
   fetchCrmUpsQueueFromApi,
   joinCrmUpsQueueInApi,
   leaveCrmUpsQueueInApi,
+  reorderCrmUpsQueueInApi,
   searchCrmRecords,
   startCrmUpsQueueCustomerInApi,
   updateCrmLeadInApi,
@@ -360,6 +361,21 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     }
   };
 
+  const handleReorderQueue = async (item: CRMUpsQueueItem, direction: "up" | "down") => {
+    setSaving("queue");
+    setStatusMessage(null);
+    setErrorMessage(null);
+    try {
+      const rows = await reorderCrmUpsQueueInApi(item.id, direction);
+      setQueue([...rows].sort((a, b) => a.queuePosition - b.queuePosition));
+      setStatusMessage(`${item.rep} moved ${direction}.`);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to move salesperson in queue.");
+    } finally {
+      setSaving(null);
+    }
+  };
+
   const handleSyncQueueCard = async () => {
     if (!draft.queueId) return;
     setSaving("queue");
@@ -564,6 +580,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                   const startDraft = startDrafts[item.id] || { customer: "", customerType: "Regular Up" as UpsQueueCustomerType };
                   const canManageRow = isManager || item.repUserId === authUser.id;
                   const isNextOpportunity = item.id === nextOpportunityId;
+                  const sameStatusItems = queue.filter((entry) => entry.status === item.status);
+                  const sameStatusIndex = sameStatusItems.findIndex((entry) => entry.id === item.id);
+                  const canMoveUp = isManager && item.status !== "working" && sameStatusIndex > 0;
+                  const canMoveDown = isManager && item.status !== "working" && sameStatusIndex >= 0 && sameStatusIndex < sameStatusItems.length - 1;
                   return (
                     <div key={item.id} className={`${isSelected ? "bg-slate-800/40" : ""}`}>
                       <button
@@ -608,64 +628,104 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                       {isSelected ? (
                         <div className="border-t border-slate-800 px-4 py-3">
                           {item.status === "waiting" ? (
-                            <div className="grid gap-2 md:grid-cols-[1.8fr_150px_auto]">
-                              <input
-                                value={startDraft.customer}
-                                onChange={(event) =>
-                                  setStartDrafts((current) => ({
-                                    ...current,
-                                    [item.id]: { ...startDraft, customer: event.target.value },
-                                  }))
-                                }
-                                onKeyDown={(event) => {
-                                  if (event.key === "Enter") {
-                                    event.preventDefault();
-                                    void handleStartCustomer(item);
+                            <div className="space-y-2">
+                              {isManager ? (
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    onClick={() => void handleReorderQueue(item, "up")}
+                                    disabled={!canMoveUp || saving === "queue"}
+                                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                                  >
+                                    Move Up
+                                  </button>
+                                  <button
+                                    onClick={() => void handleReorderQueue(item, "down")}
+                                    disabled={!canMoveDown || saving === "queue"}
+                                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                                  >
+                                    Move Down
+                                  </button>
+                                </div>
+                              ) : null}
+                              <div className="grid gap-2 md:grid-cols-[1.8fr_150px_auto]">
+                                <input
+                                  value={startDraft.customer}
+                                  onChange={(event) =>
+                                    setStartDrafts((current) => ({
+                                      ...current,
+                                      [item.id]: { ...startDraft, customer: event.target.value },
+                                    }))
                                   }
-                                }}
-                                placeholder="Customer / opportunity notes"
-                                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
-                              />
-                              <select
-                                value={startDraft.customerType}
-                                onChange={(event) =>
-                                  setStartDrafts((current) => ({
-                                    ...current,
-                                    [item.id]: {
-                                      ...startDraft,
-                                      customerType: event.target.value as UpsQueueCustomerType,
-                                    },
-                                  }))
-                                }
-                                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
-                              >
-                                <option value="Regular Up">New Opportunity</option>
-                                <option value="B-Back">B-Back</option>
-                              </select>
-                              <button
-                                onClick={() => void handleStartCustomer(item)}
-                                disabled={saving === "queue"}
-                                className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
-                              >
-                                Start
-                              </button>
+                                  onKeyDown={(event) => {
+                                    if (event.key === "Enter") {
+                                      event.preventDefault();
+                                      void handleStartCustomer(item);
+                                    }
+                                  }}
+                                  placeholder="Customer / opportunity notes"
+                                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
+                                />
+                                <select
+                                  value={startDraft.customerType}
+                                  onChange={(event) =>
+                                    setStartDrafts((current) => ({
+                                      ...current,
+                                      [item.id]: {
+                                        ...startDraft,
+                                        customerType: event.target.value as UpsQueueCustomerType,
+                                      },
+                                    }))
+                                  }
+                                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
+                                >
+                                  <option value="Regular Up">New Opportunity</option>
+                                  <option value="B-Back">B-Back</option>
+                                </select>
+                                <button
+                                  onClick={() => void handleStartCustomer(item)}
+                                  disabled={saving === "queue"}
+                                  className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
+                                >
+                                  Start
+                                </button>
+                              </div>
                             </div>
                           ) : item.status === "on_break" ? (
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                onClick={() => void handleUpdateQueueStatus(item, "waiting")}
-                                disabled={!canManageRow || saving === "queue"}
-                                className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
-                              >
-                                Return To Queue
-                              </button>
-                              <button
-                                onClick={() => void handleLeaveQueue(item)}
-                                disabled={!canManageRow || saving === "queue"}
-                                className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100 disabled:opacity-50"
-                              >
-                                Remove From Queue
-                              </button>
+                            <div className="space-y-2">
+                              {isManager ? (
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    onClick={() => void handleReorderQueue(item, "up")}
+                                    disabled={!canMoveUp || saving === "queue"}
+                                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                                  >
+                                    Move Up
+                                  </button>
+                                  <button
+                                    onClick={() => void handleReorderQueue(item, "down")}
+                                    disabled={!canMoveDown || saving === "queue"}
+                                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                                  >
+                                    Move Down
+                                  </button>
+                                </div>
+                              ) : null}
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() => void handleUpdateQueueStatus(item, "waiting")}
+                                  disabled={!canManageRow || saving === "queue"}
+                                  className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
+                                >
+                                  Return To Queue
+                                </button>
+                                <button
+                                  onClick={() => void handleLeaveQueue(item)}
+                                  disabled={!canManageRow || saving === "queue"}
+                                  className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100 disabled:opacity-50"
+                                >
+                                  Remove From Queue
+                                </button>
+                              </div>
                             </div>
                           ) : (
                             <div className="flex flex-wrap gap-2">
