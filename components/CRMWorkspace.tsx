@@ -406,7 +406,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
               </div>
               <div>
                 <h1 className="text-xl font-semibold text-white">CRM</h1>
-                <p className="text-sm text-slate-400">Quick floor view</p>
               </div>
             </div>
 
