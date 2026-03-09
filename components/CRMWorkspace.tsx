@@ -24,6 +24,7 @@ import {
   searchCrmRecords,
   startCrmUpsQueueCustomerInApi,
   updateCrmLeadInApi,
+  updateCrmUpsQueueStatusInApi,
   updateCrmUpsQueueCustomerInApi,
   upsertCrmCustomerAccount,
 } from "../services/crmApi";
@@ -165,7 +166,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const myQueueItem = useMemo(() => queue.find((item) => item.repUserId === authUser.id) || null, [queue, authUser.id]);
   const activeCount = queue.filter((item) => item.status === "working").length;
   const waitingCount = queue.filter((item) => item.status === "waiting").length;
+  const breakCount = queue.filter((item) => item.status === "on_break").length;
   const selectedQueueItem = queue.find((item) => item.id === selectedQueueId) || myQueueItem || queue[0] || null;
+  const nextOpportunityId = queue.find((item) => item.status === "waiting")?.id || null;
   const ownerOptions = useMemo(() => {
     const rows = owners.length
       ? owners
@@ -342,6 +345,21 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
     }
   };
 
+  const handleUpdateQueueStatus = async (item: CRMUpsQueueItem, status: "waiting" | "on_break") => {
+    setSaving("queue");
+    setStatusMessage(null);
+    setErrorMessage(null);
+    try {
+      const rows = await updateCrmUpsQueueStatusInApi(item.id, status);
+      setQueue([...rows].sort((a, b) => a.queuePosition - b.queuePosition));
+      setStatusMessage(status === "on_break" ? `${item.rep} marked on break.` : `${item.rep} returned to the queue.`);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to update queue status.");
+    } finally {
+      setSaving(null);
+    }
+  };
+
   const handleSyncQueueCard = async () => {
     if (!draft.queueId) return;
     setSaving("queue");
@@ -353,9 +371,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
         details: draft.visualDescription.trim(),
       });
       setQueue((current) => current.map((entry) => (entry.id === row.id ? row : entry)));
-      setStatusMessage("UPS card updated.");
+      setStatusMessage("Opportunity card updated.");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to update UPS card.");
+      setErrorMessage(error instanceof Error ? error.message : "Unable to update opportunity card.");
     } finally {
       setSaving(null);
     }
@@ -458,7 +476,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                 <div className="rounded-xl bg-slate-800 p-2 text-slate-200">
                   <Users className="h-5 w-5" />
                 </div>
-                <div className="text-base font-semibold text-white">UPS List</div>
+                <div>
+                  <div className="text-base font-semibold text-white">Opportunity Queue</div>
+                  <div className="text-xs text-slate-400">Top of the list gets the next customer opportunity.</div>
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <select
@@ -500,7 +521,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                       void handleAddManualQueuePerson();
                     }
                   }}
-                  placeholder="Add salesperson name"
+                  placeholder="Add salesperson to queue"
                   className="min-w-[180px] rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
                 />
                 <datalist id="crm-ups-name-suggestions">
@@ -513,11 +534,11 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                   disabled={joinBusy || syncMode !== "POS_DB"}
                   className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
                 >
-                  Add To List
+                  Add To Queue
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-3 border-b border-slate-800">
+            <div className="grid grid-cols-4 border-b border-slate-800">
               <div className="px-4 py-3">
                 <div className="text-xs uppercase tracking-wide text-slate-500">Waiting</div>
                 <div className="mt-1 text-2xl font-semibold text-white">{waitingCount}</div>
@@ -525,6 +546,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
               <div className="border-x border-slate-800 px-4 py-3">
                 <div className="text-xs uppercase tracking-wide text-slate-500">With Customer</div>
                 <div className="mt-1 text-2xl font-semibold text-white">{activeCount}</div>
+              </div>
+              <div className="border-r border-slate-800 px-4 py-3">
+                <div className="text-xs uppercase tracking-wide text-slate-500">On Break</div>
+                <div className="mt-1 text-2xl font-semibold text-white">{breakCount}</div>
               </div>
               <div className="px-4 py-3">
                 <div className="text-xs uppercase tracking-wide text-slate-500">Sync</div>
@@ -537,6 +562,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                 queue.map((item) => {
                   const isSelected = selectedQueueItem?.id === item.id;
                   const startDraft = startDrafts[item.id] || { customer: "", customerType: "Regular Up" as UpsQueueCustomerType };
+                  const canManageRow = isManager || item.repUserId === authUser.id;
+                  const isNextOpportunity = item.id === nextOpportunityId;
                   return (
                     <div key={item.id} className={`${isSelected ? "bg-slate-800/40" : ""}`}>
                       <button
@@ -551,14 +578,25 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                           <div className="flex items-center gap-2">
                             <span className="truncate font-semibold text-white">{item.rep}</span>
                             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                              item.status === "working" ? "bg-emerald-500/15 text-emerald-300" : "bg-slate-700 text-slate-300"
+                              item.status === "working"
+                                ? "bg-emerald-500/15 text-emerald-300"
+                                : item.status === "on_break"
+                                  ? "bg-amber-500/15 text-amber-300"
+                                  : "bg-slate-700 text-slate-300"
                             }`}>
-                              {item.status === "working" ? "With Customer" : "Waiting"}
+                              {item.status === "working" ? "With Customer" : item.status === "on_break" ? "On Break" : "Waiting"}
                             </span>
+                            {isNextOpportunity ? (
+                              <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[11px] font-medium text-sky-300">
+                                Next Opportunity
+                              </span>
+                            ) : null}
                           </div>
                           <div className="mt-1 truncate text-sm text-slate-400">
                             {item.status === "working"
                               ? `${item.currentCustomer || "Unnamed customer"}${item.currentCustomerDetails ? ` · ${item.currentCustomerDetails}` : ""}`
+                              : item.status === "on_break"
+                                ? "Unavailable and skipped until returned to queue."
                               : `Checked in ${formatTime(item.checkedInAt) || ""}`}
                           </div>
                         </div>
@@ -585,7 +623,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                                     void handleStartCustomer(item);
                                   }
                                 }}
-                                placeholder="Customer / quick description"
+                                placeholder="Customer / opportunity notes"
                                 className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
                               />
                               <select
@@ -601,7 +639,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                                 }
                                 className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
                               >
-                                <option value="Regular Up">Regular Up</option>
+                                <option value="Regular Up">New Opportunity</option>
                                 <option value="B-Back">B-Back</option>
                               </select>
                               <button
@@ -610,6 +648,23 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                                 className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
                               >
                                 Start
+                              </button>
+                            </div>
+                          ) : item.status === "on_break" ? (
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => void handleUpdateQueueStatus(item, "waiting")}
+                                disabled={!canManageRow || saving === "queue"}
+                                className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
+                              >
+                                Return To Queue
+                              </button>
+                              <button
+                                onClick={() => void handleLeaveQueue(item)}
+                                disabled={!canManageRow || saving === "queue"}
+                                className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100 disabled:opacity-50"
+                              >
+                                Remove From Queue
                               </button>
                             </div>
                           ) : (
@@ -638,6 +693,24 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                               </button>
                             </div>
                           )}
+                          {item.status === "waiting" ? (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <button
+                                onClick={() => void handleUpdateQueueStatus(item, "on_break")}
+                                disabled={!canManageRow || saving === "queue"}
+                                className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-100 disabled:opacity-50"
+                              >
+                                On Break
+                              </button>
+                              <button
+                                onClick={() => void handleLeaveQueue(item)}
+                                disabled={!canManageRow || saving === "queue"}
+                                className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100 disabled:opacity-50"
+                              >
+                                Remove From Queue
+                              </button>
+                            </div>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>
@@ -705,7 +778,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                     disabled={saving === "queue"}
                     className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
                   >
-                    Sync UPS Card
+                    Sync Opportunity Card
                   </button>
                 ) : null}
               </div>

@@ -23,6 +23,7 @@ type SqlClauseBuild = {
 const UPS_LANES = ["Unattended", "Be-Back", "Quote Follow-up"] as const;
 const UPS_PRIORITIES = ["Hot", "Today", "Nurture"] as const;
 const UPS_QUEUE_CUSTOMER_TYPES = ["Regular Up", "B-Back"] as const;
+const UPS_QUEUE_STATUSES = ["waiting", "working", "on_break"] as const;
 
 function parseUpsLane(value: any): (typeof UPS_LANES)[number] | null {
   if (!value || typeof value !== "string") return null;
@@ -40,6 +41,12 @@ function parseUpsQueueCustomerType(value: any): (typeof UPS_QUEUE_CUSTOMER_TYPES
   if (!value || typeof value !== "string") return null;
   const type = value.trim();
   return UPS_QUEUE_CUSTOMER_TYPES.includes(type as any) ? (type as any) : null;
+}
+
+function parseUpsQueueStatus(value: any): (typeof UPS_QUEUE_STATUSES)[number] | null {
+  if (!value || typeof value !== "string") return null;
+  const status = value.trim();
+  return UPS_QUEUE_STATUSES.includes(status as any) ? (status as any) : null;
 }
 
 function authUserFromReq(req: any): AuthUserLike | null {
@@ -164,6 +171,41 @@ function mapUpsQueueRow(row: any) {
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
+}
+
+async function reorderUpsQueueStore(pool: Pool, store: string) {
+  const reordered = await pool.query(
+    `
+    WITH ranked AS (
+      SELECT
+        id,
+        ROW_NUMBER() OVER (
+          PARTITION BY store
+          ORDER BY
+            CASE status
+              WHEN 'waiting' THEN 1
+              WHEN 'working' THEN 2
+              WHEN 'on_break' THEN 3
+              ELSE 99
+            END ASC,
+            queue_position ASC,
+            checked_in_at ASC
+        ) AS rn
+      FROM crm_ups_queue
+      WHERE store = $1
+    )
+    UPDATE crm_ups_queue q
+    SET queue_position = ranked.rn, updated_at = now()
+    FROM ranked
+    WHERE q.id = ranked.id
+    RETURNING
+      q.id, q.store, q.rep, q.rep_user_id, q.status, q.queue_position, q.checked_in_at,
+      q.current_customer, q.current_customer_type, q.current_customer_details, q.started_at, q.created_at, q.updated_at
+  `,
+    [store]
+  );
+
+  return reordered.rows.map(mapUpsQueueRow);
 }
 
 function normalizePhone(value: string): string {
@@ -764,7 +806,16 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         updated_at
       FROM crm_ups_queue
       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
-      ORDER BY store ASC, queue_position ASC, checked_in_at ASC;
+      ORDER BY
+        store ASC,
+        CASE status
+          WHEN 'waiting' THEN 1
+          WHEN 'working' THEN 2
+          WHEN 'on_break' THEN 3
+          ELSE 99
+        END ASC,
+        queue_position ASC,
+        checked_in_at ASC;
     `;
     const r = await pool.query(sql, values);
     res.json({ rows: r.rows.map(mapUpsQueueRow) });
@@ -860,20 +911,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       [customer, customerType, customerDetails, nextPos, id]
     );
 
-    await pool.query(
-      `
-      WITH ranked AS (
-        SELECT id, ROW_NUMBER() OVER (PARTITION BY store ORDER BY queue_position ASC, checked_in_at ASC) AS rn
-        FROM crm_ups_queue
-        WHERE store = $1
-      )
-      UPDATE crm_ups_queue q
-      SET queue_position = ranked.rn, updated_at = now()
-      FROM ranked
-      WHERE q.id = ranked.id
-    `,
-      [store]
-    );
+    await reorderUpsQueueStore(pool, store);
 
     const refreshed = await pool.query(
       `
@@ -978,24 +1016,64 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       [id]
     );
 
-    const reordered = await pool.query(
+    const rows = await reorderUpsQueueStore(pool, store);
+    res.json({ rows });
+  });
+
+  app.patch("/api/crm/ups-queue/:id/status", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+    const id = parseCrmLeadId(req.params.id);
+    if (!id) return res.status(400).json({ error: "invalid id" });
+
+    const nextStatus = parseUpsQueueStatus(req.body?.status);
+    if (!nextStatus || (nextStatus !== "waiting" && nextStatus !== "on_break")) {
+      return res.status(400).json({ error: "invalid status" });
+    }
+
+    const row = await pool.query(
       `
-      WITH ranked AS (
-        SELECT id, ROW_NUMBER() OVER (PARTITION BY store ORDER BY queue_position ASC, checked_in_at ASC) AS rn
-        FROM crm_ups_queue
-        WHERE store = $1
-      )
-      UPDATE crm_ups_queue q
-      SET queue_position = ranked.rn, updated_at = now()
-      FROM ranked
-      WHERE q.id = ranked.id
-      RETURNING
-        q.id, q.store, q.rep, q.rep_user_id, q.status, q.queue_position, q.checked_in_at,
-        q.current_customer, q.current_customer_type, q.current_customer_details, q.started_at, q.created_at, q.updated_at
+      SELECT id, store, rep_user_id, status, current_customer
+      FROM crm_ups_queue
+      WHERE id = $1
+      LIMIT 1
     `,
-      [store]
+      [id]
     );
-    res.json({ rows: reordered.rows.map(mapUpsQueueRow) });
+    if (!row.rows.length) return res.status(404).json({ error: "not found" });
+
+    const target = row.rows[0];
+    if (isSalesOnly(user) && Number(target.rep_user_id) !== Number(user.id)) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+    if (String(target.status || "") === "working") {
+      return res.status(400).json({ error: "complete the active customer before changing break status" });
+    }
+
+    const store = String(target.store || "FD7");
+    const maxPos = await pool.query(`SELECT COALESCE(MAX(queue_position), 0)::int AS max_pos FROM crm_ups_queue WHERE store = $1`, [
+      store,
+    ]);
+    const nextPos = Number(maxPos.rows[0]?.max_pos ?? 0) + 1;
+
+    await pool.query(
+      `
+      UPDATE crm_ups_queue
+      SET
+        status = $1,
+        queue_position = $2,
+        current_customer = NULL,
+        current_customer_type = NULL,
+        current_customer_details = NULL,
+        started_at = NULL,
+        updated_at = now()
+      WHERE id = $3
+    `,
+      [nextStatus, nextPos, id]
+    );
+
+    const rows = await reorderUpsQueueStore(pool, store);
+    res.json({ rows });
   });
 
   app.delete("/api/crm/ups-queue/:id", async (req, res) => {
@@ -1012,20 +1090,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     const store = String(row.rows[0].store || "FD7");
 
     await pool.query(`DELETE FROM crm_ups_queue WHERE id = $1`, [id]);
-    await pool.query(
-      `
-      WITH ranked AS (
-        SELECT id, ROW_NUMBER() OVER (PARTITION BY store ORDER BY queue_position ASC, checked_in_at ASC) AS rn
-        FROM crm_ups_queue
-        WHERE store = $1
-      )
-      UPDATE crm_ups_queue q
-      SET queue_position = ranked.rn, updated_at = now()
-      FROM ranked
-      WHERE q.id = ranked.id
-    `,
-      [store]
-    );
+    await reorderUpsQueueStore(pool, store);
     res.json({ ok: true });
   });
 

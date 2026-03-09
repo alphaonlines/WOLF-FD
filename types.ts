@@ -94,7 +94,7 @@ export interface CRMUpsItem {
   startedAt?: string;
 }
 
-export type UpsQueueStatus = "waiting" | "working";
+export type UpsQueueStatus = "waiting" | "working" | "on_break";
 export type UpsQueueCustomerType = "Regular Up" | "B-Back";
 
 export interface CRMUpsQueueItem {
