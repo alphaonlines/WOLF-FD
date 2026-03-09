@@ -398,64 +398,58 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-4 text-slate-100 sm:px-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-4">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-slate-800 p-2 text-slate-200">
-                <Users className="h-5 w-5" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-white">CRM</h1>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={selectedStore}
-                onChange={(event) => setSelectedStore(event.target.value)}
-                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
-              >
-                {LOCATION_OPTIONS.map((location) => (
-                  <option key={location} value={location}>
-                    {location}
-                  </option>
-                ))}
-              </select>
-              {isManager ? (
-                <select
-                  value={leadScope}
-                  onChange={(event) => setLeadScope(event.target.value as "team" | "my")}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
-                >
-                  <option value="team">Team</option>
-                  <option value="my">My Leads</option>
-                </select>
-              ) : null}
-              {!myQueueItem ? (
-                <button
-                  onClick={handleJoinQueue}
-                  disabled={joinBusy || syncMode !== "POS_DB"}
-                  className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
-                >
-                  {joinBusy ? "Joining..." : "Check In"}
-                </button>
-              ) : (
-                <button
-                  onClick={() => void handleLeaveQueue(myQueueItem)}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white"
-                >
-                  Leave Queue
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
         {statusMessage ? <div className="rounded-xl border border-emerald-800 bg-emerald-950/50 px-4 py-2 text-sm text-emerald-200">{statusMessage}</div> : null}
         {errorMessage ? <div className="rounded-xl border border-rose-800 bg-rose-950/50 px-4 py-2 text-sm text-rose-200">{errorMessage}</div> : null}
 
         <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-2xl border border-slate-800 bg-slate-900">
+            <div className="flex flex-col gap-3 border-b border-slate-800 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl bg-slate-800 p-2 text-slate-200">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div className="text-base font-semibold text-white">UPS List</div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={selectedStore}
+                  onChange={(event) => setSelectedStore(event.target.value)}
+                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
+                >
+                  {LOCATION_OPTIONS.map((location) => (
+                    <option key={location} value={location}>
+                      {location}
+                    </option>
+                  ))}
+                </select>
+                {isManager ? (
+                  <select
+                    value={leadScope}
+                    onChange={(event) => setLeadScope(event.target.value as "team" | "my")}
+                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
+                  >
+                    <option value="team">Team</option>
+                    <option value="my">My Leads</option>
+                  </select>
+                ) : null}
+                {!myQueueItem ? (
+                  <button
+                    onClick={handleJoinQueue}
+                    disabled={joinBusy || syncMode !== "POS_DB"}
+                    className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
+                  >
+                    {joinBusy ? "Joining..." : "Check In"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => void handleLeaveQueue(myQueueItem)}
+                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white"
+                  >
+                    Leave Queue
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="grid grid-cols-3 border-b border-slate-800">
               <div className="px-4 py-3">
                 <div className="text-xs uppercase tracking-wide text-slate-500">Waiting</div>
