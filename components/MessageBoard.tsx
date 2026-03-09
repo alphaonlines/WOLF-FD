@@ -344,6 +344,14 @@ const MessageBoard: React.FC<MessageBoardProps> = ({ authUser }) => {
 
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[260px_minmax(0,1fr)_320px]">
+      <section className="xl:col-span-3 rounded-3xl border border-amber-200 bg-amber-50 p-6">
+        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Coming Soon</div>
+        <h2 className="mt-2 text-2xl font-semibold text-amber-950">Message board improvements are coming soon.</h2>
+        <p className="mt-2 text-sm text-amber-900/80">
+          This page is currently a placeholder while the full message-board workflow is being built.
+        </p>
+      </section>
+
       <aside className="space-y-4">
         <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
           <div className="text-sm font-semibold text-slate-900">Message Board</div>

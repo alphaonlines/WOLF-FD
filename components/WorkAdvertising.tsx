@@ -567,6 +567,14 @@ const WorkAdvertising: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6 md:p-8">
+        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Coming Soon</div>
+        <h2 className="mt-2 text-2xl font-semibold text-amber-950">Social planning is coming soon.</h2>
+        <p className="mt-2 text-sm text-amber-900/80">
+          This page is currently a placeholder while the full planning workflow is being built.
+        </p>
+      </section>
+
       <section className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6 md:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>

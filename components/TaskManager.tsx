@@ -202,6 +202,14 @@ const TaskManager: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col">
+      <section className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 p-6">
+        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Coming Soon</div>
+        <h2 className="mt-2 text-2xl font-semibold text-amber-950">Task board improvements are coming soon.</h2>
+        <p className="mt-2 text-sm text-amber-900/80">
+          This page is still a placeholder while the full task workflow is being built out.
+        </p>
+      </section>
+
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Task Board</h2>
