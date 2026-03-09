@@ -422,16 +422,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                     </option>
                   ))}
                 </select>
-                {isManager ? (
-                  <select
-                    value={leadScope}
-                    onChange={(event) => setLeadScope(event.target.value as "team" | "my")}
-                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
-                  >
-                    <option value="team">Team</option>
-                    <option value="my">My Leads</option>
-                  </select>
-                ) : null}
                 {!myQueueItem ? (
                   <button
                     onClick={handleJoinQueue}
