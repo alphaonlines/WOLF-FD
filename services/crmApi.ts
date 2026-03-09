@@ -298,11 +298,11 @@ export async function fetchCrmUpsQueueFromApi(store?: string): Promise<CRMUpsQue
   return rows.map((row: any) => mapUpsQueue(row as ApiUpsQueueRow));
 }
 
-export async function joinCrmUpsQueueInApi(store: string): Promise<CRMUpsQueueItem> {
+export async function joinCrmUpsQueueInApi(store: string, rep?: string): Promise<CRMUpsQueueItem> {
   const json = await fetchJson("/api/crm/ups-queue", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ store }),
+    body: JSON.stringify({ store, rep: rep || "" }),
   });
   return mapUpsQueue((json as any)?.row as ApiUpsQueueRow);
 }

@@ -57,6 +57,7 @@ type CustomerDraft = {
 const LOCATION_OPTIONS = ["Camp", "Base", "G1", "FD7", "FD5"];
 const CHANNEL_OPTIONS: CRMLeadChannel[] = ["Phone", "SMS", "Webchat", "Facebook", "Instagram"];
 const STAGE_OPTIONS: CRMLeadStage[] = ["New", "Contacted", "Appointment", "Quoted", "Won", "Lost"];
+const QUICK_UPS_NAMES = ["Steph B", "Kassia"];
 
 const emptySearch: CRMSearchResult = { customers: [], leads: [], orders: [] };
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -104,6 +105,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState<null | "lead" | "account" | "queue">(null);
   const [joinBusy, setJoinBusy] = useState(false);
+  const [manualUpsName, setManualUpsName] = useState("");
   const [startDrafts, setStartDrafts] = useState<Record<string, { customer: string; details: string; customerType: UpsQueueCustomerType }>>({});
   const [draft, setDraft] = useState<CustomerDraft>(() => buildDraft(authUser, "FD7"));
 
@@ -229,6 +231,28 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
       setStatusMessage(`Checked into ${selectedStore}.`);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to join queue.");
+    } finally {
+      setJoinBusy(false);
+    }
+  };
+
+  const handleAddManualQueuePerson = async (nameOverride?: string) => {
+    const repName = (nameOverride ?? manualUpsName).trim();
+    if (!repName) {
+      setErrorMessage("Add a salesperson name first.");
+      return;
+    }
+    setJoinBusy(true);
+    setStatusMessage(null);
+    setErrorMessage(null);
+    try {
+      const row = await joinCrmUpsQueueInApi(selectedStore, repName);
+      setQueue((current) => [...current.filter((item) => item.id !== row.id), row].sort((a, b) => a.queuePosition - b.queuePosition));
+      setSelectedQueueId(row.id);
+      setManualUpsName("");
+      setStatusMessage(`${repName} added to ${selectedStore}.`);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to add salesperson to queue.");
     } finally {
       setJoinBusy(false);
     }
@@ -438,6 +462,31 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                     Leave Queue
                   </button>
                 )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  value={manualUpsName}
+                  onChange={(event) => setManualUpsName(event.target.value)}
+                  placeholder="Add salesperson name"
+                  className="min-w-[180px] rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
+                />
+                <button
+                  onClick={() => void handleAddManualQueuePerson()}
+                  disabled={joinBusy || syncMode !== "POS_DB"}
+                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  Add To List
+                </button>
+                {QUICK_UPS_NAMES.map((name) => (
+                  <button
+                    key={name}
+                    onClick={() => void handleAddManualQueuePerson(name)}
+                    disabled={joinBusy || syncMode !== "POS_DB"}
+                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 disabled:opacity-50"
+                  >
+                    {name}
+                  </button>
+                ))}
               </div>
             </div>
             <div className="grid grid-cols-3 border-b border-slate-800">

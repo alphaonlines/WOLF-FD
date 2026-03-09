@@ -300,6 +300,7 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN store SET DEFAULT 'FD7';`);
   await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN status SET DEFAULT 'waiting';`);
+  await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN rep_user_id DROP NOT NULL;`);
   await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN checked_in_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN created_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN updated_at SET DEFAULT now();`);

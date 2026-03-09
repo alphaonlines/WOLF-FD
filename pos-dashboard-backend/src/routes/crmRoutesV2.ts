@@ -775,13 +775,17 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     if (!user) return res.status(401).json({ error: "unauthorized" });
 
     const store = typeof req.body?.store === "string" && req.body.store.trim() ? req.body.store.trim() : "FD7";
-    const repUserId = Number(user.id);
-    const repName = user.name || user.email;
+    const manualRepName = typeof req.body?.rep === "string" ? req.body.rep.trim() : "";
+    const isManual = Boolean(manualRepName);
+    if (isManual && !isManagerOrOwner(user)) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+    const repUserId = isManual ? null : Number(user.id);
+    const repName = isManual ? manualRepName : user.name || user.email;
 
-    const existing = await pool.query(
-      `SELECT id FROM crm_ups_queue WHERE store = $1 AND rep_user_id = $2 LIMIT 1`,
-      [store, repUserId]
-    );
+    const existing = repUserId !== null
+      ? await pool.query(`SELECT id FROM crm_ups_queue WHERE store = $1 AND rep_user_id = $2 LIMIT 1`, [store, repUserId])
+      : await pool.query(`SELECT id FROM crm_ups_queue WHERE store = $1 AND lower(rep) = lower($2) LIMIT 1`, [store, repName]);
     if (existing.rows.length) {
       const row = await pool.query(
         `
