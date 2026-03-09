@@ -106,7 +106,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const [saving, setSaving] = useState<null | "lead" | "account" | "queue">(null);
   const [joinBusy, setJoinBusy] = useState(false);
   const [manualUpsName, setManualUpsName] = useState("");
-  const [startDrafts, setStartDrafts] = useState<Record<string, { customer: string; details: string; customerType: UpsQueueCustomerType }>>({});
+  const [startDrafts, setStartDrafts] = useState<Record<string, { customer: string; customerType: UpsQueueCustomerType }>>({});
   const [draft, setDraft] = useState<CustomerDraft>(() => buildDraft(authUser, "FD7"));
 
   const loadData = async () => {
@@ -283,7 +283,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
       const row = await startCrmUpsQueueCustomerInApi(item.id, {
         customer: startDraft.customer.trim(),
         customerType: startDraft.customerType,
-        details: startDraft.details.trim(),
+        details: startDraft.customer.trim(),
       });
       setQueue((current) => current.map((entry) => (entry.id === row.id ? row : entry)));
       setDraft((current) => ({
@@ -422,9 +422,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-4 text-slate-100 sm:px-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-4">
-        {statusMessage ? <div className="rounded-xl border border-emerald-800 bg-emerald-950/50 px-4 py-2 text-sm text-emerald-200">{statusMessage}</div> : null}
-        {errorMessage ? <div className="rounded-xl border border-rose-800 bg-rose-950/50 px-4 py-2 text-sm text-rose-200">{errorMessage}</div> : null}
-
         <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-2xl border border-slate-800 bg-slate-900">
             <div className="flex flex-col gap-3 border-b border-slate-800 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
@@ -510,7 +507,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
               {queue.length ? (
                 queue.map((item) => {
                   const isSelected = selectedQueueItem?.id === item.id;
-                  const startDraft = startDrafts[item.id] || { customer: "", details: "", customerType: "Regular Up" as UpsQueueCustomerType };
+                  const startDraft = startDrafts[item.id] || { customer: "", customerType: "Regular Up" as UpsQueueCustomerType };
                   return (
                     <div key={item.id} className={`${isSelected ? "bg-slate-800/40" : ""}`}>
                       <button
@@ -544,7 +541,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                       {isSelected ? (
                         <div className="border-t border-slate-800 px-4 py-3">
                           {item.status === "waiting" ? (
-                            <div className="grid gap-2 md:grid-cols-[1.2fr_1.6fr_150px_auto]">
+                            <div className="grid gap-2 md:grid-cols-[1.8fr_150px_auto]">
                               <input
                                 value={startDraft.customer}
                                 onChange={(event) =>
@@ -553,18 +550,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                                     [item.id]: { ...startDraft, customer: event.target.value },
                                   }))
                                 }
-                                placeholder="Customer label"
-                                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
-                              />
-                              <input
-                                value={startDraft.details}
-                                onChange={(event) =>
-                                  setStartDrafts((current) => ({
-                                    ...current,
-                                    [item.id]: { ...startDraft, details: event.target.value },
-                                  }))
-                                }
-                                placeholder="Quick visual description"
+                                placeholder="Customer / quick description"
                                 className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none"
                               />
                               <select
