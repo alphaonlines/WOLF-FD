@@ -46,6 +46,7 @@ type RegisterAllRoutesDeps = {
   pool: Pool;
   upload: UploadLike;
   uploadsDir: string;
+  boardUploadsDir: string;
   importerPath: string;
   pythonBin: string;
   execFileAsync: ExecFileAsyncLike;
@@ -78,6 +79,7 @@ export function registerAllRoutes({
   pool,
   upload,
   uploadsDir,
+  boardUploadsDir,
   importerPath,
   pythonBin,
   execFileAsync,
@@ -153,7 +155,7 @@ export function registerAllRoutes({
 
   registerTaskRoutes(app, pool);
   registerCrmRoutes(app, pool);
-  registerBoardRoutes(app, pool);
+  registerBoardRoutes(app, pool, boardUploadsDir, socialPublicBaseUrl);
   registerSocialRoutes({
     app,
     pool,

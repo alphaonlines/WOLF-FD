@@ -586,6 +586,74 @@ async function ensureSocialSchema(pool: Pool) {
   await pool.query(`ALTER TABLE board_comments ALTER COLUMN created_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE board_comments ALTER COLUMN updated_at SET DEFAULT now();`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_board_comments_post_id_created ON board_comments(post_id, created_at ASC);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS board_uploads (
+      id                 BIGSERIAL PRIMARY KEY,
+      storage_name       TEXT NOT NULL,
+      original_name      TEXT NOT NULL,
+      mime_type          TEXT NOT NULL DEFAULT 'application/octet-stream',
+      file_size_bytes    BIGINT NOT NULL DEFAULT 0,
+      uploaded_by_user_id BIGINT NULL,
+      created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE board_uploads ADD COLUMN IF NOT EXISTS storage_name TEXT;`);
+  await pool.query(`ALTER TABLE board_uploads ADD COLUMN IF NOT EXISTS original_name TEXT;`);
+  await pool.query(`ALTER TABLE board_uploads ADD COLUMN IF NOT EXISTS mime_type TEXT;`);
+  await pool.query(`ALTER TABLE board_uploads ADD COLUMN IF NOT EXISTS file_size_bytes BIGINT;`);
+  await pool.query(`ALTER TABLE board_uploads ADD COLUMN IF NOT EXISTS uploaded_by_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE board_uploads ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE board_uploads ALTER COLUMN mime_type SET DEFAULT 'application/octet-stream';`);
+  await pool.query(`ALTER TABLE board_uploads ALTER COLUMN file_size_bytes SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE board_uploads ALTER COLUMN created_at SET DEFAULT now();`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS board_messages (
+      id                      BIGSERIAL PRIMARY KEY,
+      scope                   TEXT NOT NULL DEFAULT 'channel',
+      channel                 TEXT NULL,
+      body                    TEXT NOT NULL,
+      priority                BOOLEAN NOT NULL DEFAULT FALSE,
+      author_name             TEXT NOT NULL,
+      author_email            TEXT NOT NULL,
+      author_user_id          BIGINT NULL,
+      recipient_user_id       BIGINT NULL,
+      recipient_name          TEXT NOT NULL DEFAULT '',
+      recipient_email         TEXT NOT NULL DEFAULT '',
+      attachment_upload_id    BIGINT NULL REFERENCES board_uploads(id) ON DELETE SET NULL,
+      forwarded_from_message_id BIGINT NULL REFERENCES board_messages(id) ON DELETE SET NULL,
+      edited_at               TIMESTAMPTZ NULL,
+      deleted_at              TIMESTAMPTZ NULL,
+      created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at              TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS scope TEXT;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS channel TEXT;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS body TEXT;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS priority BOOLEAN;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS author_name TEXT;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS author_email TEXT;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS author_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS recipient_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS recipient_name TEXT;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS recipient_email TEXT;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS attachment_upload_id BIGINT;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS forwarded_from_message_id BIGINT;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE board_messages ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE board_messages ALTER COLUMN scope SET DEFAULT 'channel';`);
+  await pool.query(`ALTER TABLE board_messages ALTER COLUMN priority SET DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE board_messages ALTER COLUMN recipient_name SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE board_messages ALTER COLUMN recipient_email SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE board_messages ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE board_messages ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_board_messages_scope_channel_created ON board_messages(scope, channel, created_at DESC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_board_messages_dm_pair_created ON board_messages(author_user_id, recipient_user_id, created_at DESC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_board_messages_deleted_at ON board_messages(deleted_at);`);
 }
 
 export async function runStartupBootstrap(deps: RunStartupBootstrapDeps) {

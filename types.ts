@@ -207,3 +207,43 @@ export interface BoardComment {
   authorEmail: string;
   createdAt: string;
 }
+
+export interface BoardUpload {
+  id: string;
+  originalName: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  publicUrl: string;
+  createdAt: string;
+}
+
+export interface BoardUser {
+  id: string;
+  name: string;
+  email: string;
+  roles: UserRole[];
+  active: boolean;
+  lastMessageAt: string | null;
+  lastMessagePreview: string;
+}
+
+export interface BoardMessage {
+  id: string;
+  scope: "channel" | "dm";
+  channel: string | null;
+  body: string;
+  priority: boolean;
+  authorName: string;
+  authorEmail: string;
+  authorUserId: string | null;
+  recipientUserId: string | null;
+  recipientName: string;
+  recipientEmail: string;
+  attachment: BoardUpload | null;
+  mentions: string[];
+  editedAt: string | null;
+  deletedAt: string | null;
+  forwardedFromMessageId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

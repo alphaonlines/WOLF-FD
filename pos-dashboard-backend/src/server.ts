@@ -36,6 +36,8 @@ app.use(express.json());
 
 const uploadsDir = path.resolve(__dirname, "..", "incoming");
 fs.mkdirSync(uploadsDir, { recursive: true });
+const boardUploadsDir = path.resolve(__dirname, "..", "board-uploads");
+fs.mkdirSync(boardUploadsDir, { recursive: true });
 const socialUploadsDir = path.resolve(__dirname, "..", "social-uploads");
 fs.mkdirSync(socialUploadsDir, { recursive: true });
 const execFileAsync = promisify(execFile);
@@ -54,6 +56,7 @@ const { setUserRolesByKeys } = registerAllRoutes({
   pool,
   upload,
   uploadsDir,
+  boardUploadsDir,
   importerPath,
   pythonBin,
   execFileAsync,
