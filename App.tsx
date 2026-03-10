@@ -376,7 +376,7 @@ const App: React.FC = () => {
             {canView(Tab.CRM) && (
               <NavItem
                 icon={<MessageSquare size={20} />}
-                label="CRM"
+                label="AP CRM"
                 isActive={activeTab === Tab.CRM}
                 onClick={() => setActiveTab(Tab.CRM)}
                 isOpen={sidebarOpen}

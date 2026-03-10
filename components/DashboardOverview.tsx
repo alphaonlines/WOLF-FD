@@ -139,10 +139,10 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "crm",
-        title: "CRM",
+        title: "Alpha Pulse CRM",
         description: "Customer follow-up pipeline and lead ownership.",
-        details: "Use CRM to track lead stage, next actions, and follow-up ownership across the team without mixing it with content analytics.",
-        cta: "Open CRM",
+        details: "Use Alpha Pulse CRM to track lead stage, next actions, and follow-up ownership across the team without mixing it with content analytics.",
+        cta: "Open Alpha Pulse CRM",
         icon: <MessageSquare size={22} className="text-indigo-500" />,
         onClick: () => onNavigate("CRM"),
       },

@@ -35,7 +35,7 @@ export const getTabTitle = (tab: Tab): string => {
     case Tab.SALES:
       return 'Sales Analysis';
     case Tab.CRM:
-      return 'CRM';
+      return 'Alpha Pulse CRM';
     case Tab.SOCIAL:
       return 'Social Posts';
     case Tab.KIOSKS:
