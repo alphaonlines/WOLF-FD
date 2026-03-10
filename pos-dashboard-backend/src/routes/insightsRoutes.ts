@@ -228,11 +228,23 @@ export function registerInsightsRoutes({
     const locationQ = parseTextParam(req.query.location);
 
     const sql = `
+    WITH item_rollup AS (
+      SELECT
+        i.sale_id,
+        SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS item_sales,
+        SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS item_profit
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE delivery_confirmed_date >= $1
+        AND delivery_confirmed_date < $2
+      GROUP BY i.sale_id
+    )
     SELECT
       date_trunc('week', delivery_confirmed_date)::date AS week,
-      ROUND(SUM(${safeGrandTotal})::numeric, 2) AS sales,
-      ROUND(SUM(${safeProfit})::numeric, 2) AS profit
-    FROM pos_sales
+      ROUND(SUM(COALESCE(item_rollup.item_sales, 0))::numeric, 2) AS sales,
+      ROUND(SUM(COALESCE(item_rollup.item_profit, 0))::numeric, 2) AS profit
+    FROM pos_sales s
+    LEFT JOIN item_rollup ON item_rollup.sale_id = s.sale_id
     WHERE delivery_confirmed_date >= $1
       AND delivery_confirmed_date < $2
       AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
@@ -253,7 +265,18 @@ export function registerInsightsRoutes({
 
     const sql = salespersonQ
       ? `
-      WITH item_profits AS (
+      WITH item_rollup AS (
+        SELECT
+          i.sale_id,
+          SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS item_sales,
+          SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS item_profit
+        FROM pos_sale_items i
+        JOIN pos_sales s ON s.sale_id = i.sale_id
+        WHERE ${prefixedDateField("s")} >= $1
+          AND ${prefixedDateField("s")} < $2
+        GROUP BY i.sale_id
+      ),
+      item_profits AS (
         SELECT sale_id, SUM(total_profit) as item_profit
         FROM pos_sale_items
         GROUP BY sale_id
@@ -264,12 +287,13 @@ export function registerInsightsRoutes({
       SELECT
         date_trunc('day', ${prefixedDateField("s")})::date AS day,
         COUNT(*)::int AS lines,
-        ROUND(SUM(p.grand_total_split)::numeric, 2) AS sales,
+        ROUND(SUM(COALESCE(item_rollup.item_sales, 0) / NULLIF(pc.cnt, 0))::numeric, 2) AS sales,
         ROUND(SUM(
-          COALESCE(ip.item_profit / NULLIF(pc.cnt, 1), p.profit_split)
+          COALESCE(item_rollup.item_profit / NULLIF(pc.cnt, 1), ip.item_profit / NULLIF(pc.cnt, 1), p.profit_split)
         )::numeric, 2) AS profit
       FROM pos_sales_people p
       JOIN pos_sales s ON s.sale_id = p.sale_id
+      LEFT JOIN item_rollup ON item_rollup.sale_id = p.sale_id
       LEFT JOIN item_profits ip ON ip.sale_id = p.sale_id
       LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
       WHERE ${prefixedDateField("s")} >= $1
@@ -280,20 +304,24 @@ export function registerInsightsRoutes({
       ORDER BY 1;
     `
       : `
-      WITH item_profits AS (
-        SELECT sale_id, SUM(total_profit) as item_profit
-        FROM pos_sale_items
-        GROUP BY sale_id
+      WITH item_rollup AS (
+        SELECT
+          i.sale_id,
+          SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS item_sales,
+          SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS item_profit
+        FROM pos_sale_items i
+        JOIN pos_sales s2 ON s2.sale_id = i.sale_id
+        WHERE ${prefixedDateField("s2")} >= $1
+          AND ${prefixedDateField("s2")} < $2
+        GROUP BY i.sale_id
       )
       SELECT
         date_trunc('day', ${prefixedDateField("s")})::date AS day,
-        COUNT(*)::int AS lines,
-        ROUND(SUM(${safeGrandTotal})::numeric, 2) AS sales,
-        ROUND(SUM(
-          COALESCE(ip.item_profit, ${safeProfit})
-        )::numeric, 2) AS profit
+        COUNT(DISTINCT s.sale_id)::int AS lines,
+        ROUND(SUM(COALESCE(item_rollup.item_sales, 0))::numeric, 2) AS sales,
+        ROUND(SUM(COALESCE(item_rollup.item_profit, 0))::numeric, 2) AS profit
       FROM pos_sales s
-      LEFT JOIN item_profits ip ON ip.sale_id = s.sale_id
+      LEFT JOIN item_rollup ON item_rollup.sale_id = s.sale_id
       WHERE ${prefixedDateField("s")} >= $1
         AND ${prefixedDateField("s")} < $2
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
@@ -314,8 +342,20 @@ export function registerInsightsRoutes({
     const salespersonQ = parseTextParam(req.query.salesperson);
     const locationQ = parseTextParam(req.query.location);
 
-    const sql = `
-    WITH item_profits AS (
+    const sql = salespersonQ
+      ? `
+    WITH item_rollup AS (
+      SELECT
+        i.sale_id,
+        SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS item_sales,
+        SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS item_profit
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+      GROUP BY i.sale_id
+    ),
+    item_profits AS (
       SELECT sale_id, SUM(total_profit) as item_profit
       FROM pos_sale_items
       GROUP BY sale_id
@@ -325,12 +365,13 @@ export function registerInsightsRoutes({
     )
     SELECT
       COALESCE(p.location,'(unknown)') AS location,
-      ROUND(SUM(p.grand_total_split)::numeric, 2) AS sales,
+      ROUND(SUM(COALESCE(item_rollup.item_sales, 0) / NULLIF(pc.cnt, 0))::numeric, 2) AS sales,
       ROUND(SUM(
-        COALESCE(ip.item_profit / NULLIF(pc.cnt, 1), p.profit_split)
+        COALESCE(item_rollup.item_profit / NULLIF(pc.cnt, 1), ip.item_profit / NULLIF(pc.cnt, 1), p.profit_split)
       )::numeric, 2) AS profit
     FROM pos_sales_people p
     JOIN pos_sales s ON s.sale_id = p.sale_id
+    LEFT JOIN item_rollup ON item_rollup.sale_id = p.sale_id
     LEFT JOIN item_profits ip ON ip.sale_id = p.sale_id
     LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
     WHERE ${prefixedDateField("s")} >= $1
@@ -339,9 +380,35 @@ export function registerInsightsRoutes({
       AND ($4::text IS NULL OR p.location ILIKE ('%' || $4 || '%'))
     GROUP BY 1
     ORDER BY sales DESC;
+  `
+      : `
+    WITH item_rollup AS (
+      SELECT
+        i.sale_id,
+        SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS item_sales,
+        SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS item_profit
+      FROM pos_sale_items i
+      JOIN pos_sales s2 ON s2.sale_id = i.sale_id
+      WHERE ${prefixedDateField("s2")} >= $1
+        AND ${prefixedDateField("s2")} < $2
+      GROUP BY i.sale_id
+    )
+    SELECT
+      COALESCE(s.location,'(unknown)') AS location,
+      ROUND(SUM(COALESCE(item_rollup.item_sales, 0))::numeric, 2) AS sales,
+      ROUND(SUM(COALESCE(item_rollup.item_profit, 0))::numeric, 2) AS profit
+    FROM pos_sales s
+    LEFT JOIN item_rollup ON item_rollup.sale_id = s.sale_id
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
+      AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
+    GROUP BY 1
+    ORDER BY sales DESC;
   `;
 
-    const r = await pool.query(sql, [start, end, salespersonQ, locationQ]);
+    const r = salespersonQ
+      ? await pool.query(sql, [start, end, salespersonQ, locationQ])
+      : await pool.query(sql, [start, end, locationQ]);
     res.json({ start, end, rows: r.rows });
   });
 }

@@ -131,9 +131,10 @@ export function registerAnalyticsRoutes({
     const salespersonQ = parseTextParam(req.query.salesperson);
     const locationQ = parseTextParam(req.query.location);
 
-    const sql = `
+    const sql = salespersonQ
+      ? `
       WITH item_sales AS (
-        SELECT i.sale_id, SUM(i.total_sale_price) AS item_sales
+        SELECT i.sale_id, SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS item_sales
         FROM pos_sale_items i
         JOIN pos_sales s ON s.sale_id = i.sale_id
         WHERE ${prefixedDateField("s")} >= $1
@@ -165,9 +166,33 @@ export function registerAnalyticsRoutes({
         AND ${prefixedDateField("s")} < $2
         AND ($3::text IS NULL OR p.salesperson ILIKE ('%' || $3 || '%'))
         AND ($4::text IS NULL OR p.location ILIKE ('%' || $4 || '%'));
+    `
+      : `
+      WITH item_rollup AS (
+        SELECT
+          i.sale_id,
+          SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS item_sales,
+          SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS item_profit
+        FROM pos_sale_items i
+        JOIN pos_sales s ON s.sale_id = i.sale_id
+        WHERE ${prefixedDateField("s")} >= $1
+          AND ${prefixedDateField("s")} < $2
+        GROUP BY i.sale_id
+      )
+      SELECT
+        COUNT(DISTINCT s.sale_id)::int AS lines,
+        ROUND(SUM(COALESCE(item_rollup.item_sales, 0))::numeric, 2) AS sales,
+        ROUND(SUM(COALESCE(item_rollup.item_profit, 0))::numeric, 2) AS profit
+      FROM pos_sales s
+      LEFT JOIN item_rollup ON item_rollup.sale_id = s.sale_id
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
+        AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'));
     `;
 
-    const r = await pool.query(sql, [start, end, salespersonQ, locationQ]);
+    const r = salespersonQ
+      ? await pool.query(sql, [start, end, salespersonQ, locationQ])
+      : await pool.query(sql, [start, end, locationQ]);
     res.json({ start, end, ...r.rows[0] });
   });
 
@@ -180,7 +205,18 @@ export function registerAnalyticsRoutes({
     const locationQ = parseTextParam(req.query.location);
 
     const sql = `
-      WITH item_profits AS (
+      WITH item_rollup AS (
+        SELECT
+          i.sale_id,
+          SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS item_sales,
+          SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS item_profit
+        FROM pos_sale_items i
+        JOIN pos_sales s ON s.sale_id = i.sale_id
+        WHERE ${prefixedDateField("s")} >= $1
+          AND ${prefixedDateField("s")} < $2
+        GROUP BY i.sale_id
+      ),
+      item_profits AS (
         SELECT sale_id, SUM(total_profit) as item_profit
         FROM pos_sale_items
         GROUP BY sale_id
@@ -191,12 +227,13 @@ export function registerAnalyticsRoutes({
       SELECT
         p.salesperson,
         COUNT(*)::int AS lines,
-        ROUND(SUM(p.grand_total_split)::numeric, 2) AS sales,
+        ROUND(SUM(COALESCE(item_rollup.item_sales, 0) / NULLIF(pc.cnt, 0))::numeric, 2) AS sales,
         ROUND(SUM(
-          COALESCE(ip.item_profit / NULLIF(pc.cnt, 1), p.profit_split)
+          COALESCE(item_rollup.item_profit / NULLIF(pc.cnt, 1), ip.item_profit / NULLIF(pc.cnt, 1), p.profit_split)
         )::numeric, 2) AS profit
       FROM pos_sales_people p
       JOIN pos_sales s ON s.sale_id = p.sale_id
+      LEFT JOIN item_rollup ON item_rollup.sale_id = p.sale_id
       LEFT JOIN item_profits ip ON ip.sale_id = p.sale_id
       LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
       WHERE ${prefixedDateField("s")} >= $1
