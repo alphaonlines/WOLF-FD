@@ -43,7 +43,14 @@ import { DASHBOARD_CARD_PERMISSION_BY_ID, FEATURE_PERMISSION_KEYS, hasPermission
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.CRM);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    try {
+      const stored = localStorage.getItem('fd_theme_dark');
+      return stored ? stored === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
   const [showLoading, setShowLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
@@ -161,6 +168,14 @@ const App: React.FC = () => {
       // ignore storage failures
     }
   }, [showTooltips]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('fd_theme_dark', String(isDarkMode));
+    } catch {
+      // ignore storage failures
+    }
+  }, [isDarkMode]);
 
   useEffect(() => {
     if (activeTab === Tab.DASHBOARD) {
@@ -476,7 +491,11 @@ const App: React.FC = () => {
         </aside>
 
         <main className={`flex-1 transition-[margin] duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
-          <header className="h-20 bg-white/70 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-10 px-6 lg:px-8 flex items-center justify-between shadow-sm">
+          <header className={`h-20 backdrop-blur-xl sticky top-0 z-10 px-6 lg:px-8 flex items-center justify-between shadow-sm border-b ${
+            isDarkMode
+              ? 'bg-slate-950/72 border-slate-800/80'
+              : 'bg-white/70 border-slate-200/60'
+          }`}>
             <div className="flex items-center gap-4">
               <h1 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
                 <span>{getTabTitle(activeTab)}</span>
@@ -519,11 +538,15 @@ const App: React.FC = () => {
                 </button>
               )}
               {activeTab === Tab.SALES && activeFilterLabel && (
-                <div className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full bg-white/70 border border-slate-200 text-slate-600">
+                <div className={`hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border ${
+                  isDarkMode
+                    ? 'bg-slate-900/80 border-slate-700 text-slate-300'
+                    : 'bg-white/70 border-slate-200 text-slate-600'
+                }`}>
                   {activeFilterLabel}
                   <button
                     onClick={() => window.dispatchEvent(new Event('fd-clear-filters'))}
-                    className="ml-1 text-slate-400 hover:text-slate-600"
+                    className={`ml-1 ${isDarkMode ? 'text-slate-500 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                     title="Clear filters"
                   >
                     ✕
@@ -531,32 +554,50 @@ const App: React.FC = () => {
                 </div>
               )}
               {activeTab === Tab.SALES && missingItemData && (
-                <div className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                <div className={`hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border ${
+                  isDarkMode
+                    ? 'bg-amber-500/10 text-amber-200 border-amber-500/30'
+                    : 'bg-amber-100 text-amber-800 border-amber-200'
+                }`}>
                   Missing data for items for this date range
                 </div>
               )}
               {activeTab === Tab.SALES && missingSalesData && (
-                <div className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                <div className={`hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border ${
+                  isDarkMode
+                    ? 'bg-amber-500/10 text-amber-200 border-amber-500/30'
+                    : 'bg-amber-100 text-amber-800 border-amber-200'
+                }`}>
                   Missing sales data for this date range
                 </div>
               )}
               {activeTab === Tab.SALES && (
                 <button
                   onClick={() => window.dispatchEvent(new Event('fd-print-request'))}
-                  className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border transition-colors bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                  className={`hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border transition-colors ${
+                    isDarkMode
+                      ? 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
                   title="Print full report"
                 >
                   Print Report
                 </button>
               )}
               {activeTab === Tab.SALES && (
-                <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1 text-xs">
+                <div className={`inline-flex items-center gap-1 rounded-full p-1 text-xs ${
+                  isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-slate-100'
+                }`}>
                   <button
                     onClick={() => setItemSortMetric('sales')}
                     className={`px-3 py-1 rounded-full font-semibold ${
                       itemSortMetric === 'sales'
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700'
+                        ? isDarkMode
+                          ? 'bg-slate-100 text-slate-950 shadow-sm'
+                          : 'bg-white text-slate-900 shadow-sm'
+                        : isDarkMode
+                          ? 'text-slate-400 hover:text-slate-200'
+                          : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     Sales $
@@ -565,8 +606,12 @@ const App: React.FC = () => {
                     onClick={() => setItemSortMetric('qty')}
                     className={`px-3 py-1 rounded-full font-semibold ${
                       itemSortMetric === 'qty'
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700'
+                        ? isDarkMode
+                          ? 'bg-slate-100 text-slate-950 shadow-sm'
+                          : 'bg-white text-slate-900 shadow-sm'
+                        : isDarkMode
+                          ? 'text-slate-400 hover:text-slate-200'
+                          : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     Qty
@@ -575,14 +620,22 @@ const App: React.FC = () => {
               )}
               <button
                 onClick={() => setIsDarkMode((prev) => !prev)}
-                className="p-2 rounded-full bg-white/70 hover:bg-white shadow-sm border border-slate-200 text-slate-600"
+                className={`p-2 rounded-full shadow-sm border transition-colors ${
+                  isDarkMode
+                    ? 'bg-slate-100 hover:bg-white border-slate-300 text-slate-950'
+                    : 'bg-white/70 hover:bg-white border-slate-200 text-slate-600'
+                }`}
                 title="Toggle night mode"
               >
                 {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
               </button>
               <button
                 onClick={handleLogout}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
+                  isDarkMode
+                    ? 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                }`}
                 title={`Signed in as ${authUser.email}`}
               >
                 <LogOut size={14} />
