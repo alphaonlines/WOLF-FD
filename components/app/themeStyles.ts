@@ -13,10 +13,10 @@ export const APP_THEME_STYLES = `
     color-scheme: dark;
   }
   .dark {
-    --wolf-card: rgba(21, 31, 45, 0.88);
-    --wolf-card-muted: rgba(27, 39, 56, 0.9);
-    --wolf-border: rgba(94, 109, 131, 0.46);
-    --wolf-shadow: 0 22px 56px rgba(2, 6, 23, 0.24);
+    --wolf-card: rgba(12, 18, 28, 0.88);
+    --wolf-card-muted: rgba(16, 24, 36, 0.9);
+    --wolf-border: rgba(66, 80, 103, 0.34);
+    --wolf-shadow: 0 16px 34px rgba(2, 6, 23, 0.18);
     --wolf-text-primary: #f4f7fb;
     --wolf-text-secondary: #cbd5e1;
     --wolf-text-muted: #94a3b8;
@@ -54,14 +54,14 @@ export const APP_THEME_STYLES = `
   .dark .text-slate-600 { color: var(--wolf-text-secondary) !important; }
   .dark .text-slate-500 { color: var(--wolf-text-muted) !important; }
   .dark .text-slate-400 { color: #a5b4c7 !important; }
-  .dark .bg-slate-50 { background-color: rgba(29, 40, 57, 0.9) !important; }
-  .dark .bg-slate-100 { background-color: rgba(34, 47, 67, 0.94) !important; }
-  .dark .bg-slate-800 { background-color: rgba(26, 37, 53, 0.94) !important; }
-  .dark .bg-slate-900 { background-color: rgba(20, 29, 42, 0.96) !important; }
-  .dark .bg-slate-950 { background-color: rgba(16, 24, 36, 0.98) !important; }
-  .dark .border-slate-100 { border-color: rgba(67, 82, 104, 0.58) !important; }
-  .dark .border-slate-200 { border-color: rgba(77, 93, 117, 0.62) !important; }
-  .dark .border-slate-700 { border-color: rgba(84, 102, 128, 0.76) !important; }
+  .dark .bg-slate-50 { background-color: rgba(16, 24, 36, 0.9) !important; }
+  .dark .bg-slate-100 { background-color: rgba(18, 27, 40, 0.92) !important; }
+  .dark .bg-slate-800 { background-color: rgba(16, 23, 34, 0.92) !important; }
+  .dark .bg-slate-900 { background-color: rgba(13, 20, 30, 0.95) !important; }
+  .dark .bg-slate-950 { background-color: rgba(10, 15, 23, 0.98) !important; }
+  .dark .border-slate-100 { border-color: rgba(57, 69, 88, 0.48) !important; }
+  .dark .border-slate-200 { border-color: rgba(64, 77, 98, 0.5) !important; }
+  .dark .border-slate-700 { border-color: rgba(68, 82, 104, 0.62) !important; }
   .fd-print-only { display: none; }
   @media print {
     body * { visibility: hidden; }

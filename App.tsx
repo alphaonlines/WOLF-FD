@@ -27,6 +27,7 @@ import WolfBot from './components/WolfBot';
 import TaskManager from './components/TaskManager';
 import OwnerSettings from './components/OwnerSettings';
 import type { AuthUser, UserRole } from './types';
+import packageJson from './package.json';
 import {
   changeCurrentPassword,
   fetchCurrentUser,
@@ -39,6 +40,8 @@ import NavItem from './components/app/NavItem';
 import { APP_THEME_STYLES } from './components/app/themeStyles';
 import { canAccessTab, getTabTitle, Tab } from './components/app/tabs';
 import { DASHBOARD_CARD_PERMISSION_BY_ID, FEATURE_PERMISSION_KEYS, hasPermission } from './components/app/permissions';
+
+const APP_VERSION = packageJson.version;
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.CRM);
@@ -496,6 +499,15 @@ const App: React.FC = () => {
               </button>
             </div>
           )}
+
+          <div
+            className={`px-3 pb-4 pt-2 text-[11px] tracking-[0.18em] uppercase ${
+              isDarkMode ? 'text-slate-500' : 'text-slate-400'
+            } ${sidebarOpen ? 'text-left' : 'text-center'}`}
+            title={`Dashboard version ${APP_VERSION}`}
+          >
+            {sidebarOpen ? `Version ${APP_VERSION}` : `v${APP_VERSION}`}
+          </div>
         </aside>
 
         <main className={`flex-1 transition-[margin] duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
