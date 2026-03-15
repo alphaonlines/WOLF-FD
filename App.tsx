@@ -300,7 +300,7 @@ const App: React.FC = () => {
       case Tab.SALES:
         return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
       case Tab.CRM:
-        return <CRMWorkspace authUser={authUser!} />;
+        return <CRMWorkspace authUser={authUser!} isDarkMode={isDarkMode} />;
       case Tab.SOCIAL:
         return <WorkAdvertising />;
       case Tab.KIOSKS:

@@ -35,6 +35,7 @@ import { APP_VERSION } from "../constants";
 
 type CRMWorkspaceProps = {
   authUser: AuthUser;
+  isDarkMode: boolean;
 };
 
 type SyncMode = "POS_DB" | "OFFLINE";
@@ -108,14 +109,7 @@ const splitName = (value: string) => {
 const combineName = (firstName: string, lastName: string) =>
   `${firstName.trim()} ${lastName.trim()}`.trim();
 
-const panelClassName =
-  "rounded-3xl border border-slate-200/80 bg-slate-50/90 shadow-sm dark:border-slate-800/80 dark:bg-[#0f1722]/92 dark:shadow-[0_14px_30px_rgba(2,6,23,0.16)]";
-const subtleInputClassName =
-  "rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:bg-white focus:ring-2 focus:ring-sky-200/60 dark:border-slate-700/60 dark:bg-slate-900/74 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-sky-400 dark:focus:bg-slate-900 dark:focus:ring-sky-500/20";
-const ghostButtonClassName =
-  "rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white disabled:opacity-50 dark:border-slate-700/60 dark:bg-slate-900/74 dark:text-slate-100 dark:hover:bg-slate-800/72";
-
-const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
+const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => {
   const isManager = authUser.roles.includes("Owner") || authUser.roles.includes("Manager");
   const [leadScope, setLeadScope] = useState<"team" | "my">(isManager ? "team" : "my");
   const [syncMode, setSyncMode] = useState<SyncMode>("OFFLINE");
@@ -135,6 +129,16 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const [selectedSalespersonName, setSelectedSalespersonName] = useState("");
   const [startDrafts, setStartDrafts] = useState<Record<string, { customer: string; customerType: UpsQueueCustomerType }>>({});
   const [draft, setDraft] = useState<CustomerDraft>(() => buildDraft(authUser, "FD7"));
+
+  const panelClassName = isDarkMode
+    ? "rounded-3xl border border-slate-800 bg-slate-950 shadow-[0_14px_30px_rgba(2,6,23,0.16)]"
+    : "rounded-3xl border border-slate-200/80 bg-slate-50/90 shadow-sm";
+  const subtleInputClassName = isDarkMode
+    ? "rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20"
+    : "rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:bg-white focus:ring-2 focus:ring-sky-200/60";
+  const ghostButtonClassName = isDarkMode
+    ? "rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-800 disabled:opacity-50"
+    : "rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white disabled:opacity-50";
 
   const loadData = async () => {
     const healthy = await checkPosBackendHealthy();
@@ -613,7 +617,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                   const canMoveUp = isManager && item.status !== "working" && sameStatusIndex > 0;
                   const canMoveDown = isManager && item.status !== "working" && sameStatusIndex >= 0 && sameStatusIndex < sameStatusItems.length - 1;
                   return (
-                    <div key={item.id} className={`${isSelected ? "bg-sky-50/80 dark:bg-sky-400/[0.05]" : "dark:hover:bg-white/[0.02]"}`}>
+                    <div key={item.id} className={`${isSelected ? (isDarkMode ? "bg-slate-900/80" : "bg-sky-50/80") : isDarkMode ? "hover:bg-slate-900/60" : ""}`}>
                       <button
                         onClick={() => setSelectedQueueId(item.id)}
                         className="grid w-full grid-cols-[56px_1fr_auto] items-center gap-3 px-4 py-3 text-left"
@@ -836,19 +840,31 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
               {(searchResults.customers.length || searchResults.leads.length || searchResults.orders.length) ? (
                 <div className="mt-3 space-y-2">
                   {searchResults.customers.slice(0, 3).map((customer) => (
-                    <button key={customer.id} onClick={() => applyCustomer(customer)} className="block w-full rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-left transition hover:border-sky-200 hover:bg-white dark:border-slate-700/55 dark:bg-slate-900/68 dark:hover:border-sky-400/20 dark:hover:bg-slate-900/82">
+                    <button key={customer.id} onClick={() => applyCustomer(customer)} className={`block w-full rounded-2xl border px-3 py-2 text-left transition ${
+                      isDarkMode
+                        ? "border-slate-800 bg-slate-900 text-slate-100 hover:border-slate-700 hover:bg-slate-800"
+                        : "border-slate-100 bg-slate-50 hover:border-sky-200 hover:bg-white"
+                    }`}>
                       <div className="text-sm font-medium text-slate-900 dark:text-white">{customer.name}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">{customer.phone || customer.email || "Saved customer"}</div>
                     </button>
                   ))}
                   {searchResults.leads.slice(0, 3).map((lead) => (
-                    <button key={lead.id} onClick={() => applyLead(lead)} className="block w-full rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-left transition hover:border-sky-200 hover:bg-white dark:border-slate-700/55 dark:bg-slate-900/68 dark:hover:border-sky-400/20 dark:hover:bg-slate-900/82">
+                    <button key={lead.id} onClick={() => applyLead(lead)} className={`block w-full rounded-2xl border px-3 py-2 text-left transition ${
+                      isDarkMode
+                        ? "border-slate-800 bg-slate-900 text-slate-100 hover:border-slate-700 hover:bg-slate-800"
+                        : "border-slate-100 bg-slate-50 hover:border-sky-200 hover:bg-white"
+                    }`}>
                       <div className="text-sm font-medium text-slate-900 dark:text-white">{lead.name}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">{lead.phone} · {lead.stage}</div>
                     </button>
                   ))}
                   {searchResults.orders.slice(0, 2).map((order, index) => (
-                    <button key={`${order.saleId}-${index}`} onClick={() => applyOrder(order)} className="block w-full rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-left transition hover:border-sky-200 hover:bg-white dark:border-slate-700/55 dark:bg-slate-900/68 dark:hover:border-sky-400/20 dark:hover:bg-slate-900/82">
+                    <button key={`${order.saleId}-${index}`} onClick={() => applyOrder(order)} className={`block w-full rounded-2xl border px-3 py-2 text-left transition ${
+                      isDarkMode
+                        ? "border-slate-800 bg-slate-900 text-slate-100 hover:border-slate-700 hover:bg-slate-800"
+                        : "border-slate-100 bg-slate-50 hover:border-sky-200 hover:bg-white"
+                    }`}>
                       <div className="text-sm font-medium text-slate-900 dark:text-white">{order.customerName || "Order match"}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">{order.phone || order.receiptNo || order.saleId}</div>
                     </button>
