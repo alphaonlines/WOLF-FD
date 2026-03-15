@@ -1,17 +1,25 @@
 export const APP_THEME_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
   :root {
-    --wolf-card: rgba(255, 255, 255, 0.78);
+    --wolf-card: rgba(255, 255, 255, 0.82);
     --wolf-border: rgba(148, 163, 184, 0.22);
-    --wolf-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    --wolf-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+    --wolf-card-muted: rgba(248, 250, 252, 0.9);
+    --wolf-text-primary: #0f172a;
+    --wolf-text-secondary: #475569;
+    --wolf-text-muted: #64748b;
   }
   .dark {
     color-scheme: dark;
   }
   .dark {
-    --wolf-card: rgba(15, 23, 42, 0.72);
-    --wolf-border: rgba(71, 85, 105, 0.55);
-    --wolf-shadow: 0 16px 36px rgba(2, 6, 23, 0.45);
+    --wolf-card: rgba(21, 31, 45, 0.88);
+    --wolf-card-muted: rgba(27, 39, 56, 0.9);
+    --wolf-border: rgba(94, 109, 131, 0.46);
+    --wolf-shadow: 0 22px 56px rgba(2, 6, 23, 0.24);
+    --wolf-text-primary: #f4f7fb;
+    --wolf-text-secondary: #cbd5e1;
+    --wolf-text-muted: #94a3b8;
   }
   html, body, #root {
     -webkit-font-smoothing: antialiased;
@@ -30,23 +38,30 @@ export const APP_THEME_STYLES = `
   .wolf-theme .bg-white {
     background-color: var(--wolf-card) !important;
     border-color: var(--wolf-border) !important;
-    backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: blur(14px) saturate(120%);
+  }
+  .wolf-theme .bg-slate-50 {
+    background-color: var(--wolf-card-muted) !important;
   }
   .wolf-theme .shadow-sm {
     box-shadow: var(--wolf-shadow) !important;
   }
   .wolf-theme .rounded-3xl { border-radius: 1.4rem; }
-  .dark .text-slate-800 { color: #e2e8f0 !important; }
-  .dark .text-slate-900 { color: #f1f5f9 !important; }
-  .dark .text-slate-950 { color: #f8fafc !important; }
-  .dark .text-slate-700 { color: #cbd5f1 !important; }
-  .dark .text-slate-600 { color: #cbd5f1 !important; }
-  .dark .text-slate-500 { color: #94a3b8 !important; }
-  .dark .text-slate-400 { color: #94a3b8 !important; }
-  .dark .bg-slate-50 { background-color: rgba(15, 23, 42, 0.9) !important; }
-  .dark .bg-slate-100 { background-color: rgba(30, 41, 59, 0.8) !important; }
-  .dark .border-slate-100 { border-color: rgba(51, 65, 85, 0.8) !important; }
-  .dark .border-slate-200 { border-color: rgba(51, 65, 85, 0.8) !important; }
+  .dark .text-slate-800 { color: #dbe6f3 !important; }
+  .dark .text-slate-900 { color: var(--wolf-text-primary) !important; }
+  .dark .text-slate-950 { color: #f8fbff !important; }
+  .dark .text-slate-700 { color: var(--wolf-text-secondary) !important; }
+  .dark .text-slate-600 { color: var(--wolf-text-secondary) !important; }
+  .dark .text-slate-500 { color: var(--wolf-text-muted) !important; }
+  .dark .text-slate-400 { color: #a5b4c7 !important; }
+  .dark .bg-slate-50 { background-color: rgba(29, 40, 57, 0.9) !important; }
+  .dark .bg-slate-100 { background-color: rgba(34, 47, 67, 0.94) !important; }
+  .dark .bg-slate-800 { background-color: rgba(26, 37, 53, 0.94) !important; }
+  .dark .bg-slate-900 { background-color: rgba(20, 29, 42, 0.96) !important; }
+  .dark .bg-slate-950 { background-color: rgba(16, 24, 36, 0.98) !important; }
+  .dark .border-slate-100 { border-color: rgba(67, 82, 104, 0.58) !important; }
+  .dark .border-slate-200 { border-color: rgba(77, 93, 117, 0.62) !important; }
+  .dark .border-slate-700 { border-color: rgba(84, 102, 128, 0.76) !important; }
   .fd-print-only { display: none; }
   @media print {
     body * { visibility: hidden; }

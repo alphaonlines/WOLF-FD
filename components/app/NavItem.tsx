@@ -23,11 +23,11 @@ type NavItemProps = {
 const NavItem: React.FC<NavItemProps> = (props) => {
   const { icon, label, isActive, isOpen } = props;
   const className = `
-    w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all
+    w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border transition-all duration-200
     ${
       isActive
-        ? 'bg-sky-500/18 border-sky-300/40 text-sky-100 shadow-sm'
-        : 'border-transparent text-slate-300 hover:bg-white/8 hover:border-white/15 hover:text-white'
+        ? 'bg-sky-400/12 border-sky-300/28 text-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+        : 'border-transparent text-slate-300 hover:bg-white/6 hover:border-white/8 hover:text-slate-50'
     }
     ${!isOpen && 'justify-center'}
   `;

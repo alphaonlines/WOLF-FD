@@ -107,11 +107,12 @@ const splitName = (value: string) => {
 const combineName = (firstName: string, lastName: string) =>
   `${firstName.trim()} ${lastName.trim()}`.trim();
 
-const panelClassName = "rounded-3xl border border-slate-100 bg-white shadow-sm";
+const panelClassName =
+  "rounded-3xl border border-slate-100/90 bg-white/95 shadow-sm dark:border-slate-700/70 dark:bg-slate-900/82 dark:shadow-[0_20px_50px_rgba(2,6,23,0.24)]";
 const subtleInputClassName =
-  "rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:bg-white focus:ring-2 focus:ring-sky-200/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-400 dark:focus:bg-slate-950 dark:focus:ring-sky-500/20";
+  "rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:bg-white focus:ring-2 focus:ring-sky-200/60 dark:border-slate-600/70 dark:bg-slate-800/88 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-sky-400 dark:focus:bg-slate-800 dark:focus:ring-sky-500/20";
 const ghostButtonClassName =
-  "rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900";
+  "rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600/70 dark:bg-slate-800/88 dark:text-slate-100 dark:hover:bg-slate-700/88";
 
 const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   const isManager = authUser.roles.includes("Owner") || authUser.roles.includes("Manager");
@@ -509,9 +510,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
       <div className="mx-auto flex max-w-7xl flex-col gap-4">
         <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <div className={panelClassName}>
-            <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-700 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-700/70 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-slate-100 p-2 text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                <div className="rounded-2xl bg-slate-100/90 p-2 text-slate-600 dark:bg-slate-800/88 dark:text-slate-100">
                   <Users className="h-5 w-5" />
                 </div>
                 <div>
@@ -571,26 +572,26 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                 {selectedSalesperson ? <div className="text-xs text-slate-500 dark:text-slate-400">{selectedSalesperson.totalTickets.toLocaleString()} tickets</div> : null}
               </div>
             </div>
-            <div className="grid grid-cols-2 border-b border-slate-100 dark:border-slate-700 md:grid-cols-4">
+            <div className="grid grid-cols-2 border-b border-slate-100 dark:border-slate-700/70 md:grid-cols-4">
               <div className="px-4 py-3">
                 <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Waiting</div>
                 <div className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{waitingCount}</div>
               </div>
-              <div className="border-l border-slate-100 px-4 py-3 dark:border-slate-700 md:border-x">
+              <div className="border-l border-slate-100 px-4 py-3 dark:border-slate-700/70 md:border-x">
                 <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">With Customer</div>
                 <div className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{activeCount}</div>
               </div>
-              <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-700 md:border-r md:border-t-0">
+              <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-700/70 md:border-r md:border-t-0">
                 <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">On Break</div>
                 <div className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{breakCount}</div>
               </div>
-              <div className="border-l border-t border-slate-100 px-4 py-3 dark:border-slate-700 md:border-l-0 md:border-t-0">
+              <div className="border-l border-t border-slate-100 px-4 py-3 dark:border-slate-700/70 md:border-l-0 md:border-t-0">
                 <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Sync</div>
                 <div className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{syncMode === "POS_DB" ? "Live" : "Offline"}</div>
               </div>
             </div>
 
-            <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            <div className="divide-y divide-slate-100 dark:divide-slate-700/70">
               {queue.length ? (
                 queue.map((item) => {
                   const isSelected = selectedQueueItem?.id === item.id;
@@ -602,7 +603,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                   const canMoveUp = isManager && item.status !== "working" && sameStatusIndex > 0;
                   const canMoveDown = isManager && item.status !== "working" && sameStatusIndex >= 0 && sameStatusIndex < sameStatusItems.length - 1;
                   return (
-                    <div key={item.id} className={`${isSelected ? "bg-sky-50/80 dark:bg-slate-800/40" : ""}`}>
+                    <div key={item.id} className={`${isSelected ? "bg-sky-50/80 dark:bg-sky-400/8" : "dark:hover:bg-white/[0.03]"}`}>
                       <button
                         onClick={() => setSelectedQueueId(item.id)}
                         className="grid w-full grid-cols-[56px_1fr_auto] items-center gap-3 px-4 py-3 text-left"
@@ -616,15 +617,15 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                             <span className="truncate font-semibold text-slate-900 dark:text-white">{item.rep}</span>
                             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                               item.status === "working"
-                                ? "bg-emerald-500/15 text-emerald-300"
+                                ? "bg-emerald-500/16 text-emerald-200"
                                 : item.status === "on_break"
-                                  ? "bg-amber-500/15 text-amber-300"
-                                  : "bg-slate-700 text-slate-300"
+                                  ? "bg-amber-500/16 text-amber-200"
+                                  : "bg-slate-700/60 text-slate-200"
                             }`}>
                               {item.status === "working" ? "With Customer" : item.status === "on_break" ? "On Break" : "Waiting"}
                             </span>
                             {isNextOpportunity ? (
-                              <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[11px] font-medium text-sky-300">
+                              <span className="rounded-full bg-sky-400/14 px-2 py-0.5 text-[11px] font-medium text-sky-200">
                                 Next Opportunity
                               </span>
                             ) : null}
@@ -643,7 +644,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                       </button>
 
                       {isSelected ? (
-                        <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-700">
+                        <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-700/70">
                           {item.status === "waiting" ? (
                             <div className="space-y-2">
                               {isManager ? (
@@ -701,7 +702,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                                 <button
                                   onClick={() => void handleStartCustomer(item)}
                                   disabled={saving === "queue"}
-                                  className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
+                                  className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-sky-100 dark:text-slate-950 dark:hover:bg-white"
                                 >
                                   Start
                                 </button>
@@ -731,7 +732,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                                 <button
                                   onClick={() => void handleUpdateQueueStatus(item, "waiting")}
                                   disabled={!canManageRow || saving === "queue"}
-                                  className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
+                                  className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-sky-100 dark:text-slate-950 dark:hover:bg-white"
                                 >
                                   Return To Queue
                                 </button>
@@ -748,7 +749,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                             <div className="flex flex-wrap gap-2">
                               <button
                                 onClick={() => void handleCompleteCustomer(item)}
-                                className="rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+                                className="rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 dark:bg-emerald-400 dark:hover:bg-emerald-300"
                               >
                                 Complete
                               </button>
@@ -775,14 +776,14 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
                               <button
                                 onClick={() => void handleUpdateQueueStatus(item, "on_break")}
                                 disabled={!canManageRow || saving === "queue"}
-                                className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-100 disabled:opacity-50"
+                                className="rounded-xl border border-amber-400/30 bg-amber-400/12 px-3 py-2 text-sm font-semibold text-amber-100 disabled:opacity-50"
                               >
                                 On Break
                               </button>
                               <button
                                 onClick={() => void handleLeaveQueue(item)}
                                 disabled={!canManageRow || saving === "queue"}
-                                className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100 disabled:opacity-50"
+                                className="rounded-xl border border-red-400/30 bg-red-400/12 px-3 py-2 text-sm font-semibold text-red-100 disabled:opacity-50"
                               >
                                 Remove From Queue
                               </button>
@@ -825,19 +826,19 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
               {(searchResults.customers.length || searchResults.leads.length || searchResults.orders.length) ? (
                 <div className="mt-3 space-y-2">
                   {searchResults.customers.slice(0, 3).map((customer) => (
-                    <button key={customer.id} onClick={() => applyCustomer(customer)} className="block w-full rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-left transition hover:border-sky-200 hover:bg-white dark:border-slate-700 dark:bg-slate-950 dark:hover:border-sky-400/40 dark:hover:bg-slate-900">
+                    <button key={customer.id} onClick={() => applyCustomer(customer)} className="block w-full rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-left transition hover:border-sky-200 hover:bg-white dark:border-slate-700/70 dark:bg-slate-800/84 dark:hover:border-sky-400/30 dark:hover:bg-slate-800">
                       <div className="text-sm font-medium text-slate-900 dark:text-white">{customer.name}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">{customer.phone || customer.email || "Saved customer"}</div>
                     </button>
                   ))}
                   {searchResults.leads.slice(0, 3).map((lead) => (
-                    <button key={lead.id} onClick={() => applyLead(lead)} className="block w-full rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-left transition hover:border-sky-200 hover:bg-white dark:border-slate-700 dark:bg-slate-950 dark:hover:border-sky-400/40 dark:hover:bg-slate-900">
+                    <button key={lead.id} onClick={() => applyLead(lead)} className="block w-full rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-left transition hover:border-sky-200 hover:bg-white dark:border-slate-700/70 dark:bg-slate-800/84 dark:hover:border-sky-400/30 dark:hover:bg-slate-800">
                       <div className="text-sm font-medium text-slate-900 dark:text-white">{lead.name}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">{lead.phone} · {lead.stage}</div>
                     </button>
                   ))}
                   {searchResults.orders.slice(0, 2).map((order, index) => (
-                    <button key={`${order.saleId}-${index}`} onClick={() => applyOrder(order)} className="block w-full rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-left transition hover:border-sky-200 hover:bg-white dark:border-slate-700 dark:bg-slate-950 dark:hover:border-sky-400/40 dark:hover:bg-slate-900">
+                    <button key={`${order.saleId}-${index}`} onClick={() => applyOrder(order)} className="block w-full rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-left transition hover:border-sky-200 hover:bg-white dark:border-slate-700/70 dark:bg-slate-800/84 dark:hover:border-sky-400/30 dark:hover:bg-slate-800">
                       <div className="text-sm font-medium text-slate-900 dark:text-white">{order.customerName || "Order match"}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">{order.phone || order.receiptNo || order.saleId}</div>
                     </button>
@@ -901,7 +902,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
               </div>
 
               <div className="mt-3 flex gap-2">
-                <button onClick={() => void handleSaveLead()} disabled={saving !== null} className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100">
+                <button onClick={() => void handleSaveLead()} disabled={saving !== null} className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-sky-100 dark:text-slate-950 dark:hover:bg-white">
                   {draft.leadId ? "Update Lead" : "Save Lead"}
                 </button>
                 <button onClick={() => void handleSaveAccount()} disabled={saving !== null} className={ghostButtonClassName}>

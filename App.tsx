@@ -343,7 +343,7 @@ const App: React.FC = () => {
     <div
       className={`min-h-screen wolf-theme font-sans ${isDarkMode ? 'dark text-slate-100' : 'text-slate-800'} ${
         isDarkMode
-          ? 'bg-[linear-gradient(160deg,#0b1220_0%,#101827_52%,#0f172a_100%)]'
+          ? 'bg-[radial-gradient(circle_at_top,#24344a_0%,rgba(36,52,74,0)_28%),linear-gradient(160deg,#0f1722_0%,#162131_48%,#111a27_100%)]'
           : 'bg-[linear-gradient(160deg,#f8fafc_0%,#eef3fb_52%,#e6edf7_100%)]'
       }`}
     >
@@ -351,20 +351,26 @@ const App: React.FC = () => {
       {showLoading && <LoadingOverlay darkness={0.9} />}
       <div className={`flex ${showLoading ? 'blur-md' : ''} transition-[filter] duration-500`}>
         <aside
-          className={`${sidebarOpen ? 'w-64' : 'w-20'} fixed h-screen bg-slate-950/90 text-white backdrop-blur-xl border-r border-white/10 transition-all duration-300 ease-in-out z-20 flex flex-col`}
+          className={`${sidebarOpen ? 'w-64' : 'w-20'} fixed h-screen border-r text-white backdrop-blur-xl transition-all duration-300 ease-in-out z-20 flex flex-col ${
+            isDarkMode
+              ? 'bg-[#101825]/94 border-white/6'
+              : 'bg-white/88 border-slate-200/80 text-slate-900'
+          }`}
         >
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="h-20 w-full flex items-center justify-center border-b border-white/10 hover:bg-white/5 transition-colors"
+            className={`h-20 w-full flex items-center justify-center border-b transition-colors ${
+              isDarkMode ? 'border-white/6 hover:bg-white/5' : 'border-slate-200/80 hover:bg-slate-50/90'
+            }`}
             aria-label="Toggle sidebar"
           >
             {sidebarOpen ? (
               <div className="flex items-center gap-3">
                 <Sofa className="text-blue-400" />
                 <div className="leading-tight text-left">
-                  <div className="font-bold text-xl tracking-tight">WOLF FD</div>
-                  <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Furniture Distributors</div>
-                  <div className="text-xs text-slate-500">Work Online · Live Free</div>
+                  <div className={`font-bold text-xl tracking-tight ${isDarkMode ? 'text-slate-50' : 'text-slate-900'}`}>WOLF FD</div>
+                  <div className={`text-[11px] uppercase tracking-[0.2em] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Furniture Distributors</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Work Online · Live Free</div>
                 </div>
               </div>
             ) : (
@@ -436,7 +442,7 @@ const App: React.FC = () => {
                 isOpen={sidebarOpen}
               />
             )}
-            <div className="pt-4 mt-4 border-t border-white/10" />
+            <div className={`pt-4 mt-4 border-t ${isDarkMode ? 'border-white/6' : 'border-slate-200/80'}`} />
             <NavItem
               icon={<Activity size={20} />}
               label="AlphaPulse"
@@ -467,7 +473,7 @@ const App: React.FC = () => {
           </nav>
 
           {canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL) && (
-            <div className="p-3 border-t border-white/10">
+            <div className={`p-3 border-t ${isDarkMode ? 'border-white/6' : 'border-slate-200/80'}`}>
               <button
                 onClick={() => {
                   if (updatePanelOpen) {
@@ -478,8 +484,10 @@ const App: React.FC = () => {
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
                   updatePanelOpen
-                    ? 'bg-sky-500/20 border border-sky-300/40 text-sky-100 shadow-sm'
-                    : 'border border-transparent text-slate-300 hover:bg-white/8 hover:border-white/15 hover:text-white'
+                    ? 'bg-sky-400/12 border border-sky-300/28 text-slate-50 shadow-sm'
+                    : isDarkMode
+                      ? 'border border-transparent text-slate-300 hover:bg-white/6 hover:border-white/8 hover:text-slate-50'
+                      : 'border border-transparent text-slate-600 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-900'
                 } ${!sidebarOpen ? 'justify-center' : ''}`}
                 title="Update database"
               >
@@ -493,7 +501,7 @@ const App: React.FC = () => {
         <main className={`flex-1 transition-[margin] duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
           <header className={`h-20 backdrop-blur-xl sticky top-0 z-10 px-6 lg:px-8 flex items-center justify-between shadow-sm border-b ${
             isDarkMode
-              ? 'bg-slate-950/72 border-slate-800/80'
+              ? 'bg-[#121b27]/78 border-slate-700/60'
               : 'bg-white/70 border-slate-200/60'
           }`}>
             <div className="flex items-center gap-4">
