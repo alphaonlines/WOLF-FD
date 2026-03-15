@@ -293,6 +293,74 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     });
   });
 
+  app.get("/api/crm/salespeople", async (_req, res) => {
+    const sql = `
+      WITH base AS (
+        SELECT
+          lower(trim(p.salesperson)) AS salesperson_key,
+          trim(p.salesperson) AS salesperson_name,
+          COALESCE(NULLIF(trim(s.location), ''), 'Unknown') AS location,
+          p.sale_id,
+          s.sale_date
+        FROM pos_sales_people p
+        JOIN pos_sales s ON s.sale_id = p.sale_id
+        WHERE p.salesperson IS NOT NULL
+          AND trim(p.salesperson) <> ''
+          AND trim(p.salesperson) <> 'Sales, Store'
+      ),
+      rep_names AS (
+        SELECT
+          salesperson_key,
+          (ARRAY_AGG(salesperson_name ORDER BY length(salesperson_name) DESC, salesperson_name ASC))[1] AS salesperson_name
+        FROM base
+        GROUP BY salesperson_key
+      ),
+      rep_locations AS (
+        SELECT
+          salesperson_key,
+          location,
+          COUNT(DISTINCT sale_id)::int AS ticket_count,
+          MAX(sale_date) AS last_sale_date
+        FROM base
+        GROUP BY salesperson_key, location
+      ),
+      matched_users AS (
+        SELECT
+          lower(trim(u.name)) AS salesperson_key,
+          MIN(u.id)::bigint AS user_id
+        FROM users u
+        LEFT JOIN user_roles ur ON ur.user_id = u.id
+        LEFT JOIN roles r ON r.id = ur.role_id
+        WHERE u.active = TRUE
+        GROUP BY lower(trim(u.name))
+        HAVING bool_or(r.role_key IN ('Owner', 'Manager', 'Sales'))
+      )
+      SELECT
+        names.salesperson_name AS name,
+        matched.user_id,
+        (ARRAY_AGG(loc.location ORDER BY loc.ticket_count DESC, loc.location ASC))[1] AS primary_location,
+        ARRAY_AGG(loc.location ORDER BY loc.ticket_count DESC, loc.location ASC) AS locations,
+        SUM(loc.ticket_count)::int AS total_tickets,
+        MAX(loc.last_sale_date) AS last_sale_date
+      FROM rep_locations loc
+      JOIN rep_names names ON names.salesperson_key = loc.salesperson_key
+      LEFT JOIN matched_users matched ON matched.salesperson_key = loc.salesperson_key
+      GROUP BY names.salesperson_name, matched.user_id
+      ORDER BY lower((ARRAY_AGG(loc.location ORDER BY loc.ticket_count DESC, loc.location ASC))[1]) ASC, lower(names.salesperson_name) ASC;
+    `;
+    const r = await pool.query(sql);
+    res.json({
+      rows: r.rows.map((row: any) => ({
+        name: String(row.name ?? ""),
+        user_id: row.user_id === null || row.user_id === undefined ? null : String(row.user_id),
+        primary_location: String(row.primary_location ?? ""),
+        locations: Array.isArray(row.locations) ? row.locations.map((value: any) => String(value)) : [],
+        total_tickets: Number(row.total_tickets ?? 0),
+        last_sale_date: row.last_sale_date ? String(row.last_sale_date).slice(0, 10) : null,
+      })),
+    });
+  });
+
   app.get("/api/crm/leads", async (req, res) => {
     const user = authUserFromReq(req);
     if (!user) return res.status(401).json({ error: "unauthorized" });
@@ -827,12 +895,52 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
 
     const store = typeof req.body?.store === "string" && req.body.store.trim() ? req.body.store.trim() : "FD7";
     const manualRepName = typeof req.body?.rep === "string" ? req.body.rep.trim() : "";
+    const requestedRepUserIdRaw = req.body?.rep_user_id;
     const isManual = Boolean(manualRepName);
     if (isManual && !isManagerOrOwner(user)) {
       return res.status(403).json({ error: "forbidden" });
     }
-    const repUserId = isManual ? null : Number(user.id);
-    const repName = isManual ? manualRepName : user.name || user.email;
+    let repUserId = isManual
+      ? requestedRepUserIdRaw === null || requestedRepUserIdRaw === undefined || requestedRepUserIdRaw === ""
+        ? null
+        : Number(requestedRepUserIdRaw)
+      : Number(user.id);
+    let repName = isManual ? manualRepName : user.name || user.email;
+
+    if (repUserId !== null && (!Number.isFinite(repUserId) || repUserId <= 0)) {
+      repUserId = null;
+    }
+    if (isManual && repUserId !== null) {
+      const matchedUser = await pool.query(
+        `
+        SELECT
+          u.id,
+          u.name,
+          u.email,
+          COALESCE(
+            ARRAY_AGG(DISTINCT r.role_key) FILTER (WHERE r.role_key IS NOT NULL),
+            ARRAY[]::text[]
+          ) AS roles
+        FROM users u
+        LEFT JOIN user_roles ur ON ur.user_id = u.id
+        LEFT JOIN roles r ON r.id = ur.role_id
+        WHERE u.id = $1 AND u.active = TRUE
+        GROUP BY u.id, u.name, u.email
+        LIMIT 1
+      `,
+        [repUserId]
+      );
+      if (!matchedUser.rows.length) {
+        return res.status(400).json({ error: "invalid rep_user_id" });
+      }
+      const roles = Array.isArray(matchedUser.rows[0].roles)
+        ? matchedUser.rows[0].roles.map((role: any) => String(role))
+        : [];
+      if (!roles.some((role: string) => ["Owner", "Manager", "Sales"].includes(role))) {
+        return res.status(400).json({ error: "rep_user_id is not queue-eligible" });
+      }
+      repName = String(matchedUser.rows[0].name || matchedUser.rows[0].email || repName);
+    }
 
     const existing = repUserId !== null
       ? await pool.query(`SELECT id FROM crm_ups_queue WHERE store = $1 AND rep_user_id = $2 LIMIT 1`, [store, repUserId])

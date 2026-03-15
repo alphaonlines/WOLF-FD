@@ -147,6 +147,15 @@ export interface CRMOwnerOption {
   roles: UserRole[];
 }
 
+export interface CRMSalespersonOption {
+  name: string;
+  userId: string | null;
+  primaryLocation: string;
+  locations: string[];
+  totalTickets: number;
+  lastSaleDate: string | null;
+}
+
 export interface CRMAutomationRule {
   id: string;
   label: string;

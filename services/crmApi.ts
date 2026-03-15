@@ -4,6 +4,7 @@ import type {
   CRMCustomerOrder,
   CRMLead,
   CRMOwnerOption,
+  CRMSalespersonOption,
   CRMSearchResult,
   CRMUpsItem,
   CRMUpsQueueItem,
@@ -62,6 +63,15 @@ type ApiUpsQueueRow = {
   current_customer_type?: string | null;
   current_customer_details?: string | null;
   started_at?: string | null;
+};
+
+type ApiSalespersonRow = {
+  name: string;
+  user_id?: string | null;
+  primary_location?: string | null;
+  locations?: string[] | null;
+  total_tickets?: number | null;
+  last_sale_date?: string | null;
 };
 
 async function fetchJson(path: string, init?: RequestInit): Promise<any> {
@@ -140,6 +150,15 @@ const mapUpsQueue = (row: ApiUpsQueueRow): CRMUpsQueueItem => ({
   startedAt: row.started_at ? String(row.started_at) : null,
 });
 
+const mapSalesperson = (row: ApiSalespersonRow): CRMSalespersonOption => ({
+  name: String(row.name ?? ""),
+  userId: row.user_id === null || row.user_id === undefined ? null : String(row.user_id),
+  primaryLocation: String(row.primary_location ?? ""),
+  locations: Array.isArray(row.locations) ? row.locations.map((value) => String(value)) : [],
+  totalTickets: Number(row.total_tickets ?? 0),
+  lastSaleDate: row.last_sale_date ? String(row.last_sale_date).slice(0, 10) : null,
+});
+
 export async function fetchCrmLeadsFromApi(scope: "my" | "team" = "team"): Promise<CRMLead[]> {
   const json = await fetchJson(`/api/crm/leads?scope=${encodeURIComponent(scope)}`);
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
@@ -155,6 +174,12 @@ export async function fetchCrmOwnersFromApi(): Promise<CRMOwnerOption[]> {
     email: String(row.email ?? ""),
     roles: Array.isArray(row.roles) ? row.roles.map((role: any) => String(role)) : [],
   })) as CRMOwnerOption[];
+}
+
+export async function fetchCrmSalespeopleFromApi(): Promise<CRMSalespersonOption[]> {
+  const json = await fetchJson("/api/crm/salespeople");
+  const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
+  return rows.map((row: any) => mapSalesperson(row as ApiSalespersonRow));
 }
 
 export async function createCrmLeadInApi(lead: CRMLead): Promise<void> {
@@ -298,11 +323,18 @@ export async function fetchCrmUpsQueueFromApi(store?: string): Promise<CRMUpsQue
   return rows.map((row: any) => mapUpsQueue(row as ApiUpsQueueRow));
 }
 
-export async function joinCrmUpsQueueInApi(store: string, rep?: string): Promise<CRMUpsQueueItem> {
+export async function joinCrmUpsQueueInApi(
+  store: string,
+  options?: { rep?: string; repUserId?: string | null }
+): Promise<CRMUpsQueueItem> {
   const json = await fetchJson("/api/crm/ups-queue", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ store, rep: rep || "" }),
+    body: JSON.stringify({
+      store,
+      rep: options?.rep || "",
+      rep_user_id: options?.repUserId || null,
+    }),
   });
   return mapUpsQueue((json as any)?.row as ApiUpsQueueRow);
 }

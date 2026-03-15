@@ -50,8 +50,10 @@ import {
 } from "../services/posBackendApi";
 import { SalesData, StoreData } from "../types";
 import {
+  addDaysYmd,
   dayOptions,
   formatMonthLabel,
+  formatDateLong,
   formatRangeLabel,
   formatShortDate,
   getSimplifiedRange,
@@ -87,6 +89,8 @@ type ReportRowsState = {
   availableManufacturers: string[];
 };
 
+type RangeMode = "preset" | "custom";
+
 type SalesDashboardProps = {
   itemSortMetric: "sales" | "qty";
   showTooltips?: boolean;
@@ -104,15 +108,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   const [yearA, setYearA] = useState<number>(() => new Date().getFullYear());
   const [monthA, setMonthA] = useState<string>("01");
   const [dayA, setDayA] = useState<string>("ALL");
-
-  useEffect(() => {
-    if (!trendFocusDay) return;
-    const current = `${yearA}-${monthA}-${dayA}`;
-    if (current !== trendFocusDay) {
-      setTrendFocusDay(null);
-      trendPrevRangeRef.current = null;
-    }
-  }, [yearA, monthA, dayA, trendFocusDay]);
+  const [rangeModeA, setRangeModeA] = useState<RangeMode>("preset");
+  const [customStartA, setCustomStartA] = useState<string>("");
+  const [customEndA, setCustomEndA] = useState<string>("");
 
   const [statCardOrder, setStatCardOrder] = useState<string[]>(() => {
     const saved = localStorage.getItem("fd-stat-card-order");
@@ -148,6 +146,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   const [yearB, setYearB] = useState<number | null>(null);
   const [monthB, setMonthB] = useState<string>("ALL");
   const [dayB, setDayB] = useState<string>("ALL");
+  const [rangeModeB, setRangeModeB] = useState<RangeMode>("preset");
+  const [customStartB, setCustomStartB] = useState<string>("");
+  const [customEndB, setCustomEndB] = useState<string>("");
   const [compareEnabled, setCompareEnabled] = useState<boolean>(false);
 
   const [compareHint, setCompareHint] = useState("");
@@ -436,6 +437,76 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
     return ["ALL", ...Array.from(new Set(values))];
   }, [reportData.availableManufacturers, reportManufacturer]);
 
+  const resolveCustomRange = (start: string, end: string) => {
+    if (!start || !end || start > end) return null;
+    return { start, endExclusive: addDaysYmd(end, 1) };
+  };
+
+  const resolveRange = (
+    mode: RangeMode,
+    year: number | null,
+    month: string,
+    day: string,
+    customStart: string,
+    customEnd: string
+  ) => {
+    if (mode === "custom") {
+      return resolveCustomRange(customStart, customEnd);
+    }
+    if (!year) return null;
+    return getSimplifiedRange(year, month, day);
+  };
+
+  const currentRangeInput = useMemo(
+    () => resolveRange(rangeModeA, yearA, monthA, dayA, customStartA, customEndA),
+    [rangeModeA, yearA, monthA, dayA, customStartA, customEndA]
+  );
+  const compareRangeInput = useMemo(
+    () => (compareEnabled ? resolveRange(rangeModeB, yearB, monthB, dayB, customStartB, customEndB) : null),
+    [compareEnabled, rangeModeB, yearB, monthB, dayB, customStartB, customEndB]
+  );
+  const rangeSelectionKeyA = useMemo(
+    () =>
+      rangeModeA === "custom"
+        ? `custom:${customStartA}:${customEndA}`
+        : `preset:${yearA}:${monthA}:${dayA}`,
+    [rangeModeA, customStartA, customEndA, yearA, monthA, dayA]
+  );
+
+  const switchRangeAToCustom = () => {
+    const baseRange = resolveRange("preset", yearA, monthA, dayA, "", "");
+    if (baseRange) {
+      setCustomStartA(baseRange.start);
+      setCustomEndA(addDaysYmd(baseRange.endExclusive, -1));
+    }
+    setRangeModeA("custom");
+  };
+
+  const switchRangeBToCustom = () => {
+    const baseRange = resolveRange("preset", yearB, monthB, dayB, "", "");
+    if (baseRange) {
+      setCustomStartB(baseRange.start);
+      setCustomEndB(addDaysYmd(baseRange.endExclusive, -1));
+    } else if (currentRangeInput) {
+      setCustomStartB(currentRangeInput.start);
+      setCustomEndB(addDaysYmd(currentRangeInput.endExclusive, -1));
+    }
+    setRangeModeB("custom");
+  };
+
+  useEffect(() => {
+    if (!trendFocusDay) return;
+    if (!currentRangeInput) {
+      setTrendFocusDay(null);
+      trendPrevRangeRef.current = null;
+      return;
+    }
+    if (!(trendFocusDay >= currentRangeInput.start && trendFocusDay < currentRangeInput.endExclusive)) {
+      setTrendFocusDay(null);
+      trendPrevRangeRef.current = null;
+    }
+  }, [currentRangeInput, trendFocusDay]);
+
 
 
 
@@ -464,12 +535,12 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
       const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
       const location = selectedStore ? selectedStore : undefined;
 
-      const currentRange = getSimplifiedRange(yearA, monthA, dayA);
+      const currentRange = currentRangeInput;
       if (!currentRange) throw new Error("Invalid Range A");
 
-      const compareRange = compareEnabled && yearB ? getSimplifiedRange(yearB, monthB, dayB) : null;
+      const compareRange = compareRangeInput;
       if (compareRange) {
-        setCompareHint(`vs ${yearB}${monthB === "ALL" ? "" : "-" + monthB}${dayB === "ALL" ? "" : "-" + dayB}`);
+        setCompareHint(`vs ${formatRangeLabel(compareRange)}`);
       } else {
         setCompareHint("");
       }
@@ -735,12 +806,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   useEffect(() => {
     loadData();
   }, [
-    yearA,
-    monthA,
-    dayA,
-    yearB,
-    monthB,
-    dayB,
+    currentRangeInput,
+    compareRangeInput,
     compareEnabled,
     selectedSalesperson,
     selectedStore,
@@ -761,7 +828,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   const runPrint = async () => {
     setPrintLoading(true);
     try {
-      const currentRange = getSimplifiedRange(yearA, monthA, dayA);
+      const currentRange = currentRangeInput;
       if (!currentRange) return;
       const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
       const location = selectedStore ? selectedStore : undefined;
@@ -883,8 +950,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   useEffect(() => {
     const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
     const location = selectedStore ? selectedStore : undefined;
-    
-    const range = getSimplifiedRange(yearA, monthA, dayA);
+
+    const range = currentRangeInput;
     if (!range) return;
     const { start, endExclusive } = range;
 
@@ -931,7 +998,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         console.error(e);
         setTrendData([]);
       });
-  }, [yearA, monthA, dayA, selectedSalesperson, selectedStore]);
+  }, [currentRangeInput, selectedSalesperson, selectedStore]);
 
   const displayTrendData = useMemo(() => {
     const rangeStart = currentRange.start;
@@ -964,25 +1031,22 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
 
   const avgTicketUp = avgTicketPct >= 0;
   const rangeLabel = useMemo(() => {
-    if (dayA !== "ALL") {
-      return formatShortDate(currentRange.start);
+    if (!currentRangeInput) return "Invalid Range";
+    if (currentRangeInput.start === addDaysYmd(currentRangeInput.endExclusive, -1)) {
+      return formatShortDate(currentRangeInput.start);
     }
-    if (monthA !== "ALL") {
-      return formatMonthLabel(`${yearA}-${monthA}`);
-    }
-    return String(yearA);
-  }, [yearA, monthA, dayA, currentRange.start]);
+    return formatRangeLabel(currentRangeInput);
+  }, [currentRangeInput]);
 
   const printRangeA = useMemo(() => {
-    const r = getSimplifiedRange(yearA, monthA, dayA);
+    const r = currentRangeInput;
     return r ? formatRangeLabel(r) : "";
-  }, [yearA, monthA, dayA]);
+  }, [currentRangeInput]);
 
   const printRangeB = useMemo(() => {
-    if (!compareEnabled || !yearB) return "";
-    const r = getSimplifiedRange(yearB, monthB, dayB);
+    const r = compareRangeInput;
     return r ? formatRangeLabel(r) : "";
-  }, [compareEnabled, yearB, monthB, dayB]);
+  }, [compareRangeInput]);
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("fd-range", { detail: { label: rangeLabel } }));
@@ -1115,7 +1179,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
     };
     window.addEventListener("fd-refresh-data", handler);
     return () => window.removeEventListener("fd-refresh-data", handler);
-  }, [yearA, monthA, dayA, yearB, monthB, dayB, compareEnabled, selectedSalesperson, selectedStore, itemSortMetric]);
+  }, [currentRangeInput, compareRangeInput, compareEnabled, selectedSalesperson, selectedStore, itemSortMetric]);
 
   const hasItemData = pro1stStats.totalSales > 0;
   const missingItemData = summary.lines > 0 && !hasItemData;
@@ -1199,37 +1263,121 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-slate-700 mb-2 block">Range A (Main)</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <select value={yearA} onChange={(e) => setYearA(Number(e.target.value))} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2">
-                      {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                    <select value={monthA} onChange={(e) => { setMonthA(e.target.value); if (e.target.value === "ALL") setDayA("ALL"); }} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2">
-                      <option value="ALL">All Months</option>
-                      {monthOptions.map((m) => <option key={m} value={m}>{new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "short" })}</option>)}
-                    </select>
-                    <select value={dayA} onChange={(e) => setDayA(e.target.value)} disabled={monthA === "ALL"} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50">
-                      <option value="ALL">All Days</option>
-                      {dayOptions.map((d) => <option key={d} value={d}>{d}</option>)}
-                    </select>
+                  <div className="mb-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                        rangeModeA === "preset"
+                          ? "bg-slate-900 text-white border-slate-900"
+                          : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                      }`}
+                      onClick={() => setRangeModeA("preset")}
+                    >
+                      Preset
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                        rangeModeA === "custom"
+                          ? "bg-slate-900 text-white border-slate-900"
+                          : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                      }`}
+                      onClick={switchRangeAToCustom}
+                    >
+                      Custom
+                    </button>
                   </div>
-                </div>
-                {compareEnabled && (
-                  <div>
-                    <label className="text-sm font-semibold text-slate-700 mb-2 block">Range B (Compare)</label>
+                  {rangeModeA === "preset" ? (
                     <div className="grid grid-cols-3 gap-2">
-                      <select value={yearB || ""} onChange={(e) => setYearB(e.target.value ? Number(e.target.value) : null)} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2">
-                        <option value="">None</option>
+                      <select value={yearA} onChange={(e) => setYearA(Number(e.target.value))} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2">
                         {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
                       </select>
-                      <select value={monthB} onChange={(e) => { setMonthB(e.target.value); if (e.target.value === "ALL") setDayB("ALL"); }} disabled={!yearB} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50">
+                      <select value={monthA} onChange={(e) => { setMonthA(e.target.value); if (e.target.value === "ALL") setDayA("ALL"); }} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2">
                         <option value="ALL">All Months</option>
                         {monthOptions.map((m) => <option key={m} value={m}>{new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "short" })}</option>)}
                       </select>
-                      <select value={dayB} onChange={(e) => setDayB(e.target.value)} disabled={!yearB || monthB === "ALL"} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50">
+                      <select value={dayA} onChange={(e) => setDayA(e.target.value)} disabled={monthA === "ALL"} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50">
                         <option value="ALL">All Days</option>
                         {dayOptions.map((d) => <option key={d} value={d}>{d}</option>)}
                       </select>
                     </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="date"
+                        value={customStartA}
+                        onChange={(e) => setCustomStartA(e.target.value)}
+                        className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2"
+                      />
+                      <input
+                        type="date"
+                        value={customEndA}
+                        min={customStartA || undefined}
+                        onChange={(e) => setCustomEndA(e.target.value)}
+                        className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2"
+                      />
+                    </div>
+                  )}
+                </div>
+                {compareEnabled && (
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-2 block">Range B (Compare)</label>
+                    <div className="mb-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                          rangeModeB === "preset"
+                            ? "bg-slate-900 text-white border-slate-900"
+                            : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                        }`}
+                        onClick={() => setRangeModeB("preset")}
+                      >
+                        Preset
+                      </button>
+                      <button
+                        type="button"
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                          rangeModeB === "custom"
+                            ? "bg-slate-900 text-white border-slate-900"
+                            : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                        }`}
+                        onClick={switchRangeBToCustom}
+                      >
+                        Custom
+                      </button>
+                    </div>
+                    {rangeModeB === "preset" ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        <select value={yearB || ""} onChange={(e) => setYearB(e.target.value ? Number(e.target.value) : null)} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2">
+                          <option value="">None</option>
+                          {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                        <select value={monthB} onChange={(e) => { setMonthB(e.target.value); if (e.target.value === "ALL") setDayB("ALL"); }} disabled={!yearB} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50">
+                          <option value="ALL">All Months</option>
+                          {monthOptions.map((m) => <option key={m} value={m}>{new Date(2024, parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "short" })}</option>)}
+                        </select>
+                        <select value={dayB} onChange={(e) => setDayB(e.target.value)} disabled={!yearB || monthB === "ALL"} className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2 disabled:opacity-50">
+                          <option value="ALL">All Days</option>
+                          {dayOptions.map((d) => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="date"
+                          value={customStartB}
+                          onChange={(e) => setCustomStartB(e.target.value)}
+                          className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2"
+                        />
+                        <input
+                          type="date"
+                          value={customEndB}
+                          min={customStartB || undefined}
+                          onChange={(e) => setCustomEndB(e.target.value)}
+                          className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

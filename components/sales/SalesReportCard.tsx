@@ -65,6 +65,16 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
   saleLink,
   saleLabel,
 }) => {
+  const formatAverageTicket = (totalRetail: number, ticketCount: number) => {
+    if (!Number.isFinite(totalRetail) || !Number.isFinite(ticketCount) || ticketCount <= 0) {
+      return "$0";
+    }
+    return `$${(totalRetail / ticketCount).toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card" data-print-id="sales-report">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -165,6 +175,10 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                       {renderHelp("Sum of qty_sold from item report, filtered by category/manufacturer.")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Average Ticket
+                      {renderHelp("Average retail per ticket for this row.")}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Units % of View
                       {renderHelp(
                         "Percent of this row's units against the visible rows after category/manufacturer filters. These values add up to 100%."
@@ -197,6 +211,9 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                         {Number(row.units || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        {formatAverageTicket(Number(row.totalRetail || 0), Number(row.ticketCount || 0))}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.unitsPct.toFixed(1)}%</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.ownUnitsPct.toFixed(1)}%</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.totalUnitsPct.toFixed(1)}%</td>
@@ -222,6 +239,9 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                     </td>
                     <td className="px-6 py-3 text-sm font-semibold text-slate-700">
                       {Number(reportTotals.totalUnits || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                      {formatAverageTicket(Number(reportTotals.totalRetail || 0), Number(reportTotals.totalTickets || 0))}
                     </td>
                     <td className="px-6 py-3 text-sm font-semibold text-slate-700">
                       {reportTotals.totalUnits > 0 ? "100.0" : "0.0"}%
