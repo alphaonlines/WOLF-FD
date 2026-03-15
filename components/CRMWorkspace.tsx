@@ -31,6 +31,7 @@ import {
   updateCrmUpsQueueCustomerInApi,
   upsertCrmCustomerAccount,
 } from "../services/crmApi";
+import { APP_VERSION } from "../constants";
 
 type CRMWorkspaceProps = {
   authUser: AuthUser;
@@ -508,6 +509,15 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser }) => {
   return (
     <div className="px-4 py-4 sm:px-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-4">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div>
+            <div className="text-sm font-semibold text-slate-900 dark:text-white">Alpha Pulse CRM</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">Opportunity queue and customer follow-up workspace.</div>
+          </div>
+          <div className="rounded-full border border-slate-200/80 bg-slate-50/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700/70 dark:bg-slate-900/76 dark:text-slate-300">
+            v{APP_VERSION}
+          </div>
+        </div>
         <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <div className={panelClassName}>
             <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-700/70 lg:flex-row lg:items-center lg:justify-between">

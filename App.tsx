@@ -27,7 +27,7 @@ import WolfBot from './components/WolfBot';
 import TaskManager from './components/TaskManager';
 import OwnerSettings from './components/OwnerSettings';
 import type { AuthUser, UserRole } from './types';
-import packageJson from './package.json';
+import { APP_VERSION } from './constants';
 import {
   changeCurrentPassword,
   fetchCurrentUser,
@@ -40,8 +40,6 @@ import NavItem from './components/app/NavItem';
 import { APP_THEME_STYLES } from './components/app/themeStyles';
 import { canAccessTab, getTabTitle, Tab } from './components/app/tabs';
 import { DASHBOARD_CARD_PERMISSION_BY_ID, FEATURE_PERMISSION_KEYS, hasPermission } from './components/app/permissions';
-
-const APP_VERSION = packageJson.version;
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.CRM);
