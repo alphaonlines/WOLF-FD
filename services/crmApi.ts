@@ -69,6 +69,12 @@ type ApiUpsQueueRow = {
   current_weather_precip_pct?: number | null;
   current_weather_wind_mph?: number | null;
   current_weather_fetched_at?: string | null;
+  live_weather_location?: string | null;
+  live_weather_summary?: string | null;
+  live_weather_temp_f?: number | null;
+  live_weather_precip_pct?: number | null;
+  live_weather_wind_mph?: number | null;
+  live_weather_fetched_at?: string | null;
 };
 
 type ApiSalespersonRow = {
@@ -165,6 +171,13 @@ const mapUpsQueue = (row: ApiUpsQueueRow): CRMUpsQueueItem => ({
   currentWeatherWindMph:
     row.current_weather_wind_mph === null || row.current_weather_wind_mph === undefined ? null : Number(row.current_weather_wind_mph),
   currentWeatherFetchedAt: row.current_weather_fetched_at ? String(row.current_weather_fetched_at) : null,
+  liveWeatherLocation: row.live_weather_location ? String(row.live_weather_location) : null,
+  liveWeatherSummary: row.live_weather_summary ? String(row.live_weather_summary) : null,
+  liveWeatherTempF: row.live_weather_temp_f === null || row.live_weather_temp_f === undefined ? null : Number(row.live_weather_temp_f),
+  liveWeatherPrecipPct:
+    row.live_weather_precip_pct === null || row.live_weather_precip_pct === undefined ? null : Number(row.live_weather_precip_pct),
+  liveWeatherWindMph: row.live_weather_wind_mph === null || row.live_weather_wind_mph === undefined ? null : Number(row.live_weather_wind_mph),
+  liveWeatherFetchedAt: row.live_weather_fetched_at ? String(row.live_weather_fetched_at) : null,
 });
 
 const mapSalesperson = (row: ApiSalespersonRow): CRMSalespersonOption => ({

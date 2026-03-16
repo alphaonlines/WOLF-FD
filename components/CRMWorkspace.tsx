@@ -62,13 +62,7 @@ type CustomerDraft = {
 };
 
 const LOCATION_OPTIONS = ["Camp", "Base", "G1", "FD7", "FD5"];
-const STORE_WEATHER_TRACKING_LABELS: Record<string, string> = {
-  Camp: "Camp Lejeune, NC",
-  Base: "Cherry Point, NC",
-  G1: "Greenville, NC",
-  FD7: "Morehead City, NC",
-  FD5: "Newport, NC",
-};
+const STORE_FILTER_OPTIONS = ["ALL", ...LOCATION_OPTIONS];
 const CHANNEL_OPTIONS: CRMLeadChannel[] = ["Phone", "SMS", "Webchat", "Facebook", "Instagram"];
 const STAGE_OPTIONS: CRMLeadStage[] = ["New", "Contacted", "Appointment", "Quoted", "Won", "Lost"];
 
@@ -111,6 +105,15 @@ const formatWeatherSnapshot = (item: CRMUpsQueueItem) => {
     item.currentWeatherPrecipPct === null || item.currentWeatherPrecipPct === undefined ? null : `${item.currentWeatherPrecipPct}% precip`,
   ].filter(Boolean);
   return parts.length ? parts.join(" · ") : "";
+};
+
+const formatLiveWeather = (item: CRMUpsQueueItem) => {
+  const parts = [
+    item.liveWeatherLocation || item.store,
+    item.liveWeatherTempF === null || item.liveWeatherTempF === undefined ? null : `${Math.round(item.liveWeatherTempF)}F`,
+    item.liveWeatherSummary,
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : item.store;
 };
 
 const splitName = (value: string) => {
@@ -169,7 +172,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     const [ownerRows, salespersonRows, queueRows, leadRows] = await Promise.all([
       fetchCrmOwnersFromApi(),
       fetchCrmSalespeopleFromApi(),
-      fetchCrmUpsQueueFromApi(selectedStore),
+      fetchCrmUpsQueueFromApi(selectedStore === "ALL" ? undefined : selectedStore),
       fetchCrmLeadsFromApi(leadScope),
     ]);
     setOwners(ownerRows);
@@ -201,22 +204,13 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   }, [selectedStore, leadScope]);
 
   const myQueueItem = useMemo(() => queue.find((item) => item.repUserId === authUser.id) || null, [queue, authUser.id]);
+  const isViewingAllStores = selectedStore === "ALL";
   const activeCount = queue.filter((item) => item.status === "working").length;
   const waitingCount = queue.filter((item) => item.status === "waiting").length;
   const breakCount = queue.filter((item) => item.status === "on_break").length;
   const selectedQueueItem = queue.find((item) => item.id === selectedQueueId) || myQueueItem || queue[0] || null;
+  const defaultDraftStore = !isViewingAllStores ? selectedStore : selectedQueueItem?.store || myQueueItem?.store || "FD7";
   const nextOpportunityId = queue.find((item) => item.status === "waiting")?.id || null;
-  const trackedStoreWeatherItem = useMemo(
-    () =>
-      queue.find(
-        (item) =>
-          item.store === selectedStore &&
-          item.currentWeatherLocation &&
-          item.currentWeatherFetchedAt
-      ) || null,
-    [queue, selectedStore]
-  );
-  const trackedStoreWeatherLabel = trackedStoreWeatherItem?.currentWeatherLocation || STORE_WEATHER_TRACKING_LABELS[selectedStore] || selectedStore;
   const ownerOptions = useMemo(() => {
     const rows = owners.length
       ? owners
@@ -261,7 +255,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       ...splitName(lead.name),
       phone: lead.phone,
       email: "",
-      store: lead.store || selectedStore,
+      store: lead.store || defaultDraftStore,
       owner: lead.owner || authUser.name || "Unassigned",
       ownerUserId: lead.ownerUserId || null,
       channel: lead.channel,
@@ -297,6 +291,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   };
 
   const handleJoinQueue = async () => {
+    if (isViewingAllStores) {
+      setErrorMessage("Choose a store before checking into the queue.");
+      return;
+    }
     setJoinBusy(true);
     setStatusMessage(null);
     setErrorMessage(null);
@@ -313,6 +311,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   };
 
   const handleAddSalespersonToQueue = async () => {
+    if (isViewingAllStores) {
+      setErrorMessage("Choose a store before adding someone to the queue.");
+      return;
+    }
     if (!selectedSalesperson) {
       setErrorMessage("Choose a salesperson from the sales roster first.");
       return;
@@ -395,7 +397,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     try {
       const rows = await completeCrmUpsQueueCustomerInApi(item.id);
       setQueue([...rows].sort((a, b) => a.queuePosition - b.queuePosition));
-      setDraft(buildDraft(authUser, selectedStore));
+      setDraft(buildDraft(authUser, defaultDraftStore));
       setStartDrafts((current) => ({
         ...current,
         [item.id]: { customer: "", customerType: "Regular Up" },
@@ -571,19 +573,19 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                   onChange={(event) => setSelectedStore(event.target.value)}
                   className={subtleInputClassName}
                 >
-                  {LOCATION_OPTIONS.map((location) => (
+                  {STORE_FILTER_OPTIONS.map((location) => (
                     <option key={location} value={location}>
-                      {location}
+                      {location === "ALL" ? "All Stores" : location}
                     </option>
                   ))}
                 </select>
                 {!myQueueItem ? (
                   <button
                     onClick={handleJoinQueue}
-                    disabled={joinBusy || syncMode !== "POS_DB"}
+                    disabled={joinBusy || syncMode !== "POS_DB" || isViewingAllStores}
                     className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-sky-300 dark:text-slate-950 dark:hover:bg-sky-200"
                   >
-                    {joinBusy ? "Joining..." : "Check In"}
+                    {isViewingAllStores ? "Select Store" : joinBusy ? "Joining..." : "Check In"}
                   </button>
                 ) : (
                   <button
@@ -609,10 +611,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                 </select>
                 <button
                   onClick={() => void handleAddSalespersonToQueue()}
-                  disabled={joinBusy || syncMode !== "POS_DB" || !selectedSalesperson}
+                  disabled={joinBusy || syncMode !== "POS_DB" || !selectedSalesperson || isViewingAllStores}
                   className={ghostButtonClassName}
                 >
-                  Add To Queue
+                  {isViewingAllStores ? "Select Store" : "Add To Queue"}
                 </button>
                 {selectedSalesperson ? <div className="text-xs text-slate-500 dark:text-slate-400">{selectedSalesperson.totalTickets.toLocaleString()} tickets</div> : null}
               </div>
@@ -635,26 +637,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                 <div className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{syncMode === "POS_DB" ? "Live" : "Offline"}</div>
               </div>
             </div>
-            <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-700/70">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-400">Weather Tracking</div>
-              {trackedStoreWeatherItem ? (
-                <div className="mt-1 text-sm text-slate-600 dark:text-slate-200">
-                  {selectedStore} uses {trackedStoreWeatherLabel}
-                  {trackedStoreWeatherItem.currentWeatherSummary ? ` · ${trackedStoreWeatherItem.currentWeatherSummary}` : ""}
-                  {trackedStoreWeatherItem.currentWeatherTempF !== null && trackedStoreWeatherItem.currentWeatherTempF !== undefined
-                    ? ` · ${Math.round(trackedStoreWeatherItem.currentWeatherTempF)}F`
-                    : ""}
-                  {trackedStoreWeatherItem.currentWeatherPrecipPct !== null && trackedStoreWeatherItem.currentWeatherPrecipPct !== undefined
-                    ? ` · ${trackedStoreWeatherItem.currentWeatherPrecipPct}% precip`
-                    : ""}
-                </div>
-              ) : (
-                <div className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                  {selectedStore} ups snapshot weather from {trackedStoreWeatherLabel} automatically when an opportunity starts.
-                </div>
-              )}
-            </div>
-
             <div className="divide-y divide-slate-100 dark:divide-slate-700/70">
               {queue.length ? (
                 queue.map((item) => {
@@ -667,6 +649,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                   const canMoveUp = isManager && item.status !== "working" && sameStatusIndex > 0;
                   const canMoveDown = isManager && item.status !== "working" && sameStatusIndex >= 0 && sameStatusIndex < sameStatusItems.length - 1;
                   const weatherSnapshot = formatWeatherSnapshot(item);
+                  const liveWeather = formatLiveWeather(item);
                   return (
                     <div key={item.id} className={`${isSelected ? (isDarkMode ? "bg-slate-900/80" : "bg-sky-50/80") : isDarkMode ? "hover:bg-slate-900/60" : ""}`}>
                       <button
@@ -706,8 +689,16 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                             <div className="mt-1 truncate text-xs text-emerald-300/90">{weatherSnapshot}</div>
                           ) : null}
                         </div>
-                        <div className="text-right text-xs text-slate-400 dark:text-slate-500">
-                          {item.status === "working" ? formatTime(item.startedAt) : ""}
+                        <div className="text-right">
+                          <div className="text-[11px] font-medium text-slate-500 dark:text-slate-300">
+                            {item.store}
+                          </div>
+                          <div className="mt-0.5 max-w-[210px] truncate text-[11px] text-emerald-500 dark:text-emerald-300">
+                            {liveWeather}
+                          </div>
+                          <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                            {item.status === "working" ? formatTime(item.startedAt) : ""}
+                          </div>
                         </div>
                       </button>
 
@@ -995,7 +986,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                 <button onClick={() => void handleSaveAccount()} disabled={saving !== null} className={ghostButtonClassName}>
                   Save Account
                 </button>
-                <button onClick={() => setDraft(buildDraft(authUser, selectedStore))} className={ghostButtonClassName}>
+                <button onClick={() => setDraft(buildDraft(authUser, defaultDraftStore))} className={ghostButtonClassName}>
                   Clear
                 </button>
               </div>

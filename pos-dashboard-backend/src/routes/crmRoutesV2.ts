@@ -236,9 +236,41 @@ function mapUpsQueueRow(row: any) {
     current_weather_fetched_at: row.current_weather_fetched_at ? String(row.current_weather_fetched_at) : null,
     current_weather_source: row.current_weather_source ? String(row.current_weather_source) : null,
     active_history_id: row.active_history_id ? String(row.active_history_id) : null,
+    live_weather_location: row.live_weather_location ? String(row.live_weather_location) : null,
+    live_weather_summary: row.live_weather_summary ? String(row.live_weather_summary) : null,
+    live_weather_temp_f:
+      row.live_weather_temp_f === null || row.live_weather_temp_f === undefined ? null : Number(row.live_weather_temp_f),
+    live_weather_precip_pct:
+      row.live_weather_precip_pct === null || row.live_weather_precip_pct === undefined ? null : Number(row.live_weather_precip_pct),
+    live_weather_wind_mph:
+      row.live_weather_wind_mph === null || row.live_weather_wind_mph === undefined ? null : Number(row.live_weather_wind_mph),
+    live_weather_fetched_at: row.live_weather_fetched_at ? String(row.live_weather_fetched_at) : null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
+}
+
+async function addLiveWeatherToQueueRows(rows: any[]) {
+  const stores = [...new Set(rows.map((row) => String(row.store || "").trim()).filter(Boolean))];
+  const weatherByStore = new Map<string, Awaited<ReturnType<typeof getStoreWeatherSnapshot>>>();
+  await Promise.all(
+    stores.map(async (store) => {
+      const snapshot = await getStoreWeatherSnapshot(store);
+      weatherByStore.set(store, snapshot);
+    })
+  );
+  return rows.map((row) => {
+    const snapshot = weatherByStore.get(String(row.store || "").trim()) || null;
+    return {
+      ...row,
+      live_weather_location: snapshot?.locationLabel || null,
+      live_weather_summary: snapshot?.summary || null,
+      live_weather_temp_f: snapshot?.temperatureF ?? null,
+      live_weather_precip_pct: snapshot?.precipitationProbabilityPct ?? null,
+      live_weather_wind_mph: snapshot?.windSpeedMph ?? null,
+      live_weather_fetched_at: snapshot?.fetchedAt || null,
+    };
+  });
 }
 
 async function reorderUpsQueueStore(pool: Pool, store: string) {
@@ -941,7 +973,8 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         checked_in_at ASC;
     `;
     const r = await pool.query(sql, values);
-    res.json({ rows: r.rows.map(mapUpsQueueRow) });
+    const rowsWithWeather = await addLiveWeatherToQueueRows(r.rows);
+    res.json({ rows: rowsWithWeather.map(mapUpsQueueRow) });
   });
 
   app.post("/api/crm/ups-queue", async (req, res) => {
