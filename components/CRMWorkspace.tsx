@@ -62,6 +62,13 @@ type CustomerDraft = {
 };
 
 const LOCATION_OPTIONS = ["Camp", "Base", "G1", "FD7", "FD5"];
+const STORE_WEATHER_TRACKING_LABELS: Record<string, string> = {
+  Camp: "Camp Lejeune, NC",
+  Base: "Cherry Point, NC",
+  G1: "Greenville, NC",
+  FD7: "Morehead City, NC",
+  FD5: "Newport, NC",
+};
 const CHANNEL_OPTIONS: CRMLeadChannel[] = ["Phone", "SMS", "Webchat", "Facebook", "Instagram"];
 const STAGE_OPTIONS: CRMLeadStage[] = ["New", "Contacted", "Appointment", "Quoted", "Won", "Lost"];
 
@@ -199,6 +206,17 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   const breakCount = queue.filter((item) => item.status === "on_break").length;
   const selectedQueueItem = queue.find((item) => item.id === selectedQueueId) || myQueueItem || queue[0] || null;
   const nextOpportunityId = queue.find((item) => item.status === "waiting")?.id || null;
+  const trackedStoreWeatherItem = useMemo(
+    () =>
+      queue.find(
+        (item) =>
+          item.store === selectedStore &&
+          item.currentWeatherLocation &&
+          item.currentWeatherFetchedAt
+      ) || null,
+    [queue, selectedStore]
+  );
+  const trackedStoreWeatherLabel = trackedStoreWeatherItem?.currentWeatherLocation || STORE_WEATHER_TRACKING_LABELS[selectedStore] || selectedStore;
   const ownerOptions = useMemo(() => {
     const rows = owners.length
       ? owners
@@ -616,6 +634,25 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                 <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Sync</div>
                 <div className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{syncMode === "POS_DB" ? "Live" : "Offline"}</div>
               </div>
+            </div>
+            <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-700/70">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-400">Weather Tracking</div>
+              {trackedStoreWeatherItem ? (
+                <div className="mt-1 text-sm text-slate-600 dark:text-slate-200">
+                  {selectedStore} uses {trackedStoreWeatherLabel}
+                  {trackedStoreWeatherItem.currentWeatherSummary ? ` · ${trackedStoreWeatherItem.currentWeatherSummary}` : ""}
+                  {trackedStoreWeatherItem.currentWeatherTempF !== null && trackedStoreWeatherItem.currentWeatherTempF !== undefined
+                    ? ` · ${Math.round(trackedStoreWeatherItem.currentWeatherTempF)}F`
+                    : ""}
+                  {trackedStoreWeatherItem.currentWeatherPrecipPct !== null && trackedStoreWeatherItem.currentWeatherPrecipPct !== undefined
+                    ? ` · ${trackedStoreWeatherItem.currentWeatherPrecipPct}% precip`
+                    : ""}
+                </div>
+              ) : (
+                <div className="mt-1 text-sm text-slate-500 dark:text-slate-300">
+                  {selectedStore} ups snapshot weather from {trackedStoreWeatherLabel} automatically when an opportunity starts.
+                </div>
+              )}
             </div>
 
             <div className="divide-y divide-slate-100 dark:divide-slate-700/70">
