@@ -139,6 +139,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   const ghostButtonClassName = isDarkMode
     ? "rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-800 disabled:opacity-50"
     : "rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white disabled:opacity-50";
+  const successButtonClassName = isDarkMode
+    ? "rounded-xl border border-emerald-400/35 bg-emerald-400/14 px-3 py-2 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-400/20 disabled:opacity-50"
+    : "rounded-xl border border-emerald-300 bg-emerald-50/90 px-3 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50";
 
   const loadData = async () => {
     const healthy = await checkPosBackendHealthy();
@@ -716,7 +719,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                                 <button
                                   onClick={() => void handleStartCustomer(item)}
                                   disabled={saving === "queue"}
-                                  className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-sky-300 dark:text-slate-950 dark:hover:bg-sky-200"
+                                  className={successButtonClassName}
                                 >
                                   Start
                                 </button>
@@ -746,7 +749,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                                 <button
                                   onClick={() => void handleUpdateQueueStatus(item, "waiting")}
                                   disabled={!canManageRow || saving === "queue"}
-                                  className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-sky-300 dark:text-slate-950 dark:hover:bg-sky-200"
+                                  className={successButtonClassName}
                                 >
                                   Return To Queue
                                 </button>
@@ -790,7 +793,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                               <button
                                 onClick={() => void handleUpdateQueueStatus(item, "on_break")}
                                 disabled={!canManageRow || saving === "queue"}
-                                className="rounded-xl border border-amber-400/30 bg-amber-400/12 px-3 py-2 text-sm font-semibold text-amber-100 disabled:opacity-50"
+                                className={successButtonClassName}
                               >
                                 On Break
                               </button>
@@ -928,7 +931,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
               </div>
 
               <div className="mt-3 flex gap-2">
-                <button onClick={() => void handleSaveLead()} disabled={saving !== null} className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-sky-300 dark:text-slate-950 dark:hover:bg-sky-200">
+                <button onClick={() => void handleSaveLead()} disabled={saving !== null} className={successButtonClassName}>
                   {draft.leadId ? "Update Lead" : "Save Lead"}
                 </button>
                 <button onClick={() => void handleSaveAccount()} disabled={saving !== null} className={ghostButtonClassName}>
