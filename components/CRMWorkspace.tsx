@@ -590,7 +590,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                 <button
                   onClick={() => void handleAddToQueue()}
                   disabled={joinBusy || syncMode !== "POS_DB" || isViewingAllStores || (!selectedSalesperson && !!myQueueItem)}
-                  className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-sky-300 dark:text-slate-950 dark:hover:bg-sky-200"
+                  className={ghostButtonClassName}
                 >
                   {isViewingAllStores
                     ? "Select Store"
