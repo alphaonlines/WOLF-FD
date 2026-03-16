@@ -245,12 +245,21 @@ function mapUpsQueueRow(row: any) {
     live_weather_wind_mph:
       row.live_weather_wind_mph === null || row.live_weather_wind_mph === undefined ? null : Number(row.live_weather_wind_mph),
     live_weather_fetched_at: row.live_weather_fetched_at ? String(row.live_weather_fetched_at) : null,
+    helped_today_count: row.helped_today_count === null || row.helped_today_count === undefined ? 0 : Number(row.helped_today_count),
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
 }
 
-async function addLiveWeatherToQueueRows(rows: any[]) {
+function buildQueueRepMetricKey(row: any): string | null {
+  if (row?.rep_user_id !== null && row?.rep_user_id !== undefined && row?.rep_user_id !== "") {
+    return `uid:${String(row.rep_user_id)}`;
+  }
+  const rep = String(row?.rep || "").trim().toLowerCase();
+  return rep ? `name:${rep}` : null;
+}
+
+async function decorateQueueRows(pool: Pool, rows: any[]) {
   const stores = [...new Set(rows.map((row) => String(row.store || "").trim()).filter(Boolean))];
   const weatherByStore = new Map<string, Awaited<ReturnType<typeof getStoreWeatherSnapshot>>>();
   await Promise.all(
@@ -259,8 +268,46 @@ async function addLiveWeatherToQueueRows(rows: any[]) {
       weatherByStore.set(store, snapshot);
     })
   );
+  const repUserIds = [...new Set(
+    rows
+      .map((row) => (row.rep_user_id === null || row.rep_user_id === undefined || row.rep_user_id === "" ? null : Number(row.rep_user_id)))
+      .filter((value): value is number => Number.isFinite(value) && value > 0)
+  )];
+  const repNames = [...new Set(
+    rows
+      .filter((row) => row.rep_user_id === null || row.rep_user_id === undefined || row.rep_user_id === "")
+      .map((row) => String(row.rep || "").trim().toLowerCase())
+      .filter(Boolean)
+  )];
+  const helpedTodayByRep = new Map<string, number>();
+  if (repUserIds.length || repNames.length) {
+    const metrics = await pool.query(
+      `
+      SELECT
+        CASE
+          WHEN rep_user_id IS NOT NULL THEN 'uid:' || rep_user_id::text
+          ELSE 'name:' || lower(rep)
+        END AS rep_key,
+        COUNT(*)::int AS helped_today_count
+      FROM crm_ups_history
+      WHERE
+        counts_as_up = TRUE
+        AND (started_at AT TIME ZONE 'America/New_York')::date = (now() AT TIME ZONE 'America/New_York')::date
+        AND (
+          (array_length($1::bigint[], 1) IS NOT NULL AND rep_user_id = ANY($1::bigint[]))
+          OR (array_length($2::text[], 1) IS NOT NULL AND rep_user_id IS NULL AND lower(rep) = ANY($2::text[]))
+        )
+      GROUP BY 1
+    `,
+      [repUserIds, repNames]
+    );
+    for (const metricRow of metrics.rows) {
+      helpedTodayByRep.set(String(metricRow.rep_key || ""), Number(metricRow.helped_today_count ?? 0));
+    }
+  }
   return rows.map((row) => {
     const snapshot = weatherByStore.get(String(row.store || "").trim()) || null;
+    const repKey = buildQueueRepMetricKey(row);
     return {
       ...row,
       live_weather_location: snapshot?.locationLabel || null,
@@ -269,6 +316,7 @@ async function addLiveWeatherToQueueRows(rows: any[]) {
       live_weather_precip_pct: snapshot?.precipitationProbabilityPct ?? null,
       live_weather_wind_mph: snapshot?.windSpeedMph ?? null,
       live_weather_fetched_at: snapshot?.fetchedAt || null,
+      helped_today_count: repKey ? helpedTodayByRep.get(repKey) ?? 0 : 0,
     };
   });
 }
@@ -304,7 +352,8 @@ async function reorderUpsQueueStore(pool: Pool, store: string) {
     [store]
   );
 
-  return reordered.rows.map(mapUpsQueueRow);
+  const decoratedRows = await decorateQueueRows(pool, reordered.rows);
+  return decoratedRows.map(mapUpsQueueRow);
 }
 
 function normalizePhone(value: string): string {
@@ -973,8 +1022,8 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         checked_in_at ASC;
     `;
     const r = await pool.query(sql, values);
-    const rowsWithWeather = await addLiveWeatherToQueueRows(r.rows);
-    res.json({ rows: rowsWithWeather.map(mapUpsQueueRow) });
+    const decoratedRows = await decorateQueueRows(pool, r.rows);
+    res.json({ rows: decoratedRows.map(mapUpsQueueRow) });
   });
 
   app.post("/api/crm/ups-queue", async (req, res) => {
@@ -1043,7 +1092,8 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       `,
         [existing.rows[0].id]
       );
-      return res.status(200).json({ row: mapUpsQueueRow(row.rows[0]) });
+      const decoratedRows = await decorateQueueRows(pool, row.rows);
+      return res.status(200).json({ row: mapUpsQueueRow(decoratedRows[0]) });
     }
 
     const maxPos = await pool.query(`SELECT COALESCE(MAX(queue_position), 0)::int AS max_pos FROM crm_ups_queue WHERE store = $1`, [
@@ -1067,7 +1117,8 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     `,
       [id, store, repName, repUserId, nextPos]
     );
-    res.status(201).json({ row: mapUpsQueueRow(r.rows[0]) });
+    const decoratedRows = await decorateQueueRows(pool, r.rows);
+    res.status(201).json({ row: mapUpsQueueRow(decoratedRows[0]) });
   });
 
   app.post("/api/crm/ups-queue/:id/start", async (req, res) => {
@@ -1186,7 +1237,8 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       [id]
     );
     if (!refreshed.rows.length) return res.status(404).json({ error: "not found" });
-    res.json({ row: mapUpsQueueRow(refreshed.rows[0]) });
+    const decoratedRows = await decorateQueueRows(pool, refreshed.rows);
+    res.json({ row: mapUpsQueueRow(decoratedRows[0]) });
   });
 
   app.patch("/api/crm/ups-queue/:id/customer", async (req, res) => {
@@ -1237,11 +1289,12 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       WHERE id = $${values.length}
       RETURNING
         ${UPS_QUEUE_SELECT_SQL}
-      `,
+    `,
       values
     );
     if (!r.rows.length) return res.status(404).json({ error: "not found" });
-    res.json({ row: mapUpsQueueRow(r.rows[0]) });
+    const decoratedRows = await decorateQueueRows(pool, r.rows);
+    res.json({ row: mapUpsQueueRow(decoratedRows[0]) });
   });
 
   app.post("/api/crm/ups-queue/:id/complete", async (req, res) => {

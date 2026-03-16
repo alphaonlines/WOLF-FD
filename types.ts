@@ -121,6 +121,7 @@ export interface CRMUpsQueueItem {
   liveWeatherPrecipPct: number | null;
   liveWeatherWindMph: number | null;
   liveWeatherFetchedAt: string | null;
+  helpedTodayCount: number;
 }
 
 export interface CRMCustomerOrder {

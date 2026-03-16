@@ -714,6 +714,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                           <div className="mt-0.5 max-w-[210px] truncate text-[11px] text-emerald-500 dark:text-emerald-300">
                             {liveWeather}
                           </div>
+                          <div className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+                            Helped today: {item.helpedTodayCount}
+                          </div>
                           <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
                             {item.status === "working" ? formatTime(item.startedAt) : ""}
                           </div>
