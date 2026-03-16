@@ -291,49 +291,27 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     }));
   };
 
-  const handleJoinQueue = async () => {
-    if (isViewingAllStores) {
-      setErrorMessage("Choose a store before checking into the queue.");
-      return;
-    }
-    setJoinBusy(true);
-    setStatusMessage(null);
-    setErrorMessage(null);
-    try {
-      const row = await joinCrmUpsQueueInApi(selectedStore);
-      setQueue((current) => [...current.filter((item) => item.id !== row.id), row].sort((a, b) => a.queuePosition - b.queuePosition));
-      setSelectedQueueId(row.id);
-      setStatusMessage(`Checked into ${selectedStore}.`);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to join queue.");
-    } finally {
-      setJoinBusy(false);
-    }
-  };
-
-  const handleAddSalespersonToQueue = async () => {
+  const handleAddToQueue = async () => {
     if (isViewingAllStores) {
       setErrorMessage("Choose a store before adding someone to the queue.");
       return;
     }
-    if (!selectedSalesperson) {
-      setErrorMessage("Choose a salesperson from the sales roster first.");
-      return;
-    }
     setJoinBusy(true);
     setStatusMessage(null);
     setErrorMessage(null);
     try {
-      const row = await joinCrmUpsQueueInApi(selectedStore, {
-        rep: selectedSalesperson.name,
-        repUserId: selectedSalesperson.userId,
-      });
+      const row = selectedSalesperson
+        ? await joinCrmUpsQueueInApi(selectedStore, {
+            rep: selectedSalesperson.name,
+            repUserId: selectedSalesperson.userId,
+          })
+        : await joinCrmUpsQueueInApi(selectedStore);
       setQueue((current) => [...current.filter((item) => item.id !== row.id), row].sort((a, b) => a.queuePosition - b.queuePosition));
       setSelectedQueueId(row.id);
       setSelectedSalespersonName("");
-      setStatusMessage(`${selectedSalesperson.name} added to ${selectedStore}.`);
+      setStatusMessage(selectedSalesperson ? `${selectedSalesperson.name} added to ${selectedStore}.` : `Checked into ${selectedStore}.`);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to add salesperson to queue.");
+      setErrorMessage(error instanceof Error ? error.message : "Unable to add to queue.");
     } finally {
       setJoinBusy(false);
     }
@@ -597,30 +575,12 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                     </option>
                   ))}
                 </select>
-                {!myQueueItem ? (
-                  <button
-                    onClick={handleJoinQueue}
-                    disabled={joinBusy || syncMode !== "POS_DB" || isViewingAllStores}
-                    className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-sky-300 dark:text-slate-950 dark:hover:bg-sky-200"
-                  >
-                    {isViewingAllStores ? "Select Store" : joinBusy ? "Joining..." : "Check In"}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => void handleLeaveQueue(myQueueItem)}
-                    className={ghostButtonClassName}
-                  >
-                    Leave Queue
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
                 <select
                   value={selectedSalespersonName}
                   onChange={(event) => setSelectedSalespersonName(event.target.value)}
                   className={`min-w-[220px] ${subtleInputClassName}`}
                 >
-                  <option value="">Add salesperson from sales analysis</option>
+                  <option value="">Add myself to queue</option>
                   {availableSalespeople.map((person) => (
                     <option key={`${person.name}-${person.userId || "manual"}`} value={person.name}>
                       {person.name}
@@ -628,13 +588,30 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                   ))}
                 </select>
                 <button
-                  onClick={() => void handleAddSalespersonToQueue()}
-                  disabled={joinBusy || syncMode !== "POS_DB" || !selectedSalesperson || isViewingAllStores}
-                  className={ghostButtonClassName}
+                  onClick={() => void handleAddToQueue()}
+                  disabled={joinBusy || syncMode !== "POS_DB" || isViewingAllStores || (!selectedSalesperson && !!myQueueItem)}
+                  className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-sky-300 dark:text-slate-950 dark:hover:bg-sky-200"
                 >
-                  {isViewingAllStores ? "Select Store" : "Add To Queue"}
+                  {isViewingAllStores
+                    ? "Select Store"
+                    : joinBusy
+                      ? "Adding..."
+                      : !selectedSalesperson && myQueueItem
+                        ? "Already In Queue"
+                      : selectedSalesperson
+                        ? "Add To Queue"
+                        : "Check In"}
                 </button>
-                {selectedSalesperson ? <div className="text-xs text-slate-500 dark:text-slate-400">{selectedSalesperson.totalTickets.toLocaleString()} tickets</div> : null}
+                {selectedSalesperson ? (
+                  <div className="text-xs text-slate-500 dark:text-slate-400">{selectedSalesperson.totalTickets.toLocaleString()} tickets</div>
+                ) : myQueueItem ? (
+                  <button
+                    onClick={() => void handleLeaveQueue(myQueueItem)}
+                    className={ghostButtonClassName}
+                  >
+                    Leave Queue
+                  </button>
+                ) : null}
               </div>
             </div>
             <div className="grid grid-cols-2 border-b border-slate-100 dark:border-slate-700/70 md:grid-cols-4">
