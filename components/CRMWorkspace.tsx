@@ -96,6 +96,16 @@ const formatTime = (value: string | null) => {
   return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 };
 
+const formatWeatherSnapshot = (item: CRMUpsQueueItem) => {
+  const parts = [
+    item.currentWeatherLocation || item.store,
+    item.currentWeatherSummary,
+    item.currentWeatherTempF === null || item.currentWeatherTempF === undefined ? null : `${Math.round(item.currentWeatherTempF)}F`,
+    item.currentWeatherPrecipPct === null || item.currentWeatherPrecipPct === undefined ? null : `${item.currentWeatherPrecipPct}% precip`,
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "";
+};
+
 const splitName = (value: string) => {
   const trimmed = value.trim();
   if (!trimmed) return { firstName: "", lastName: "" };
@@ -619,6 +629,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                   const sameStatusIndex = sameStatusItems.findIndex((entry) => entry.id === item.id);
                   const canMoveUp = isManager && item.status !== "working" && sameStatusIndex > 0;
                   const canMoveDown = isManager && item.status !== "working" && sameStatusIndex >= 0 && sameStatusIndex < sameStatusItems.length - 1;
+                  const weatherSnapshot = formatWeatherSnapshot(item);
                   return (
                     <div key={item.id} className={`${isSelected ? (isDarkMode ? "bg-slate-900/80" : "bg-sky-50/80") : isDarkMode ? "hover:bg-slate-900/60" : ""}`}>
                       <button
@@ -654,6 +665,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                                 ? "Unavailable and skipped until returned to queue."
                               : `Checked in ${formatTime(item.checkedInAt) || ""}`}
                           </div>
+                          {item.status === "working" && weatherSnapshot ? (
+                            <div className="mt-1 truncate text-xs text-emerald-300/90">{weatherSnapshot}</div>
+                          ) : null}
                         </div>
                         <div className="text-right text-xs text-slate-400 dark:text-slate-500">
                           {item.status === "working" ? formatTime(item.startedAt) : ""}
@@ -763,29 +777,36 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                               </div>
                             </div>
                           ) : (
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                onClick={() => void handleCompleteCustomer(item)}
-                                className="rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 dark:bg-emerald-400 dark:hover:bg-emerald-300"
-                              >
-                                Complete
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setDraft((current) => ({
-                                    ...current,
-                                    queueId: item.id,
-                                    ...splitName(item.currentCustomer || combineName(current.firstName, current.lastName)),
-                                    visualDescription: item.currentCustomerDetails || current.visualDescription,
-                                    owner: item.rep || current.owner,
-                                    ownerUserId: item.repUserId || current.ownerUserId,
-                                    store: item.store || current.store,
-                                  }));
-                                }}
-                                className={ghostButtonClassName}
-                              >
-                                Load Into Panel
-                              </button>
+                            <div className="space-y-2">
+                              {weatherSnapshot ? (
+                                <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-medium text-emerald-100">
+                                  Weather snapshot: {weatherSnapshot}
+                                </div>
+                              ) : null}
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() => void handleCompleteCustomer(item)}
+                                  className="rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 dark:bg-emerald-400 dark:hover:bg-emerald-300"
+                                >
+                                  Complete
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setDraft((current) => ({
+                                      ...current,
+                                      queueId: item.id,
+                                      ...splitName(item.currentCustomer || combineName(current.firstName, current.lastName)),
+                                      visualDescription: item.currentCustomerDetails || current.visualDescription,
+                                      owner: item.rep || current.owner,
+                                      ownerUserId: item.repUserId || current.ownerUserId,
+                                      store: item.store || current.store,
+                                    }));
+                                  }}
+                                  className={ghostButtonClassName}
+                                >
+                                  Load Into Panel
+                                </button>
+                              </div>
                             </div>
                           )}
                           {item.status === "waiting" ? (

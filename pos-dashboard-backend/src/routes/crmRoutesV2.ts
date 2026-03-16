@@ -7,6 +7,7 @@ import {
   parseCrmLeadId,
   parseCrmStage,
 } from "../parsers";
+import { getStoreWeatherSnapshot } from "../crmWeather";
 
 type AuthUserLike = {
   id: string;
@@ -24,6 +25,52 @@ const UPS_LANES = ["Unattended", "Be-Back", "Quote Follow-up"] as const;
 const UPS_PRIORITIES = ["Hot", "Today", "Nurture"] as const;
 const UPS_QUEUE_CUSTOMER_TYPES = ["Regular Up", "B-Back"] as const;
 const UPS_QUEUE_STATUSES = ["waiting", "working", "on_break"] as const;
+const UPS_QUEUE_SELECT_SQL = `
+  id,
+  store,
+  rep,
+  rep_user_id,
+  status,
+  queue_position,
+  checked_in_at,
+  current_customer,
+  current_customer_type,
+  current_customer_details,
+  started_at,
+  current_weather_location,
+  current_weather_summary,
+  current_weather_temp_f,
+  current_weather_precip_pct,
+  current_weather_wind_mph,
+  current_weather_fetched_at,
+  current_weather_source,
+  active_history_id,
+  created_at,
+  updated_at
+`;
+const QUALIFIED_UPS_QUEUE_SELECT_SQL = `
+  q.id,
+  q.store,
+  q.rep,
+  q.rep_user_id,
+  q.status,
+  q.queue_position,
+  q.checked_in_at,
+  q.current_customer,
+  q.current_customer_type,
+  q.current_customer_details,
+  q.started_at,
+  q.current_weather_location,
+  q.current_weather_summary,
+  q.current_weather_temp_f,
+  q.current_weather_precip_pct,
+  q.current_weather_wind_mph,
+  q.current_weather_fetched_at,
+  q.current_weather_source,
+  q.active_history_id,
+  q.created_at,
+  q.updated_at
+`;
 
 function parseUpsLane(value: any): (typeof UPS_LANES)[number] | null {
   if (!value || typeof value !== "string") return null;
@@ -47,6 +94,10 @@ function parseUpsQueueStatus(value: any): (typeof UPS_QUEUE_STATUSES)[number] | 
   if (!value || typeof value !== "string") return null;
   const status = value.trim();
   return UPS_QUEUE_STATUSES.includes(status as any) ? (status as any) : null;
+}
+
+function buildUpsHistoryId(): string {
+  return `uphist-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function authUserFromReq(req: any): AuthUserLike | null {
@@ -168,6 +219,23 @@ function mapUpsQueueRow(row: any) {
     current_customer_type: row.current_customer_type ? String(row.current_customer_type) : null,
     current_customer_details: row.current_customer_details ? String(row.current_customer_details) : null,
     started_at: row.started_at ? String(row.started_at) : null,
+    current_weather_location: row.current_weather_location ? String(row.current_weather_location) : null,
+    current_weather_summary: row.current_weather_summary ? String(row.current_weather_summary) : null,
+    current_weather_temp_f:
+      row.current_weather_temp_f === null || row.current_weather_temp_f === undefined
+        ? null
+        : Number(row.current_weather_temp_f),
+    current_weather_precip_pct:
+      row.current_weather_precip_pct === null || row.current_weather_precip_pct === undefined
+        ? null
+        : Number(row.current_weather_precip_pct),
+    current_weather_wind_mph:
+      row.current_weather_wind_mph === null || row.current_weather_wind_mph === undefined
+        ? null
+        : Number(row.current_weather_wind_mph),
+    current_weather_fetched_at: row.current_weather_fetched_at ? String(row.current_weather_fetched_at) : null,
+    current_weather_source: row.current_weather_source ? String(row.current_weather_source) : null,
+    active_history_id: row.active_history_id ? String(row.active_history_id) : null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -199,8 +267,7 @@ async function reorderUpsQueueStore(pool: Pool, store: string) {
     FROM ranked
     WHERE q.id = ranked.id
     RETURNING
-      q.id, q.store, q.rep, q.rep_user_id, q.status, q.queue_position, q.checked_in_at,
-      q.current_customer, q.current_customer_type, q.current_customer_details, q.started_at, q.created_at, q.updated_at
+      ${QUALIFIED_UPS_QUEUE_SELECT_SQL}
   `,
     [store]
   );
@@ -859,19 +926,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     }
     const sql = `
       SELECT
-        id,
-        store,
-        rep,
-        rep_user_id,
-        status,
-        queue_position,
-        checked_in_at,
-        current_customer,
-        current_customer_type,
-        current_customer_details,
-        started_at,
-        created_at,
-        updated_at
+        ${UPS_QUEUE_SELECT_SQL}
       FROM crm_ups_queue
       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
       ORDER BY
@@ -949,8 +1004,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       const row = await pool.query(
         `
         SELECT
-          id, store, rep, rep_user_id, status, queue_position, checked_in_at,
-          current_customer, current_customer_type, current_customer_details, started_at, created_at, updated_at
+          ${UPS_QUEUE_SELECT_SQL}
         FROM crm_ups_queue
         WHERE id = $1
       `,
@@ -969,12 +1023,14 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       `
       INSERT INTO crm_ups_queue (
         id, store, rep, rep_user_id, status, queue_position, checked_in_at,
-        current_customer, current_customer_type, current_customer_details, started_at, created_at, updated_at
+        current_customer, current_customer_type, current_customer_details, started_at,
+        current_weather_location, current_weather_summary, current_weather_temp_f, current_weather_precip_pct,
+        current_weather_wind_mph, current_weather_fetched_at, current_weather_source, active_history_id,
+        created_at, updated_at
       )
-      VALUES ($1, $2, $3, $4::bigint, 'waiting', $5, now(), NULL, NULL, NULL, NULL, now(), now())
+      VALUES ($1, $2, $3, $4::bigint, 'waiting', $5, now(), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, now(), now())
       RETURNING
-        id, store, rep, rep_user_id, status, queue_position, checked_in_at,
-        current_customer, current_customer_type, current_customer_details, started_at, created_at, updated_at
+        ${UPS_QUEUE_SELECT_SQL}
     `,
       [id, store, repName, repUserId, nextPos]
     );
@@ -992,40 +1048,103 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     const customerType = parseUpsQueueCustomerType(req.body?.customer_type) ?? "Regular Up";
     const customerDetails = typeof req.body?.customer_details === "string" ? req.body.customer_details.trim() : "";
 
-    const row = await pool.query(`SELECT rep_user_id, store FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
+    const row = await pool.query(`SELECT rep_user_id, store, rep FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
     if (!row.rows.length) return res.status(404).json({ error: "not found" });
     if (isSalesOnly(user) && Number(row.rows[0].rep_user_id) !== Number(user.id)) {
       return res.status(403).json({ error: "forbidden" });
     }
     const store = String(row.rows[0].store || "FD7");
+    const rep = String(row.rows[0].rep || user.name || user.email || "");
     const maxPos = await pool.query(`SELECT COALESCE(MAX(queue_position), 0)::int AS max_pos FROM crm_ups_queue WHERE store = $1`, [
       store,
     ]);
     const nextPos = Number(maxPos.rows[0]?.max_pos ?? 1) + 1;
-
-    await pool.query(
-      `
-      UPDATE crm_ups_queue
-      SET
-        status = 'working',
-        current_customer = $1,
-        current_customer_type = $2,
-        current_customer_details = $3,
-        queue_position = $4,
-        started_at = now(),
-        updated_at = now()
-      WHERE id = $5
-    `,
-      [customer, customerType, customerDetails, nextPos, id]
-    );
+    const historyId = buildUpsHistoryId();
+    const weather = await getStoreWeatherSnapshot(store);
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `
+        UPDATE crm_ups_queue
+        SET
+          status = 'working',
+          current_customer = $1,
+          current_customer_type = $2,
+          current_customer_details = $3,
+          queue_position = $4,
+          started_at = now(),
+          current_weather_location = $5,
+          current_weather_summary = $6,
+          current_weather_temp_f = $7,
+          current_weather_precip_pct = $8,
+          current_weather_wind_mph = $9,
+          current_weather_fetched_at = $10,
+          current_weather_source = $11,
+          active_history_id = $12,
+          updated_at = now()
+        WHERE id = $13
+      `,
+        [
+          customer,
+          customerType,
+          customerDetails,
+          nextPos,
+          weather?.locationLabel || null,
+          weather?.summary || null,
+          weather?.temperatureF ?? null,
+          weather?.precipitationProbabilityPct ?? null,
+          weather?.windSpeedMph ?? null,
+          weather?.fetchedAt || null,
+          weather?.source || null,
+          historyId,
+          id,
+        ]
+      );
+      await client.query(
+        `
+        INSERT INTO crm_ups_history (
+          id, queue_entry_id, store, rep, rep_user_id, customer, customer_type, customer_details,
+          started_at, completed_at, weather_location, weather_summary, weather_temp_f, weather_precip_pct,
+          weather_wind_mph, weather_fetched_at, weather_source, created_at, updated_at
+        )
+        VALUES (
+          $1, $2, $3, $4, $5::bigint, $6, $7, $8,
+          now(), NULL, $9, $10, $11, $12, $13, $14, $15, now(), now()
+        )
+      `,
+        [
+          historyId,
+          id,
+          store,
+          rep,
+          row.rows[0].rep_user_id ?? null,
+          customer,
+          customerType,
+          customerDetails,
+          weather?.locationLabel || null,
+          weather?.summary || null,
+          weather?.temperatureF ?? null,
+          weather?.precipitationProbabilityPct ?? null,
+          weather?.windSpeedMph ?? null,
+          weather?.fetchedAt || null,
+          weather?.source || null,
+        ]
+      );
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
 
     await reorderUpsQueueStore(pool, store);
 
     const refreshed = await pool.query(
       `
       SELECT
-        id, store, rep, rep_user_id, status, queue_position, checked_in_at,
-        current_customer, current_customer_type, current_customer_details, started_at, created_at, updated_at
+        ${UPS_QUEUE_SELECT_SQL}
       FROM crm_ups_queue
       WHERE id = $1
       LIMIT 1
@@ -1083,8 +1202,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       SET ${fields.join(", ")}, updated_at = now()
       WHERE id = $${values.length}
       RETURNING
-        id, store, rep, rep_user_id, status, queue_position, checked_in_at,
-        current_customer, current_customer_type, current_customer_details, started_at, created_at, updated_at
+        ${UPS_QUEUE_SELECT_SQL}
       `,
       values
     );
@@ -1099,7 +1217,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     if (!id) return res.status(400).json({ error: "invalid id" });
 
     const row = await pool.query(
-      `SELECT id, store, rep_user_id, current_customer_type FROM crm_ups_queue WHERE id = $1 LIMIT 1`,
+      `SELECT id, store, rep_user_id, current_customer_type, active_history_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`,
       [id]
     );
     if (!row.rows.length) return res.status(404).json({ error: "not found" });
@@ -1109,20 +1227,48 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     }
 
     const store = String(target.store || "FD7");
-    await pool.query(
-      `
-      UPDATE crm_ups_queue
-      SET
-        status = 'waiting',
-        current_customer = NULL,
-        current_customer_type = NULL,
-        current_customer_details = NULL,
-        started_at = NULL,
-        updated_at = now()
-      WHERE id = $1
-    `,
-      [id]
-    );
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `
+        UPDATE crm_ups_queue
+        SET
+          status = 'waiting',
+          current_customer = NULL,
+          current_customer_type = NULL,
+          current_customer_details = NULL,
+          started_at = NULL,
+          current_weather_location = NULL,
+          current_weather_summary = NULL,
+          current_weather_temp_f = NULL,
+          current_weather_precip_pct = NULL,
+          current_weather_wind_mph = NULL,
+          current_weather_fetched_at = NULL,
+          current_weather_source = NULL,
+          active_history_id = NULL,
+          updated_at = now()
+        WHERE id = $1
+      `,
+        [id]
+      );
+      if (target.active_history_id) {
+        await client.query(
+          `
+          UPDATE crm_ups_history
+          SET completed_at = COALESCE(completed_at, now()), updated_at = now()
+          WHERE id = $1
+        `,
+          [target.active_history_id]
+        );
+      }
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
 
     const rows = await reorderUpsQueueStore(pool, store);
     res.json({ rows });
@@ -1174,6 +1320,14 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         current_customer_type = NULL,
         current_customer_details = NULL,
         started_at = NULL,
+        current_weather_location = NULL,
+        current_weather_summary = NULL,
+        current_weather_temp_f = NULL,
+        current_weather_precip_pct = NULL,
+        current_weather_wind_mph = NULL,
+        current_weather_fetched_at = NULL,
+        current_weather_source = NULL,
+        active_history_id = NULL,
         updated_at = now()
       WHERE id = $3
     `,
@@ -1264,14 +1418,33 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     const id = parseCrmLeadId(req.params.id);
     if (!id) return res.status(400).json({ error: "invalid id" });
 
-    const row = await pool.query(`SELECT store, rep_user_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
+    const row = await pool.query(`SELECT store, rep_user_id, active_history_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
     if (!row.rows.length) return res.status(404).json({ error: "not found" });
     if (isSalesOnly(user) && Number(row.rows[0].rep_user_id) !== Number(user.id)) {
       return res.status(403).json({ error: "forbidden" });
     }
     const store = String(row.rows[0].store || "FD7");
-
-    await pool.query(`DELETE FROM crm_ups_queue WHERE id = $1`, [id]);
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      if (row.rows[0].active_history_id) {
+        await client.query(
+          `
+          UPDATE crm_ups_history
+          SET completed_at = COALESCE(completed_at, now()), updated_at = now()
+          WHERE id = $1
+        `,
+          [row.rows[0].active_history_id]
+        );
+      }
+      await client.query(`DELETE FROM crm_ups_queue WHERE id = $1`, [id]);
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
     await reorderUpsQueueStore(pool, store);
     res.json({ ok: true });
   });

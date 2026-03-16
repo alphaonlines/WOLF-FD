@@ -109,6 +109,12 @@ export interface CRMUpsQueueItem {
   currentCustomerType: UpsQueueCustomerType | null;
   currentCustomerDetails: string | null;
   startedAt: string | null;
+  currentWeatherLocation: string | null;
+  currentWeatherSummary: string | null;
+  currentWeatherTempF: number | null;
+  currentWeatherPrecipPct: number | null;
+  currentWeatherWindMph: number | null;
+  currentWeatherFetchedAt: string | null;
 }
 
 export interface CRMCustomerOrder {

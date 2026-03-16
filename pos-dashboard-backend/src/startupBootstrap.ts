@@ -296,6 +296,14 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_customer_type TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_customer_details TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_location TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_summary TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_temp_f NUMERIC(5,1);`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_precip_pct INTEGER;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_wind_mph NUMERIC(5,1);`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_fetched_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_source TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS active_history_id TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN store SET DEFAULT 'FD7';`);
@@ -306,6 +314,58 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_queue ALTER COLUMN updated_at SET DEFAULT now();`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_queue_store_pos ON crm_ups_queue(store, queue_position ASC);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_queue_rep_user_id ON crm_ups_queue(rep_user_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_queue_active_history_id ON crm_ups_queue(active_history_id);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS crm_ups_history (
+      id                          TEXT PRIMARY KEY,
+      queue_entry_id              TEXT NOT NULL,
+      store                       TEXT NOT NULL DEFAULT 'FD7',
+      rep                         TEXT NOT NULL DEFAULT '',
+      rep_user_id                 BIGINT NULL,
+      customer                    TEXT NOT NULL DEFAULT '',
+      customer_type               TEXT NULL,
+      customer_details            TEXT NOT NULL DEFAULT '',
+      started_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
+      completed_at                TIMESTAMPTZ NULL,
+      weather_location            TEXT NULL,
+      weather_summary             TEXT NULL,
+      weather_temp_f              NUMERIC(5,1) NULL,
+      weather_precip_pct          INTEGER NULL,
+      weather_wind_mph            NUMERIC(5,1) NULL,
+      weather_fetched_at          TIMESTAMPTZ NULL,
+      weather_source              TEXT NULL,
+      created_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at                  TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS queue_entry_id TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS store TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS rep TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS rep_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS customer TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS customer_type TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS customer_details TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS weather_location TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS weather_summary TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS weather_temp_f NUMERIC(5,1);`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS weather_precip_pct INTEGER;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS weather_wind_mph NUMERIC(5,1);`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS weather_fetched_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS weather_source TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN store SET DEFAULT 'FD7';`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN rep SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN customer SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN customer_details SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN started_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_history_store_started_at ON crm_ups_history(store, started_at DESC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_history_queue_entry_id ON crm_ups_history(queue_entry_id);`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS crm_customers (
