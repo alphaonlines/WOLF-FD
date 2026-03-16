@@ -335,6 +335,9 @@ async function ensureCrmSchema(pool: Pool) {
       weather_wind_mph            NUMERIC(5,1) NULL,
       weather_fetched_at          TIMESTAMPTZ NULL,
       weather_source              TEXT NULL,
+      ended_reason                TEXT NOT NULL DEFAULT 'completed',
+      counts_as_up                BOOLEAN NOT NULL DEFAULT TRUE,
+      is_door_traffic             BOOLEAN NOT NULL DEFAULT TRUE,
       created_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at                  TIMESTAMPTZ NOT NULL DEFAULT now()
     );
@@ -355,15 +358,24 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS weather_wind_mph NUMERIC(5,1);`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS weather_fetched_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS weather_source TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS ended_reason TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS counts_as_up BOOLEAN;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS is_door_traffic BOOLEAN;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN store SET DEFAULT 'FD7';`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN rep SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN customer SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN customer_details SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN ended_reason SET DEFAULT 'completed';`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN counts_as_up SET DEFAULT TRUE;`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN is_door_traffic SET DEFAULT TRUE;`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN started_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN created_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`UPDATE crm_ups_history SET ended_reason = COALESCE(NULLIF(ended_reason, ''), 'completed') WHERE ended_reason IS NULL OR ended_reason = '';`);
+  await pool.query(`UPDATE crm_ups_history SET counts_as_up = TRUE WHERE counts_as_up IS NULL;`);
+  await pool.query(`UPDATE crm_ups_history SET is_door_traffic = TRUE WHERE is_door_traffic IS NULL;`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_history_store_started_at ON crm_ups_history(store, started_at DESC);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_history_queue_entry_id ON crm_ups_history(queue_entry_id);`);
 

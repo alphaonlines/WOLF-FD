@@ -1139,11 +1139,12 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         INSERT INTO crm_ups_history (
           id, queue_entry_id, store, rep, rep_user_id, customer, customer_type, customer_details,
           started_at, completed_at, weather_location, weather_summary, weather_temp_f, weather_precip_pct,
-          weather_wind_mph, weather_fetched_at, weather_source, created_at, updated_at
+          weather_wind_mph, weather_fetched_at, weather_source, ended_reason, counts_as_up, is_door_traffic,
+          created_at, updated_at
         )
         VALUES (
           $1, $2, $3, $4, $5::bigint, $6, $7, $8,
-          now(), NULL, $9, $10, $11, $12, $13, $14, $15, now(), now()
+          now(), NULL, $9, $10, $11, $12, $13, $14, $15, 'completed', TRUE, TRUE, now(), now()
         )
       `,
         [
@@ -1289,7 +1290,84 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         await client.query(
           `
           UPDATE crm_ups_history
-          SET completed_at = COALESCE(completed_at, now()), updated_at = now()
+          SET
+            completed_at = COALESCE(completed_at, now()),
+            ended_reason = COALESCE(NULLIF(ended_reason, ''), 'completed'),
+            counts_as_up = COALESCE(counts_as_up, TRUE),
+            is_door_traffic = COALESCE(is_door_traffic, TRUE),
+            updated_at = now()
+          WHERE id = $1
+        `,
+          [target.active_history_id]
+        );
+      }
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    const rows = await reorderUpsQueueStore(pool, store);
+    res.json({ rows });
+  });
+
+  app.post("/api/crm/ups-queue/:id/remove-up", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+    const id = parseCrmLeadId(req.params.id);
+    if (!id) return res.status(400).json({ error: "invalid id" });
+
+    const row = await pool.query(
+      `SELECT id, store, rep_user_id, status, active_history_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`,
+      [id]
+    );
+    if (!row.rows.length) return res.status(404).json({ error: "not found" });
+    const target = row.rows[0];
+    if (isSalesOnly(user) && Number(target.rep_user_id) !== Number(user.id)) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+    if (String(target.status || "") !== "working") {
+      return res.status(400).json({ error: "only active customers can be removed from ups" });
+    }
+
+    const store = String(target.store || "FD7");
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `
+        UPDATE crm_ups_queue
+        SET
+          status = 'waiting',
+          current_customer = NULL,
+          current_customer_type = NULL,
+          current_customer_details = NULL,
+          started_at = NULL,
+          current_weather_location = NULL,
+          current_weather_summary = NULL,
+          current_weather_temp_f = NULL,
+          current_weather_precip_pct = NULL,
+          current_weather_wind_mph = NULL,
+          current_weather_fetched_at = NULL,
+          current_weather_source = NULL,
+          active_history_id = NULL,
+          updated_at = now()
+        WHERE id = $1
+      `,
+        [id]
+      );
+      if (target.active_history_id) {
+        await client.query(
+          `
+          UPDATE crm_ups_history
+          SET
+            completed_at = COALESCE(completed_at, now()),
+            ended_reason = 'traffic_only',
+            counts_as_up = FALSE,
+            is_door_traffic = TRUE,
+            updated_at = now()
           WHERE id = $1
         `,
           [target.active_history_id]
@@ -1464,7 +1542,12 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         await client.query(
           `
           UPDATE crm_ups_history
-          SET completed_at = COALESCE(completed_at, now()), updated_at = now()
+          SET
+            completed_at = COALESCE(completed_at, now()),
+            ended_reason = COALESCE(NULLIF(ended_reason, ''), 'queue_deleted'),
+            counts_as_up = COALESCE(counts_as_up, FALSE),
+            is_door_traffic = COALESCE(is_door_traffic, TRUE),
+            updated_at = now()
           WHERE id = $1
         `,
           [row.rows[0].active_history_id]

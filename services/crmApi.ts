@@ -412,6 +412,16 @@ export async function completeCrmUpsQueueCustomerInApi(id: string): Promise<CRMU
   return rows.map((row: any) => mapUpsQueue(row as ApiUpsQueueRow));
 }
 
+export async function removeCrmUpsQueueCustomerInApi(id: string): Promise<CRMUpsQueueItem[]> {
+  const json = await fetchJson(`/api/crm/ups-queue/${encodeURIComponent(id)}/remove-up`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
+  return rows.map((row: any) => mapUpsQueue(row as ApiUpsQueueRow));
+}
+
 export async function updateCrmUpsQueueStatusInApi(
   id: string,
   status: "waiting" | "on_break"

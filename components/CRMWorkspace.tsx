@@ -23,6 +23,7 @@ import {
   fetchCrmUpsQueueFromApi,
   joinCrmUpsQueueInApi,
   leaveCrmUpsQueueInApi,
+  removeCrmUpsQueueCustomerInApi,
   reorderCrmUpsQueueInApi,
   searchCrmRecords,
   startCrmUpsQueueCustomerInApi,
@@ -404,6 +405,23 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       }));
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to complete customer.");
+    }
+  };
+
+  const handleRemoveCustomerFromUps = async (item: CRMUpsQueueItem) => {
+    setStatusMessage(null);
+    setErrorMessage(null);
+    try {
+      const rows = await removeCrmUpsQueueCustomerInApi(item.id);
+      setQueue([...rows].sort((a, b) => a.queuePosition - b.queuePosition));
+      setDraft(buildDraft(authUser, defaultDraftStore));
+      setStartDrafts((current) => ({
+        ...current,
+        [item.id]: { customer: "", customerType: "Regular Up" },
+      }));
+      setStatusMessage("Active up removed. Door traffic was kept for future reporting.");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to remove active up.");
     }
   };
 
@@ -817,6 +835,12 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                                   className="rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 dark:bg-emerald-400 dark:hover:bg-emerald-300"
                                 >
                                   Complete
+                                </button>
+                                <button
+                                  onClick={() => void handleRemoveCustomerFromUps(item)}
+                                  className="rounded-xl border border-amber-400/30 bg-amber-400/12 px-3 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/20"
+                                >
+                                  Remove Up
                                 </button>
                                 <button
                                   onClick={() => {
