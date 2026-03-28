@@ -1026,8 +1026,8 @@ const App: React.FC = () => {
               onClick={closeUpdatePanel}
             />
             <div
-              className={`fixed bottom-6 z-30 w-[320px] sm:w-[420px] max-h-[70vh] overflow-y-auto transition-transform duration-200 ${
-                sidebarOpen ? 'left-72' : 'left-24'
+              className={`fixed inset-x-4 bottom-6 z-30 max-h-[78vh] overflow-y-auto transition-all duration-200 sm:right-6 ${
+                sidebarOpen ? 'lg:left-72' : 'lg:left-24'
               } ${updatePanelClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}
               onClick={(event) => event.stopPropagation()}
             >

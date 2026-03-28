@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { CheckCircle, AlertTriangle, UploadCloud, FileSpreadsheet } from "lucide-react";
 import { fetchCoverageMonths, uploadPosExports } from "../services/posBackendApi";
+import ManufacturerPricelistPortal from "./ManufacturerPricelistPortal";
 
 type FileCheckStatus = "ready" | "invalid" | "uploading" | "uploaded" | "error";
 
@@ -57,6 +58,7 @@ type UpdateDatabaseProps = {
 };
 
 const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => {
+  const [view, setView] = useState<"default" | "manufacturer_pricelist">("default");
   const [checks, setChecks] = useState<FileCheck[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
@@ -290,6 +292,10 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
     }
   };
 
+  if (view === "manufacturer_pricelist") {
+    return <ManufacturerPricelistPortal onBack={() => setView("default")} />;
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-base">
@@ -334,6 +340,14 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
             <UploadCloud size={16} />
             Manager Specials Upload
           </a>
+          <button
+            type="button"
+            onClick={() => setView("manufacturer_pricelist")}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-base font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <FileSpreadsheet size={16} />
+            Update Manufacturer Pricelist
+          </button>
           {uploadSuccess && (
             <span className="text-sm text-green-600 font-medium flex items-center gap-1">
               <CheckCircle size={14} />
