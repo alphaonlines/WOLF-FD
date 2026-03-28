@@ -89,6 +89,49 @@ const PORTAL_SCREENS: Array<{ key: PortalScreen; label: string }> = [
 
 const cloneRows = (rows: NormalizedProductRow[]) => rows.map((row) => ({ ...row }));
 
+const getUploadSelectionScore = (upload: ManufacturerPricebookUpload) => {
+  let score = 0;
+  const name = `${upload.originalName} ${upload.storageName}`.toLowerCase();
+  if (upload.documentType === "archive") score -= 1000;
+  if (upload.parentUploadId) score += 25;
+  if (/\.xlsx?$/.test(name)) score += 250;
+  if (/residential price list/.test(name)) score += 600;
+  if (/compressed/.test(name)) score += 20;
+  if (/warranty/.test(name)) score -= 100;
+  if (/diamond/.test(name)) score -= 120;
+  if (/fabric/.test(name)) score -= 120;
+  if (/grade change|cheat sheet/.test(name)) score -= 140;
+  return score;
+};
+
+const getPreferredHoldingUpload = (uploads: ManufacturerPricebookUpload[]) =>
+  [...uploads].sort((left, right) => getUploadSelectionScore(right) - getUploadSelectionScore(left))[0] || null;
+
+const getResolvedPreviewUpload = (
+  uploads: ManufacturerPricebookUpload[],
+  selectedUploadId: string | null
+) => {
+  const selectedUpload = uploads.find((upload) => upload.id === selectedUploadId) || null;
+  if (selectedUpload?.documentType === "archive") {
+    return (
+      getPreferredHoldingUpload(
+        uploads.filter((upload) => upload.parentUploadId === selectedUpload.id && upload.documentType !== "archive")
+      ) ||
+      selectedUpload
+    );
+  }
+  if (selectedUpload?.manufacturerSlug === "best" && selectedUpload.parentUploadId) {
+    return (
+      getPreferredHoldingUpload(
+        uploads.filter(
+          (upload) => upload.parentUploadId === selectedUpload.parentUploadId && upload.documentType !== "archive"
+        )
+      ) || selectedUpload
+    );
+  }
+  return selectedUpload || getPreferredHoldingUpload(uploads) || null;
+};
+
 const MANUFACTURER_TEMPLATES: Record<string, ManufacturerTemplate> = {
   Ashley: {
     summary: "Ashley files often bundle base furniture with optional add-ons like storage footboards and roll-out slats.",
@@ -575,8 +618,8 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
     const uploads = await fetchManufacturerPricebookUploads(manufacturer);
     setHoldingUploads(uploads);
     if (uploads.length && (!selectedUploadId || !uploads.some((upload) => upload.id === selectedUploadId))) {
-      const firstPricebook = uploads.find((upload) => upload.documentType !== "archive");
-      setSelectedUploadId((firstPricebook || uploads[0]).id);
+      const preferredUpload = getPreferredHoldingUpload(uploads);
+      setSelectedUploadId((preferredUpload || uploads[0]).id);
     }
     return uploads;
   };
@@ -608,8 +651,8 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
         setHoldingUploads(uploads);
         setCatalogRows(catalog);
         setReferenceNotes(notes);
-        const firstPricebook = uploads.find((upload) => upload.documentType !== "archive");
-        setSelectedUploadId((firstPricebook || uploads[0] || null)?.id || null);
+        const preferredUpload = getPreferredHoldingUpload(uploads);
+        setSelectedUploadId((preferredUpload || uploads[0] || null)?.id || null);
       } catch (error: any) {
         if (!cancelled) {
           setHoldingUploads([]);
@@ -634,17 +677,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
   };
 
   const startExtraction = async () => {
-    const selectedUpload = holdingUploads.find((upload) => upload.id === selectedUploadId) || null;
-    const archiveChild =
-      selectedUpload?.documentType === "archive"
-        ? holdingUploads.find((upload) => upload.parentUploadId === selectedUpload.id && upload.documentType !== "archive") ||
-          null
-        : null;
-    const targetUpload =
-      archiveChild ||
-      selectedUpload ||
-      holdingUploads.find((upload) => upload.documentType !== "archive") ||
-      null;
+    const targetUpload = getResolvedPreviewUpload(holdingUploads, selectedUploadId);
     if (!targetUpload) {
       setHoldingError("Upload a pricebook PDF, spreadsheet, CSV, or ZIP first. ZIP bundles now auto-unpack when they contain supported files.");
       return;
@@ -694,9 +727,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
       return;
     }
     const targetUpload =
-      holdingUploads.find((upload) => upload.id === selectedUploadId) ||
-      holdingUploads.find((upload) => upload.documentType !== "archive") ||
-      null;
+      getResolvedPreviewUpload(holdingUploads, selectedUploadId) || null;
     if (!targetUpload) {
       setValidationMessage("Choose a holding upload before publishing.");
       return;
@@ -746,8 +777,8 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
       });
       const refreshed = await refreshHoldingUploads(selectedManufacturer);
       const firstUsableUpload =
-        uploadedRows.find((row) => row.documentType !== "archive") ||
-        refreshed.find((row) => row.documentType !== "archive") ||
+        getPreferredHoldingUpload(uploadedRows) ||
+        getPreferredHoldingUpload(refreshed) ||
         uploadedRows[0] ||
         null;
       if (firstUsableUpload) setSelectedUploadId(firstUsableUpload.id);

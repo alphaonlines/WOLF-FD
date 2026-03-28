@@ -50,9 +50,10 @@ Build an internal workflow to ingest, normalize, validate, and search furniture 
 - [x] Add search endpoints with filters for manufacturer, category, description, finish, and richer furniture attributes.
 - [x] Capture manufacturer reference notes such as warranty, freight, return, and website/policy information.
 - [x] Build the first live manufacturer parser and publish pipeline for `Liberty`.
+- [x] Build and publish the `Best` residential upholstery workbook pipeline from staged ZIP contents, including archive auto-unpack, workbook selection, and reference-note capture.
 - Save flagged validation issues per row so review sessions can resume.
 - [x] Auto-unpack ZIP archives into child holding files and surface extracted files for review.
-- Add manufacturer-specific parser profiles for the next vendors (`Best HF`, `Ashley`, `England`, etc.).
+- Add manufacturer-specific parser profiles for the next vendors (`Ashley`, `England`, `Albany`, etc.).
 - Add audit logging for uploads, edits, and publish actions.
 
 ## Current Normalized Search Fields

@@ -4,6 +4,11 @@ import type { Express } from "express";
 import type { Pool, PoolClient } from "pg";
 import multer from "multer";
 import {
+  isBestResidentialWorkbook,
+  parseBestPricebookWorkbook,
+  parseBestReferenceNotes,
+} from "../parsers/bestPricebook";
+import {
   type ParsedManufacturerCatalogRow,
   parseLibertyPricebookPdf,
   parseLibertyReferenceNotesFromPdf,
@@ -379,11 +384,18 @@ async function parseUploadRows(input: {
   }
 
   const manufacturerSlug = String(input.uploadRow.manufacturer_slug || "").trim().toLowerCase();
-  if (manufacturerSlug !== "liberty") {
-    throw new Error(`No parser is available yet for ${input.uploadRow.manufacturer}. Liberty is the first live pipeline.`);
+  if (manufacturerSlug === "liberty") {
+    return parseLibertyPricebookPdf(filePath, input.execFileAsync);
   }
-
-  return parseLibertyPricebookPdf(filePath, input.execFileAsync);
+  if (manufacturerSlug === "best") {
+    if (!isBestResidentialWorkbook(filePath)) {
+      throw new Error(
+        "Best preview currently expects the extracted Residential Price List workbook. Select the spreadsheet child file from the archive."
+      );
+    }
+    return parseBestPricebookWorkbook(filePath);
+  }
+  throw new Error(`No parser is available yet for ${input.uploadRow.manufacturer}. Liberty and Best are currently live.`);
 }
 
 async function parseUploadReferenceNotes(input: {
@@ -394,9 +406,15 @@ async function parseUploadReferenceNotes(input: {
   const filePath = path.join(input.holdingDir, String(input.uploadRow.relative_path || ""));
   if (!fs.existsSync(filePath)) return [];
   const manufacturerSlug = String(input.uploadRow.manufacturer_slug || "").trim().toLowerCase();
-  if (manufacturerSlug !== "liberty") return [];
   if (String(input.uploadRow.document_type || "pricebook") === "archive") return [];
-  return parseLibertyReferenceNotesFromPdf(filePath, input.execFileAsync);
+  if (manufacturerSlug === "liberty") {
+    return parseLibertyReferenceNotesFromPdf(filePath, input.execFileAsync);
+  }
+  if (manufacturerSlug === "best") {
+    if (!isBestResidentialWorkbook(filePath)) return [];
+    return parseBestReferenceNotes(filePath);
+  }
+  return [];
 }
 
 function normalizeDraftRows(rows: any[], uploadRow: any): ParsedManufacturerCatalogRow[] {
