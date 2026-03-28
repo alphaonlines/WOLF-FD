@@ -25,6 +25,11 @@ const mapUpload = (row: any): ManufacturerPricebookUpload => ({
     row.uploaded_by_user_id === null || row.uploaded_by_user_id === undefined
       ? null
       : String(row.uploaded_by_user_id),
+  parentUploadId:
+    row.parent_upload_id === null || row.parent_upload_id === undefined
+      ? null
+      : String(row.parent_upload_id),
+  extractedFileCount: Number(row.extracted_file_count ?? 0),
   createdAt: row.created_at ? String(row.created_at) : undefined,
 });
 

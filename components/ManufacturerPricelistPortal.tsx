@@ -634,16 +634,23 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
   };
 
   const startExtraction = async () => {
+    const selectedUpload = holdingUploads.find((upload) => upload.id === selectedUploadId) || null;
+    const archiveChild =
+      selectedUpload?.documentType === "archive"
+        ? holdingUploads.find((upload) => upload.parentUploadId === selectedUpload.id && upload.documentType !== "archive") ||
+          null
+        : null;
     const targetUpload =
-      holdingUploads.find((upload) => upload.id === selectedUploadId) ||
+      archiveChild ||
+      selectedUpload ||
       holdingUploads.find((upload) => upload.documentType !== "archive") ||
       null;
     if (!targetUpload) {
-      setHoldingError("Upload a pricebook PDF, spreadsheet, or CSV first. ZIP archives can be stored in holding, but they are not parsed yet.");
+      setHoldingError("Upload a pricebook PDF, spreadsheet, CSV, or ZIP first. ZIP bundles now auto-unpack when they contain supported files.");
       return;
     }
     if (targetUpload.documentType === "archive") {
-      setHoldingError("ZIP archives can be stored in holding now, but extraction still needs a real pricebook file inside the archive.");
+      setHoldingError("This archive did not produce a supported PDF/CSV/XLS/XLSX file yet. Upload another file or re-upload the ZIP once the bundle is ready.");
       return;
     }
     setPreviewBusy(true);
@@ -737,9 +744,25 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
         replaceExisting: replaceExistingOnPublish,
         documentType: selectedDocumentType,
       });
-      await refreshHoldingUploads(selectedManufacturer);
-      if (uploadedRows[0]) setSelectedUploadId(uploadedRows[0].id);
-      setHoldingMessage(`${uploadedRows.length} file(s) uploaded to holding for ${selectedManufacturer}.`);
+      const refreshed = await refreshHoldingUploads(selectedManufacturer);
+      const firstUsableUpload =
+        uploadedRows.find((row) => row.documentType !== "archive") ||
+        refreshed.find((row) => row.documentType !== "archive") ||
+        uploadedRows[0] ||
+        null;
+      if (firstUsableUpload) setSelectedUploadId(firstUsableUpload.id);
+
+      const archiveCount = uploadedRows.filter((row) => row.documentType === "archive").length;
+      const extractedCount = uploadedRows.filter((row) => row.parentUploadId).length;
+      const messageParts = [`${selectedFiles.length} file(s) uploaded to holding for ${selectedManufacturer}.`];
+      if (archiveCount > 0) {
+        messageParts.push(
+          extractedCount > 0
+            ? `${archiveCount} archive(s) auto-unpacked into ${extractedCount} holding file(s).`
+            : `${archiveCount} archive(s) uploaded, but no supported holding file was found inside.`
+        );
+      }
+      setHoldingMessage(messageParts.join(" "));
       if (selectedDocumentType !== "archive" && uploadedRows.length === 1) {
         setSelectedFiles([]);
       }
@@ -1068,6 +1091,11 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                           <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
                             {upload.documentType || "pricebook"}
                           </div>
+                          {upload.parentUploadId ? (
+                            <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-600">
+                              Extracted from archive #{upload.parentUploadId}
+                            </div>
+                          ) : null}
                         </div>
                         <button
                           type="button"
@@ -1082,6 +1110,12 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                         <span>{(upload.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
                         <span>•</span>
                         <span>{upload.status}</span>
+                        {upload.extractedFileCount ? (
+                          <>
+                            <span>•</span>
+                            <span>{upload.extractedFileCount} extracted files</span>
+                          </>
+                        ) : null}
                         {upload.parsedRowCount ? (
                           <>
                             <span>•</span>
@@ -1109,7 +1143,9 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                         </button>
                       ) : (
                         <div className="mt-3 text-xs text-slate-500">
-                          Archive stored for later unpacking and parser setup.
+                          {upload.extractedFileCount
+                            ? `Archive unpacked. Select one of the extracted child files to preview.`
+                            : "Archive stored, but no supported extracted pricebook file is available yet."}
                         </div>
                       )}
                     </div>

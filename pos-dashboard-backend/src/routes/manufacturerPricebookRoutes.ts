@@ -15,6 +15,25 @@ type ExecFileAsyncLike = (
   options?: { timeout?: number }
 ) => Promise<{ stdout?: string | Buffer; stderr?: string | Buffer }>;
 
+type UploadFileRow = {
+  id?: number | string;
+  manufacturer: string;
+  manufacturerSlug: string;
+  originalName: string;
+  storageName: string;
+  relativePath: string;
+  documentType: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  replaceExisting: boolean;
+  uploadedByUserId: number | null;
+  parentUploadId?: number | null;
+  status?: string;
+  parsedRowCount?: number;
+  lastError?: string | null;
+  extractedFileCount?: number;
+};
+
 type RegisterManufacturerPricebookRoutesDeps = {
   app: Express;
   pool: Pool;
@@ -119,7 +138,153 @@ function mapUploadRow(row: any) {
       row.uploaded_by_user_id === null || row.uploaded_by_user_id === undefined
         ? null
         : String(row.uploaded_by_user_id),
+    parent_upload_id:
+      row.parent_upload_id === null || row.parent_upload_id === undefined
+        ? null
+        : String(row.parent_upload_id),
+    extracted_file_count: Number(row.extracted_file_count ?? 0),
     created_at: row.created_at || null,
+  };
+}
+
+function collectFilesRecursively(rootDir: string) {
+  const files: string[] = [];
+  const stack = [rootDir];
+  while (stack.length) {
+    const current = stack.pop();
+    if (!current || !fs.existsSync(current)) continue;
+    const entries = fs.readdirSync(current, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name === "__MACOSX" || entry.name.startsWith(".")) continue;
+      const nextPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(nextPath);
+        continue;
+      }
+      files.push(nextPath);
+    }
+  }
+  return files.sort((left, right) => left.localeCompare(right));
+}
+
+async function insertUploadRow(pool: Pool, input: UploadFileRow) {
+  const result = await pool.query(
+    `
+      INSERT INTO manufacturer_pricebook_uploads (
+        manufacturer,
+        manufacturer_slug,
+        original_name,
+        storage_name,
+        relative_path,
+        document_type,
+        mime_type,
+        file_size_bytes,
+        replace_existing,
+        status,
+        parsed_row_count,
+        last_error,
+        uploaded_by_user_id,
+        parent_upload_id,
+        extracted_file_count,
+        created_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, now())
+      RETURNING
+        id,
+        manufacturer,
+        manufacturer_slug,
+        original_name,
+        storage_name,
+        relative_path,
+        document_type,
+        mime_type,
+        file_size_bytes,
+        replace_existing,
+        status,
+        parsed_row_count,
+        last_error,
+        previewed_at,
+        published_at,
+        uploaded_by_user_id,
+        parent_upload_id,
+        extracted_file_count,
+        created_at
+    `,
+    [
+      input.manufacturer,
+      input.manufacturerSlug,
+      input.originalName,
+      input.storageName,
+      input.relativePath,
+      input.documentType,
+      input.mimeType,
+      input.fileSizeBytes,
+      input.replaceExisting,
+      input.status || "holding",
+      input.parsedRowCount ?? 0,
+      input.lastError ?? null,
+      input.uploadedByUserId,
+      input.parentUploadId ?? null,
+      input.extractedFileCount ?? 0,
+    ]
+  );
+  return result.rows[0] || null;
+}
+
+async function extractArchiveChildren(input: {
+  pool: Pool;
+  holdingDir: string;
+  manufacturerDir: string;
+  archiveAbsolutePath: string;
+  archiveUploadRow: any;
+  manufacturer: string;
+  manufacturerSlug: string;
+  replaceExisting: boolean;
+  uploadedByUserId: number | null;
+  execFileAsync: ExecFileAsyncLike;
+}) {
+  const archiveBaseName = path.parse(String(input.archiveUploadRow.storage_name || "archive")).name;
+  const extractFolderName = `${archiveBaseName}__unzipped_${Number(input.archiveUploadRow.id)}`;
+  const extractDir = path.join(input.manufacturerDir, extractFolderName);
+  fs.mkdirSync(extractDir, { recursive: true });
+
+  await input.execFileAsync(
+    "unzip",
+    ["-oq", input.archiveAbsolutePath, "-d", extractDir],
+    { timeout: 120000 }
+  );
+
+  const extractedFiles = collectFilesRecursively(extractDir).filter((filePath) =>
+    ACCEPTED_FILE_PATTERN.test(path.basename(filePath))
+  );
+
+  const insertedRows: any[] = [];
+  for (const filePath of extractedFiles) {
+    const relativeToManufacturerDir = path.relative(input.manufacturerDir, filePath).replace(/\\/g, "/");
+    const relativePath = path.join(input.manufacturerSlug, relativeToManufacturerDir).replace(/\\/g, "/");
+    const stats = fs.statSync(filePath);
+    const inserted = await insertUploadRow(input.pool, {
+      manufacturer: input.manufacturer,
+      manufacturerSlug: input.manufacturerSlug,
+      originalName: relativeToManufacturerDir,
+      storageName: path.basename(filePath),
+      relativePath,
+      documentType: inferDocumentType(relativeToManufacturerDir),
+      mimeType: "application/octet-stream",
+      fileSizeBytes: Number(stats.size || 0),
+      replaceExisting: input.replaceExisting,
+      uploadedByUserId: input.uploadedByUserId,
+      parentUploadId: Number(input.archiveUploadRow.id),
+      status: "holding",
+      extractedFileCount: 0,
+    });
+    if (inserted) insertedRows.push(inserted);
+  }
+
+  return {
+    extractFolderName,
+    extractedFiles,
+    insertedRows,
   };
 }
 
@@ -187,6 +352,8 @@ async function loadUploadByIdOr404(pool: Pool, uploadId: string, res: any) {
         previewed_at,
         published_at,
         uploaded_by_user_id,
+        parent_upload_id,
+        extracted_file_count,
         created_at
       FROM manufacturer_pricebook_uploads
       WHERE id = $1
@@ -389,7 +556,7 @@ export function registerManufacturerPricebookRoutes({
     }),
     fileFilter: (_req, file, cb) => {
       const ok = ACCEPTED_FILE_PATTERN.test(file.originalname);
-      cb((ok ? null : new Error("Only PDF, CSV, XLS, and XLSX files are accepted")) as any, ok);
+      cb((ok ? null : new Error("Only PDF, CSV, XLS, XLSX, and ZIP files are accepted")) as any, ok);
     },
     limits: { fileSize: 250 * 1024 * 1024 },
   });
@@ -485,58 +652,68 @@ export function registerManufacturerPricebookRoutes({
 
       const relativePath = path.join(manufacturerSlug, storageName).replace(/\\/g, "/");
       const documentType = inferDocumentType(rawFile.originalname, req.body?.document_type);
+      const inserted = await insertUploadRow(pool, {
+        manufacturer,
+        manufacturerSlug,
+        originalName: rawFile.originalname,
+        storageName,
+        relativePath,
+        documentType,
+        mimeType: String(rawFile.mimetype || "application/octet-stream"),
+        fileSizeBytes: Number(rawFile.size || 0),
+        replaceExisting,
+        uploadedByUserId: uploaderId,
+        parentUploadId: null,
+        status: "holding",
+        extractedFileCount: 0,
+      });
+      if (inserted) insertedRows.push(inserted);
 
-      const inserted = await pool.query(
-        `
-          INSERT INTO manufacturer_pricebook_uploads (
+      if (documentType === "archive" && inserted) {
+        try {
+          const extracted = await extractArchiveChildren({
+            pool,
+            holdingDir,
+            manufacturerDir,
+            archiveAbsolutePath: targetPath,
+            archiveUploadRow: inserted,
             manufacturer,
-            manufacturer_slug,
-            original_name,
-            storage_name,
-            relative_path,
-            document_type,
-            mime_type,
-            file_size_bytes,
-            replace_existing,
-            status,
-            parsed_row_count,
-            uploaded_by_user_id,
-            created_at
-          )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'holding', 0, $10, now())
-          RETURNING
-            id,
-            manufacturer,
-            manufacturer_slug,
-            original_name,
-            storage_name,
-            relative_path,
-            document_type,
-            mime_type,
-            file_size_bytes,
-            replace_existing,
-            status,
-            parsed_row_count,
-            last_error,
-            previewed_at,
-            published_at,
-            uploaded_by_user_id,
-            created_at
-        `,
-        [
-          manufacturer,
-          manufacturerSlug,
-          rawFile.originalname,
-          storageName,
-          relativePath,
-          documentType,
-          String(rawFile.mimetype || "application/octet-stream"),
-          Number(rawFile.size || 0),
-          replaceExisting,
-          uploaderId,
-        ]
-      );
-      insertedRows.push(inserted.rows[0] || {});
+            manufacturerSlug,
+            replaceExisting,
+            uploadedByUserId: uploaderId,
+            execFileAsync,
+          });
+          await pool.query(
+            `
+              UPDATE manufacturer_pricebook_uploads
+              SET status = $2,
+                  last_error = CASE WHEN $3 > 0 THEN NULL ELSE 'Archive extracted, but no supported upload files were found inside.' END,
+                  extracted_file_count = $3
+              WHERE id = $1
+            `,
+            [Number(inserted.id), extracted.extractedFiles.length ? "extracted" : "holding", extracted.extractedFiles.length]
+          );
+          inserted.status = extracted.extractedFiles.length ? "extracted" : "holding";
+          inserted.extracted_file_count = extracted.extractedFiles.length;
+          inserted.last_error = extracted.extractedFiles.length
+            ? null
+            : "Archive extracted, but no supported upload files were found inside.";
+          insertedRows.push(...extracted.insertedRows);
+        } catch (error: any) {
+          const message = String(error?.message || error || "Failed to extract archive");
+          await pool.query(
+            `
+              UPDATE manufacturer_pricebook_uploads
+              SET status = 'error',
+                  last_error = $2
+              WHERE id = $1
+            `,
+            [Number(inserted.id), message.slice(0, 4000)]
+          );
+          inserted.status = "error";
+          inserted.last_error = message.slice(0, 4000);
+        }
+      }
     }
 
     res.status(201).json({

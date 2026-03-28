@@ -51,7 +51,7 @@ Build an internal workflow to ingest, normalize, validate, and search furniture 
 - [x] Capture manufacturer reference notes such as warranty, freight, return, and website/policy information.
 - [x] Build the first live manufacturer parser and publish pipeline for `Liberty`.
 - Save flagged validation issues per row so review sessions can resume.
-- Add archive unpacking and review helpers for multi-file ZIP bundles.
+- [x] Auto-unpack ZIP archives into child holding files and surface extracted files for review.
 - Add manufacturer-specific parser profiles for the next vendors (`Best HF`, `Ashley`, `England`, etc.).
 - Add audit logging for uploads, edits, and publish actions.
 

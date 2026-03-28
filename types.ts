@@ -193,6 +193,8 @@ export interface ManufacturerPricebookUpload {
   previewedAt?: string | null;
   publishedAt?: string | null;
   uploadedByUserId?: string | null;
+  parentUploadId?: string | null;
+  extractedFileCount?: number;
   createdAt?: string;
 }
 

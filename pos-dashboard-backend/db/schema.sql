@@ -147,6 +147,8 @@ CREATE TABLE IF NOT EXISTS manufacturer_pricebook_uploads (
   previewed_at        TIMESTAMPTZ,
   published_at        TIMESTAMPTZ,
   uploaded_by_user_id BIGINT NULL,
+  parent_upload_id    BIGINT REFERENCES manufacturer_pricebook_uploads(id) ON DELETE SET NULL,
+  extracted_file_count INTEGER NOT NULL DEFAULT 0,
   created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -165,6 +167,8 @@ ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS last_error T
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS previewed_at TIMESTAMPTZ;
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS uploaded_by_user_id BIGINT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS parent_upload_id BIGINT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS extracted_file_count INTEGER;
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
 ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN document_type SET DEFAULT 'pricebook';
 ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN mime_type SET DEFAULT 'application/octet-stream';
@@ -172,12 +176,15 @@ ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN file_size_bytes SET DEFA
 ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN replace_existing SET DEFAULT TRUE;
 ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN status SET DEFAULT 'holding';
 ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN parsed_row_count SET DEFAULT 0;
+ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN extracted_file_count SET DEFAULT 0;
 ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN created_at SET DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_manufacturer_pricebook_uploads_manufacturer_created
   ON manufacturer_pricebook_uploads(manufacturer, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_manufacturer_pricebook_uploads_status_created
   ON manufacturer_pricebook_uploads(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_manufacturer_pricebook_uploads_parent_upload
+  ON manufacturer_pricebook_uploads(parent_upload_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS manufacturer_catalog_items (
   id                  BIGSERIAL PRIMARY KEY,
