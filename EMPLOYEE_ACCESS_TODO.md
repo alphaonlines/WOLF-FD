@@ -27,6 +27,7 @@ Add secure employee login with Google Workspace request-access approval, role-ba
 - [x] Add authenticated self-service password change flow
 - [x] Add employee-specific permission overrides on top of role defaults
 - [x] Add owner approval controls for pending employees
+- [x] Add employee-to-sales-report salesperson linking in owner settings
 - [ ] Add manager-specific elevated action permissions beyond module visibility
 - [ ] Add marketing/social approval permissions for publishing workflows
 

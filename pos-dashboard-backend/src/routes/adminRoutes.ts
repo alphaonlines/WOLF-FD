@@ -181,6 +181,7 @@ export function registerAdminRoutes({
         u.last_name,
         u.email,
         u.phone,
+        u.salesperson_name,
         u.auth_provider,
         u.access_status,
         u.access_requested_at,
@@ -204,6 +205,7 @@ export function registerAdminRoutes({
         u.last_name,
         u.email,
         u.phone,
+        u.salesperson_name,
         u.auth_provider,
         u.access_status,
         u.access_requested_at,
@@ -222,6 +224,7 @@ export function registerAdminRoutes({
         last_name: String(x.last_name ?? ""),
         email: String(x.email ?? ""),
         phone: typeof x.phone === "string" ? x.phone : "",
+        salesperson_name: typeof x.salesperson_name === "string" ? x.salesperson_name : "",
         auth_provider: String(x.auth_provider ?? "password"),
         access_status: String(x.access_status ?? "approved"),
         access_requested_at: x.access_requested_at,
@@ -315,6 +318,15 @@ export function registerAdminRoutes({
       }
       values.push(req.body.phone.trim());
       fields.push(`phone = $${values.length}`);
+    }
+
+    if (req.body?.salesperson_name !== undefined) {
+      if (typeof req.body?.salesperson_name !== "string") {
+        return res.status(400).json({ ok: false, error: "invalid salesperson name" });
+      }
+      const salespersonName = req.body.salesperson_name.trim();
+      values.push(salespersonName || null);
+      fields.push(`salesperson_name = $${values.length}`);
     }
 
     if (req.body?.active !== undefined) {

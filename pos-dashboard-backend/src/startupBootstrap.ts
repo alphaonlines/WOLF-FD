@@ -18,6 +18,7 @@ async function ensureAuthSchema(pool: Pool) {
       email         TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
       phone         TEXT,
+      salesperson_name TEXT,
       google_sub    TEXT UNIQUE,
       auth_provider TEXT NOT NULL DEFAULT 'password',
       access_status TEXT NOT NULL DEFAULT 'approved',
@@ -35,6 +36,7 @@ async function ensureAuthSchema(pool: Pool) {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS salesperson_name TEXT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub TEXT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider TEXT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS access_status TEXT;`);

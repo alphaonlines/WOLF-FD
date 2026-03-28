@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
-import type { ManagedUser, UserRole } from "../types";
+import type { CRMSalespersonOption, ManagedUser, UserRole } from "../types";
 import {
   createAdminUser,
+  fetchAdminSalespeople,
   fetchAdminRoles,
   fetchAdminUsers,
   resetAdminUserPassword,
   setAdminUserAccessStatus,
   setAdminUserActive,
+  setAdminUserSalespersonName,
   updateAdminUserRoles,
 } from "../services/adminUsersApi";
 
@@ -14,6 +16,7 @@ const FALLBACK_ROLES: UserRole[] = ["Owner", "Manager", "Sales", "Marketing"];
 
 const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [salespeople, setSalespeople] = useState<CRMSalespersonOption[]>([]);
   const [availableRoles, setAvailableRoles] = useState<UserRole[]>(FALLBACK_ROLES);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
@@ -28,6 +31,7 @@ const AdminUsers: React.FC = () => {
   });
 
   const [draftRoles, setDraftRoles] = useState<Record<string, UserRole[]>>({});
+  const [draftSalespeople, setDraftSalespeople] = useState<Record<string, string>>({});
   const [resetPasswords, setResetPasswords] = useState<Record<string, string>>({});
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
 
@@ -35,10 +39,15 @@ const AdminUsers: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [roles, userRows] = await Promise.all([fetchAdminRoles(), fetchAdminUsers()]);
+      const [roles, userRows, salespersonRows] = await Promise.all([
+        fetchAdminRoles(),
+        fetchAdminUsers(),
+        fetchAdminSalespeople(),
+      ]);
       const roleKeys = roles.map((r) => r.key).filter(Boolean);
       setAvailableRoles(roleKeys.length ? roleKeys : FALLBACK_ROLES);
       setUsers(userRows);
+      setSalespeople(salespersonRows);
       setDraftRoles(
         userRows.reduce(
           (acc, user) => {
@@ -46,6 +55,15 @@ const AdminUsers: React.FC = () => {
             return acc;
           },
           {} as Record<string, UserRole[]>
+        )
+      );
+      setDraftSalespeople(
+        userRows.reduce(
+          (acc, user) => {
+            acc[user.id] = user.salespersonName || "";
+            return acc;
+          },
+          {} as Record<string, string>
         )
       );
     } catch (err: any) {
@@ -65,6 +83,20 @@ const AdminUsers: React.FC = () => {
   );
   const activeUsers = useMemo(() => sortedUsers.filter((user) => user.active), [sortedUsers]);
   const inactiveUsers = useMemo(() => sortedUsers.filter((user) => !user.active), [sortedUsers]);
+  const salespersonLabelMap = useMemo(
+    () =>
+      salespeople.reduce(
+        (acc, salesperson) => {
+          const parts = [];
+          if (salesperson.primaryLocation) parts.push(salesperson.primaryLocation);
+          if (salesperson.totalTickets > 0) parts.push(`${salesperson.totalTickets} tickets`);
+          acc[salesperson.name] = parts.length ? `${salesperson.name} (${parts.join(" • ")})` : salesperson.name;
+          return acc;
+        },
+        {} as Record<string, string>
+      ),
+    [salespeople]
+  );
 
   const toggleRole = (roles: UserRole[], role: UserRole) => {
     if (roles.includes(role)) return roles.filter((r) => r !== role);
@@ -147,6 +179,25 @@ const AdminUsers: React.FC = () => {
       await load();
     } catch (err: any) {
       setError(String(err?.message || err || "Failed to update access status"));
+    } finally {
+      setBusyUserId(null);
+    }
+  };
+
+  const saveSalespersonLink = async (user: ManagedUser) => {
+    setBusyUserId(user.id);
+    setMessage(null);
+    setError(null);
+    try {
+      await setAdminUserSalespersonName(user.id, draftSalespeople[user.id] || "");
+      setMessage(
+        draftSalespeople[user.id]
+          ? `${user.email} is now linked to ${draftSalespeople[user.id]}.`
+          : `${user.email} no longer has a linked salesperson profile.`
+      );
+      await load();
+    } catch (err: any) {
+      setError(String(err?.message || err || "Failed to update salesperson link"));
     } finally {
       setBusyUserId(null);
     }
@@ -279,6 +330,8 @@ const AdminUsers: React.FC = () => {
                         {user.phone ? <span>{user.phone}</span> : <span>No phone on file</span>}
                         <span>•</span>
                         <span>{user.authProvider === "google" ? "Google Workspace" : "Password login"}</span>
+                        <span>•</span>
+                        <span>{user.salespersonName || "No salesperson linked"}</span>
                         {user.permissionMode === "explicit" && (
                           <>
                             <span>•</span>
@@ -330,6 +383,34 @@ const AdminUsers: React.FC = () => {
                         </button>
                       );
                     })}
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
+                    <select
+                      value={draftSalespeople[user.id] || ""}
+                      onChange={(event) =>
+                        setDraftSalespeople((curr) => ({
+                          ...curr,
+                          [user.id]: event.target.value,
+                        }))
+                      }
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                    >
+                      <option value="">No linked salesperson</option>
+                      {salespeople.map((salesperson) => (
+                        <option key={salesperson.name} value={salesperson.name}>
+                          {salespersonLabelMap[salesperson.name] || salesperson.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void saveSalespersonLink(user)}
+                      className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60"
+                    >
+                      Save Salesperson Link
+                    </button>
                   </div>
 
                   <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[auto_auto_auto_1fr_auto]">

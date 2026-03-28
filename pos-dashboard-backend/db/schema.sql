@@ -514,6 +514,7 @@ CREATE TABLE IF NOT EXISTS users (
   email         TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   phone         TEXT,
+  salesperson_name TEXT,
   google_sub    TEXT UNIQUE,
   auth_provider TEXT NOT NULL DEFAULT 'password',
   access_status TEXT NOT NULL DEFAULT 'approved',
@@ -531,6 +532,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS salesperson_name TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS access_status TEXT;

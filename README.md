@@ -15,7 +15,7 @@ Furniture Distributors dashboard (Vite + React) with a local POS backend API and
 - **API URL:** `https://furnituredistributors.wolf.discount/fd/api/`
 - **Backend Port:** `5057`
 - **Database Port (Host):** `5433`
-- **Display Versioning:** UI shows `displayVersion` from `package.json` (for example `0.3.28.2`) while package semver remains valid.
+- **Display Versioning:** UI shows `displayVersion` from `package.json` (for example `0.3.28.4`) while package semver remains valid.
 
 ### Nginx Routing
 Nginx acts as a reverse proxy, mapping `/fd/api/` to the internal Swarm service. Note that the path mapping includes a redundant `/api` in the frontend code to correctly trigger the backend's relative routing logic.
@@ -56,6 +56,7 @@ From backend folder:
 - First-time Google users land in a request-access step and must provide a phone number.
 - The backend stores `name`, `first_name`, `last_name`, `email`, and `phone` for pending requests so the same identity record can be reused later for app/mobile rollout.
 - Owners approve or return employees to pending status from **Settings → Users**.
+- Owners can link an employee profile to a salesperson name pulled from the sales-report data so reporting and profile access can line up later.
 - Owners can assign role defaults and per-employee permission overrides from **Settings → Employee Permissions**.
 
 ## Auth Configuration

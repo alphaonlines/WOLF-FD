@@ -212,6 +212,7 @@ export interface ManagedUser {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  salespersonName?: string;
   authProvider?: string;
   accessStatus?: string;
   accessRequestedAt?: string;
