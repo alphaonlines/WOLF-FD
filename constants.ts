@@ -1,7 +1,7 @@
 import packageJson from "./package.json";
 import { SalesData, StoreData, Task, TaskStatus, SocialPost, PostStatus } from "./types";
 
-export const APP_VERSION = packageJson.version;
+export const APP_VERSION = String((packageJson as { displayVersion?: string; version: string }).displayVersion || packageJson.version);
 
 // Mock Sales Data
 export const SALES_PERSON_DATA: SalesData[] = [
