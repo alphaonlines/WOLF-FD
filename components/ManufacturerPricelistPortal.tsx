@@ -8,6 +8,11 @@ import {
   Search,
   UploadCloud,
 } from "lucide-react";
+import type { ManufacturerPricebookUpload } from "../types";
+import {
+  fetchManufacturerPricebookUploads,
+  uploadManufacturerPricebookToHolding,
+} from "../services/manufacturerPricelistApi";
 
 type PortalScreen = "ingestion" | "validation" | "search";
 
@@ -399,6 +404,11 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
   const [searchManufacturerFilter, setSearchManufacturerFilter] = useState("All Manufacturers");
   const [searchCategoryFilter, setSearchCategoryFilter] = useState("All Categories");
   const [searchColorFilter, setSearchColorFilter] = useState("All Colors");
+  const [replaceExistingOnPublish, setReplaceExistingOnPublish] = useState(true);
+  const [holdingUploads, setHoldingUploads] = useState<ManufacturerPricebookUpload[]>([]);
+  const [holdingBusy, setHoldingBusy] = useState(false);
+  const [holdingMessage, setHoldingMessage] = useState<string | null>(null);
+  const [holdingError, setHoldingError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const template = MANUFACTURER_TEMPLATES[selectedManufacturer] || MANUFACTURER_TEMPLATES.Ashley;
@@ -432,6 +442,24 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
     return () => window.clearInterval(timer);
   }, [ingestionStage, selectedManufacturer, template.rows]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const uploads = await fetchManufacturerPricebookUploads(selectedManufacturer);
+        if (!cancelled) setHoldingUploads(uploads);
+      } catch (error: any) {
+        if (!cancelled) {
+          setHoldingUploads([]);
+          setHoldingError(String(error?.message || error || "Failed to load holding uploads"));
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedManufacturer]);
+
   const searchCategoryOptions = useMemo(() => {
     const categories = Array.from(new Set(rows.map((row) => row.category.trim()).filter(Boolean))).sort();
     return ["All Categories", ...categories];
@@ -459,6 +487,8 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
     setIngestionStage(file ? "ready" : "idle");
     setExtractionProgress(0);
     setValidationMessage(null);
+    setHoldingMessage(null);
+    setHoldingError(null);
   };
 
   const startExtraction = () => {
@@ -491,6 +521,33 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
     setRows(cloneRows(template.rows));
     setValidationMessage("Validation rows were reset to the latest extracted state.");
     setPublishedAt(null);
+  };
+
+  const refreshHoldingUploads = async (manufacturer: string) => {
+    const uploads = await fetchManufacturerPricebookUploads(manufacturer);
+    setHoldingUploads(uploads);
+  };
+
+  const uploadToHolding = async () => {
+    if (!selectedFile) return;
+    setHoldingBusy(true);
+    setHoldingMessage(null);
+    setHoldingError(null);
+    try {
+      const row = await uploadManufacturerPricebookToHolding({
+        manufacturer: selectedManufacturer,
+        file: selectedFile,
+        replaceExisting: replaceExistingOnPublish,
+      });
+      await refreshHoldingUploads(selectedManufacturer);
+      setHoldingMessage(
+        `${row.originalName} uploaded to holding for ${selectedManufacturer}. Stored at ${row.relativePath}.`
+      );
+    } catch (error: any) {
+      setHoldingError(String(error?.message || error || "Failed to upload file to holding"));
+    } finally {
+      setHoldingBusy(false);
+    }
   };
 
   return (
@@ -647,6 +704,15 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <button
                 type="button"
+                disabled={!selectedFile || holdingBusy}
+                onClick={() => void uploadToHolding()}
+                className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-5 py-2.5 text-sm font-semibold text-blue-700 disabled:opacity-50"
+              >
+                <UploadCloud size={16} />
+                {holdingBusy ? "Uploading..." : "Upload to Holding Folder"}
+              </button>
+              <button
+                type="button"
                 disabled={!selectedFile || ingestionStage === "extracting"}
                 onClick={startExtraction}
                 className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
@@ -661,6 +727,15 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                   `${selectedManufacturer} extraction is loaded. Review flagged rows before publishing.`}
               </div>
             </div>
+
+            {holdingMessage && (
+              <div className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                {holdingMessage}
+              </div>
+            )}
+            {holdingError && (
+              <div className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-800">{holdingError}</div>
+            )}
 
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center justify-between gap-3">
@@ -683,6 +758,26 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                 />
               </div>
             </div>
+
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={replaceExistingOnPublish}
+                  onChange={(event) => setReplaceExistingOnPublish(event.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300"
+                />
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    Replace existing {selectedManufacturer} catalog rows on publish
+                  </div>
+                  <div className="mt-1 text-sm text-slate-500">
+                    The intended publish flow is manufacturer-scoped: clear old normalized rows for this vendor, then
+                    insert the newly validated set so stale pricing never lingers.
+                  </div>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -703,6 +798,30 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
             </div>
             <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
               Blank required fields should never be publishable. Missing data stays highlighted until staff correct it.
+            </div>
+            <div className="mt-5">
+              <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Holding uploads</h4>
+              <div className="mt-3 space-y-2">
+                {holdingUploads.length ? (
+                  holdingUploads.slice(0, 6).map((upload) => (
+                    <div key={upload.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                      <div className="text-sm font-semibold text-slate-900">{upload.originalName}</div>
+                      <div className="mt-1 text-xs text-slate-500">{upload.relativePath}</div>
+                      <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-500">
+                        <span>{(upload.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                        <span>•</span>
+                        <span>{upload.status}</span>
+                        <span>•</span>
+                        <span>{upload.createdAt ? new Date(upload.createdAt).toLocaleString() : "Just now"}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                    No holding uploads for {selectedManufacturer} yet.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

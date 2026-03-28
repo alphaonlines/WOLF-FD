@@ -843,11 +843,53 @@ async function ensureWebTrackingSchema(pool: Pool) {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_web_page_events_site_session_created ON web_page_events(site, session_id, created_at DESC);`);
 }
 
+async function ensureManufacturerPricebookSchema(pool: Pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS manufacturer_pricebook_uploads (
+      id                  BIGSERIAL PRIMARY KEY,
+      manufacturer        TEXT NOT NULL,
+      manufacturer_slug   TEXT NOT NULL,
+      original_name       TEXT NOT NULL,
+      storage_name        TEXT NOT NULL,
+      relative_path       TEXT NOT NULL,
+      mime_type           TEXT NOT NULL DEFAULT 'application/octet-stream',
+      file_size_bytes     BIGINT NOT NULL DEFAULT 0,
+      replace_existing    BOOLEAN NOT NULL DEFAULT TRUE,
+      status              TEXT NOT NULL DEFAULT 'holding',
+      uploaded_by_user_id BIGINT NULL,
+      created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS manufacturer TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS manufacturer_slug TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS original_name TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS storage_name TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS relative_path TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS mime_type TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS file_size_bytes BIGINT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS replace_existing BOOLEAN;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS status TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS uploaded_by_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN mime_type SET DEFAULT 'application/octet-stream';`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN file_size_bytes SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN replace_existing SET DEFAULT TRUE;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN status SET DEFAULT 'holding';`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_manufacturer_pricebook_uploads_manufacturer_created ON manufacturer_pricebook_uploads(manufacturer, created_at DESC);`
+  );
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_manufacturer_pricebook_uploads_status_created ON manufacturer_pricebook_uploads(status, created_at DESC);`
+  );
+}
+
 export async function runStartupBootstrap(deps: RunStartupBootstrapDeps) {
   await ensureAuthSchema(deps.pool);
   await ensureDefaultRoles(deps.pool);
   await ensureDefaultRolePermissions(deps.pool);
   await ensureDefaultAuthUser(deps);
+  await ensureManufacturerPricebookSchema(deps.pool);
   await ensureCrmSchema(deps.pool);
   await ensureSocialSchema(deps.pool);
   await ensureWebTrackingSchema(deps.pool);

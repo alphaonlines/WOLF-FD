@@ -176,6 +176,21 @@ export interface CRMAutomationRule {
   enabled: boolean;
 }
 
+export interface ManufacturerPricebookUpload {
+  id: string;
+  manufacturer: string;
+  manufacturerSlug: string;
+  originalName: string;
+  storageName: string;
+  relativePath: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  replaceExisting: boolean;
+  status: string;
+  uploadedByUserId?: string | null;
+  createdAt?: string;
+}
+
 export type UserRole = "Owner" | "Manager" | "Sales" | "Marketing";
 export type PermissionMode = "role" | "explicit";
 

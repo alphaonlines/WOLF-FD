@@ -21,6 +21,7 @@ import { registerSystemRoutes } from "./routes/systemRoutes";
 import { registerTrackingRoutes } from "./routes/trackingRoutes";
 import { registerBoardRoutes } from "./routes/boardRoutes";
 import { registerPublicSocialRoutes, registerSocialRoutes } from "./routes/socialRoutes";
+import { registerManufacturerPricebookRoutes } from "./routes/manufacturerPricebookRoutes";
 import {
   type AuthUserView,
   buildAuthUser,
@@ -47,6 +48,7 @@ type RegisterAllRoutesDeps = {
   pool: Pool;
   upload: UploadLike;
   uploadsDir: string;
+  manufacturerPricebookHoldingDir: string;
   boardUploadsDir: string;
   importerPath: string;
   pythonBin: string;
@@ -81,6 +83,7 @@ export function registerAllRoutes({
   pool,
   upload,
   uploadsDir,
+  manufacturerPricebookHoldingDir,
   boardUploadsDir,
   importerPath,
   pythonBin,
@@ -158,6 +161,12 @@ export function registerAllRoutes({
   registerTaskRoutes(app, pool);
   registerCrmRoutes(app, pool);
   registerBoardRoutes(app, pool, boardUploadsDir, socialPublicBaseUrl);
+  registerManufacturerPricebookRoutes({
+    app,
+    pool,
+    requireOwner,
+    holdingDir: manufacturerPricebookHoldingDir,
+  });
   registerSocialRoutes({
     app,
     pool,

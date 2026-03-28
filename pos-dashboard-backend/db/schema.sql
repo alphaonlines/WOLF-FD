@@ -130,6 +130,43 @@ CREATE INDEX IF NOT EXISTS idx_pos_sales_salesperson ON pos_sales(salesperson);
 
 CREATE INDEX IF NOT EXISTS idx_pos_sales_location ON pos_sales(location);
 
+CREATE TABLE IF NOT EXISTS manufacturer_pricebook_uploads (
+  id                  BIGSERIAL PRIMARY KEY,
+  manufacturer        TEXT NOT NULL,
+  manufacturer_slug   TEXT NOT NULL,
+  original_name       TEXT NOT NULL,
+  storage_name        TEXT NOT NULL,
+  relative_path       TEXT NOT NULL,
+  mime_type           TEXT NOT NULL DEFAULT 'application/octet-stream',
+  file_size_bytes     BIGINT NOT NULL DEFAULT 0,
+  replace_existing    BOOLEAN NOT NULL DEFAULT TRUE,
+  status              TEXT NOT NULL DEFAULT 'holding',
+  uploaded_by_user_id BIGINT NULL,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS manufacturer TEXT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS manufacturer_slug TEXT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS original_name TEXT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS storage_name TEXT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS relative_path TEXT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS mime_type TEXT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS file_size_bytes BIGINT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS replace_existing BOOLEAN;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS status TEXT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS uploaded_by_user_id BIGINT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN mime_type SET DEFAULT 'application/octet-stream';
+ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN file_size_bytes SET DEFAULT 0;
+ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN replace_existing SET DEFAULT TRUE;
+ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN status SET DEFAULT 'holding';
+ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN created_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_manufacturer_pricebook_uploads_manufacturer_created
+  ON manufacturer_pricebook_uploads(manufacturer, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_manufacturer_pricebook_uploads_status_created
+  ON manufacturer_pricebook_uploads(status, created_at DESC);
+
 -- Analytics: split "A and B" (or "A & B") combos into one row per person.
 -- Totals are split evenly across the participants.
 CREATE OR REPLACE VIEW pos_sales_people AS

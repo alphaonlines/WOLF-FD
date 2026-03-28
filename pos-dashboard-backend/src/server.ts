@@ -58,6 +58,8 @@ app.use((req, res, next) => {
 
 const uploadsDir = path.resolve(__dirname, "..", "incoming");
 fs.mkdirSync(uploadsDir, { recursive: true });
+const manufacturerPricebookHoldingDir = path.resolve(__dirname, "..", "manufacturer-pricebooks", "holding");
+fs.mkdirSync(manufacturerPricebookHoldingDir, { recursive: true });
 const boardUploadsDir = path.resolve(__dirname, "..", "board-uploads");
 fs.mkdirSync(boardUploadsDir, { recursive: true });
 const socialUploadsDir = path.resolve(__dirname, "..", "social-uploads");
@@ -78,6 +80,7 @@ const { setUserRolesByKeys } = registerAllRoutes({
   pool,
   upload,
   uploadsDir,
+  manufacturerPricebookHoldingDir,
   boardUploadsDir,
   importerPath,
   pythonBin,

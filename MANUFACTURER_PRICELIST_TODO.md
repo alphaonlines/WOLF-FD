@@ -9,7 +9,8 @@ Build an internal workflow to ingest, normalize, validate, and search furniture 
   - Upload & Ingestion
   - Data Validation & Correction
   - Global Product Search Catalog
-- Current implementation is a frontend prototype with manufacturer-aware demo extraction rows to shape the workflow and data model.
+- Current implementation now also supports real upload-to-holding by manufacturer before parsing is finalized.
+- Uploaded source files are staged so we can inspect formatting and build parser rules vendor by vendor.
 
 ## Why This Needs A Dedicated Pipeline
 - Source files arrive in mixed formats: PDF, Excel, CSV.
@@ -40,11 +41,12 @@ Build an internal workflow to ingest, normalize, validate, and search furniture 
 - Preserve vendor-specific source notes for downstream ops review.
 
 ## Next Backend Phases
-- Create a dedicated manufacturer price-book upload endpoint.
-- Store upload batches with manufacturer, file metadata, and extraction status.
+- [x] Create a dedicated manufacturer price-book upload endpoint.
+- [x] Store upload batches with manufacturer, file metadata, and holding status.
 - Create normalized price-book tables for products and source notes.
 - Save flagged validation issues per row so review sessions can resume.
 - Add publish action from validation into the searchable master catalog.
+- On publish, clear existing normalized rows for that manufacturer first, then replace them with the newly validated set.
 - Add search endpoints with filters for manufacturer, category, description, and finish.
 - Add audit logging for uploads, edits, and publish actions.
 

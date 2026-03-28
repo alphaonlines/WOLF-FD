@@ -23,6 +23,8 @@ pos-dashboard-backend/logs
 pos-dashboard-backend/incoming
 pos-dashboard-backend/processed
 pos-dashboard-backend/dist
+pos-dashboard-backend/manufacturer-pricebooks/holding/*
+!pos-dashboard-backend/manufacturer-pricebooks/holding/.gitkeep
 pos-dashboard-backend/src/*.js
 pos-dashboard-backend/src/*.js.map
 pos-dashboard-backend/src/*.d.ts
