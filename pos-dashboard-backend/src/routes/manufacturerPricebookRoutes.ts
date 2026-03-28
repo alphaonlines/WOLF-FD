@@ -391,7 +391,7 @@ export function registerManufacturerPricebookRoutes({
       const ok = ACCEPTED_FILE_PATTERN.test(file.originalname);
       cb((ok ? null : new Error("Only PDF, CSV, XLS, and XLSX files are accepted")) as any, ok);
     },
-    limits: { fileSize: 100 * 1024 * 1024 },
+    limits: { fileSize: 250 * 1024 * 1024 },
   });
 
   app.get("/api/manufacturer-pricebooks/uploads", requireOwner, async (req, res) => {
