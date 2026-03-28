@@ -137,10 +137,15 @@ CREATE TABLE IF NOT EXISTS manufacturer_pricebook_uploads (
   original_name       TEXT NOT NULL,
   storage_name        TEXT NOT NULL,
   relative_path       TEXT NOT NULL,
+  document_type       TEXT NOT NULL DEFAULT 'pricebook',
   mime_type           TEXT NOT NULL DEFAULT 'application/octet-stream',
   file_size_bytes     BIGINT NOT NULL DEFAULT 0,
   replace_existing    BOOLEAN NOT NULL DEFAULT TRUE,
   status              TEXT NOT NULL DEFAULT 'holding',
+  parsed_row_count    INTEGER NOT NULL DEFAULT 0,
+  last_error          TEXT,
+  previewed_at        TIMESTAMPTZ,
+  published_at        TIMESTAMPTZ,
   uploaded_by_user_id BIGINT NULL,
   created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -150,22 +155,158 @@ ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS manufacturer
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS original_name TEXT;
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS storage_name TEXT;
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS relative_path TEXT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS document_type TEXT;
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS mime_type TEXT;
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS file_size_bytes BIGINT;
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS replace_existing BOOLEAN;
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS status TEXT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS parsed_row_count INTEGER;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS last_error TEXT;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS previewed_at TIMESTAMPTZ;
+ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS uploaded_by_user_id BIGINT;
 ALTER TABLE manufacturer_pricebook_uploads ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN document_type SET DEFAULT 'pricebook';
 ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN mime_type SET DEFAULT 'application/octet-stream';
 ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN file_size_bytes SET DEFAULT 0;
 ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN replace_existing SET DEFAULT TRUE;
 ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN status SET DEFAULT 'holding';
+ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN parsed_row_count SET DEFAULT 0;
 ALTER TABLE manufacturer_pricebook_uploads ALTER COLUMN created_at SET DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_manufacturer_pricebook_uploads_manufacturer_created
   ON manufacturer_pricebook_uploads(manufacturer, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_manufacturer_pricebook_uploads_status_created
   ON manufacturer_pricebook_uploads(status, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS manufacturer_catalog_items (
+  id                  BIGSERIAL PRIMARY KEY,
+  manufacturer        TEXT NOT NULL,
+  manufacturer_slug   TEXT NOT NULL,
+  upload_id           BIGINT REFERENCES manufacturer_pricebook_uploads(id) ON DELETE SET NULL,
+  source_sort_order   INTEGER NOT NULL DEFAULT 0,
+  collection_code     TEXT,
+  collection_name     TEXT,
+  category            TEXT NOT NULL DEFAULT '',
+  product_type        TEXT NOT NULL DEFAULT '',
+  sku                 TEXT NOT NULL,
+  description         TEXT NOT NULL DEFAULT '',
+  color_finish        TEXT NOT NULL DEFAULT '',
+  color_family        TEXT NOT NULL DEFAULT '',
+  material            TEXT NOT NULL DEFAULT '',
+  shape               TEXT NOT NULL DEFAULT '',
+  dimensions_text     TEXT NOT NULL DEFAULT '',
+  width_inches        NUMERIC,
+  depth_inches        NUMERIC,
+  height_inches       NUMERIC,
+  cubes               NUMERIC,
+  weight_lbs          NUMERIC,
+  base_price          NUMERIC,
+  is_set              BOOLEAN NOT NULL DEFAULT FALSE,
+  set_piece_count     INTEGER,
+  is_swatch           BOOLEAN NOT NULL DEFAULT FALSE,
+  is_sample           BOOLEAN NOT NULL DEFAULT FALSE,
+  is_new_product      BOOLEAN NOT NULL DEFAULT FALSE,
+  upholstery_cover    TEXT NOT NULL DEFAULT '',
+  hardware_options    TEXT[] NOT NULL DEFAULT '{}'::text[],
+  cushion_options     TEXT[] NOT NULL DEFAULT '{}'::text[],
+  feature_tags        TEXT[] NOT NULL DEFAULT '{}'::text[],
+  search_keywords     TEXT[] NOT NULL DEFAULT '{}'::text[],
+  search_text         TEXT NOT NULL DEFAULT '',
+  source_note         TEXT NOT NULL DEFAULT '',
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS manufacturer TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS manufacturer_slug TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS upload_id BIGINT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS source_sort_order INTEGER;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS collection_code TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS collection_name TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS category TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS product_type TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS sku TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS color_finish TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS color_family TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS material TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS shape TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS dimensions_text TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS width_inches NUMERIC;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS depth_inches NUMERIC;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS height_inches NUMERIC;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS cubes NUMERIC;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS weight_lbs NUMERIC;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS base_price NUMERIC;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS is_set BOOLEAN;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS set_piece_count INTEGER;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS is_swatch BOOLEAN;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS is_sample BOOLEAN;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS is_new_product BOOLEAN;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS upholstery_cover TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS hardware_options TEXT[];
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS cushion_options TEXT[];
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS feature_tags TEXT[];
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS search_keywords TEXT[];
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS search_text TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS source_note TEXT;
+ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN category SET DEFAULT '';
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN product_type SET DEFAULT '';
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN description SET DEFAULT '';
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN color_finish SET DEFAULT '';
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN color_family SET DEFAULT '';
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN material SET DEFAULT '';
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN shape SET DEFAULT '';
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN dimensions_text SET DEFAULT '';
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN is_set SET DEFAULT FALSE;
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN is_swatch SET DEFAULT FALSE;
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN is_sample SET DEFAULT FALSE;
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN is_new_product SET DEFAULT FALSE;
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN upholstery_cover SET DEFAULT '';
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN hardware_options SET DEFAULT '{}'::text[];
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN cushion_options SET DEFAULT '{}'::text[];
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN feature_tags SET DEFAULT '{}'::text[];
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN search_keywords SET DEFAULT '{}'::text[];
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN search_text SET DEFAULT '';
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN source_note SET DEFAULT '';
+ALTER TABLE manufacturer_catalog_items ALTER COLUMN created_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_manufacturer_catalog_items_lookup
+  ON manufacturer_catalog_items(manufacturer_slug, category, color_family, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_manufacturer_catalog_items_upload_sort
+  ON manufacturer_catalog_items(upload_id, source_sort_order);
+CREATE INDEX IF NOT EXISTS idx_manufacturer_catalog_items_search_text
+  ON manufacturer_catalog_items USING GIN (to_tsvector('simple', search_text));
+
+CREATE TABLE IF NOT EXISTS manufacturer_reference_notes (
+  id                BIGSERIAL PRIMARY KEY,
+  manufacturer      TEXT NOT NULL,
+  manufacturer_slug TEXT NOT NULL,
+  upload_id         BIGINT REFERENCES manufacturer_pricebook_uploads(id) ON DELETE SET NULL,
+  note_type         TEXT NOT NULL DEFAULT 'reference',
+  title             TEXT NOT NULL DEFAULT '',
+  content           TEXT NOT NULL DEFAULT '',
+  source_sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS manufacturer TEXT;
+ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS manufacturer_slug TEXT;
+ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS upload_id BIGINT;
+ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS note_type TEXT;
+ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS content TEXT;
+ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS source_sort_order INTEGER;
+ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE manufacturer_reference_notes ALTER COLUMN note_type SET DEFAULT 'reference';
+ALTER TABLE manufacturer_reference_notes ALTER COLUMN title SET DEFAULT '';
+ALTER TABLE manufacturer_reference_notes ALTER COLUMN content SET DEFAULT '';
+ALTER TABLE manufacturer_reference_notes ALTER COLUMN source_sort_order SET DEFAULT 0;
+ALTER TABLE manufacturer_reference_notes ALTER COLUMN created_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_manufacturer_reference_notes_lookup
+  ON manufacturer_reference_notes(manufacturer_slug, note_type, source_sort_order);
 
 -- Analytics: split "A and B" (or "A & B") combos into one row per person.
 -- Totals are split evenly across the participants.

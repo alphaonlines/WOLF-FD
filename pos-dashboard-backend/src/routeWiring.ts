@@ -166,6 +166,7 @@ export function registerAllRoutes({
     pool,
     requireOwner,
     holdingDir: manufacturerPricebookHoldingDir,
+    execFileAsync,
   });
   registerSocialRoutes({
     app,

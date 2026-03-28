@@ -43,12 +43,40 @@ Build an internal workflow to ingest, normalize, validate, and search furniture 
 ## Next Backend Phases
 - [x] Create a dedicated manufacturer price-book upload endpoint.
 - [x] Store upload batches with manufacturer, file metadata, and holding status.
-- Create normalized price-book tables for products and source notes.
+- [x] Support multi-file and ZIP uploads into the holding area so manufacturer bundles can be staged before parser work is complete.
+- [x] Create normalized price-book tables for products and source notes.
+- [x] Add publish action from validation into the searchable master catalog.
+- [x] On publish, clear existing normalized rows for that manufacturer first, then replace them with the newly validated set.
+- [x] Add search endpoints with filters for manufacturer, category, description, finish, and richer furniture attributes.
+- [x] Capture manufacturer reference notes such as warranty, freight, return, and website/policy information.
+- [x] Build the first live manufacturer parser and publish pipeline for `Liberty`.
 - Save flagged validation issues per row so review sessions can resume.
-- Add publish action from validation into the searchable master catalog.
-- On publish, clear existing normalized rows for that manufacturer first, then replace them with the newly validated set.
-- Add search endpoints with filters for manufacturer, category, description, and finish.
+- Add archive unpacking and review helpers for multi-file ZIP bundles.
+- Add manufacturer-specific parser profiles for the next vendors (`Best HF`, `Ashley`, `England`, etc.).
 - Add audit logging for uploads, edits, and publish actions.
+
+## Current Normalized Search Fields
+- Manufacturer / manufacturer slug
+- Category
+- Collection code / collection name
+- Product name / description
+- SKU / item number
+- Color / finish
+- Color family
+- Material
+- Product type
+- Shape
+- Dimensions text
+- Width / depth / height
+- Cubes
+- Weight
+- Base price / cost
+- Set / piece count flags
+- Swatch / sample flags
+- Hardware options
+- Cushion options
+- Feature tags / search keywords
+- Source note / source sort order
 
 ## Future Nice-To-Haves
 - Manufacturer-specific parser profiles with reusable extraction templates.

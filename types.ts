@@ -183,12 +183,65 @@ export interface ManufacturerPricebookUpload {
   originalName: string;
   storageName: string;
   relativePath: string;
+  documentType?: string;
   mimeType: string;
   fileSizeBytes: number;
   replaceExisting: boolean;
   status: string;
+  parsedRowCount?: number;
+  lastError?: string;
+  previewedAt?: string | null;
+  publishedAt?: string | null;
   uploadedByUserId?: string | null;
   createdAt?: string;
+}
+
+export interface ManufacturerReferenceNote {
+  id: string;
+  manufacturer: string;
+  manufacturerSlug: string;
+  uploadId?: string | null;
+  noteType: string;
+  title: string;
+  content: string;
+  sourceSortOrder: number;
+  createdAt?: string | null;
+}
+
+export interface ManufacturerCatalogItem {
+  id: string;
+  uploadId?: string | null;
+  manufacturer: string;
+  manufacturerSlug: string;
+  collectionCode: string;
+  collectionName: string;
+  category: string;
+  productType: string;
+  sku: string;
+  description: string;
+  colorFinish: string;
+  colorFamily: string;
+  material: string;
+  shape: string;
+  dimensionsText: string;
+  widthInches: number | null;
+  depthInches: number | null;
+  heightInches: number | null;
+  cubes: number | null;
+  weightLbs: number | null;
+  basePrice: number | null;
+  isSet: boolean;
+  setPieceCount: number | null;
+  isSwatch: boolean;
+  isSample: boolean;
+  isNewProduct: boolean;
+  upholsteryCover: string;
+  hardwareOptions: string[];
+  cushionOptions: string[];
+  featureTags: string[];
+  searchKeywords: string[];
+  sourceNote: string;
+  sourceSortOrder: number;
 }
 
 export type UserRole = "Owner" | "Manager" | "Sales" | "Marketing";

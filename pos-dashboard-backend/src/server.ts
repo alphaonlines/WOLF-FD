@@ -35,7 +35,7 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "25mb" }));
 app.use((req, res, next) => {
   if (!DASHBOARD_LOCKED) {
     next();

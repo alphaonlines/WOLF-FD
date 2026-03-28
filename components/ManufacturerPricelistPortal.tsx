@@ -8,9 +8,17 @@ import {
   Search,
   UploadCloud,
 } from "lucide-react";
-import type { ManufacturerPricebookUpload } from "../types";
+import type {
+  ManufacturerCatalogItem,
+  ManufacturerPricebookUpload,
+  ManufacturerReferenceNote,
+} from "../types";
 import {
+  fetchManufacturerCatalog,
   fetchManufacturerPricebookUploads,
+  fetchManufacturerReferenceNotes,
+  previewManufacturerPricebookUpload,
+  publishManufacturerPricebookUpload,
   uploadManufacturerPricebookToHolding,
 } from "../services/manufacturerPricelistApi";
 
@@ -19,11 +27,36 @@ type PortalScreen = "ingestion" | "validation" | "search";
 type NormalizedProductRow = {
   id: string;
   manufacturer: string;
+  manufacturerSlug?: string;
   category: string;
+  collectionName?: string;
+  collectionCode?: string;
+  productType?: string;
   productName: string;
   description: string;
   colorFinish: string;
+  colorFamily?: string;
+  material?: string;
+  shape?: string;
+  dimensionsText?: string;
+  widthInches?: number | null;
+  depthInches?: number | null;
+  heightInches?: number | null;
+  cubes?: number | null;
+  weightLbs?: number | null;
   basePrice: string;
+  isSet?: boolean;
+  setPieceCount?: number | null;
+  isSwatch?: boolean;
+  isSample?: boolean;
+  isNewProduct?: boolean;
+  upholsteryCover?: string;
+  hardwareOptions?: string[];
+  cushionOptions?: string[];
+  featureTags?: string[];
+  searchKeywords?: string[];
+  uploadId?: string | null;
+  sourceSortOrder?: number;
   sourceNote: string;
 };
 
@@ -390,10 +423,83 @@ const formatFieldLabel = (field: string) => {
   }
 };
 
+const catalogItemToRow = (item: ManufacturerCatalogItem): NormalizedProductRow => ({
+  id: item.id,
+  uploadId: item.uploadId ?? null,
+  manufacturer: item.manufacturer,
+  manufacturerSlug: item.manufacturerSlug,
+  category: item.category,
+  collectionName: item.collectionName,
+  collectionCode: item.collectionCode,
+  productType: item.productType,
+  productName: item.sku,
+  description: item.description,
+  colorFinish: item.colorFinish,
+  colorFamily: item.colorFamily,
+  material: item.material,
+  shape: item.shape,
+  dimensionsText: item.dimensionsText,
+  widthInches: item.widthInches,
+  depthInches: item.depthInches,
+  heightInches: item.heightInches,
+  cubes: item.cubes,
+  weightLbs: item.weightLbs,
+  basePrice: item.basePrice === null ? "" : item.basePrice.toFixed(2),
+  isSet: item.isSet,
+  setPieceCount: item.setPieceCount,
+  isSwatch: item.isSwatch,
+  isSample: item.isSample,
+  isNewProduct: item.isNewProduct,
+  upholsteryCover: item.upholsteryCover,
+  hardwareOptions: item.hardwareOptions,
+  cushionOptions: item.cushionOptions,
+  featureTags: item.featureTags,
+  searchKeywords: item.searchKeywords,
+  sourceSortOrder: item.sourceSortOrder,
+  sourceNote: item.sourceNote,
+});
+
+const rowToCatalogItem = (row: NormalizedProductRow, manufacturerSlug: string, uploadId: string | null): ManufacturerCatalogItem => ({
+  id: row.id,
+  uploadId,
+  manufacturer: row.manufacturer,
+  manufacturerSlug,
+  collectionCode: row.collectionCode || "",
+  collectionName: row.collectionName || "",
+  category: row.category,
+  productType: row.productType || "",
+  sku: row.productName,
+  description: row.description,
+  colorFinish: row.colorFinish,
+  colorFamily: row.colorFamily || "",
+  material: row.material || "",
+  shape: row.shape || "",
+  dimensionsText: row.dimensionsText || "",
+  widthInches: row.widthInches ?? null,
+  depthInches: row.depthInches ?? null,
+  heightInches: row.heightInches ?? null,
+  cubes: row.cubes ?? null,
+  weightLbs: row.weightLbs ?? null,
+  basePrice: row.basePrice ? Number(row.basePrice) : null,
+  isSet: Boolean(row.isSet),
+  setPieceCount: row.setPieceCount ?? null,
+  isSwatch: Boolean(row.isSwatch),
+  isSample: Boolean(row.isSample),
+  isNewProduct: Boolean(row.isNewProduct),
+  upholsteryCover: row.upholsteryCover || "",
+  hardwareOptions: row.hardwareOptions || [],
+  cushionOptions: row.cushionOptions || [],
+  featureTags: row.featureTags || [],
+  searchKeywords: row.searchKeywords || [],
+  sourceNote: row.sourceNote,
+  sourceSortOrder: row.sourceSortOrder ?? 0,
+});
+
 const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = ({ onBack }) => {
   const [activeScreen, setActiveScreen] = useState<PortalScreen>("ingestion");
   const [selectedManufacturer, setSelectedManufacturer] = useState("Ashley");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedDocumentType, setSelectedDocumentType] = useState("pricebook");
   const [dragActive, setDragActive] = useState(false);
   const [ingestionStage, setIngestionStage] = useState<"idle" | "ready" | "extracting" | "review">("idle");
   const [extractionProgress, setExtractionProgress] = useState(0);
@@ -406,9 +512,15 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
   const [searchColorFilter, setSearchColorFilter] = useState("All Colors");
   const [replaceExistingOnPublish, setReplaceExistingOnPublish] = useState(true);
   const [holdingUploads, setHoldingUploads] = useState<ManufacturerPricebookUpload[]>([]);
+  const [selectedUploadId, setSelectedUploadId] = useState<string | null>(null);
   const [holdingBusy, setHoldingBusy] = useState(false);
   const [holdingMessage, setHoldingMessage] = useState<string | null>(null);
   const [holdingError, setHoldingError] = useState<string | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
+  const [publishBusy, setPublishBusy] = useState(false);
+  const [catalogBusy, setCatalogBusy] = useState(false);
+  const [catalogRows, setCatalogRows] = useState<ManufacturerCatalogItem[]>([]);
+  const [referenceNotes, setReferenceNotes] = useState<ManufacturerReferenceNote[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const template = MANUFACTURER_TEMPLATES[selectedManufacturer] || MANUFACTURER_TEMPLATES.Ashley;
@@ -421,37 +533,89 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
   );
   const readyRowsCount = rows.length - flaggedRows.length;
 
-  useEffect(() => {
-    if (ingestionStage !== "extracting") return undefined;
+  const searchRows = useMemo(
+    () => (catalogRows.length ? catalogRows.map((row) => catalogItemToRow(row)) : rows),
+    [catalogRows, rows]
+  );
 
-    setExtractionProgress(12);
-    const timer = window.setInterval(() => {
-      setExtractionProgress((current) => {
-        const next = Math.min(current + 17, 100);
-        if (next >= 100) {
-          window.clearInterval(timer);
-          setRows(cloneRows(template.rows));
-          setIngestionStage("review");
-          setActiveScreen("validation");
-          setValidationMessage(`${selectedManufacturer} extraction is ready for validation review.`);
-        }
-        return next;
-      });
-    }, 140);
+  const searchCategoryOptions = useMemo(() => {
+    const categories = Array.from(new Set(searchRows.map((row) => row.category.trim()).filter(Boolean))).sort();
+    return ["All Categories", ...categories];
+  }, [searchRows]);
 
-    return () => window.clearInterval(timer);
-  }, [ingestionStage, selectedManufacturer, template.rows]);
+  const searchColorOptions = useMemo(() => {
+    const colors = Array.from(new Set(searchRows.map((row) => row.colorFinish.trim()).filter(Boolean))).sort();
+    return ["All Colors", ...colors];
+  }, [searchRows]);
+
+  const searchResults = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return searchRows.filter((row) => {
+      if (searchManufacturerFilter !== "All Manufacturers" && row.manufacturer !== searchManufacturerFilter) return false;
+      if (searchCategoryFilter !== "All Categories" && row.category !== searchCategoryFilter) return false;
+      if (searchColorFilter !== "All Colors" && row.colorFinish !== searchColorFilter) return false;
+      if (!query) return true;
+      const haystack = [
+        row.productName,
+        row.description,
+        row.colorFinish,
+        row.manufacturer,
+        row.collectionName || "",
+        row.productType || "",
+        ...(row.featureTags || []),
+        ...(row.searchKeywords || []),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [searchRows, searchManufacturerFilter, searchCategoryFilter, searchColorFilter, searchTerm]);
+
+  const refreshHoldingUploads = async (manufacturer: string) => {
+    const uploads = await fetchManufacturerPricebookUploads(manufacturer);
+    setHoldingUploads(uploads);
+    if (uploads.length && (!selectedUploadId || !uploads.some((upload) => upload.id === selectedUploadId))) {
+      const firstPricebook = uploads.find((upload) => upload.documentType !== "archive");
+      setSelectedUploadId((firstPricebook || uploads[0]).id);
+    }
+    return uploads;
+  };
+
+  const refreshCatalogData = async (manufacturer: string) => {
+    setCatalogBusy(true);
+    try {
+      const [catalog, notes] = await Promise.all([
+        fetchManufacturerCatalog({ manufacturer, limit: 500 }),
+        fetchManufacturerReferenceNotes(manufacturer),
+      ]);
+      setCatalogRows(catalog);
+      setReferenceNotes(notes);
+    } finally {
+      setCatalogBusy(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
-        const uploads = await fetchManufacturerPricebookUploads(selectedManufacturer);
-        if (!cancelled) setHoldingUploads(uploads);
+        const [uploads, catalog, notes] = await Promise.all([
+          fetchManufacturerPricebookUploads(selectedManufacturer),
+          fetchManufacturerCatalog({ manufacturer: selectedManufacturer, limit: 500 }),
+          fetchManufacturerReferenceNotes(selectedManufacturer),
+        ]);
+        if (cancelled) return;
+        setHoldingUploads(uploads);
+        setCatalogRows(catalog);
+        setReferenceNotes(notes);
+        const firstPricebook = uploads.find((upload) => upload.documentType !== "archive");
+        setSelectedUploadId((firstPricebook || uploads[0] || null)?.id || null);
       } catch (error: any) {
         if (!cancelled) {
           setHoldingUploads([]);
-          setHoldingError(String(error?.message || error || "Failed to load holding uploads"));
+          setCatalogRows([]);
+          setReferenceNotes([]);
+          setHoldingError(String(error?.message || error || "Failed to load manufacturer workspace"));
         }
       }
     })();
@@ -460,43 +624,53 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
     };
   }, [selectedManufacturer]);
 
-  const searchCategoryOptions = useMemo(() => {
-    const categories = Array.from(new Set(rows.map((row) => row.category.trim()).filter(Boolean))).sort();
-    return ["All Categories", ...categories];
-  }, [rows]);
-
-  const searchColorOptions = useMemo(() => {
-    const colors = Array.from(new Set(rows.map((row) => row.colorFinish.trim()).filter(Boolean))).sort();
-    return ["All Colors", ...colors];
-  }, [rows]);
-
-  const searchResults = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-    return rows.filter((row) => {
-      if (searchManufacturerFilter !== "All Manufacturers" && row.manufacturer !== searchManufacturerFilter) return false;
-      if (searchCategoryFilter !== "All Categories" && row.category !== searchCategoryFilter) return false;
-      if (searchColorFilter !== "All Colors" && row.colorFinish !== searchColorFilter) return false;
-      if (!query) return true;
-      const haystack = [row.productName, row.description, row.colorFinish, row.manufacturer].join(" ").toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [rows, searchManufacturerFilter, searchCategoryFilter, searchColorFilter, searchTerm]);
-
-  const onFilePicked = (file: File | null) => {
-    setSelectedFile(file);
-    setIngestionStage(file ? "ready" : "idle");
+  const onFilePicked = (files: File[]) => {
+    setSelectedFiles(files);
+    setIngestionStage(files.length ? "ready" : "idle");
     setExtractionProgress(0);
     setValidationMessage(null);
     setHoldingMessage(null);
     setHoldingError(null);
   };
 
-  const startExtraction = () => {
-    if (!selectedFile) return;
+  const startExtraction = async () => {
+    const targetUpload =
+      holdingUploads.find((upload) => upload.id === selectedUploadId) ||
+      holdingUploads.find((upload) => upload.documentType !== "archive") ||
+      null;
+    if (!targetUpload) {
+      setHoldingError("Upload a pricebook PDF, spreadsheet, or CSV first. ZIP archives can be stored in holding, but they are not parsed yet.");
+      return;
+    }
+    if (targetUpload.documentType === "archive") {
+      setHoldingError("ZIP archives can be stored in holding now, but extraction still needs a real pricebook file inside the archive.");
+      return;
+    }
+    setPreviewBusy(true);
     setValidationMessage(null);
     setPublishedAt(null);
+    setHoldingError(null);
     setIngestionStage("extracting");
-    setExtractionProgress(0);
+    setExtractionProgress(35);
+    try {
+      const preview = await previewManufacturerPricebookUpload(targetUpload.id);
+      setRows(preview.rows.map((row) => catalogItemToRow(row)));
+      if (preview.notes.length) setReferenceNotes(preview.notes);
+      setSelectedUploadId(targetUpload.id);
+      setIngestionStage("review");
+      setExtractionProgress(100);
+      setActiveScreen("validation");
+      setValidationMessage(
+        `${selectedManufacturer} extraction loaded ${preview.rows.length} normalized rows from ${targetUpload.originalName}.`
+      );
+      await refreshHoldingUploads(selectedManufacturer);
+    } catch (error: any) {
+      setIngestionStage("ready");
+      setExtractionProgress(0);
+      setHoldingError(String(error?.message || error || "Failed to preview upload"));
+    } finally {
+      setPreviewBusy(false);
+    }
   };
 
   const updateRow = (rowId: string, field: keyof NormalizedProductRow, value: string) => {
@@ -507,42 +681,68 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
     setPublishedAt(null);
   };
 
-  const saveAndPublish = () => {
+  const saveAndPublish = async () => {
     if (flaggedRows.length > 0) {
       setValidationMessage("Resolve all highlighted required fields before publishing to the master database.");
       return;
     }
-    setPublishedAt(new Date().toLocaleString());
-    setValidationMessage("Validation passed. This manufacturer price book is ready to publish into the normalized catalog.");
-    setActiveScreen("search");
+    const targetUpload =
+      holdingUploads.find((upload) => upload.id === selectedUploadId) ||
+      holdingUploads.find((upload) => upload.documentType !== "archive") ||
+      null;
+    if (!targetUpload) {
+      setValidationMessage("Choose a holding upload before publishing.");
+      return;
+    }
+    setPublishBusy(true);
+    try {
+      const result = await publishManufacturerPricebookUpload({
+        uploadId: targetUpload.id,
+        rows: rows.map((row) =>
+          rowToCatalogItem(row, targetUpload.manufacturerSlug || selectedManufacturer.toLowerCase(), targetUpload.id)
+        ),
+      });
+      setPublishedAt(new Date().toLocaleString());
+      setValidationMessage(
+        `Published ${result.publishedRows} ${selectedManufacturer} rows into the searchable catalog.`
+      );
+      await Promise.all([refreshHoldingUploads(selectedManufacturer), refreshCatalogData(selectedManufacturer)]);
+      setActiveScreen("search");
+    } catch (error: any) {
+      setValidationMessage(String(error?.message || error || "Failed to publish manufacturer catalog"));
+    } finally {
+      setPublishBusy(false);
+    }
   };
 
-  const resetExtraction = () => {
+  const resetExtraction = async () => {
+    if (selectedUploadId) {
+      await startExtraction();
+      return;
+    }
     setRows(cloneRows(template.rows));
-    setValidationMessage("Validation rows were reset to the latest extracted state.");
+    setValidationMessage("Validation rows were reset to the current template state.");
     setPublishedAt(null);
   };
 
-  const refreshHoldingUploads = async (manufacturer: string) => {
-    const uploads = await fetchManufacturerPricebookUploads(manufacturer);
-    setHoldingUploads(uploads);
-  };
-
   const uploadToHolding = async () => {
-    if (!selectedFile) return;
+    if (!selectedFiles.length) return;
     setHoldingBusy(true);
     setHoldingMessage(null);
     setHoldingError(null);
     try {
-      const row = await uploadManufacturerPricebookToHolding({
+      const uploadedRows = await uploadManufacturerPricebookToHolding({
         manufacturer: selectedManufacturer,
-        file: selectedFile,
+        files: selectedFiles,
         replaceExisting: replaceExistingOnPublish,
+        documentType: selectedDocumentType,
       });
       await refreshHoldingUploads(selectedManufacturer);
-      setHoldingMessage(
-        `${row.originalName} uploaded to holding for ${selectedManufacturer}. Stored at ${row.relativePath}.`
-      );
+      if (uploadedRows[0]) setSelectedUploadId(uploadedRows[0].id);
+      setHoldingMessage(`${uploadedRows.length} file(s) uploaded to holding for ${selectedManufacturer}.`);
+      if (selectedDocumentType !== "archive" && uploadedRows.length === 1) {
+        setSelectedFiles([]);
+      }
     } catch (error: any) {
       setHoldingError(String(error?.message || error || "Failed to upload file to holding"));
     } finally {
@@ -647,6 +847,8 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                   onChange={(event) => {
                     setSelectedManufacturer(event.target.value);
                     setRows(cloneRows((MANUFACTURER_TEMPLATES[event.target.value] || template).rows));
+                    setSelectedFiles([]);
+                    setSelectedUploadId(null);
                     setValidationMessage(null);
                     setPublishedAt(null);
                   }}
@@ -664,9 +866,10 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".pdf,.xls,.xlsx,.csv"
+                  accept=".pdf,.xls,.xlsx,.csv,.zip"
+                  multiple
                   className="hidden"
-                  onChange={(event) => onFilePicked(event.target.files?.[0] || null)}
+                  onChange={(event) => onFilePicked(Array.from(event.target.files || []))}
                 />
                 <button
                   type="button"
@@ -679,7 +882,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                   onDrop={(event) => {
                     event.preventDefault();
                     setDragActive(false);
-                    onFilePicked(event.dataTransfer.files?.[0] || null);
+                    onFilePicked(Array.from(event.dataTransfer.files || []));
                   }}
                   className={`flex w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed px-6 py-12 text-center transition ${
                     dragActive
@@ -691,20 +894,46 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                   <div className="mt-4 text-base font-semibold text-slate-800">
                     Drag and drop a price book or click to browse
                   </div>
-                  <div className="mt-2 text-sm text-slate-500">Accepted formats: PDF, Excel, CSV</div>
-                  {selectedFile && (
-                    <div className="mt-4 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm">
-                      {selectedFile.name}
+                  <div className="mt-2 text-sm text-slate-500">Accepted formats: PDF, Excel, CSV, ZIP</div>
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
+                      {selectedFiles.length === 1
+                        ? selectedFiles[0].name
+                        : `${selectedFiles.length} files selected`}
                     </div>
                   )}
                 </button>
               </div>
             </div>
 
+            <div className="mt-4 grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Upload Type
+                </label>
+                <select
+                  value={selectedDocumentType}
+                  onChange={(event) => setSelectedDocumentType(event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="pricebook">Pricebook</option>
+                  <option value="archive">ZIP archive</option>
+                  <option value="warranty">Warranty</option>
+                  <option value="return_policy">Return policy</option>
+                  <option value="freight_policy">Freight policy</option>
+                  <option value="reference">Reference / Other</option>
+                </select>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                Use `ZIP archive` when the manufacturer sends a Google Drive bundle. Archives can live in holding now so
+                we can inspect them and build the next manufacturer parser from the real files.
+              </div>
+            </div>
+
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                disabled={!selectedFile || holdingBusy}
+                disabled={!selectedFiles.length || holdingBusy}
                 onClick={() => void uploadToHolding()}
                 className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-5 py-2.5 text-sm font-semibold text-blue-700 disabled:opacity-50"
               >
@@ -713,16 +942,16 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
               </button>
               <button
                 type="button"
-                disabled={!selectedFile || ingestionStage === "extracting"}
-                onClick={startExtraction}
+                disabled={previewBusy || ingestionStage === "extracting"}
+                onClick={() => void startExtraction()}
                 className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
               >
                 <UploadCloud size={16} />
-                {ingestionStage === "extracting" ? "Extracting..." : "Start Extraction"}
+                {previewBusy || ingestionStage === "extracting" ? "Previewing..." : "Load Into Validation"}
               </button>
               <div className="text-sm text-slate-500">
-                {ingestionStage === "idle" && "Select a manufacturer and upload a file to begin."}
-                {ingestionStage === "ready" && "File queued. Start extraction when you are ready."}
+                {ingestionStage === "idle" && "Select a manufacturer and upload one or more files to begin."}
+                {ingestionStage === "ready" && "Upload files to holding, then load the real pricebook into validation."}
                 {ingestionStage === "review" &&
                   `${selectedManufacturer} extraction is loaded. Review flagged rows before publishing.`}
               </div>
@@ -800,20 +1029,89 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
               Blank required fields should never be publishable. Missing data stays highlighted until staff correct it.
             </div>
             <div className="mt-5">
+              <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Manufacturer reference notes</h4>
+              <div className="mt-3 space-y-2">
+                {referenceNotes.length ? (
+                  referenceNotes.slice(0, 4).map((note) => (
+                    <div key={note.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                      <div className="text-sm font-semibold text-slate-900">{note.title}</div>
+                      <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{note.noteType}</div>
+                      <div className="mt-2 text-sm leading-6 text-slate-600">
+                        {note.content.slice(0, 280)}
+                        {note.content.length > 280 ? "..." : ""}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                    No stored warranty or policy notes for {selectedManufacturer} yet.
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="mt-5">
               <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Holding uploads</h4>
               <div className="mt-3 space-y-2">
                 {holdingUploads.length ? (
                   holdingUploads.slice(0, 6).map((upload) => (
-                    <div key={upload.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                      <div className="text-sm font-semibold text-slate-900">{upload.originalName}</div>
+                    <div
+                      key={upload.id}
+                      className={`rounded-2xl border p-3 ${
+                        selectedUploadId === upload.id
+                          ? "border-slate-900 bg-slate-100"
+                          : "border-slate-200 bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold text-slate-900">{upload.originalName}</div>
+                          <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                            {upload.documentType || "pricebook"}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedUploadId(upload.id)}
+                          className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700"
+                        >
+                          {selectedUploadId === upload.id ? "Selected" : "Select"}
+                        </button>
+                      </div>
                       <div className="mt-1 text-xs text-slate-500">{upload.relativePath}</div>
                       <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-500">
                         <span>{(upload.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
                         <span>•</span>
                         <span>{upload.status}</span>
+                        {upload.parsedRowCount ? (
+                          <>
+                            <span>•</span>
+                            <span>{upload.parsedRowCount} parsed rows</span>
+                          </>
+                        ) : null}
                         <span>•</span>
                         <span>{upload.createdAt ? new Date(upload.createdAt).toLocaleString() : "Just now"}</span>
                       </div>
+                      {upload.lastError ? (
+                        <div className="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                          {upload.lastError}
+                        </div>
+                      ) : null}
+                      {upload.documentType !== "archive" ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedUploadId(upload.id);
+                            void startExtraction();
+                          }}
+                          className="mt-3 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+                        >
+                          Preview
+                        </button>
+                      ) : (
+                        <div className="mt-3 text-xs text-slate-500">
+                          Archive stored for later unpacking and parser setup.
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -840,18 +1138,18 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={resetExtraction}
+                  onClick={() => void resetExtraction()}
                   className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   Reset Extraction
                 </button>
                 <button
                   type="button"
-                  onClick={saveAndPublish}
-                  disabled={flaggedRows.length > 0}
+                  onClick={() => void saveAndPublish()}
+                  disabled={flaggedRows.length > 0 || publishBusy}
                   className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Save & Publish to Database
+                  {publishBusy ? "Publishing..." : "Save & Publish to Database"}
                 </button>
               </div>
             </div>
@@ -1062,7 +1360,8 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                This catalog is designed for fast staff lookup once each manufacturer book has been normalized.
+                This catalog is designed for fast staff lookup by SKU, description, collection, dimensions, color, and
+                furniture keywords like round, loveseat, sleeper, white, black, green, wood, or glass.
               </div>
             </div>
           </div>
@@ -1075,6 +1374,9 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                   Search is centered on description and product name, with manufacturer and finish filters alongside it.
                 </div>
               </div>
+              {catalogBusy ? (
+                <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Refreshing catalog...</div>
+              ) : null}
               {publishedAt && (
                 <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                   Last published {publishedAt}
@@ -1083,14 +1385,18 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
             </div>
 
             <div className="mt-5 overflow-x-auto rounded-3xl border border-slate-200">
-              <table className="min-w-[860px] divide-y divide-slate-200 text-sm">
+              <table className="min-w-[1180px] divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                   <tr>
                     <th className="px-4 py-3">Manufacturer</th>
                     <th className="px-4 py-3">Category</th>
-                    <th className="px-4 py-3">Product / Item #</th>
+                    <th className="px-4 py-3">Collection</th>
+                    <th className="px-4 py-3">Item #</th>
+                    <th className="px-4 py-3">Type</th>
                     <th className="px-4 py-3">Description</th>
                     <th className="px-4 py-3">Color / Finish</th>
+                    <th className="px-4 py-3">Dimensions</th>
+                    <th className="px-4 py-3">Tags</th>
                     <th className="px-4 py-3">Base Price</th>
                   </tr>
                 </thead>
@@ -1099,9 +1405,15 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                     <tr key={row.id}>
                       <td className="px-4 py-3 font-medium text-slate-800">{row.manufacturer || "Unassigned"}</td>
                       <td className="px-4 py-3 text-slate-600">{row.category || "Needs review"}</td>
+                      <td className="px-4 py-3 text-slate-600">{row.collectionName || "Needs review"}</td>
                       <td className="px-4 py-3 text-slate-600">{row.productName || "Needs review"}</td>
+                      <td className="px-4 py-3 text-slate-600">{row.productType || "Needs review"}</td>
                       <td className="px-4 py-3 text-slate-600">{row.description || "Needs review"}</td>
                       <td className="px-4 py-3 text-slate-600">{row.colorFinish || "Optional"}</td>
+                      <td className="px-4 py-3 text-slate-600">{row.dimensionsText || "Varies"}</td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {(row.featureTags || []).slice(0, 4).join(", ") || (row.material || "None")}
+                      </td>
                       <td className="px-4 py-3 font-semibold text-slate-800">{row.basePrice || "Needs review"}</td>
                     </tr>
                   ))}
