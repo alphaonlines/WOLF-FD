@@ -1,4 +1,4 @@
-import type { AuthUser, UserRole } from "../types";
+import type { AuthUser, PermissionMode, UserRole } from "../types";
 import { getPosApiBaseUrl } from "./posBackendApi";
 
 type AuthResponse = {
@@ -9,6 +9,7 @@ type AuthResponse = {
     email?: string;
     roles?: string[];
     permissions?: string[];
+    permissionMode?: string;
   } | null;
 };
 
@@ -24,6 +25,7 @@ const mapUser = (raw: AuthResponse["user"]): AuthUser | null => {
     email,
     roles: (Array.isArray(raw.roles) ? raw.roles.map((r) => String(r)) : []) as UserRole[],
     permissions: Array.isArray(raw.permissions) ? raw.permissions.map((permission) => String(permission)) : [],
+    permissionMode: raw.permissionMode === "explicit" ? ("explicit" as PermissionMode) : ("role" as PermissionMode),
   };
 };
 

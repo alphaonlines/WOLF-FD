@@ -1,4 +1,4 @@
-import type { UserRole } from '../../types';
+import type { PermissionMode, UserRole } from '../../types';
 import { hasPermission, MODULE_PERMISSION_KEYS } from './permissions';
 
 export enum Tab {
@@ -23,9 +23,14 @@ export const TAB_PERMISSION_KEYS: Record<Tab, string> = {
   [Tab.ADMIN]: MODULE_PERMISSION_KEYS.SETTINGS,
 };
 
-export const canAccessTab = (roles: UserRole[], permissions: string[], tab: Tab): boolean => {
+export const canAccessTab = (
+  roles: UserRole[],
+  permissions: string[],
+  permissionMode: PermissionMode | undefined,
+  tab: Tab
+): boolean => {
   const permissionKey = TAB_PERMISSION_KEYS[tab];
-  return hasPermission(roles, permissions, permissionKey);
+  return hasPermission(roles, permissions, permissionMode, permissionKey);
 };
 
 export const getTabTitle = (tab: Tab): string => {

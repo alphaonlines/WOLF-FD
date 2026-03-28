@@ -1,4 +1,4 @@
-import type { UserRole } from "../../types";
+import type { PermissionMode, UserRole } from "../../types";
 
 export const MODULE_PERMISSION_KEYS = {
   DASHBOARD: "module.dashboard",
@@ -79,9 +79,14 @@ export const ROLE_FALLBACK_PERMISSION_KEYS: Record<UserRole, string[]> = {
   ],
 };
 
-export function hasPermission(roles: UserRole[], explicitPermissions: string[], permissionKey: string): boolean {
+export function hasPermission(
+  roles: UserRole[],
+  explicitPermissions: string[],
+  permissionMode: PermissionMode | undefined,
+  permissionKey: string
+): boolean {
   const explicit = Array.isArray(explicitPermissions) ? explicitPermissions.filter(Boolean) : [];
-  if (explicit.length > 0) return explicit.includes(permissionKey);
+  if (permissionMode === "explicit") return explicit.includes(permissionKey);
 
   const fallback = new Set<string>();
   for (const role of roles) {

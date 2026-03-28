@@ -72,6 +72,7 @@ const toRouteAuthUser = (user: AuthUserView | null | undefined) => {
     email: String(user.email),
     roles: (user.roles || []).map((role) => String(role)),
     permissions: (user.permissions || []).map((permission) => String(permission)),
+    permissionMode: user.permissionMode === "explicit" ? ("explicit" as const) : ("role" as const),
   };
 };
 

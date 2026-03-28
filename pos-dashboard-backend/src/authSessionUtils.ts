@@ -6,6 +6,7 @@ export type AuthUserView = {
   email: string;
   roles: (typeof VALID_USER_ROLES)[number][];
   permissions: string[];
+  permissionMode: "role" | "explicit";
 };
 
 export function normalizeRoleList(raw: any): (typeof VALID_USER_ROLES)[number][] {
@@ -44,6 +45,7 @@ export function buildAuthUser(row: any): AuthUserView {
     email: String(row.email ?? ""),
     roles: normalizeRoleList(row.roles),
     permissions,
+    permissionMode: row?.permission_mode === "explicit" ? "explicit" : "role",
   };
 }
 

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import AdminUsers from "./AdminUsers";
 import AccessPermissions from "./settings/AccessPermissions";
+import EmployeePermissions from "./settings/EmployeePermissions";
 
-type SettingsPanel = "users" | "permissions";
+type SettingsPanel = "users" | "employees" | "permissions";
 
 type OwnerSettingsProps = {
   onOpenChangePassword: () => void;
@@ -41,6 +42,15 @@ const OwnerSettings: React.FC<OwnerSettingsProps> = ({ onOpenChangePassword }) =
           </button>
           <button
             type="button"
+            onClick={() => setPanel("employees")}
+            className={`px-3 py-1.5 text-sm font-semibold rounded-lg ${
+              panel === "employees" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+            }`}
+          >
+            Employee Permissions
+          </button>
+          <button
+            type="button"
             onClick={() => setPanel("permissions")}
             className={`px-3 py-1.5 text-sm font-semibold rounded-lg ${
               panel === "permissions" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
@@ -51,7 +61,7 @@ const OwnerSettings: React.FC<OwnerSettingsProps> = ({ onOpenChangePassword }) =
         </div>
       </section>
 
-      {panel === "users" ? <AdminUsers /> : <AccessPermissions />}
+      {panel === "users" ? <AdminUsers /> : panel === "employees" ? <EmployeePermissions /> : <AccessPermissions />}
     </div>
   );
 };

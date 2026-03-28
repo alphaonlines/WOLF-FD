@@ -128,6 +128,27 @@ async function ensureAuthSchema(pool: Pool) {
   await pool.query(`ALTER TABLE role_permissions ALTER COLUMN updated_at SET DEFAULT now();`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_role_permissions_role_id ON role_permissions(role_id);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_role_permissions_key ON role_permissions(permission_key);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_permissions (
+      user_id         BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      permission_key  TEXT NOT NULL,
+      allowed         BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (user_id, permission_key)
+    );
+  `);
+  await pool.query(`ALTER TABLE user_permissions ADD COLUMN IF NOT EXISTS user_id BIGINT;`);
+  await pool.query(`ALTER TABLE user_permissions ADD COLUMN IF NOT EXISTS permission_key TEXT;`);
+  await pool.query(`ALTER TABLE user_permissions ADD COLUMN IF NOT EXISTS allowed BOOLEAN;`);
+  await pool.query(`ALTER TABLE user_permissions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE user_permissions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE user_permissions ALTER COLUMN allowed SET DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE user_permissions ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE user_permissions ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_permissions_key ON user_permissions(permission_key);`);
 }
 
 async function ensureDefaultRoles(pool: Pool) {

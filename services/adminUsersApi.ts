@@ -7,6 +7,13 @@ type ApiUserRow = {
   email: string;
   active: boolean;
   roles: string[];
+  phone?: string | null;
+  auth_provider?: string | null;
+  access_status?: string | null;
+  access_requested_at?: string | null;
+  access_approved_at?: string | null;
+  explicit_permission_count?: number | null;
+  permission_mode?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -17,6 +24,13 @@ const mapUser = (row: ApiUserRow): ManagedUser => ({
   email: String(row.email ?? ""),
   active: Boolean(row.active),
   roles: (Array.isArray(row.roles) ? row.roles : []).map((r) => String(r)) as UserRole[],
+  phone: row.phone ? String(row.phone) : "",
+  authProvider: row.auth_provider ? String(row.auth_provider) : "password",
+  accessStatus: row.access_status ? String(row.access_status) : "approved",
+  accessRequestedAt: row.access_requested_at ? String(row.access_requested_at) : undefined,
+  accessApprovedAt: row.access_approved_at ? String(row.access_approved_at) : undefined,
+  explicitPermissionCount: Number(row.explicit_permission_count ?? 0),
+  permissionMode: row.permission_mode === "explicit" ? "explicit" : "role",
   createdAt: row.created_at ? String(row.created_at) : undefined,
   updatedAt: row.updated_at ? String(row.updated_at) : undefined,
 });
@@ -86,6 +100,14 @@ export async function setAdminUserActive(userId: string, active: boolean): Promi
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ active }),
+  });
+}
+
+export async function setAdminUserAccessStatus(userId: string, accessStatus: "approved" | "pending"): Promise<void> {
+  await fetchJson(`/api/admin/users/${encodeURIComponent(userId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ access_status: accessStatus }),
   });
 }
 

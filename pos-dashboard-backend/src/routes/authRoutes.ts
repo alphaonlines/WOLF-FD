@@ -9,6 +9,7 @@ type AuthUserLike = {
   email: string;
   roles: string[];
   permissions: string[];
+  permissionMode: "role" | "explicit";
 };
 
 type RegisterAuthRoutesDeps = {

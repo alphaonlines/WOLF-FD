@@ -177,6 +177,7 @@ export interface CRMAutomationRule {
 }
 
 export type UserRole = "Owner" | "Manager" | "Sales" | "Marketing";
+export type PermissionMode = "role" | "explicit";
 
 export interface AuthUser {
   id: string;
@@ -184,6 +185,7 @@ export interface AuthUser {
   email: string;
   roles: UserRole[];
   permissions: string[];
+  permissionMode: PermissionMode;
 }
 
 export interface ManagedUser {
@@ -192,6 +194,13 @@ export interface ManagedUser {
   email: string;
   active: boolean;
   roles: UserRole[];
+  phone?: string;
+  authProvider?: string;
+  accessStatus?: string;
+  accessRequestedAt?: string;
+  accessApprovedAt?: string;
+  explicitPermissionCount?: number;
+  permissionMode?: PermissionMode;
   createdAt?: string;
   updatedAt?: string;
 }

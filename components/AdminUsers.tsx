@@ -5,6 +5,7 @@ import {
   fetchAdminRoles,
   fetchAdminUsers,
   resetAdminUserPassword,
+  setAdminUserAccessStatus,
   setAdminUserActive,
   updateAdminUserRoles,
 } from "../services/adminUsersApi";
@@ -129,6 +130,25 @@ const AdminUsers: React.FC = () => {
     }
   };
 
+  const updateAccessStatus = async (user: ManagedUser, accessStatus: "approved" | "pending") => {
+    setBusyUserId(user.id);
+    setMessage(null);
+    setError(null);
+    try {
+      await setAdminUserAccessStatus(user.id, accessStatus);
+      setMessage(
+        accessStatus === "approved"
+          ? `${user.email} has been approved for dashboard access.`
+          : `${user.email} was moved back to pending access.`
+      );
+      await load();
+    } catch (err: any) {
+      setError(String(err?.message || err || "Failed to update access status"));
+    } finally {
+      setBusyUserId(null);
+    }
+  };
+
   const resetPassword = async (user: ManagedUser) => {
     const password = String(resetPasswords[user.id] || "");
     if (password.length < 4) {
@@ -242,13 +262,35 @@ const AdminUsers: React.FC = () => {
                     <div>
                       <div className="text-sm font-semibold text-slate-900">{user.name}</div>
                       <div className="text-xs text-slate-600">{user.email}</div>
+                      <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-slate-500">
+                        {user.phone ? <span>{user.phone}</span> : <span>No phone on file</span>}
+                        <span>•</span>
+                        <span>{user.authProvider === "google" ? "Google Workspace" : "Password login"}</span>
+                        {user.permissionMode === "explicit" && (
+                          <>
+                            <span>•</span>
+                            <span>{user.explicitPermissionCount || 0} custom permission overrides</span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                          user.accessStatus === "approved"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {user.accessStatus === "approved" ? "Approved" : "Pending"}
+                      </div>
+                      <div
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
                         user.active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"
-                      }`}
-                    >
-                      {user.active ? "Active" : "Inactive"}
+                        }`}
+                      >
+                        {user.active ? "Active" : "Inactive"}
+                      </div>
                     </div>
                   </div>
 
@@ -277,7 +319,7 @@ const AdminUsers: React.FC = () => {
                     })}
                   </div>
 
-                  <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[auto_auto_1fr_auto]">
+                  <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[auto_auto_auto_1fr_auto]">
                     <button
                       type="button"
                       disabled={busy}
@@ -293,6 +335,18 @@ const AdminUsers: React.FC = () => {
                       className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:opacity-60"
                     >
                       {user.active ? "Deactivate" : "Activate"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void updateAccessStatus(user, user.accessStatus === "approved" ? "pending" : "approved")}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
+                        user.accessStatus === "approved"
+                          ? "border-amber-200 bg-amber-50 text-amber-700"
+                          : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      }`}
+                    >
+                      {user.accessStatus === "approved" ? "Move To Pending" : "Approve Access"}
                     </button>
                     <input
                       type="password"

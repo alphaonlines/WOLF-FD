@@ -274,8 +274,12 @@ const App: React.FC = () => {
 
   const userRoles = (authUser?.roles || []) as UserRole[];
   const userPermissions = authUser?.permissions || [];
-  const canUsePermission = (permissionKey: string) => hasPermission(userRoles, userPermissions, permissionKey);
-  const availableTabs = (Object.values(Tab) as Tab[]).filter((tab) => canAccessTab(userRoles, userPermissions, tab));
+  const permissionMode = authUser?.permissionMode;
+  const canUsePermission = (permissionKey: string) =>
+    hasPermission(userRoles, userPermissions, permissionMode, permissionKey);
+  const availableTabs = (Object.values(Tab) as Tab[]).filter((tab) =>
+    canAccessTab(userRoles, userPermissions, permissionMode, tab)
+  );
 
   useEffect(() => {
     if (!authUser) return;
@@ -372,11 +376,11 @@ const App: React.FC = () => {
               return canUsePermission(permissionKey);
             }}
             onNavigate={(tab) => {
-              if (tab === 'SALES' && canAccessTab(userRoles, userPermissions, Tab.SALES)) setActiveTab(Tab.SALES);
-              if (tab === 'TASKS' && canAccessTab(userRoles, userPermissions, Tab.TASKS)) setActiveTab(Tab.TASKS);
-              if (tab === 'CRM' && canAccessTab(userRoles, userPermissions, Tab.CRM)) setActiveTab(Tab.CRM);
-              if (tab === 'SOCIAL' && canAccessTab(userRoles, userPermissions, Tab.SOCIAL)) setActiveTab(Tab.SOCIAL);
-              if (tab === 'KIOSKS' && canAccessTab(userRoles, userPermissions, Tab.KIOSKS)) setActiveTab(Tab.KIOSKS);
+              if (tab === 'SALES' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SALES)) setActiveTab(Tab.SALES);
+              if (tab === 'TASKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.TASKS)) setActiveTab(Tab.TASKS);
+              if (tab === 'CRM' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.CRM)) setActiveTab(Tab.CRM);
+              if (tab === 'SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SOCIAL)) setActiveTab(Tab.SOCIAL);
+              if (tab === 'KIOSKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.KIOSKS)) setActiveTab(Tab.KIOSKS);
               if (tab === 'UPDATE' && canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL)) {
                 setUpdatePanelOpen(true);
               }
@@ -450,7 +454,7 @@ const App: React.FC = () => {
     );
   }
 
-  const canView = (tab: Tab) => canAccessTab(userRoles, userPermissions, tab);
+  const canView = (tab: Tab) => canAccessTab(userRoles, userPermissions, permissionMode, tab);
 
   return (
     <div

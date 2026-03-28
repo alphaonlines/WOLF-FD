@@ -9,6 +9,7 @@ type AuthUserLike = {
   email: string;
   roles: string[];
   permissions: string[];
+  permissionMode?: "role" | "explicit";
 };
 
 type AdminRoutesDeps = {
@@ -30,6 +31,54 @@ export function registerAdminRoutes({
   setUserRolesByKeys,
   loadAuthUserById,
 }: AdminRoutesDeps) {
+  const buildPermissionMap = (rows: Array<{ permission_key?: string; allowed?: boolean }>) => {
+    const out: Record<string, boolean> = {};
+    for (const entry of PERMISSION_CATALOG) out[entry.key] = false;
+    for (const row of rows) {
+      const key = String(row.permission_key || "");
+      if (!key || !isValidPermissionKey(key)) continue;
+      out[key] = Boolean(row.allowed);
+    }
+    return out;
+  };
+
+  const loadUserPermissionState = async (userId: number) => {
+    const [rolePermissionRows, explicitPermissionRows] = await Promise.all([
+      pool.query(
+        `
+          SELECT rp.permission_key, BOOL_OR(rp.allowed) AS allowed
+          FROM user_roles ur
+          JOIN role_permissions rp ON rp.role_id = ur.role_id
+          WHERE ur.user_id = $1
+          GROUP BY rp.permission_key
+          ORDER BY rp.permission_key ASC
+        `,
+        [userId]
+      ),
+      pool.query(
+        `
+          SELECT permission_key, allowed
+          FROM user_permissions
+          WHERE user_id = $1
+          ORDER BY permission_key ASC
+        `,
+        [userId]
+      ),
+    ]);
+
+    const rolePermissions = buildPermissionMap(rolePermissionRows.rows);
+    const explicitPermissions = buildPermissionMap(explicitPermissionRows.rows);
+    const explicitCount = explicitPermissionRows.rows.length;
+
+    return {
+      rolePermissions,
+      explicitPermissions,
+      explicitCount,
+      permissionMode: explicitCount > 0 ? ("explicit" as const) : ("role" as const),
+      effectivePermissions: explicitCount > 0 ? explicitPermissions : rolePermissions,
+    };
+  };
+
   app.get("/api/admin/roles", requireOwner, async (_req, res) => {
     const r = await pool.query("SELECT role_key, label FROM roles ORDER BY role_key ASC");
     res.json({
@@ -119,9 +168,15 @@ export function registerAdminRoutes({
         u.id,
         u.name,
         u.email,
+        u.phone,
+        u.auth_provider,
+        u.access_status,
+        u.access_requested_at,
+        u.access_approved_at,
         u.active,
         u.created_at,
         u.updated_at,
+        COUNT(DISTINCT up.permission_key)::int AS explicit_permission_count,
         COALESCE(
           ARRAY_AGG(DISTINCT r.role_key) FILTER (WHERE r.role_key IS NOT NULL),
           ARRAY[]::text[]
@@ -129,7 +184,19 @@ export function registerAdminRoutes({
       FROM users u
       LEFT JOIN user_roles ur ON ur.user_id = u.id
       LEFT JOIN roles r ON r.id = ur.role_id
-      GROUP BY u.id, u.name, u.email, u.active, u.created_at, u.updated_at
+      LEFT JOIN user_permissions up ON up.user_id = u.id
+      GROUP BY
+        u.id,
+        u.name,
+        u.email,
+        u.phone,
+        u.auth_provider,
+        u.access_status,
+        u.access_requested_at,
+        u.access_approved_at,
+        u.active,
+        u.created_at,
+        u.updated_at
       ORDER BY lower(u.email) ASC;
     `;
     const r = await pool.query(sql);
@@ -138,6 +205,13 @@ export function registerAdminRoutes({
         id: Number(x.id),
         name: String(x.name ?? ""),
         email: String(x.email ?? ""),
+        phone: typeof x.phone === "string" ? x.phone : "",
+        auth_provider: String(x.auth_provider ?? "password"),
+        access_status: String(x.access_status ?? "approved"),
+        access_requested_at: x.access_requested_at,
+        access_approved_at: x.access_approved_at,
+        explicit_permission_count: Number(x.explicit_permission_count ?? 0),
+        permission_mode: Number(x.explicit_permission_count ?? 0) > 0 ? "explicit" : "role",
         active: Boolean(x.active),
         roles: normalizeRoleList(x.roles),
         created_at: x.created_at,
@@ -161,8 +235,8 @@ export function registerAdminRoutes({
 
     const r = await pool.query(
       `
-        INSERT INTO users (name, email, password_hash, active, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, now(), now())
+        INSERT INTO users (name, email, password_hash, auth_provider, access_status, access_approved_at, active, created_at, updated_at)
+        VALUES ($1, $2, $3, 'password', 'approved', now(), $4, now(), now())
         RETURNING id
       `,
       [name, email, passwordHash, active]
@@ -196,9 +270,39 @@ export function registerAdminRoutes({
       fields.push(`email = $${values.length}`);
     }
 
+    if (req.body?.phone !== undefined) {
+      if (typeof req.body?.phone !== "string") {
+        return res.status(400).json({ ok: false, error: "invalid phone" });
+      }
+      values.push(req.body.phone.trim());
+      fields.push(`phone = $${values.length}`);
+    }
+
     if (req.body?.active !== undefined) {
       values.push(Boolean(req.body.active));
       fields.push(`active = $${values.length}`);
+    }
+
+    if (req.body?.access_status !== undefined) {
+      const accessStatus = String(req.body.access_status || "").trim().toLowerCase();
+      if (!["approved", "pending"].includes(accessStatus)) {
+        return res.status(400).json({ ok: false, error: "invalid access status" });
+      }
+      values.push(accessStatus);
+      fields.push(`access_status = $${values.length}`);
+      if (accessStatus === "approved") {
+        const approverId = Number((req as any).authUser?.id);
+        fields.push(`access_approved_at = now()`);
+        if (Number.isFinite(approverId)) {
+          values.push(approverId);
+          fields.push(`approved_by_user_id = $${values.length}`);
+        } else {
+          fields.push(`approved_by_user_id = NULL`);
+        }
+      } else {
+        fields.push(`access_approved_at = NULL`);
+        fields.push(`approved_by_user_id = NULL`);
+      }
     }
 
     if (!fields.length) return res.status(400).json({ ok: false, error: "no fields to update" });
@@ -225,6 +329,94 @@ export function registerAdminRoutes({
     }
     const activeRow = await pool.query("SELECT active FROM users WHERE id = $1 LIMIT 1", [id]);
     res.json({ ok: true, row: { ...user, active: Boolean(activeRow.rows[0]?.active) } });
+  });
+
+  app.get("/api/admin/users/:id/permissions", requireOwner, async (req, res) => {
+    const id = parseTaskIdParam(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, error: "invalid id" });
+
+    const userRow = await pool.query(
+      `
+        SELECT
+          u.id,
+          u.name,
+          u.email,
+          COALESCE(
+            ARRAY_AGG(DISTINCT r.role_key) FILTER (WHERE r.role_key IS NOT NULL),
+            ARRAY[]::text[]
+          ) AS roles
+        FROM users u
+        LEFT JOIN user_roles ur ON ur.user_id = u.id
+        LEFT JOIN roles r ON r.id = ur.role_id
+        WHERE u.id = $1
+        GROUP BY u.id, u.name, u.email
+        LIMIT 1
+      `,
+      [id]
+    );
+    if (!userRow.rows.length) return res.status(404).json({ ok: false, error: "not found" });
+
+    const permissionState = await loadUserPermissionState(id);
+    res.json({
+      catalog: PERMISSION_CATALOG,
+      row: {
+        user_id: id,
+        name: String(userRow.rows[0].name ?? ""),
+        email: String(userRow.rows[0].email ?? ""),
+        roles: normalizeRoleList(userRow.rows[0].roles),
+        permission_mode: permissionState.permissionMode,
+        explicit_permissions: permissionState.explicitPermissions,
+        role_permissions: permissionState.rolePermissions,
+        effective_permissions: permissionState.effectivePermissions,
+        explicit_permission_count: permissionState.explicitCount,
+      },
+    });
+  });
+
+  app.patch("/api/admin/users/:id/permissions", requireOwner, async (req, res) => {
+    const id = parseTaskIdParam(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, error: "invalid id" });
+
+    const mode = String(req.body?.mode || "").trim().toLowerCase();
+    if (!["role", "explicit"].includes(mode)) {
+      return res.status(400).json({ ok: false, error: "mode must be role or explicit" });
+    }
+
+    const existingUser = await pool.query("SELECT id FROM users WHERE id = $1 LIMIT 1", [id]);
+    if (!existingUser.rows.length) return res.status(404).json({ ok: false, error: "not found" });
+
+    if (mode === "role") {
+      await pool.query("DELETE FROM user_permissions WHERE user_id = $1", [id]);
+      return res.json({ ok: true, mode: "role" });
+    }
+
+    const rawPermissions = req.body?.permissions;
+    if (!rawPermissions || typeof rawPermissions !== "object" || Array.isArray(rawPermissions)) {
+      return res.status(400).json({ ok: false, error: "permissions object is required" });
+    }
+
+    const updates: Array<{ key: string; allowed: boolean }> = [];
+    for (const entry of PERMISSION_CATALOG) {
+      updates.push({
+        key: entry.key,
+        allowed: Boolean((rawPermissions as Record<string, boolean>)[entry.key]),
+      });
+    }
+
+    await pool.query("DELETE FROM user_permissions WHERE user_id = $1", [id]);
+    for (const update of updates) {
+      await pool.query(
+        `
+          INSERT INTO user_permissions (user_id, permission_key, allowed, created_at, updated_at)
+          VALUES ($1, $2, $3, now(), now())
+          ON CONFLICT (user_id, permission_key)
+          DO UPDATE SET allowed = EXCLUDED.allowed, updated_at = now()
+        `,
+        [id, update.key, update.allowed]
+      );
+    }
+
+    res.json({ ok: true, mode: "explicit" });
   });
 
   app.patch("/api/admin/users/:id/roles", requireOwner, async (req, res) => {
