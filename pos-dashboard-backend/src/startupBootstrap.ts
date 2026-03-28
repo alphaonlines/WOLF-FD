@@ -15,6 +15,13 @@ async function ensureAuthSchema(pool: Pool) {
       name          TEXT NOT NULL,
       email         TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
+      phone         TEXT,
+      google_sub    TEXT UNIQUE,
+      auth_provider TEXT NOT NULL DEFAULT 'password',
+      access_status TEXT NOT NULL DEFAULT 'approved',
+      access_requested_at TIMESTAMPTZ,
+      access_approved_at TIMESTAMPTZ,
+      approved_by_user_id BIGINT,
       active        BOOLEAN NOT NULL DEFAULT TRUE,
       created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -23,13 +30,27 @@ async function ensureAuthSchema(pool: Pool) {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS access_status TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS access_requested_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS access_approved_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_by_user_id BIGINT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS active BOOLEAN;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE users ALTER COLUMN auth_provider SET DEFAULT 'password';`);
+  await pool.query(`ALTER TABLE users ALTER COLUMN access_status SET DEFAULT 'approved';`);
   await pool.query(`ALTER TABLE users ALTER COLUMN active SET DEFAULT TRUE;`);
   await pool.query(`ALTER TABLE users ALTER COLUMN created_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE users ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`UPDATE users SET auth_provider = COALESCE(NULLIF(auth_provider, ''), 'password') WHERE auth_provider IS NULL OR auth_provider = '';`);
+  await pool.query(`UPDATE users SET access_status = COALESCE(NULLIF(access_status, ''), 'approved') WHERE access_status IS NULL OR access_status = '';`);
+  await pool.query(`UPDATE users SET access_approved_at = COALESCE(access_approved_at, created_at, now()) WHERE access_status = 'approved';`);
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users ((lower(email)));`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub) WHERE google_sub IS NOT NULL;`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_access_status ON users(access_status);`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS roles (
@@ -728,6 +749,64 @@ async function ensureSocialSchema(pool: Pool) {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_board_messages_deleted_at ON board_messages(deleted_at);`);
 }
 
+async function ensureWebTrackingSchema(pool: Pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS web_page_events (
+      id           BIGSERIAL PRIMARY KEY,
+      site         TEXT NOT NULL DEFAULT '',
+      page_path    TEXT NOT NULL DEFAULT '/',
+      page_url     TEXT NOT NULL DEFAULT '',
+      page_title   TEXT NOT NULL DEFAULT '',
+      event_type   TEXT NOT NULL DEFAULT 'pageview',
+      event_name   TEXT NOT NULL DEFAULT '',
+      element_text TEXT NOT NULL DEFAULT '',
+      link_url     TEXT NOT NULL DEFAULT '',
+      referrer     TEXT NOT NULL DEFAULT '',
+      visitor_id   TEXT NOT NULL DEFAULT '',
+      session_id   TEXT NOT NULL DEFAULT '',
+      ip_address   TEXT NOT NULL DEFAULT '',
+      user_agent   TEXT NOT NULL DEFAULT '',
+      meta_json    JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS site TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS page_path TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS page_url TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS page_title TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS event_type TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS event_name TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS element_text TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS link_url TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS referrer TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS visitor_id TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS session_id TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS ip_address TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS user_agent TEXT;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS meta_json JSONB;`);
+  await pool.query(`ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN site SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN page_path SET DEFAULT '/';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN page_url SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN page_title SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN event_type SET DEFAULT 'pageview';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN event_name SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN element_text SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN link_url SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN referrer SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN visitor_id SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN session_id SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN ip_address SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN user_agent SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN meta_json SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE web_page_events ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_web_page_events_created_at ON web_page_events(created_at DESC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_web_page_events_site_page_created ON web_page_events(site, page_path, created_at DESC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_web_page_events_site_type_created ON web_page_events(site, event_type, created_at DESC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_web_page_events_site_visitor_created ON web_page_events(site, visitor_id, created_at DESC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_web_page_events_site_session_created ON web_page_events(site, session_id, created_at DESC);`);
+}
+
 export async function runStartupBootstrap(deps: RunStartupBootstrapDeps) {
   await ensureAuthSchema(deps.pool);
   await ensureDefaultRoles(deps.pool);
@@ -735,4 +814,5 @@ export async function runStartupBootstrap(deps: RunStartupBootstrapDeps) {
   await ensureDefaultAuthUser(deps);
   await ensureCrmSchema(deps.pool);
   await ensureSocialSchema(deps.pool);
+  await ensureWebTrackingSchema(deps.pool);
 }

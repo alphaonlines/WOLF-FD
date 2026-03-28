@@ -1638,6 +1638,31 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         </SortableContext>
       </DndContext>
 
+      <SalesReportCard
+        collapsed={isCardCollapsed("sales-report")}
+        renderHelp={renderHelp}
+        cardToggle={renderCardToggle("sales-report")}
+        reportMode={reportMode}
+        setReportMode={setReportMode}
+        reportDimension={reportDimension}
+        setReportDimension={setReportDimension}
+        reportCategory={reportCategory}
+        setReportCategory={setReportCategory}
+        reportManufacturer={reportManufacturer}
+        setReportManufacturer={setReportManufacturer}
+        reportCategoryOptions={reportCategoryOptions}
+        reportManufacturerOptions={reportManufacturerOptions}
+        reportRowsWithPct={reportRowsWithPct}
+        reportTotals={reportTotals}
+        reportOverallTotals={reportOverallTotals}
+        formatMarginPct={formatMarginPct}
+        lowMarginRows={printData?.lowMarginRows ?? sortedLowMarginData}
+        lowMarginSort={lowMarginSort}
+        setLowMarginSort={setLowMarginSort}
+        saleLink={saleLink}
+        saleLabel={saleLabel}
+      />
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
@@ -2256,31 +2281,6 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         </div>
         )}
       </div>
-
-      <SalesReportCard
-        collapsed={isCardCollapsed("sales-report")}
-        renderHelp={renderHelp}
-        cardToggle={renderCardToggle("sales-report")}
-        reportMode={reportMode}
-        setReportMode={setReportMode}
-        reportDimension={reportDimension}
-        setReportDimension={setReportDimension}
-        reportCategory={reportCategory}
-        setReportCategory={setReportCategory}
-        reportManufacturer={reportManufacturer}
-        setReportManufacturer={setReportManufacturer}
-        reportCategoryOptions={reportCategoryOptions}
-        reportManufacturerOptions={reportManufacturerOptions}
-        reportRowsWithPct={reportRowsWithPct}
-        reportTotals={reportTotals}
-        reportOverallTotals={reportOverallTotals}
-        formatMarginPct={formatMarginPct}
-        lowMarginRows={printData?.lowMarginRows ?? sortedLowMarginData}
-        lowMarginSort={lowMarginSort}
-        setLowMarginSort={setLowMarginSort}
-        saleLink={saleLink}
-        saleLabel={saleLabel}
-      />
 
       {selectedSalesperson && (
         <SalespersonDetailCard

@@ -19,7 +19,16 @@ export function createPoolFromEnv() {
 export const AUTH_COOKIE_NAME = "fd_session";
 export const AUTH_SESSION_DAYS = Math.max(Number(envString("AUTH_SESSION_DAYS", "14")) || 14, 1);
 export const AUTH_COOKIE_SECURE_MODE = (envString("AUTH_COOKIE_SECURE", "auto") || "auto").toLowerCase();
-export const PUBLIC_AUTH_PATHS = new Set(["/auth/login", "/auth/logout", "/auth/me"]);
+export const PUBLIC_AUTH_PATHS = new Set([
+  "/auth/login",
+  "/auth/logout",
+  "/auth/me",
+  "/auth/config",
+  "/auth/google/start",
+  "/auth/google/request-access",
+]);
+export const GOOGLE_WORKSPACE_CLIENT_ID = envString("GOOGLE_WORKSPACE_CLIENT_ID", "");
+export const GOOGLE_WORKSPACE_DOMAIN = (envString("GOOGLE_WORKSPACE_DOMAIN", "furnituredistributors.net") || "furnituredistributors.net").toLowerCase();
 
 export const PYTHON_BIN = process.env.POS_IMPORT_PYTHON || "python";
 export const PORT = Number(process.env.PORT || 5057);

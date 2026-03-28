@@ -228,6 +228,48 @@ ALTER TABLE tasks ALTER COLUMN updated_at SET DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_tasks_status_sort ON tasks(status, sort_index, id);
 
+-- Public web tracking for reusable page analytics across WOLF sites
+CREATE TABLE IF NOT EXISTS web_page_events (
+  id           BIGSERIAL PRIMARY KEY,
+  site         TEXT NOT NULL DEFAULT '',
+  page_path    TEXT NOT NULL DEFAULT '/',
+  page_url     TEXT NOT NULL DEFAULT '',
+  page_title   TEXT NOT NULL DEFAULT '',
+  event_type   TEXT NOT NULL DEFAULT 'pageview',
+  event_name   TEXT NOT NULL DEFAULT '',
+  element_text TEXT NOT NULL DEFAULT '',
+  link_url     TEXT NOT NULL DEFAULT '',
+  referrer     TEXT NOT NULL DEFAULT '',
+  visitor_id   TEXT NOT NULL DEFAULT '',
+  session_id   TEXT NOT NULL DEFAULT '',
+  ip_address   TEXT NOT NULL DEFAULT '',
+  user_agent   TEXT NOT NULL DEFAULT '',
+  meta_json    JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS site TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS page_path TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS page_url TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS page_title TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS event_type TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS event_name TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS element_text TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS link_url TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS referrer TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS visitor_id TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS session_id TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS ip_address TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS user_agent TEXT;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS meta_json JSONB;
+ALTER TABLE web_page_events ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_web_page_events_created_at ON web_page_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_web_page_events_site_page_created ON web_page_events(site, page_path, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_web_page_events_site_type_created ON web_page_events(site, event_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_web_page_events_site_visitor_created ON web_page_events(site, visitor_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_web_page_events_site_session_created ON web_page_events(site, session_id, created_at DESC);
+
 -- CRM: shared lead pipeline + automation controls
 CREATE TABLE IF NOT EXISTS crm_leads (
   id           TEXT PRIMARY KEY,

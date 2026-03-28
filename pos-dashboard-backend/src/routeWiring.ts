@@ -18,6 +18,7 @@ import { registerAnalyticsRoutes } from "./routes/analyticsRoutes";
 import { registerSalesDetailRoutes } from "./routes/salesDetailRoutes";
 import { registerInsightsRoutes } from "./routes/insightsRoutes";
 import { registerSystemRoutes } from "./routes/systemRoutes";
+import { registerTrackingRoutes } from "./routes/trackingRoutes";
 import { registerBoardRoutes } from "./routes/boardRoutes";
 import { registerPublicSocialRoutes, registerSocialRoutes } from "./routes/socialRoutes";
 import {
@@ -176,6 +177,7 @@ export function registerAllRoutes({
     safeFinanceBalance: SAFE_FINANCE_BALANCE,
     safeFinanceFee: SAFE_FINANCE_FEE,
   });
+  registerTrackingRoutes({ app, pool });
   registerSystemRoutes({
     app,
     pool,

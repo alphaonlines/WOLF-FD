@@ -24,6 +24,9 @@ import {
 import { registerAllRoutes } from "./routeWiring";
 import { createSocialPublisher } from "./socialPublishing";
 
+const DASHBOARD_LOCKED = false;
+const DASHBOARD_NOTICE = "System down until further notice.";
+
 const app = express();
 app.set("trust proxy", 1);
 app.use(
@@ -33,6 +36,25 @@ app.use(
   })
 );
 app.use(express.json());
+app.use((req, res, next) => {
+  if (!DASHBOARD_LOCKED) {
+    next();
+    return;
+  }
+  if (req.path === "/health") {
+    next();
+    return;
+  }
+  if (req.path.startsWith("/api/")) {
+    res.status(503).json({
+      ok: false,
+      error: "system_down",
+      message: DASHBOARD_NOTICE,
+    });
+    return;
+  }
+  next();
+});
 
 const uploadsDir = path.resolve(__dirname, "..", "incoming");
 fs.mkdirSync(uploadsDir, { recursive: true });

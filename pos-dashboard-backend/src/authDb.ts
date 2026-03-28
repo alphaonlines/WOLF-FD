@@ -42,6 +42,7 @@ export function createAuthDbHelpers({
     WHERE s.token_hash = $1
       AND s.expires_at > now()
       AND u.active = TRUE
+      AND COALESCE(u.access_status, 'approved') = 'approved'
     GROUP BY u.id, u.name, u.email
     LIMIT 1;
   `;

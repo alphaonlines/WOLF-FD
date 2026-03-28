@@ -34,12 +34,50 @@ import {
   loginWithPassword,
   logoutCurrentUser,
 } from './services/authApi';
+import { getPosApiBaseUrl } from './services/posBackendApi';
 import AuthScreen from './components/app/AuthScreen';
 import LoadingOverlay from './components/app/LoadingOverlay';
 import NavItem from './components/app/NavItem';
 import { APP_THEME_STYLES } from './components/app/themeStyles';
 import { canAccessTab, getTabTitle, Tab } from './components/app/tabs';
 import { DASHBOARD_CARD_PERMISSION_BY_ID, FEATURE_PERMISSION_KEYS, hasPermission } from './components/app/permissions';
+
+const DASHBOARD_LOCKED = false;
+const DASHBOARD_NOTICE = 'System down until further notice.';
+const MAINTENANCE_TRACKING_SITE = 'wolf-fd-dashboard-maintenance';
+const MAINTENANCE_VISITOR_KEY = 'wolf_fd_maintenance_visitor_id';
+const MAINTENANCE_SESSION_KEY = 'wolf_fd_maintenance_session_id';
+
+const makeTrackingId = (prefix: string) => {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return `${prefix}_${crypto.randomUUID()}`;
+    }
+  } catch {
+    // fall through to timestamp/random fallback
+  }
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+};
+
+const getStoredTrackingId = (storage: Storage | undefined, key: string, prefix: string) => {
+  if (!storage) return makeTrackingId(prefix);
+  try {
+    const existing = storage.getItem(key);
+    if (existing) return existing;
+    const next = makeTrackingId(prefix);
+    storage.setItem(key, next);
+    return next;
+  } catch {
+    return makeTrackingId(prefix);
+  }
+};
+
+const getMaintenanceTrackingUrl = () => {
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/fd')) {
+    return `${window.location.origin}/fd/api/public/tracking/event`;
+  }
+  return `${getPosApiBaseUrl()}/public/tracking/event`;
+};
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.CRM);
@@ -86,6 +124,10 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
+    if (DASHBOARD_LOCKED) {
+      setAuthReady(true);
+      return;
+    }
     let stopped = false;
     void (async () => {
       try {
@@ -100,6 +142,50 @@ const App: React.FC = () => {
     return () => {
       stopped = true;
     };
+  }, []);
+
+  useEffect(() => {
+    if (!DASHBOARD_LOCKED || typeof window === 'undefined') return;
+
+    const visitorId = getStoredTrackingId(window.localStorage, MAINTENANCE_VISITOR_KEY, 'visitor');
+    const sessionId = getStoredTrackingId(window.sessionStorage, MAINTENANCE_SESSION_KEY, 'session');
+    const payload = {
+      site: MAINTENANCE_TRACKING_SITE,
+      pagePath: window.location.pathname,
+      pageUrl: window.location.href,
+      pageTitle: document.title || 'WOLF FD Dashboard',
+      eventType: 'pageview',
+      eventName: 'maintenance_view',
+      referrer: document.referrer || '',
+      visitorId,
+      sessionId,
+      meta: {
+        mode: 'maintenance',
+        locked: true,
+      },
+    };
+    const body = JSON.stringify(payload);
+    const trackingUrl = getMaintenanceTrackingUrl();
+
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+        const blob = new Blob([body], { type: 'application/json' });
+        navigator.sendBeacon(trackingUrl, blob);
+        return;
+      }
+    } catch {
+      // fall back to fetch
+    }
+
+    void fetch(trackingUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      keepalive: true,
+      credentials: 'include',
+    }).catch(() => {
+      // best-effort visit logging only
+    });
   }, []);
 
   useEffect(() => {
@@ -316,6 +402,32 @@ const App: React.FC = () => {
     }
   };
 
+  if (DASHBOARD_LOCKED) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,#3b0f12_0%,rgba(59,15,18,0)_32%),linear-gradient(180deg,#0f0f12_0%,#191217_50%,#0d0d10_100%)] text-slate-100">
+        <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6 py-16">
+          <div className="w-full rounded-[2rem] border border-rose-500/20 bg-slate-950/70 p-8 text-center shadow-2xl shadow-black/40 backdrop-blur-xl md:p-12">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-rose-400/20 bg-rose-500/10 text-4xl shadow-lg shadow-rose-950/40">
+              🐺
+            </div>
+            <div className="mb-3 text-xs font-semibold uppercase tracking-[0.35em] text-rose-300/80">
+              WOLF FD Dashboard
+            </div>
+            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
+              {DASHBOARD_NOTICE}
+            </h1>
+            <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
+              Dashboard access has been temporarily disabled. No dashboard pages, login access, or operational views are available at this time.
+            </p>
+            <div className="mt-8 inline-flex items-center rounded-full border border-rose-400/20 bg-rose-500/10 px-4 py-2 text-sm font-medium text-rose-100">
+              Access restricted
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!authReady) {
     return (
       <div className="min-h-screen bg-slate-950">
@@ -345,7 +457,7 @@ const App: React.FC = () => {
       className={`min-h-screen wolf-theme font-sans ${isDarkMode ? 'dark text-slate-100' : 'text-slate-800'} ${
         isDarkMode
           ? 'bg-[radial-gradient(circle_at_top,#24344a_0%,rgba(36,52,74,0)_28%),linear-gradient(160deg,#0f1722_0%,#162131_48%,#111a27_100%)]'
-          : 'bg-[linear-gradient(160deg,#f8fafc_0%,#eef3fb_52%,#e6edf7_100%)]'
+          : 'bg-[linear-gradient(160deg,#e9f0f8_0%,#dde7f3_52%,#d2dfee_100%)]'
       }`}
     >
       <style>{APP_THEME_STYLES}</style>
@@ -387,6 +499,7 @@ const App: React.FC = () => {
                 isActive={activeTab === Tab.CRM}
                 onClick={() => setActiveTab(Tab.CRM)}
                 isOpen={sidebarOpen}
+                isDarkMode={isDarkMode}
               />
             )}
             {canView(Tab.SALES) && (
@@ -396,6 +509,7 @@ const App: React.FC = () => {
                 isActive={activeTab === Tab.SALES}
                 onClick={() => setActiveTab(Tab.SALES)}
                 isOpen={sidebarOpen}
+                isDarkMode={isDarkMode}
               />
             )}
             {canView(Tab.SOCIAL) && (
@@ -405,6 +519,7 @@ const App: React.FC = () => {
                 isActive={activeTab === Tab.SOCIAL}
                 onClick={() => setActiveTab(Tab.SOCIAL)}
                 isOpen={sidebarOpen}
+                isDarkMode={isDarkMode}
               />
             )}
             {canView(Tab.TASKS) && (
@@ -414,6 +529,7 @@ const App: React.FC = () => {
                 isActive={activeTab === Tab.TASKS}
                 onClick={() => setActiveTab(Tab.TASKS)}
                 isOpen={sidebarOpen}
+                isDarkMode={isDarkMode}
               />
             )}
             {canView(Tab.KIOSKS) && (
@@ -423,6 +539,7 @@ const App: React.FC = () => {
                 isActive={activeTab === Tab.KIOSKS}
                 onClick={() => setActiveTab(Tab.KIOSKS)}
                 isOpen={sidebarOpen}
+                isDarkMode={isDarkMode}
               />
             )}
             {canView(Tab.MESSAGE_BOARD) && (
@@ -432,6 +549,7 @@ const App: React.FC = () => {
                 isActive={activeTab === Tab.MESSAGE_BOARD}
                 onClick={() => setActiveTab(Tab.MESSAGE_BOARD)}
                 isOpen={sidebarOpen}
+                isDarkMode={isDarkMode}
               />
             )}
             {canView(Tab.ADMIN) && (
@@ -441,6 +559,7 @@ const App: React.FC = () => {
                 isActive={activeTab === Tab.ADMIN}
                 onClick={() => setActiveTab(Tab.ADMIN)}
                 isOpen={sidebarOpen}
+                isDarkMode={isDarkMode}
               />
             )}
             <div className={`pt-4 mt-4 border-t ${isDarkMode ? 'border-white/6' : 'border-slate-200/80'}`} />
@@ -452,6 +571,7 @@ const App: React.FC = () => {
               target="_blank"
               rel="noreferrer"
               isOpen={sidebarOpen}
+              isDarkMode={isDarkMode}
             />
             <NavItem
               icon={<Star size={20} />}
@@ -461,6 +581,7 @@ const App: React.FC = () => {
               target="_blank"
               rel="noreferrer"
               isOpen={sidebarOpen}
+              isDarkMode={isDarkMode}
             />
             <NavItem
               icon={<LayoutDashboard size={20} />}
@@ -470,6 +591,7 @@ const App: React.FC = () => {
               target="_blank"
               rel="noreferrer"
               isOpen={sidebarOpen}
+              isDarkMode={isDarkMode}
             />
           </nav>
 
@@ -485,7 +607,9 @@ const App: React.FC = () => {
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
                   updatePanelOpen
-                    ? 'bg-sky-400/12 border border-sky-300/28 text-slate-50 shadow-sm'
+                    ? isDarkMode
+                      ? 'bg-sky-400/12 border border-sky-300/28 text-slate-50 shadow-sm'
+                      : 'bg-slate-900 border border-slate-900 text-white shadow-sm'
                     : isDarkMode
                       ? 'border border-transparent text-slate-300 hover:bg-white/6 hover:border-white/8 hover:text-slate-50'
                       : 'border border-transparent text-slate-600 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-900'

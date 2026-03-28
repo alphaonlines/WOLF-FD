@@ -5,6 +5,7 @@ type NavItemProps = {
   label: string;
   isActive: boolean;
   isOpen: boolean;
+  isDarkMode: boolean;
 } & (
   | {
       onClick: () => void;
@@ -21,13 +22,17 @@ type NavItemProps = {
 );
 
 const NavItem: React.FC<NavItemProps> = (props) => {
-  const { icon, label, isActive, isOpen } = props;
+  const { icon, label, isActive, isOpen, isDarkMode } = props;
   const className = `
     w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border transition-all duration-200
     ${
       isActive
-        ? 'bg-sky-400/12 border-sky-300/28 text-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
-        : 'border-transparent text-slate-300 hover:bg-white/6 hover:border-white/8 hover:text-slate-50'
+        ? isDarkMode
+          ? 'bg-sky-400/12 border-sky-300/28 text-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+          : 'bg-slate-900 border-slate-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)]'
+        : isDarkMode
+          ? 'border-transparent text-slate-300 hover:bg-white/6 hover:border-white/8 hover:text-slate-50'
+          : 'border-transparent text-slate-700 hover:bg-slate-100/95 hover:border-slate-300/70 hover:text-slate-950'
     }
     ${!isOpen && 'justify-center'}
   `;
