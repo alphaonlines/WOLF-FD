@@ -1,4 +1,4 @@
-import type { AuthUser, PermissionMode, UserRole } from "../types";
+import type { AccessRequestProfile, AuthConfig, AuthUser, PermissionMode, UserRole } from "../types";
 import { getPosApiBaseUrl } from "./posBackendApi";
 
 type AuthResponse = {
@@ -11,6 +11,38 @@ type AuthResponse = {
     permissions?: string[];
     permissionMode?: string;
   } | null;
+};
+
+type AuthConfigResponse = {
+  ok?: boolean;
+  googleWorkspaceEnabled?: boolean;
+  googleClientId?: string;
+  googleHostedDomain?: string;
+};
+
+type GoogleRequestProfileResponse = {
+  email?: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  givenName?: string;
+  familyName?: string;
+  phone?: string;
+  accessStatus?: string;
+};
+
+type GoogleAuthResponse = {
+  ok?: boolean;
+  status?: string;
+  user?: AuthResponse["user"];
+  requestProfile?: GoogleRequestProfileResponse | null;
+  error?: string;
+};
+
+export type GoogleAuthResult = {
+  status: "approved" | "pending" | "request_required";
+  user: AuthUser | null;
+  requestProfile: AccessRequestProfile | null;
 };
 
 const mapUser = (raw: AuthResponse["user"]): AuthUser | null => {
@@ -29,6 +61,36 @@ const mapUser = (raw: AuthResponse["user"]): AuthUser | null => {
   };
 };
 
+const mapRequestProfile = (raw: GoogleRequestProfileResponse | null | undefined): AccessRequestProfile | null => {
+  if (!raw) return null;
+  const email = String(raw.email ?? "").trim().toLowerCase();
+  if (!email) return null;
+  const firstName = String(raw.firstName ?? raw.givenName ?? "").trim();
+  const lastName = String(raw.lastName ?? raw.familyName ?? "").trim();
+  const derivedName = `${firstName} ${lastName}`.trim();
+  const name = String(raw.name ?? derivedName ?? "").trim() || email;
+  return {
+    email,
+    name: name || email,
+    firstName,
+    lastName,
+    phone: String(raw.phone ?? "").trim(),
+    accessStatus: String(raw.accessStatus ?? "").trim() || "request_required",
+  };
+};
+
+async function readApiError(res: Response, fallback: string): Promise<string> {
+  const text = await res.text().catch(() => "");
+  if (!text) return fallback;
+  try {
+    const json = JSON.parse(text) as { error?: string };
+    if (typeof json?.error === "string" && json.error.trim()) return json.error.trim();
+  } catch {
+    // fall through to raw text
+  }
+  return text;
+}
+
 async function authFetch(path: string, init?: RequestInit): Promise<Response> {
   const baseUrl = getPosApiBaseUrl();
   const url = `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
@@ -42,12 +104,25 @@ async function authFetch(path: string, init?: RequestInit): Promise<Response> {
   });
 }
 
+export async function fetchAuthConfig(): Promise<AuthConfig> {
+  const res = await authFetch("/api/auth/config");
+  if (!res.ok) {
+    const error = await readApiError(res, "Unable to load auth configuration.");
+    throw new Error(error);
+  }
+  const json = (await res.json()) as AuthConfigResponse;
+  return {
+    googleWorkspaceEnabled: Boolean(json.googleWorkspaceEnabled),
+    googleClientId: String(json.googleClientId ?? "").trim(),
+    googleHostedDomain: String(json.googleHostedDomain ?? "").trim().toLowerCase(),
+  };
+}
+
 export async function fetchCurrentUser(): Promise<AuthUser | null> {
   const res = await authFetch("/api/auth/me");
   if (res.status === 401) return null;
   if (!res.ok) {
-    const msg = await res.text().catch(() => "");
-    throw new Error(`Auth check failed (${res.status})${msg ? `: ${msg}` : ""}`);
+    throw new Error(await readApiError(res, `Auth check failed (${res.status})`));
   }
   const json = (await res.json()) as AuthResponse;
   return mapUser(json.user);
@@ -60,13 +135,52 @@ export async function loginWithPassword(email: string, password: string): Promis
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
-    const msg = await res.text().catch(() => "");
-    throw new Error(`Login failed (${res.status})${msg ? `: ${msg}` : ""}`);
+    throw new Error(await readApiError(res, `Login failed (${res.status})`));
   }
   const json = (await res.json()) as AuthResponse;
   const user = mapUser(json.user);
   if (!user) throw new Error("Login succeeded but no user was returned.");
   return user;
+}
+
+export async function startGoogleSignIn(credential: string): Promise<GoogleAuthResult> {
+  const res = await authFetch("/api/auth/google/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ credential }),
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, `Google sign-in failed (${res.status})`));
+  }
+  const json = (await res.json()) as GoogleAuthResponse;
+  return {
+    status:
+      json.status === "approved" || json.status === "pending" || json.status === "request_required"
+        ? json.status
+        : "request_required",
+    user: mapUser(json.user ?? null),
+    requestProfile: mapRequestProfile(json.requestProfile),
+  };
+}
+
+export async function submitGoogleAccessRequest(credential: string, phone: string): Promise<GoogleAuthResult> {
+  const res = await authFetch("/api/auth/google/request-access", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ credential, phone }),
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, `Google access request failed (${res.status})`));
+  }
+  const json = (await res.json()) as GoogleAuthResponse;
+  return {
+    status:
+      json.status === "approved" || json.status === "pending" || json.status === "request_required"
+        ? json.status
+        : "pending",
+    user: mapUser(json.user ?? null),
+    requestProfile: mapRequestProfile(json.requestProfile),
+  };
 }
 
 export async function logoutCurrentUser(): Promise<void> {
@@ -88,7 +202,6 @@ export async function changeCurrentPassword(currentPassword: string, newPassword
     }),
   });
   if (!res.ok) {
-    const msg = await res.text().catch(() => "");
-    throw new Error(`Password change failed (${res.status})${msg ? `: ${msg}` : ""}`);
+    throw new Error(await readApiError(res, `Password change failed (${res.status})`));
   }
 }

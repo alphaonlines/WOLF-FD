@@ -22,6 +22,16 @@ type AdminRoutesDeps = {
   loadAuthUserById: (userId: number) => Promise<AuthUserLike | null>;
 };
 
+function splitNameParts(name: string) {
+  const trimmed = String(name || "").trim();
+  if (!trimmed) return { firstName: "", lastName: "" };
+  const [firstName, ...rest] = trimmed.split(/\s+/);
+  return {
+    firstName: firstName || "",
+    lastName: rest.join(" ").trim(),
+  };
+}
+
 export function registerAdminRoutes({
   app,
   pool,
@@ -167,6 +177,8 @@ export function registerAdminRoutes({
       SELECT
         u.id,
         u.name,
+        u.first_name,
+        u.last_name,
         u.email,
         u.phone,
         u.auth_provider,
@@ -188,6 +200,8 @@ export function registerAdminRoutes({
       GROUP BY
         u.id,
         u.name,
+        u.first_name,
+        u.last_name,
         u.email,
         u.phone,
         u.auth_provider,
@@ -204,6 +218,8 @@ export function registerAdminRoutes({
       rows: r.rows.map((x: any) => ({
         id: Number(x.id),
         name: String(x.name ?? ""),
+        first_name: String(x.first_name ?? ""),
+        last_name: String(x.last_name ?? ""),
         email: String(x.email ?? ""),
         phone: typeof x.phone === "string" ? x.phone : "",
         auth_provider: String(x.auth_provider ?? "password"),
@@ -232,14 +248,15 @@ export function registerAdminRoutes({
 
     const roleKeys = roles.length ? roles : (["Sales"] as const);
     const passwordHash = hashPassword(password);
+    const { firstName, lastName } = splitNameParts(name);
 
     const r = await pool.query(
       `
-        INSERT INTO users (name, email, password_hash, auth_provider, access_status, access_approved_at, active, created_at, updated_at)
-        VALUES ($1, $2, $3, 'password', 'approved', now(), $4, now(), now())
+        INSERT INTO users (name, first_name, last_name, email, password_hash, auth_provider, access_status, access_approved_at, active, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, 'password', 'approved', now(), $6, now(), now())
         RETURNING id
       `,
-      [name, email, passwordHash, active]
+      [name, firstName || null, lastName || null, email, passwordHash, active]
     );
     const userId = Number(r.rows[0]?.id);
     await setUserRolesByKeys(userId, roleKeys as any);
@@ -258,8 +275,30 @@ export function registerAdminRoutes({
       if (typeof req.body?.name !== "string" || !req.body.name.trim()) {
         return res.status(400).json({ ok: false, error: "invalid name" });
       }
-      values.push(req.body.name.trim());
+      const nextName = req.body.name.trim();
+      const { firstName, lastName } = splitNameParts(nextName);
+      values.push(nextName);
       fields.push(`name = $${values.length}`);
+      values.push(firstName || null);
+      fields.push(`first_name = $${values.length}`);
+      values.push(lastName || null);
+      fields.push(`last_name = $${values.length}`);
+    }
+
+    if (req.body?.first_name !== undefined) {
+      if (typeof req.body?.first_name !== "string") {
+        return res.status(400).json({ ok: false, error: "invalid first name" });
+      }
+      values.push(req.body.first_name.trim() || null);
+      fields.push(`first_name = $${values.length}`);
+    }
+
+    if (req.body?.last_name !== undefined) {
+      if (typeof req.body?.last_name !== "string") {
+        return res.status(400).json({ ok: false, error: "invalid last name" });
+      }
+      values.push(req.body.last_name.trim() || null);
+      fields.push(`last_name = $${values.length}`);
     }
 
     if (req.body?.email !== undefined) {

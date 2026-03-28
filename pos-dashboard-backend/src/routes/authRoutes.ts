@@ -50,16 +50,21 @@ function normalizePhone(value: any): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeNamePart(value: any): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function buildGoogleRequestProfile(payload: GooglePayloadLike, row?: any) {
   const email = normalizeEmail(row?.email || payload.email);
-  const fullName = String(row?.name || payload.name || email).trim();
-  const givenName = String(payload.given_name || "").trim();
-  const familyName = String(payload.family_name || "").trim();
+  const givenName = normalizeNamePart(row?.first_name || payload.given_name);
+  const familyName = normalizeNamePart(row?.last_name || payload.family_name);
+  const fallbackName = String(payload.name || email).trim();
+  const fullName = String(row?.name || `${givenName} ${familyName}`.trim() || fallbackName).trim();
   return {
     email,
     name: fullName || email,
-    givenName,
-    familyName,
+    firstName: givenName,
+    lastName: familyName,
     phone: normalizePhone(row?.phone),
     accessStatus: String(row?.access_status || "request_required"),
   };
@@ -122,7 +127,7 @@ async function createAuthSessionForUser({
 async function loadUserRecordByEmail(pool: Pool, email: string) {
   return pool.query(
     `
-      SELECT id, name, email, password_hash, active, phone, google_sub, auth_provider, access_status, access_requested_at, access_approved_at
+      SELECT id, name, first_name, last_name, email, password_hash, active, phone, google_sub, auth_provider, access_status, access_requested_at, access_approved_at
       FROM users
       WHERE lower(email) = lower($1)
       LIMIT 1
@@ -217,16 +222,20 @@ export function registerAuthRoutes({
       }
 
       if (String(row.access_status || "approved") !== "approved") {
+        const givenName = normalizeNamePart(payload.given_name);
+        const familyName = normalizeNamePart(payload.family_name);
         await pool.query(
           `
             UPDATE users
             SET google_sub = $1,
                 auth_provider = 'google',
                 name = CASE WHEN trim(COALESCE(name, '')) = '' THEN $2 ELSE name END,
+                first_name = CASE WHEN $3 <> '' THEN $3 ELSE first_name END,
+                last_name = CASE WHEN $4 <> '' THEN $4 ELSE last_name END,
                 updated_at = now()
-            WHERE id = $3
+            WHERE id = $5
           `,
-          [payload.sub || null, String(payload.name || row.name || email).trim(), Number(row.id)]
+          [payload.sub || null, String(payload.name || row.name || email).trim(), givenName, familyName, Number(row.id)]
         );
         const refreshed = (await loadUserRecordByEmail(pool, email)).rows[0] || row;
         return res.json({
@@ -236,16 +245,20 @@ export function registerAuthRoutes({
         });
       }
 
+      const givenName = normalizeNamePart(payload.given_name);
+      const familyName = normalizeNamePart(payload.family_name);
       await pool.query(
         `
           UPDATE users
           SET google_sub = $1,
               auth_provider = 'google',
               name = CASE WHEN $2 <> '' THEN $2 ELSE name END,
+              first_name = CASE WHEN $3 <> '' THEN $3 ELSE first_name END,
+              last_name = CASE WHEN $4 <> '' THEN $4 ELSE last_name END,
               updated_at = now()
-          WHERE id = $3
+          WHERE id = $5
         `,
-        [payload.sub || null, String(payload.name || "").trim(), Number(row.id)]
+        [payload.sub || null, String(payload.name || "").trim(), givenName, familyName, Number(row.id)]
       );
 
       await createAuthSessionForUser({
@@ -291,6 +304,8 @@ export function registerAuthRoutes({
       const payload = await verifyGoogleCredential(credential);
       const email = normalizeEmail(payload.email);
       const name = String(payload.name || email).trim();
+      const firstName = normalizeNamePart(payload.given_name);
+      const lastName = normalizeNamePart(payload.family_name);
       const googleSub = typeof payload.sub === "string" ? payload.sub.trim() : "";
       const userRes = await loadUserRecordByEmail(pool, email);
       const row = userRes.rows[0];
@@ -305,6 +320,8 @@ export function registerAuthRoutes({
           `
             INSERT INTO users (
               name,
+              first_name,
+              last_name,
               email,
               password_hash,
               phone,
@@ -316,24 +333,26 @@ export function registerAuthRoutes({
               created_at,
               updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, 'google', 'pending', now(), TRUE, now(), now())
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'google', 'pending', now(), TRUE, now(), now())
           `,
-          [name, email, placeholderPasswordHash, phone, googleSub || null]
+          [name, firstName || null, lastName || null, email, placeholderPasswordHash, phone, googleSub || null]
         );
       } else {
         await pool.query(
           `
             UPDATE users
             SET name = CASE WHEN $1 <> '' THEN $1 ELSE name END,
-                phone = $2,
-                google_sub = $3,
+                first_name = CASE WHEN $2 <> '' THEN $2 ELSE first_name END,
+                last_name = CASE WHEN $3 <> '' THEN $3 ELSE last_name END,
+                phone = $4,
+                google_sub = $5,
                 auth_provider = 'google',
                 access_status = CASE WHEN access_status = 'approved' THEN 'approved' ELSE 'pending' END,
                 access_requested_at = CASE WHEN access_status = 'approved' THEN access_requested_at ELSE now() END,
                 updated_at = now()
-            WHERE id = $4
+            WHERE id = $6
           `,
-          [name, phone, googleSub || null, Number(row.id)]
+          [name, firstName, lastName, phone, googleSub || null, Number(row.id)]
         );
       }
 

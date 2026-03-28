@@ -15,6 +15,7 @@ Furniture Distributors dashboard (Vite + React) with a local POS backend API and
 - **API URL:** `https://furnituredistributors.wolf.discount/fd/api/`
 - **Backend Port:** `5057`
 - **Database Port (Host):** `5433`
+- **Display Versioning:** UI shows `displayVersion` from `package.json` (for example `0.3.28.2`) while package semver remains valid.
 
 ### Nginx Routing
 Nginx acts as a reverse proxy, mapping `/fd/api/` to the internal Swarm service. Note that the path mapping includes a redundant `/api` in the frontend code to correctly trigger the backend's relative routing logic.
@@ -47,6 +48,33 @@ From backend folder:
 - The backend is consolidated on **Port 5057**.
 - Database connectivity uses host IP with Port **5433** to bridge Swarm and standard Docker networks.
 - For historical context, see `PROJECT_NOTES.md` and `AGENTS.md`.
+
+## Employee Access Rollout
+
+- Password login still exists as a temporary fallback.
+- Preferred employee path is `Sign in with Google` using a `@furnituredistributors.net` Google Workspace account.
+- First-time Google users land in a request-access step and must provide a phone number.
+- The backend stores `name`, `first_name`, `last_name`, `email`, and `phone` for pending requests so the same identity record can be reused later for app/mobile rollout.
+- Owners approve or return employees to pending status from **Settings → Users**.
+- Owners can assign role defaults and per-employee permission overrides from **Settings → Employee Permissions**.
+
+## Auth Configuration
+
+Set these on the FD backend environment before enabling live Google sign-in:
+
+- `GOOGLE_WORKSPACE_CLIENT_ID` — Google Identity Services web client ID for the FD dashboard
+- `GOOGLE_WORKSPACE_DOMAIN` — defaults to `furnituredistributors.net`
+- `AUTH_BOOTSTRAP_EMAIL` — bootstrap owner email
+- `AUTH_BOOTSTRAP_PASSWORD` — bootstrap owner password
+
+Public auth endpoints used by the frontend:
+
+- `GET /api/auth/config`
+- `POST /api/auth/login`
+- `POST /api/auth/google/start`
+- `POST /api/auth/google/request-access`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
 
 ## UI Overview (2026-02-06)
 

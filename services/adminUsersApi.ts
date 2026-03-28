@@ -4,6 +4,8 @@ import { getPosApiBaseUrl } from "./posBackendApi";
 type ApiUserRow = {
   id: number | string;
   name: string;
+  first_name?: string | null;
+  last_name?: string | null;
   email: string;
   active: boolean;
   roles: string[];
@@ -21,6 +23,8 @@ type ApiUserRow = {
 const mapUser = (row: ApiUserRow): ManagedUser => ({
   id: String(row.id ?? ""),
   name: String(row.name ?? ""),
+  firstName: row.first_name ? String(row.first_name) : "",
+  lastName: row.last_name ? String(row.last_name) : "",
   email: String(row.email ?? ""),
   active: Boolean(row.active),
   roles: (Array.isArray(row.roles) ? row.roles : []).map((r) => String(r)) as UserRole[],

@@ -1,7 +1,7 @@
 # Employee Access Rollout TODO
 
 ## Goal
-Add secure employee login with role-based module visibility, lead assignment, and internal collaboration comments.
+Add secure employee login with Google Workspace request-access approval, role-based module visibility, lead assignment, and internal collaboration comments.
 
 ## Phase 1: Authentication
 - [x] Add `users` table (`id`, `name`, `email`, `password_hash`, `active`, `created_at`, `updated_at`)
@@ -10,6 +10,11 @@ Add secure employee login with role-based module visibility, lead assignment, an
 - [x] Use secure HTTP-only cookie sessions
 - [x] Add `requireAuth` middleware for protected routes
 - [x] Add initial admin seed user
+- [x] Add Google Workspace auth config + verification endpoints
+- [x] Add request-access flow with pending owner approval
+- [x] Capture Google profile name plus employee phone number on request
+- [x] Store `first_name` and `last_name` separately for future app/mobile use
+- [ ] Configure live `GOOGLE_WORKSPACE_CLIENT_ID` and verify production popup flow end-to-end
 
 ## Phase 2: Roles and Module Permissions
 - [x] Add `roles`, `user_roles` tables (role-module mapping tables pending)
@@ -20,6 +25,10 @@ Add secure employee login with role-based module visibility, lead assignment, an
 - [x] In frontend, hide tabs/screens user cannot access by role
 - [x] Add admin user management UI for create/roles/active/reset-password
 - [x] Add authenticated self-service password change flow
+- [x] Add employee-specific permission overrides on top of role defaults
+- [x] Add owner approval controls for pending employees
+- [ ] Add manager-specific elevated action permissions beyond module visibility
+- [ ] Add marketing/social approval permissions for publishing workflows
 
 ## Phase 3: CRM Ownership and Assignment
 - [ ] Add `owner_user_id` to `crm_leads` (nullable for migration safety)
@@ -45,6 +54,8 @@ Add secure employee login with role-based module visibility, lead assignment, an
 - [x] Backend build passes (`pos-dashboard-backend`)
 - [x] Frontend build passes (`WOLF-FD`)
 - [x] Manual auth flow test (login/logout/me)
+- [ ] Manual Google Workspace request-access flow test with real client ID
+- [ ] Manual owner approval → employee sign-in happy path test
 - [ ] Permission tests for each role
 - [ ] Lead assignment test across roles
 - [ ] Message board visibility and comment permissions verified

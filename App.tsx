@@ -26,13 +26,16 @@ import MessageBoard from './components/MessageBoard';
 import WolfBot from './components/WolfBot';
 import TaskManager from './components/TaskManager';
 import OwnerSettings from './components/OwnerSettings';
-import type { AuthUser, UserRole } from './types';
+import type { AccessRequestProfile, AuthConfig, AuthUser, UserRole } from './types';
 import { APP_VERSION } from './constants';
 import {
   changeCurrentPassword,
+  fetchAuthConfig,
   fetchCurrentUser,
   loginWithPassword,
   logoutCurrentUser,
+  startGoogleSignIn,
+  submitGoogleAccessRequest,
 } from './services/authApi';
 import { getPosApiBaseUrl } from './services/posBackendApi';
 import AuthScreen from './components/app/AuthScreen';
@@ -92,7 +95,16 @@ const App: React.FC = () => {
   });
   const [showLoading, setShowLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  const [authConfig, setAuthConfig] = useState<AuthConfig>({
+    googleWorkspaceEnabled: false,
+    googleClientId: '',
+    googleHostedDomain: '',
+  });
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authStage, setAuthStage] = useState<'sign_in' | 'request_access' | 'pending'>('sign_in');
+  const [requestProfile, setRequestProfile] = useState<AccessRequestProfile | null>(null);
+  const [requestPhone, setRequestPhone] = useState('');
+  const [pendingGoogleCredential, setPendingGoogleCredential] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginPending, setLoginPending] = useState(false);
@@ -131,10 +143,18 @@ const App: React.FC = () => {
     let stopped = false;
     void (async () => {
       try {
-        const user = await fetchCurrentUser();
-        if (!stopped) setAuthUser(user);
-      } catch {
-        if (!stopped) setAuthUser(null);
+        const [userResult, configResult] = await Promise.allSettled([fetchCurrentUser(), fetchAuthConfig()]);
+        if (stopped) return;
+
+        if (userResult.status === 'fulfilled') {
+          setAuthUser(userResult.value);
+        } else {
+          setAuthUser(null);
+        }
+
+        if (configResult.status === 'fulfilled') {
+          setAuthConfig(configResult.value);
+        }
       } finally {
         if (!stopped) setAuthReady(true);
       }
@@ -297,18 +317,99 @@ const App: React.FC = () => {
     try {
       const user = await loginWithPassword(loginEmail.trim(), loginPassword);
       setAuthUser(user);
+      setAuthStage('sign_in');
+      setRequestProfile(null);
+      setRequestPhone('');
+      setPendingGoogleCredential('');
       setLoginPassword('');
       setShowLoading(true);
-    } catch {
-      setLoginError('Login failed. Check your credentials.');
+    } catch (error: any) {
+      setLoginError(String(error?.message || error || 'Login failed. Check your credentials.'));
     } finally {
       setLoginPending(false);
     }
   };
 
+  const handleGoogleCredential = async (credential: string) => {
+    if (!credential) {
+      setLoginError('Google sign-in did not return a valid credential.');
+      return;
+    }
+    setLoginPending(true);
+    setLoginError(null);
+    try {
+      const result = await startGoogleSignIn(credential);
+      if (result.status === 'approved' && result.user) {
+        setAuthUser(result.user);
+        setAuthStage('sign_in');
+        setRequestProfile(null);
+        setRequestPhone('');
+        setPendingGoogleCredential('');
+        setShowLoading(true);
+        return;
+      }
+
+      setPendingGoogleCredential(credential);
+      setRequestProfile(result.requestProfile);
+      setRequestPhone(result.requestProfile?.phone || '');
+      if (result.status === 'pending' && (result.requestProfile?.phone || '').trim()) {
+        setAuthStage('pending');
+      } else {
+        setAuthStage('request_access');
+      }
+    } catch (error: any) {
+      setLoginError(String(error?.message || error || 'Google sign-in failed.'));
+    } finally {
+      setLoginPending(false);
+    }
+  };
+
+  const handleSubmitRequestAccess = async () => {
+    if (!pendingGoogleCredential) {
+      setLoginError('Please start with Google sign-in again before requesting access.');
+      setAuthStage('sign_in');
+      return;
+    }
+    if (!requestPhone.trim()) {
+      setLoginError('Phone number is required so the owner can reach you.');
+      return;
+    }
+
+    setLoginPending(true);
+    setLoginError(null);
+    try {
+      const result = await submitGoogleAccessRequest(pendingGoogleCredential, requestPhone.trim());
+      if (result.status === 'approved' && result.user) {
+        setAuthUser(result.user);
+        setAuthStage('sign_in');
+        setRequestProfile(null);
+        setRequestPhone('');
+        setPendingGoogleCredential('');
+        setShowLoading(true);
+        return;
+      }
+      setRequestProfile(result.requestProfile);
+      setRequestPhone(result.requestProfile?.phone || requestPhone.trim());
+      setAuthStage('pending');
+    } catch (error: any) {
+      setLoginError(String(error?.message || error || 'Unable to submit access request.'));
+    } finally {
+      setLoginPending(false);
+    }
+  };
+
+  const handleBackToSignIn = () => {
+    setAuthStage('sign_in');
+    setLoginError(null);
+  };
+
   const handleLogout = async () => {
     await logoutCurrentUser();
     setAuthUser(null);
+    setAuthStage('sign_in');
+    setRequestProfile(null);
+    setRequestPhone('');
+    setPendingGoogleCredential('');
     setLoginPassword('');
     setLoginError(null);
     setPasswordModalOpen(false);
@@ -443,13 +544,23 @@ const App: React.FC = () => {
   if (!authUser) {
     return (
       <AuthScreen
+        stage={authStage}
         email={loginEmail}
         password={loginPassword}
+        requestPhone={requestPhone}
+        requestProfile={requestProfile}
         pending={loginPending}
         error={loginError}
+        googleEnabled={authConfig.googleWorkspaceEnabled}
+        googleClientId={authConfig.googleClientId}
+        googleHostedDomain={authConfig.googleHostedDomain}
         setEmail={setLoginEmail}
         setPassword={setLoginPassword}
+        setRequestPhone={setRequestPhone}
         onLogin={handleLogin}
+        onBackToSignIn={handleBackToSignIn}
+        onSubmitRequestAccess={handleSubmitRequestAccess}
+        onGoogleCredential={handleGoogleCredential}
       />
     );
   }

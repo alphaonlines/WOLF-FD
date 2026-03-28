@@ -509,25 +509,57 @@ CREATE INDEX IF NOT EXISTS idx_board_comments_post_id_created ON board_comments(
 CREATE TABLE IF NOT EXISTS users (
   id            BIGSERIAL PRIMARY KEY,
   name          TEXT NOT NULL,
+  first_name    TEXT,
+  last_name     TEXT,
   email         TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
+  phone         TEXT,
+  google_sub    TEXT UNIQUE,
+  auth_provider TEXT NOT NULL DEFAULT 'password',
+  access_status TEXT NOT NULL DEFAULT 'approved',
+  access_requested_at TIMESTAMPTZ,
+  access_approved_at TIMESTAMPTZ,
+  approved_by_user_id BIGINT,
   active        BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS access_status TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS access_requested_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS access_approved_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_by_user_id BIGINT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS active BOOLEAN;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
 
+ALTER TABLE users ALTER COLUMN auth_provider SET DEFAULT 'password';
+ALTER TABLE users ALTER COLUMN access_status SET DEFAULT 'approved';
 ALTER TABLE users ALTER COLUMN active SET DEFAULT TRUE;
 ALTER TABLE users ALTER COLUMN created_at SET DEFAULT now();
 ALTER TABLE users ALTER COLUMN updated_at SET DEFAULT now();
+UPDATE users
+SET first_name = COALESCE(NULLIF(first_name, ''), NULLIF(split_part(trim(name), ' ', 1), '')),
+    last_name = COALESCE(
+      NULLIF(last_name, ''),
+      NULLIF(trim(regexp_replace(trim(name), '^\S+\s*', '')), '')
+    )
+WHERE COALESCE(trim(name), '') <> '';
+UPDATE users SET auth_provider = COALESCE(NULLIF(auth_provider, ''), 'password') WHERE auth_provider IS NULL OR auth_provider = '';
+UPDATE users SET access_status = COALESCE(NULLIF(access_status, ''), 'approved') WHERE access_status IS NULL OR access_status = '';
+UPDATE users SET access_approved_at = COALESCE(access_approved_at, created_at, now()) WHERE access_status = 'approved';
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users ((lower(email)));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub) WHERE google_sub IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_users_access_status ON users(access_status);
 
 CREATE TABLE IF NOT EXISTS auth_sessions (
   id            BIGSERIAL PRIMARY KEY,

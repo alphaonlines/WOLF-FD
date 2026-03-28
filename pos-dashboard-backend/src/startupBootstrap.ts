@@ -13,6 +13,8 @@ async function ensureAuthSchema(pool: Pool) {
     CREATE TABLE IF NOT EXISTS users (
       id            BIGSERIAL PRIMARY KEY,
       name          TEXT NOT NULL,
+      first_name    TEXT,
+      last_name     TEXT,
       email         TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
       phone         TEXT,
@@ -28,6 +30,8 @@ async function ensureAuthSchema(pool: Pool) {
     );
   `);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;`);
@@ -45,6 +49,15 @@ async function ensureAuthSchema(pool: Pool) {
   await pool.query(`ALTER TABLE users ALTER COLUMN active SET DEFAULT TRUE;`);
   await pool.query(`ALTER TABLE users ALTER COLUMN created_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE users ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`
+    UPDATE users
+    SET first_name = COALESCE(NULLIF(first_name, ''), NULLIF(split_part(trim(name), ' ', 1), '')),
+        last_name = COALESCE(
+          NULLIF(last_name, ''),
+          NULLIF(trim(regexp_replace(trim(name), '^\\S+\\s*', '')), '')
+        )
+    WHERE COALESCE(trim(name), '') <> '';
+  `);
   await pool.query(`UPDATE users SET auth_provider = COALESCE(NULLIF(auth_provider, ''), 'password') WHERE auth_provider IS NULL OR auth_provider = '';`);
   await pool.query(`UPDATE users SET access_status = COALESCE(NULLIF(access_status, ''), 'approved') WHERE access_status IS NULL OR access_status = '';`);
   await pool.query(`UPDATE users SET access_approved_at = COALESCE(access_approved_at, created_at, now()) WHERE access_status = 'approved';`);

@@ -188,12 +188,29 @@ export interface AuthUser {
   permissionMode: PermissionMode;
 }
 
+export interface AuthConfig {
+  googleWorkspaceEnabled: boolean;
+  googleClientId: string;
+  googleHostedDomain: string;
+}
+
+export interface AccessRequestProfile {
+  email: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  accessStatus: string;
+}
+
 export interface ManagedUser {
   id: string;
   name: string;
   email: string;
   active: boolean;
   roles: UserRole[];
+  firstName?: string;
+  lastName?: string;
   phone?: string;
   authProvider?: string;
   accessStatus?: string;
