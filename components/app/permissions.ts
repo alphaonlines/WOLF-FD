@@ -27,6 +27,7 @@ export const DASHBOARD_CARD_PERMISSION_BY_ID: Record<string, string> = {
   "den-ups": "card.dashboard.den_ups",
   "den-crm": "card.dashboard.den_crm",
   "den-board": "card.dashboard.den_board",
+  "den-meeting": "card.dashboard.den_meeting",
   "den-tasks": "card.dashboard.den_tasks",
   "amp-social": "card.dashboard.amp_social",
   "amp-bot": "card.dashboard.amp_bot",
@@ -77,6 +78,7 @@ export const MODULE_TO_DASHBOARD_CARD_KEYS: Record<string, string[]> = {
     DASHBOARD_CARD_PERMISSION_BY_ID["den-ups"],
     DASHBOARD_CARD_PERMISSION_BY_ID["den-crm"],
     DASHBOARD_CARD_PERMISSION_BY_ID["den-board"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["den-meeting"],
     DASHBOARD_CARD_PERMISSION_BY_ID["den-tasks"],
   ],
   [MODULE_PERMISSION_KEYS.PULSE]: [

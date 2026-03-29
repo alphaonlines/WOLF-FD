@@ -89,9 +89,9 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
   const [requestedWolfdenSubTab, setRequestedWolfdenSubTab] = useState<'ups' | 'crm' | 'board' | 'meeting' | 'tasks' | 'quicklinks'>('ups');
   const [requestedWolfdenSubTabToken, setRequestedWolfdenSubTabToken] = useState(0);
-  const [requestedPulseSubTab, setRequestedPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('sales');
+  const [requestedPulseSubTab, setRequestedPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('alphapulse');
   const [requestedPulseSubTabToken, setRequestedPulseSubTabToken] = useState(0);
-  const [currentPulseSubTab, setCurrentPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('sales');
+  const [currentPulseSubTab, setCurrentPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('alphapulse');
   const [requestedAmpSubTab, setRequestedAmpSubTab] = useState<'social' | 'bot'>('social');
   const [requestedAmpSubTabToken, setRequestedAmpSubTabToken] = useState(0);
   const [requestedShopSubTab, setRequestedShopSubTab] = useState<'search' | 'pos'>('search');
@@ -517,6 +517,7 @@ const App: React.FC = () => {
               if (tab === 'WOLFDEN_UPS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('ups');
               if (tab === 'WOLFDEN_CRM' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('crm');
               if (tab === 'WOLFDEN_BOARD' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('board');
+              if (tab === 'WOLFDEN_MEETING' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('meeting');
               if (tab === 'WOLFDEN_TASKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('tasks');
               if (tab === 'WOLFDEN_QUICKLINKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('quicklinks');
               if (tab === 'PULSE_SALES' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('sales');

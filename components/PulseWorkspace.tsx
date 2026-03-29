@@ -17,9 +17,69 @@ export type PulseSubTab = "sales" | "alphaos" | "alphapulse" | "website" | "revi
 const FD_REVIEWS_URL = "https://www.furnituredistributors.net/content/connect";
 const ALPHAPULSE_URL = "https://furnituredistributors.wolf.discount/alphapulse/";
 
+type PulsePaneBoundaryProps = {
+  children: React.ReactNode;
+  isDarkMode: boolean;
+  label: string;
+  onReset: () => void;
+};
+
+type PulsePaneBoundaryState = {
+  hasError: boolean;
+};
+
+class PulsePaneBoundary extends React.Component<PulsePaneBoundaryProps, PulsePaneBoundaryState> {
+  state: PulsePaneBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError(): PulsePaneBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.error("Pulse pane crashed", this.props.label, error);
+  }
+
+  componentDidUpdate(prevProps: PulsePaneBoundaryProps) {
+    if (prevProps.label !== this.props.label && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (!this.state.hasError) {
+      return this.props.children;
+    }
+
+    return (
+      <div className="h-full overflow-auto p-5 lg:p-7">
+        <div className={`rounded-3xl border p-6 ${
+          this.props.isDarkMode ? "border-slate-800 bg-slate-950 text-slate-100" : "border-slate-200 bg-white text-slate-900"
+        }`}>
+          <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-500">Pulse</div>
+          <h2 className="mt-2 text-2xl font-semibold">{this.props.label} hit a rendering error</h2>
+          <p className={`mt-3 text-sm leading-6 ${this.props.isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
+            This tab failed to render, but the rest of Pulse is still available. Use the button below to jump back to the AlphaPulse page instead of landing on a blank screen.
+          </p>
+          <button
+            type="button"
+            onClick={this.props.onReset}
+            className={`mt-5 inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+              this.props.isDarkMode
+                ? "border-sky-500/30 bg-sky-500/10 text-sky-200 hover:bg-sky-500/18"
+                : "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
+            }`}
+          >
+            Open AlphaPulse
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
+
 const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
   isDarkMode,
-  requestedSubTab = "sales",
+  requestedSubTab = "alphapulse",
   requestedSubTabToken,
   onSubTabChange,
   itemSortMetric,
@@ -70,7 +130,8 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden">
+      <PulsePaneBoundary isDarkMode={isDarkMode} label={subTab} onReset={() => setSubTab("alphapulse")}>
+        <div className="flex-1 overflow-hidden">
         {subTab === "sales" && (
           <div className="h-full overflow-auto p-5 lg:p-7">
             <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />
@@ -80,7 +141,8 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
         {subTab === "alphapulse" && <EmbeddedPage isDarkMode={isDarkMode} src={ALPHAPULSE_URL} title="AlphaPulse" label="AlphaPulse" />}
         {subTab === "website" && <WebsitePage isDarkMode={isDarkMode} />}
         {subTab === "reviews" && <EmbeddedPage isDarkMode={isDarkMode} src={FD_REVIEWS_URL} title="FD Connect Reviews" label="FD Connect" />}
-      </div>
+        </div>
+      </PulsePaneBoundary>
     </div>
   );
 };

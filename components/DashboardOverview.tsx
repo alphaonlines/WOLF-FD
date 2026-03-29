@@ -144,6 +144,17 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
         accentClass: "from-amber-100 via-amber-50 to-white border-amber-200/80",
       },
       {
+        id: "den-meeting",
+        title: "Den Meeting Room",
+        description: "Open the Den meeting room directly from the dashboard.",
+        details: "This jumps straight into the Den meeting room so the stat meeting page is one click away from the home dashboard.",
+        cta: "Open Meeting Room",
+        icon: <ClipboardList size={22} className="text-amber-500" />,
+        onClick: () => onNavigate("WOLFDEN_MEETING"),
+        module: "Den",
+        accentClass: "from-amber-100 via-amber-50 to-white border-amber-200/80",
+      },
+      {
         id: "den-tasks",
         title: "Den Tasks",
         description: "Open the task lane board for assignments and completion tracking.",
