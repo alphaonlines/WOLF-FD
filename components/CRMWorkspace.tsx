@@ -402,14 +402,21 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   };
 
   const handleCompleteCustomer = async (item: CRMUpsQueueItem, activeCustomerId: string) => {
+    const activeCustomer = item.activeCustomers.find((entry) => entry.id === activeCustomerId) || null;
     setStatusMessage(null);
     setErrorMessage(null);
+    setSaving("queue");
     try {
       if (draft.queueId === item.id && draft.activeCustomerId === activeCustomerId) {
-        await updateCrmUpsQueueCustomerInApi(item.id, activeCustomerId, {
-          customer: combineName(draft.firstName, draft.lastName),
-          details: draft.visualDescription.trim(),
-        });
+        const customerName = combineName(draft.firstName, draft.lastName);
+        const payload: { customer?: string; details?: string } = {};
+        if (customerName) payload.customer = customerName;
+        if (draft.visualDescription.trim() !== (activeCustomer?.customerDetails || "")) {
+          payload.details = draft.visualDescription.trim();
+        }
+        if (payload.customer !== undefined || payload.details !== undefined) {
+          await updateCrmUpsQueueCustomerInApi(item.id, activeCustomerId, payload);
+        }
       }
       const rows = await completeCrmUpsQueueCustomerInApi(item.id, activeCustomerId);
       setQueue([...rows].sort((a, b) => a.queuePosition - b.queuePosition));
@@ -421,6 +428,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       setStatusMessage("Up completed and saved to history.");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to complete customer.");
+    } finally {
+      setSaving(null);
     }
   };
 
