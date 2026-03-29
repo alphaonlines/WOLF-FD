@@ -130,6 +130,20 @@ const splitName = (value: string) => {
 const combineName = (firstName: string, lastName: string) =>
   `${firstName.trim()} ${lastName.trim()}`.trim();
 
+const normalizePersonNameTokens = (value: string) =>
+  value
+    .toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .sort();
+
+const namesLikelyMatch = (left: string, right: string) => {
+  const leftTokens = normalizePersonNameTokens(left);
+  const rightTokens = normalizePersonNameTokens(right);
+  return leftTokens.length > 0 && leftTokens.join("|") === rightTokens.join("|");
+};
+
 const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => {
   const isManager = authUser.roles.includes("Owner") || authUser.roles.includes("Manager");
   const [leadScope, setLeadScope] = useState<"team" | "my">(isManager ? "team" : "my");
@@ -231,7 +245,12 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     };
   }, [selectedStore, leadScope]);
 
-  const myQueueItem = useMemo(() => queue.find((item) => item.repUserId === authUser.id) || null, [queue, authUser.id]);
+  const myQueueItem = useMemo(
+    () =>
+      queue.find((item) => item.repUserId === authUser.id || (!item.repUserId && namesLikelyMatch(item.rep, authUser.name))) ||
+      null,
+    [queue, authUser.id, authUser.name]
+  );
   const isViewingAllStores = selectedStore === "ALL";
   const activeCount = queue.reduce((total, item) => total + item.activeCustomerCount, 0);
   const waitingCount = queue.filter((item) => item.status === "waiting").length;
@@ -645,7 +664,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                 queue.map((item) => {
                   const isSelected = selectedQueueItem?.id === item.id;
                   const startDraft = startDrafts[item.id] || { customer: "", customerType: "Regular Up" as UpsQueueCustomerType };
-                  const canManageRow = isManager || item.repUserId === authUser.id;
+                  const canManageRow =
+                    isManager || item.repUserId === authUser.id || (!item.repUserId && namesLikelyMatch(item.rep, authUser.name));
                   const isNextOpportunity = item.id === nextOpportunityId;
                   const sameStatusItems = queue.filter((entry) => entry.status === item.status);
                   const sameStatusIndex = sameStatusItems.findIndex((entry) => entry.id === item.id);

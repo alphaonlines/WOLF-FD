@@ -143,6 +143,34 @@ function isSalesOnly(user: AuthUserLike | null): boolean {
   return hasAnyRole(user, ["Sales"]) && !isManagerOrOwner(user);
 }
 
+function normalizePersonNameTokens(value: any): string[] {
+  return String(value || "")
+    .toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .sort();
+}
+
+function namesLikelyMatch(left: any, right: any): boolean {
+  const leftTokens = normalizePersonNameTokens(left);
+  const rightTokens = normalizePersonNameTokens(right);
+  return leftTokens.length > 0 && leftTokens.join("|") === rightTokens.join("|");
+}
+
+function canManageUpsQueueRow(user: AuthUserLike | null, row: any): boolean {
+  if (!user) return false;
+  if (!isSalesOnly(user)) return true;
+  const repUserId =
+    row?.rep_user_id === null || row?.rep_user_id === undefined || row?.rep_user_id === ""
+      ? null
+      : Number(row.rep_user_id);
+  if (repUserId !== null && Number.isFinite(repUserId) && repUserId > 0) {
+    return repUserId === Number(user.id);
+  }
+  return namesLikelyMatch(row?.rep, user.name);
+}
+
 async function resolveOwner(
   pool: Pool,
   ownerUserIdRaw: any,
@@ -1285,7 +1313,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
 
     const row = await pool.query(`SELECT rep_user_id, store, rep, status, queue_position FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
     if (!row.rows.length) return res.status(404).json({ error: "not found" });
-    if (isSalesOnly(user) && Number(row.rows[0].rep_user_id) !== Number(user.id)) {
+    if (!canManageUpsQueueRow(user, row.rows[0])) {
       return res.status(403).json({ error: "forbidden" });
     }
     const store = String(row.rows[0].store || "FD7");
@@ -1422,7 +1450,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
 
     const row = await pool.query(`SELECT rep_user_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
     if (!row.rows.length) return res.status(404).json({ error: "not found" });
-    if (isSalesOnly(user) && Number(row.rows[0].rep_user_id) !== Number(user.id)) {
+    if (!canManageUpsQueueRow(user, row.rows[0])) {
       return res.status(403).json({ error: "forbidden" });
     }
     const activeRow = await pool.query(
@@ -1512,7 +1540,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     const row = await pool.query(`SELECT id, store, rep_user_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
     if (!row.rows.length) return res.status(404).json({ error: "not found" });
     const target = row.rows[0];
-    if (isSalesOnly(user) && Number(target.rep_user_id) !== Number(user.id)) {
+    if (!canManageUpsQueueRow(user, target)) {
       return res.status(403).json({ error: "forbidden" });
     }
     const activeCustomer = await pool.query(
@@ -1565,7 +1593,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     const row = await pool.query(`SELECT id, store, rep_user_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
     if (!row.rows.length) return res.status(404).json({ error: "not found" });
     const target = row.rows[0];
-    if (isSalesOnly(user) && Number(target.rep_user_id) !== Number(user.id)) {
+    if (!canManageUpsQueueRow(user, target)) {
       return res.status(403).json({ error: "forbidden" });
     }
     const activeCustomer = await pool.query(
@@ -1630,7 +1658,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     if (!row.rows.length) return res.status(404).json({ error: "not found" });
 
     const target = row.rows[0];
-    if (isSalesOnly(user) && Number(target.rep_user_id) !== Number(user.id)) {
+    if (!canManageUpsQueueRow(user, target)) {
       return res.status(403).json({ error: "forbidden" });
     }
     if (String(target.status || "") === "working") {
@@ -1753,7 +1781,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
 
     const row = await pool.query(`SELECT store, rep_user_id, active_history_id FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
     if (!row.rows.length) return res.status(404).json({ error: "not found" });
-    if (isSalesOnly(user) && Number(row.rows[0].rep_user_id) !== Number(user.id)) {
+    if (!canManageUpsQueueRow(user, row.rows[0])) {
       return res.status(403).json({ error: "forbidden" });
     }
     const store = String(row.rows[0].store || "FD7");
