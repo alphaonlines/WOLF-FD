@@ -8,6 +8,7 @@ import {
   parseBestPricebookWorkbook,
   parseBestReferenceNotes,
 } from "../parsers/bestPricebook";
+import { parseEnglandPricebookPdf, parseEnglandReferenceNotes } from "../parsers/englandPricebook";
 import {
   type ParsedManufacturerCatalogRow,
   parseLibertyPricebookPdf,
@@ -469,7 +470,12 @@ async function parseUploadRows(input: {
     }
     return parseBestPricebookWorkbook(filePath);
   }
-  throw new Error(`No parser is available yet for ${resolvedUploadRow.manufacturer}. Liberty and Best are currently live.`);
+  if (manufacturerSlug === "england") {
+    return parseEnglandPricebookPdf(filePath, input.execFileAsync);
+  }
+  throw new Error(
+    `No parser is available yet for ${resolvedUploadRow.manufacturer}. Liberty, Best, and England are currently live.`
+  );
 }
 
 async function parseUploadReferenceNotes(input: {
@@ -489,6 +495,9 @@ async function parseUploadReferenceNotes(input: {
   if (manufacturerSlug === "best") {
     if (!isBestResidentialWorkbook(filePath)) return [];
     return parseBestReferenceNotes(filePath);
+  }
+  if (manufacturerSlug === "england") {
+    return parseEnglandReferenceNotes();
   }
   return [];
 }
