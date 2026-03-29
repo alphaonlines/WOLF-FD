@@ -22,6 +22,7 @@ const formatDimensions = (item: ManufacturerCatalogItem) => {
 };
 
 const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkMode, onOpenUploadArea }) => {
+  const CATALOG_FETCH_LIMIT = 5000;
   const [query, setQuery] = useState("");
   const [manufacturer, setManufacturer] = useState("");
   const [category, setCategory] = useState("");
@@ -53,7 +54,7 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
           category: category || undefined,
           color: color || undefined,
           query: query || undefined,
-          limit: 160,
+          limit: CATALOG_FETCH_LIMIT,
         }),
         manufacturer ? fetchManufacturerReferenceNotes(manufacturer) : Promise.resolve([]),
       ]);
@@ -178,6 +179,7 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
           <span className={badgeClassName}>
             {new Set(items.map((item) => item.manufacturer).filter(Boolean)).size} manufacturers in current result
           </span>
+          <span className={badgeClassName}>Showing up to {CATALOG_FETCH_LIMIT.toLocaleString()} products</span>
           <button
             type="button"
             onClick={() => void loadCatalog()}
