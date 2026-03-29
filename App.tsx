@@ -15,6 +15,8 @@ import {
   Bot,
   LogOut,
   Settings,
+  Inbox,
+  Zap,
 } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import WorkAdvertising from './components/WorkAdvertising';
@@ -27,6 +29,8 @@ import MessageBoard from './components/MessageBoard';
 import WolfBot from './components/WolfBot';
 import TaskManager from './components/TaskManager';
 import OwnerSettings from './components/OwnerSettings';
+import WolfdenWorkspace from './components/WolfdenWorkspace';
+import PulseWorkspace from './components/PulseWorkspace';
 import type { AccessRequestProfile, AuthConfig, AuthUser, UserRole } from './types';
 import { APP_VERSION } from './constants';
 import {
@@ -84,7 +88,11 @@ const getMaintenanceTrackingUrl = () => {
 };
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.CRM);
+  const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
+  const [requestedWolfdenSubTab, setRequestedWolfdenSubTab] = useState<'ups' | 'crm' | 'board' | 'tasks'>('ups');
+  const [requestedWolfdenSubTabToken, setRequestedWolfdenSubTabToken] = useState(0);
+  const [requestedPulseSubTab, setRequestedPulseSubTab] = useState<'sales' | 'alphaos' | 'website' | 'social' | 'reviews'>('sales');
+  const [requestedPulseSubTabToken, setRequestedPulseSubTabToken] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
@@ -468,11 +476,24 @@ const App: React.FC = () => {
     }, 220);
   };
 
+  const openWolfdenSubTab = (subTab: 'ups' | 'crm' | 'board' | 'tasks') => {
+    setRequestedWolfdenSubTab(subTab);
+    setRequestedWolfdenSubTabToken((current) => current + 1);
+    setActiveTab(Tab.WOLFDEN);
+  };
+
+  const openPulseSubTab = (subTab: 'sales' | 'alphaos' | 'website' | 'social' | 'reviews') => {
+    setRequestedPulseSubTab(subTab);
+    setRequestedPulseSubTabToken((current) => current + 1);
+    setActiveTab(Tab.PULSE);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case Tab.DASHBOARD:
         return (
           <DashboardOverview
+            isDarkMode={isDarkMode}
             canViewCard={(cardId) => {
               const permissionKey = DASHBOARD_CARD_PERMISSION_BY_ID[cardId];
               if (!permissionKey) return true;
@@ -484,6 +505,16 @@ const App: React.FC = () => {
               if (tab === 'CRM' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.CRM)) setActiveTab(Tab.CRM);
               if (tab === 'SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SOCIAL)) setActiveTab(Tab.SOCIAL);
               if (tab === 'KIOSKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.KIOSKS)) setActiveTab(Tab.KIOSKS);
+              if (tab === 'PRODUCT_SEARCH' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PRODUCT_SEARCH)) setActiveTab(Tab.PRODUCT_SEARCH);
+              if (tab === 'WOLFDEN_UPS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('ups');
+              if (tab === 'WOLFDEN_CRM' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('crm');
+              if (tab === 'WOLFDEN_BOARD' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('board');
+              if (tab === 'WOLFDEN_TASKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('tasks');
+              if (tab === 'PULSE_SALES' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('sales');
+              if (tab === 'PULSE_ALPHAOS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('alphaos');
+              if (tab === 'PULSE_WEBSITE' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('website');
+              if (tab === 'PULSE_SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('social');
+              if (tab === 'PULSE_REVIEWS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('reviews');
               if (tab === 'UPDATE' && canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL)) {
                 setUpdatePanelOpen(true);
               }
@@ -518,6 +549,24 @@ const App: React.FC = () => {
             onOpenChangePassword={openChangePasswordModal}
             requestedPanel={requestedSettingsPanel}
             onConsumeRequestedPanel={() => setRequestedSettingsPanel(null)}
+          />
+        );
+      case Tab.WOLFDEN:
+        return (
+          <WolfdenWorkspace
+            authUser={authUser!}
+            isDarkMode={isDarkMode}
+            requestedSubTab={requestedWolfdenSubTab}
+            requestedSubTabToken={requestedWolfdenSubTabToken}
+          />
+        );
+      case Tab.PULSE:
+        return (
+          <PulseWorkspace
+            authUser={authUser!}
+            isDarkMode={isDarkMode}
+            requestedSubTab={requestedPulseSubTab}
+            requestedSubTabToken={requestedPulseSubTabToken}
           />
         );
       default:
@@ -625,12 +674,32 @@ const App: React.FC = () => {
           </button>
 
           <nav className="flex-1 py-6 px-3 space-y-1.5">
-            {canView(Tab.CRM) && (
+            {canView(Tab.DASHBOARD) && (
               <NavItem
-                icon={<MessageSquare size={20} />}
-                label="AP CRM"
-                isActive={activeTab === Tab.CRM}
-                onClick={() => setActiveTab(Tab.CRM)}
+                icon={<LayoutDashboard size={20} />}
+                label="Dashboard"
+                isActive={activeTab === Tab.DASHBOARD}
+                onClick={() => setActiveTab(Tab.DASHBOARD)}
+                isOpen={sidebarOpen}
+                isDarkMode={isDarkMode}
+              />
+            )}
+            {canView(Tab.WOLFDEN) && (
+              <NavItem
+                icon={<Inbox size={20} />}
+                label="Den"
+                isActive={activeTab === Tab.WOLFDEN}
+                onClick={() => setActiveTab(Tab.WOLFDEN)}
+                isOpen={sidebarOpen}
+                isDarkMode={isDarkMode}
+              />
+            )}
+            {canView(Tab.PULSE) && (
+              <NavItem
+                icon={<Zap size={20} />}
+                label="Pulse"
+                isActive={activeTab === Tab.PULSE}
+                onClick={() => setActiveTab(Tab.PULSE)}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
@@ -665,32 +734,12 @@ const App: React.FC = () => {
                 isDarkMode={isDarkMode}
               />
             )}
-            {canView(Tab.TASKS) && (
-              <NavItem
-                icon={<CheckSquare size={20} />}
-                label="Tasks"
-                isActive={activeTab === Tab.TASKS}
-                onClick={() => setActiveTab(Tab.TASKS)}
-                isOpen={sidebarOpen}
-                isDarkMode={isDarkMode}
-              />
-            )}
             {canView(Tab.KIOSKS) && (
               <NavItem
                 icon={<Monitor size={20} />}
                 label="AlphaOS"
                 isActive={activeTab === Tab.KIOSKS}
                 onClick={() => setActiveTab(Tab.KIOSKS)}
-                isOpen={sidebarOpen}
-                isDarkMode={isDarkMode}
-              />
-            )}
-            {canView(Tab.MESSAGE_BOARD) && (
-              <NavItem
-                icon={<ClipboardList size={20} />}
-                label="Message Board"
-                isActive={activeTab === Tab.MESSAGE_BOARD}
-                onClick={() => setActiveTab(Tab.MESSAGE_BOARD)}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />

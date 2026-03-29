@@ -10,17 +10,30 @@ export const MODULE_PERMISSION_KEYS = {
   KIOSKS: "module.kiosks",
   MESSAGE_BOARD: "module.message_board",
   SETTINGS: "module.settings",
+  WOLFDEN: "module.wolfden",
+  PULSE: "module.pulse",
 } as const;
 
 export const DASHBOARD_CARD_PERMISSION_BY_ID: Record<string, string> = {
   sales: "card.dashboard.sales",
+  "pulse-sales": "card.dashboard.pulse_sales",
+  "pulse-alphaos": "card.dashboard.pulse_alphaos",
+  "pulse-website": "card.dashboard.pulse_website",
+  "pulse-social": "card.dashboard.pulse_social",
+  "pulse-reviews": "card.dashboard.pulse_reviews",
   tasks: "card.dashboard.tasks",
+  "den-ups": "card.dashboard.den_ups",
+  "den-crm": "card.dashboard.den_crm",
+  "den-board": "card.dashboard.den_board",
+  "den-tasks": "card.dashboard.den_tasks",
   "update-db": "card.dashboard.update_db",
   "manager-specials": "card.dashboard.manager_specials",
   kiosks: "card.dashboard.kiosks",
   "message-board": "card.dashboard.message_board",
   crm: "card.dashboard.crm",
   "social-posts": "card.dashboard.social_posts",
+  "product-search": "card.dashboard.product_search",
+  quicklinks: "card.dashboard.quicklinks",
 };
 
 export const FEATURE_PERMISSION_KEYS = {
@@ -31,15 +44,44 @@ export const MODULE_TO_DASHBOARD_CARD_KEYS: Record<string, string[]> = {
   [MODULE_PERMISSION_KEYS.DASHBOARD]: [
     DASHBOARD_CARD_PERMISSION_BY_ID["update-db"],
     DASHBOARD_CARD_PERMISSION_BY_ID["manager-specials"],
+    DASHBOARD_CARD_PERMISSION_BY_ID.quicklinks,
   ],
-  [MODULE_PERMISSION_KEYS.SALES]: [DASHBOARD_CARD_PERMISSION_BY_ID.sales],
-  [MODULE_PERMISSION_KEYS.PRODUCT_SEARCH]: [],
+  [MODULE_PERMISSION_KEYS.SALES]: [
+    DASHBOARD_CARD_PERMISSION_BY_ID.sales,
+    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-sales"],
+  ],
+  [MODULE_PERMISSION_KEYS.PRODUCT_SEARCH]: [DASHBOARD_CARD_PERMISSION_BY_ID["product-search"]],
   [MODULE_PERMISSION_KEYS.CRM]: [DASHBOARD_CARD_PERMISSION_BY_ID.crm],
-  [MODULE_PERMISSION_KEYS.SOCIAL]: [DASHBOARD_CARD_PERMISSION_BY_ID["social-posts"]],
-  [MODULE_PERMISSION_KEYS.TASKS]: [DASHBOARD_CARD_PERMISSION_BY_ID.tasks],
-  [MODULE_PERMISSION_KEYS.KIOSKS]: [DASHBOARD_CARD_PERMISSION_BY_ID.kiosks],
-  [MODULE_PERMISSION_KEYS.MESSAGE_BOARD]: [DASHBOARD_CARD_PERMISSION_BY_ID["message-board"]],
+  [MODULE_PERMISSION_KEYS.SOCIAL]: [
+    DASHBOARD_CARD_PERMISSION_BY_ID["social-posts"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-social"],
+  ],
+  [MODULE_PERMISSION_KEYS.TASKS]: [
+    DASHBOARD_CARD_PERMISSION_BY_ID.tasks,
+    DASHBOARD_CARD_PERMISSION_BY_ID["den-tasks"],
+  ],
+  [MODULE_PERMISSION_KEYS.KIOSKS]: [
+    DASHBOARD_CARD_PERMISSION_BY_ID.kiosks,
+    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-alphaos"],
+  ],
+  [MODULE_PERMISSION_KEYS.MESSAGE_BOARD]: [
+    DASHBOARD_CARD_PERMISSION_BY_ID["message-board"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["den-board"],
+  ],
   [MODULE_PERMISSION_KEYS.SETTINGS]: [],
+  [MODULE_PERMISSION_KEYS.WOLFDEN]: [
+    DASHBOARD_CARD_PERMISSION_BY_ID["den-ups"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["den-crm"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["den-board"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["den-tasks"],
+  ],
+  [MODULE_PERMISSION_KEYS.PULSE]: [
+    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-sales"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-alphaos"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-website"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-social"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-reviews"],
+  ],
 };
 
 const OWNER_DEFAULTS = [
@@ -59,6 +101,8 @@ export const ROLE_FALLBACK_PERMISSION_KEYS: Record<UserRole, string[]> = {
     MODULE_PERMISSION_KEYS.TASKS,
     MODULE_PERMISSION_KEYS.KIOSKS,
     MODULE_PERMISSION_KEYS.MESSAGE_BOARD,
+    MODULE_PERMISSION_KEYS.WOLFDEN,
+    MODULE_PERMISSION_KEYS.PULSE,
     ...Object.values(DASHBOARD_CARD_PERMISSION_BY_ID),
     FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL,
   ],
@@ -68,6 +112,8 @@ export const ROLE_FALLBACK_PERMISSION_KEYS: Record<UserRole, string[]> = {
     MODULE_PERMISSION_KEYS.CRM,
     MODULE_PERMISSION_KEYS.TASKS,
     MODULE_PERMISSION_KEYS.MESSAGE_BOARD,
+    MODULE_PERMISSION_KEYS.WOLFDEN,
+    MODULE_PERMISSION_KEYS.PULSE,
     DASHBOARD_CARD_PERMISSION_BY_ID.tasks,
     DASHBOARD_CARD_PERMISSION_BY_ID["message-board"],
     DASHBOARD_CARD_PERMISSION_BY_ID.crm,
