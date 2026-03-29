@@ -96,6 +96,32 @@ type SalesDashboardProps = {
   showTooltips?: boolean;
 };
 
+const DEFAULT_STAT_CARD_ORDER = ["range-selector", "sales-overview", "finance-overview"];
+
+const normalizeStatCardOrder = (value: unknown): string[] => {
+  const allowed = new Set(["range-selector", "sales-overview", "finance-overview"]);
+  const legacyMap: Record<string, string> = {
+    transactions: "sales-overview",
+    "total-sales": "sales-overview",
+    "avg-ticket": "sales-overview",
+    "average-ticket": "sales-overview",
+    "financed-amount": "finance-overview",
+    "financed-transactions": "finance-overview",
+  };
+
+  const raw = Array.isArray(value) ? value.map((entry) => String(entry)) : DEFAULT_STAT_CARD_ORDER;
+  const normalized = raw
+    .map((entry) => legacyMap[entry] ?? entry)
+    .filter((entry) => allowed.has(entry));
+  const deduped = Array.from(new Set(normalized));
+
+  for (const entry of DEFAULT_STAT_CARD_ORDER) {
+    if (!deduped.includes(entry)) deduped.push(entry);
+  }
+
+  return deduped;
+};
+
 const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showTooltips = false }) => {
   const [salesData, setSalesData] = useState<SalespersonPoint[]>([]);
   const [storeData, setStoreData] = useState<StoreData[]>([]);
@@ -117,10 +143,10 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return parsed;
+        return normalizeStatCardOrder(parsed);
       } catch (e) {}
     }
-    return ["range-selector", "transactions", "total-sales", "financed-amount", "financed-transactions", "avg-ticket"];
+    return DEFAULT_STAT_CARD_ORDER;
   });
 
   useEffect(() => {
@@ -1030,6 +1056,20 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   const avgTicketPct = pctChange(avgTicket, avgTicketCompare);
 
   const avgTicketUp = avgTicketPct >= 0;
+  const salesOverviewPrimaryIsQty = itemSortMetric === "qty";
+  const salesOverviewPrimaryLabel = salesOverviewPrimaryIsQty ? "Transactions" : "Total Sales";
+  const salesOverviewPrimaryValue = salesOverviewPrimaryIsQty
+    ? summary.lines.toLocaleString()
+    : `$${summary.sales.toLocaleString()}`;
+  const salesOverviewPrimaryPct = salesOverviewPrimaryIsQty ? linesPct : revenuePct;
+  const salesOverviewPrimaryUp = salesOverviewPrimaryIsQty ? linesUp : revenueUp;
+  const financeOverviewPrimaryIsQty = itemSortMetric === "qty";
+  const financeOverviewPrimaryLabel = financeOverviewPrimaryIsQty ? "Financed Transactions" : "Financed Amount";
+  const financeOverviewPrimaryValue = financeOverviewPrimaryIsQty
+    ? finance.financedLines.toLocaleString()
+    : `$${finance.financedAmount.toLocaleString()}`;
+  const financeOverviewPrimaryPct = financeOverviewPrimaryIsQty ? financedLinesPct : financedAmountPct;
+  const financeOverviewPrimaryUp = financeOverviewPrimaryIsQty ? financedLinesUp : financedAmountUp;
   const rangeLabel = useMemo(() => {
     if (!currentRangeInput) return "Invalid Range";
     if (currentRangeInput.start === addDaysYmd(currentRangeInput.endExclusive, -1)) {
@@ -1384,165 +1424,130 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
             )}
           </div>
         );
+      case "sales-overview":
       case "transactions":
-        return (
-          <div
-            className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between relative fd-print-card h-full"
-            data-print-id="transactions"
-           
-           
-          >
-            <div className="w-full">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-500">
-                  Transactions
-                  {renderHelp("Count of distinct sales tickets in the date range (from sales report).")}
-                </p>
-                {renderCardToggle("transactions")}
-              </div>
-              {!isCardCollapsed("transactions") && (
-                <div className="flex items-center justify-between mt-3">
-                  <div>
-                    <h3 className="text-2xl font-bold text-slate-800">{summary.lines.toLocaleString()}</h3>
-                    {hasCompare && (
-                      <div className={`flex items-center text-sm mt-1 ${linesUp ? "text-green-600" : "text-red-500"}`}>
-                        {linesUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-                        <span className="font-medium">{Math.abs(linesPct).toFixed(1)}%</span>
-                        <span className="text-slate-400 ml-1">{compareHint}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-full text-slate-700">
-                    <Database size={24} />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
       case "total-sales":
-        return (
-          <div
-            className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between relative fd-print-card h-full"
-            data-print-id="total-sales"
-           
-           
-          >
-            <div className="w-full">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-500">
-                  Total Sales
-                  {renderHelp("Sum of ticket totals for the date range (from sales report).")}
-                </p>
-                {renderCardToggle("total-sales")}
-              </div>
-              {!isCardCollapsed("total-sales") && (
-                <div className="flex items-center justify-between mt-3">
-                  <div>
-                    <h3 className="text-2xl font-bold text-slate-800">${summary.sales.toLocaleString()}</h3>
-                    {hasCompare && (
-                      <div className={`flex items-center text-sm mt-1 ${revenueUp ? "text-green-600" : "text-red-500"}`}>
-                        {revenueUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-                        <span className="font-medium">{Math.abs(revenuePct).toFixed(1)}%</span>
-                        <span className="text-slate-400 ml-1">{compareHint}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 bg-blue-50 rounded-full text-blue-600">
-                    <ShoppingBag size={24} />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      case "financed-amount":
-        return (
-          <div
-            className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card h-full"
-            data-print-id="financed-amount"
-           
-           
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-slate-500">
-                Financed Amount
-                {renderHelp("Sum of financed amounts on tickets in the date range (from sales report).")}
-              </p>
-              {renderCardToggle("financed-amount")}
-            </div>
-            {!isCardCollapsed("financed-amount") && (
-              <div className="mt-3">
-                <h3 className="text-2xl font-bold text-slate-800">${finance.financedAmount.toLocaleString()}</h3>
-                <p className="text-sm text-slate-400 mt-1">{financeAmountPctOfSales.toFixed(1)}% of sales financed</p>
-                {hasCompare && (
-                  <div className={`flex items-center text-sm mt-2 ${financedAmountUp ? "text-green-600" : "text-red-500"}`}>
-                    {financedAmountUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-                    <span className="font-medium">{Math.abs(financedAmountPct).toFixed(1)}%</span>
-                    <span className="text-slate-400 ml-1">{compareHint}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      case "financed-transactions":
-        return (
-          <div
-            className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card h-full"
-            data-print-id="financed-transactions"
-           
-           
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-slate-500">
-                Financed Transactions
-                {renderHelp("Count of tickets with finance amount or balance > 0 (from sales report).")}
-              </p>
-              {renderCardToggle("financed-transactions")}
-            </div>
-            {!isCardCollapsed("financed-transactions") && (
-              <div className="mt-3">
-                <h3 className="text-2xl font-bold text-slate-800">{finance.financedLines.toLocaleString()}</h3>
-                <p className="text-sm text-slate-400 mt-1">{financePenetration.toFixed(1)}% of transactions financed</p>
-                {hasCompare && (
-                  <div className={`flex items-center text-sm mt-2 ${financedLinesUp ? "text-green-600" : "text-red-500"}`}>
-                    {financedLinesUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-                    <span className="font-medium">{Math.abs(financedLinesPct).toFixed(1)}%</span>
-                    <span className="text-slate-400 ml-1">{compareHint}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
       case "avg-ticket":
       case "average-ticket":
         return (
           <div
             className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card h-full"
-            data-print-id="average-ticket"
-           
-           
+            data-print-id="sales-overview"
           >
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-slate-500">
-                Average Ticket
-                {renderHelp("Total sales ÷ transactions for the date range (from sales report).")}
-              </p>
-              {renderCardToggle("average-ticket")}
-            </div>
-            {!isCardCollapsed("average-ticket") && (
-              <div className="mt-3">
-                <h3 className="text-2xl font-bold text-slate-800">${avgTicket.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
-                <p className="text-sm text-slate-400 mt-1">Sales ÷ transactions (A)</p>
-                {hasCompare && (
-                  <div className={`flex items-center text-sm mt-2 ${avgTicketUp ? "text-green-600" : "text-red-500"}`}>
-                    {avgTicketUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-                    <span className="font-medium">{Math.abs(avgTicketPct).toFixed(1)}%</span>
-                    <span className="text-slate-400 ml-1">{compareHint}</span>
-                  </div>
+                Sales Overview
+                {renderHelp(
+                  "The main number follows the header toggle: Sales shows revenue first, and QTY shows transaction count first."
                 )}
+              </p>
+              {renderCardToggle("sales-overview")}
+            </div>
+            {!isCardCollapsed("sales-overview") && (
+              <div className="mt-4 space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      {salesOverviewPrimaryLabel}
+                    </p>
+                    <h3 className="text-2xl font-bold text-slate-800">{salesOverviewPrimaryValue}</h3>
+                    <p className="text-sm text-slate-400 mt-1">
+                      {salesOverviewPrimaryIsQty ? "QTY mode is showing transaction count first." : "Sales mode is showing revenue first."}
+                    </p>
+                    {hasCompare && (
+                      <div className={`flex items-center text-sm mt-2 ${salesOverviewPrimaryUp ? "text-green-600" : "text-red-500"}`}>
+                        {salesOverviewPrimaryUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
+                        <span className="font-medium">{Math.abs(salesOverviewPrimaryPct).toFixed(1)}%</span>
+                        <span className="text-slate-400 ml-1">{compareHint}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className={`p-3 rounded-full ${salesOverviewPrimaryIsQty ? "bg-slate-50 text-slate-700" : "bg-blue-50 text-blue-600"}`}>
+                    {salesOverviewPrimaryIsQty ? <Database size={24} /> : <ShoppingBag size={24} />}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      {salesOverviewPrimaryIsQty ? "Total Sales" : "Transactions"}
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-slate-800">
+                      {salesOverviewPrimaryIsQty ? `$${summary.sales.toLocaleString()}` : summary.lines.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Average Ticket</div>
+                    <div className="mt-1 text-lg font-semibold text-slate-800">
+                      ${avgTicket.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case "finance-overview":
+      case "financed-amount":
+      case "financed-transactions":
+        return (
+          <div
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card h-full"
+            data-print-id="finance-overview"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-slate-500">
+                Finance Overview
+                {renderHelp(
+                  "The main number follows the header toggle: Sales shows financed dollars first, and QTY shows financed transaction count first."
+                )}
+              </p>
+              {renderCardToggle("finance-overview")}
+            </div>
+            {!isCardCollapsed("finance-overview") && (
+              <div className="mt-4 space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      {financeOverviewPrimaryLabel}
+                    </p>
+                    <h3 className="text-2xl font-bold text-slate-800">{financeOverviewPrimaryValue}</h3>
+                    <p className="text-sm text-slate-400 mt-1">
+                      {financeOverviewPrimaryIsQty
+                        ? `${financePenetration.toFixed(1)}% of transactions financed`
+                        : `${financeAmountPctOfSales.toFixed(1)}% of sales financed`}
+                    </p>
+                    {hasCompare && (
+                      <div className={`flex items-center text-sm mt-2 ${financeOverviewPrimaryUp ? "text-green-600" : "text-red-500"}`}>
+                        {financeOverviewPrimaryUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
+                        <span className="font-medium">{Math.abs(financeOverviewPrimaryPct).toFixed(1)}%</span>
+                        <span className="text-slate-400 ml-1">{compareHint}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className={`p-3 rounded-full ${financeOverviewPrimaryIsQty ? "bg-slate-50 text-slate-700" : "bg-emerald-50 text-emerald-600"}`}>
+                    {financeOverviewPrimaryIsQty ? <Database size={24} /> : <ShoppingBag size={24} />}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      {financeOverviewPrimaryIsQty ? "Financed Amount" : "Financed Transactions"}
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-slate-800">
+                      {financeOverviewPrimaryIsQty ? `$${finance.financedAmount.toLocaleString()}` : finance.financedLines.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      {financeOverviewPrimaryIsQty ? "Sales Financed" : "Transaction Penetration"}
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-slate-800">
+                      {financeOverviewPrimaryIsQty ? `${financeAmountPctOfSales.toFixed(1)}%` : `${financePenetration.toFixed(1)}%`}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
