@@ -284,6 +284,8 @@ export async function fetchSalespersonTickets(params: {
     grandTotal: number;
     profit: number;
     marginPct: number | null;
+    pro1stSales: number;
+    pro1stPct: number | null;
     rawSourceFile: string;
   }>
 > {
@@ -307,6 +309,8 @@ export async function fetchSalespersonTickets(params: {
     grandTotal: Number(r.grand_total ?? 0),
     profit: Number(r.profit ?? 0),
     marginPct: r.margin_pct === null || r.margin_pct === undefined ? null : Number(r.margin_pct),
+    pro1stSales: Number(r.pro1st_sales ?? 0),
+    pro1stPct: r.pro1st_pct === null || r.pro1st_pct === undefined ? null : Number(r.pro1st_pct),
     rawSourceFile: String(r.raw_source_file ?? ""),
   }));
 }

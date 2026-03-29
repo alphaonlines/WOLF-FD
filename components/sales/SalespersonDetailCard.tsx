@@ -11,6 +11,8 @@ export type SalespersonTicketRow = {
   grandTotal: number;
   profit: number;
   marginPct: number | null;
+  pro1stSales: number;
+  pro1stPct: number | null;
 };
 
 type SalespersonDetailCardProps = {
@@ -46,6 +48,8 @@ const SalespersonDetailCard: React.FC<SalespersonDetailCardProps> = ({
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Location</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Pro1st</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Pro1st %</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Profit</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Margin %</th>
               </tr>
@@ -63,6 +67,10 @@ const SalespersonDetailCard: React.FC<SalespersonDetailCardProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.location || "(unknown)"}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.grandTotal.toLocaleString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.pro1stSales.toLocaleString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {row.pro1stPct !== null ? `${row.pro1stPct.toFixed(1)}%` : "N/A"}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.profit.toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                     {row.marginPct !== null ? `${row.marginPct.toFixed(1)}%` : "N/A"}
