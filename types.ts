@@ -285,6 +285,8 @@ export interface AuthConfig {
   googleWorkspaceEnabled: boolean;
   googleClientId: string;
   googleHostedDomain: string;
+  updatedAt?: string | null;
+  source?: "database" | "environment";
 }
 
 export interface AccessRequestProfile {

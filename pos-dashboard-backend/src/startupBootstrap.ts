@@ -164,6 +164,22 @@ async function ensureAuthSchema(pool: Pool) {
   await pool.query(`ALTER TABLE user_permissions ALTER COLUMN updated_at SET DEFAULT now();`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user_id);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_permissions_key ON user_permissions(permission_key);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key         TEXT PRIMARY KEY,
+      value_json  JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS key TEXT;`);
+  await pool.query(`ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS value_json JSONB;`);
+  await pool.query(`ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE app_settings ALTER COLUMN value_json SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE app_settings ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE app_settings ALTER COLUMN updated_at SET DEFAULT now();`);
 }
 
 async function ensureDefaultRoles(pool: Pool) {

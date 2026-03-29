@@ -18,6 +18,8 @@ type AuthConfigResponse = {
   googleWorkspaceEnabled?: boolean;
   googleClientId?: string;
   googleHostedDomain?: string;
+  updatedAt?: string | null;
+  source?: "database" | "environment";
 };
 
 type GoogleRequestProfileResponse = {
@@ -115,6 +117,48 @@ export async function fetchAuthConfig(): Promise<AuthConfig> {
     googleWorkspaceEnabled: Boolean(json.googleWorkspaceEnabled),
     googleClientId: String(json.googleClientId ?? "").trim(),
     googleHostedDomain: String(json.googleHostedDomain ?? "").trim().toLowerCase(),
+    updatedAt: typeof json.updatedAt === "string" ? json.updatedAt : null,
+    source: json.source === "database" ? "database" : "environment",
+  };
+}
+
+export async function fetchAuthWorkspaceSettings(): Promise<AuthConfig> {
+  const res = await authFetch("/api/admin/auth-settings");
+  if (!res.ok) {
+    const error = await readApiError(res, "Unable to load auth settings.");
+    throw new Error(error);
+  }
+  const json = (await res.json()) as AuthConfigResponse;
+  return {
+    googleWorkspaceEnabled: Boolean(json.googleWorkspaceEnabled),
+    googleClientId: String(json.googleClientId ?? "").trim(),
+    googleHostedDomain: String(json.googleHostedDomain ?? "").trim().toLowerCase(),
+    updatedAt: typeof json.updatedAt === "string" ? json.updatedAt : null,
+    source: json.source === "database" ? "database" : "environment",
+  };
+}
+
+export async function updateAuthWorkspaceSettings(input: AuthConfig): Promise<AuthConfig> {
+  const res = await authFetch("/api/admin/auth-settings", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      googleWorkspaceEnabled: Boolean(input.googleWorkspaceEnabled),
+      googleClientId: String(input.googleClientId ?? "").trim(),
+      googleHostedDomain: String(input.googleHostedDomain ?? "").trim().toLowerCase(),
+    }),
+  });
+  if (!res.ok) {
+    const error = await readApiError(res, "Unable to save auth settings.");
+    throw new Error(error);
+  }
+  const json = (await res.json()) as AuthConfigResponse;
+  return {
+    googleWorkspaceEnabled: Boolean(json.googleWorkspaceEnabled),
+    googleClientId: String(json.googleClientId ?? "").trim(),
+    googleHostedDomain: String(json.googleHostedDomain ?? "").trim().toLowerCase(),
+    updatedAt: typeof json.updatedAt === "string" ? json.updatedAt : null,
+    source: json.source === "database" ? "database" : "environment",
   };
 }
 

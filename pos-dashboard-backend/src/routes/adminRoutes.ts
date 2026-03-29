@@ -2,6 +2,8 @@ import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseTaskIdParam } from "../parsers";
 import { PERMISSION_CATALOG, isValidPermissionKey } from "../permissionCatalog";
+import { loadGoogleWorkspaceAuthSettings, saveGoogleWorkspaceAuthSettings } from "../appSettings";
+import { GOOGLE_WORKSPACE_CLIENT_ID, GOOGLE_WORKSPACE_DOMAIN } from "../runtimeConfig";
 
 type AuthUserLike = {
   id: string;
@@ -88,6 +90,44 @@ export function registerAdminRoutes({
       effectivePermissions: explicitCount > 0 ? explicitPermissions : rolePermissions,
     };
   };
+
+  app.get("/api/admin/auth-settings", requireOwner, async (_req, res) => {
+    const settings = await loadGoogleWorkspaceAuthSettings(pool, {
+      googleWorkspaceEnabled: Boolean(GOOGLE_WORKSPACE_CLIENT_ID),
+      googleClientId: GOOGLE_WORKSPACE_CLIENT_ID,
+      googleHostedDomain: GOOGLE_WORKSPACE_DOMAIN,
+    });
+
+    res.json({
+      ok: true,
+      googleWorkspaceEnabled: settings.googleWorkspaceEnabled,
+      googleClientId: settings.googleClientId,
+      googleHostedDomain: settings.googleHostedDomain,
+      updatedAt: settings.updatedAt,
+      source: settings.source,
+    });
+  });
+
+  app.patch("/api/admin/auth-settings", requireOwner, async (req, res) => {
+    const next = await saveGoogleWorkspaceAuthSettings(
+      pool,
+      {
+        googleWorkspaceEnabled: Boolean(req.body?.googleWorkspaceEnabled),
+        googleClientId: typeof req.body?.googleClientId === "string" ? req.body.googleClientId : "",
+        googleHostedDomain: typeof req.body?.googleHostedDomain === "string" ? req.body.googleHostedDomain : "",
+      },
+      GOOGLE_WORKSPACE_DOMAIN
+    );
+
+    res.json({
+      ok: true,
+      googleWorkspaceEnabled: next.googleWorkspaceEnabled,
+      googleClientId: next.googleClientId,
+      googleHostedDomain: next.googleHostedDomain,
+      updatedAt: next.updatedAt,
+      source: next.source,
+    });
+  });
 
   app.get("/api/admin/roles", requireOwner, async (_req, res) => {
     const r = await pool.query("SELECT role_key, label FROM roles ORDER BY role_key ASC");

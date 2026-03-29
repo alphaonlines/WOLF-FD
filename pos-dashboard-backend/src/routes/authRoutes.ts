@@ -2,6 +2,7 @@ import { OAuth2Client } from "google-auth-library";
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { GOOGLE_WORKSPACE_CLIENT_ID, GOOGLE_WORKSPACE_DOMAIN } from "../runtimeConfig";
+import { loadGoogleWorkspaceAuthSettings } from "../appSettings";
 
 type AuthUserLike = {
   id: string;
@@ -40,8 +41,6 @@ type GooglePayloadLike = {
   hd?: string;
 };
 
-const googleClient = GOOGLE_WORKSPACE_CLIENT_ID ? new OAuth2Client(GOOGLE_WORKSPACE_CLIENT_ID) : null;
-
 function normalizeEmail(value: any): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
@@ -70,14 +69,24 @@ function buildGoogleRequestProfile(payload: GooglePayloadLike, row?: any) {
   };
 }
 
-async function verifyGoogleCredential(credential: string): Promise<GooglePayloadLike> {
-  if (!GOOGLE_WORKSPACE_CLIENT_ID || !googleClient) {
+async function verifyGoogleCredential(pool: Pool, credential: string): Promise<{
+  payload: GooglePayloadLike;
+  config: Awaited<ReturnType<typeof loadGoogleWorkspaceAuthSettings>>;
+}> {
+  const config = await loadGoogleWorkspaceAuthSettings(pool, {
+    googleWorkspaceEnabled: Boolean(GOOGLE_WORKSPACE_CLIENT_ID),
+    googleClientId: GOOGLE_WORKSPACE_CLIENT_ID,
+    googleHostedDomain: GOOGLE_WORKSPACE_DOMAIN,
+  });
+
+  if (!config.googleWorkspaceEnabled || !config.googleClientId) {
     throw new Error("google_workspace_not_configured");
   }
 
+  const googleClient = new OAuth2Client(config.googleClientId);
   const ticket = await googleClient.verifyIdToken({
     idToken: credential,
-    audience: GOOGLE_WORKSPACE_CLIENT_ID,
+    audience: config.googleClientId,
   });
   const payload = ticket.getPayload() as GooglePayloadLike | undefined;
   if (!payload?.email || payload.email_verified !== true) {
@@ -85,10 +94,10 @@ async function verifyGoogleCredential(credential: string): Promise<GooglePayload
   }
   const email = normalizeEmail(payload.email);
   const hostedDomain = String(payload.hd || "").trim().toLowerCase();
-  if (!email.endsWith(`@${GOOGLE_WORKSPACE_DOMAIN}`) && hostedDomain !== GOOGLE_WORKSPACE_DOMAIN) {
+  if (!email.endsWith(`@${config.googleHostedDomain}`) && hostedDomain !== config.googleHostedDomain) {
     throw new Error("google_workspace_domain_required");
   }
-  return payload;
+  return { payload, config };
 }
 
 async function createAuthSessionForUser({
@@ -154,11 +163,18 @@ export function registerAuthRoutes({
   buildAuthUser,
 }: RegisterAuthRoutesDeps) {
   app.get("/api/auth/config", async (_req, res) => {
-    res.json({
-      ok: true,
+    const config = await loadGoogleWorkspaceAuthSettings(pool, {
       googleWorkspaceEnabled: Boolean(GOOGLE_WORKSPACE_CLIENT_ID),
       googleClientId: GOOGLE_WORKSPACE_CLIENT_ID,
       googleHostedDomain: GOOGLE_WORKSPACE_DOMAIN,
+    });
+    res.json({
+      ok: true,
+      googleWorkspaceEnabled: config.googleWorkspaceEnabled,
+      googleClientId: config.googleClientId,
+      googleHostedDomain: config.googleHostedDomain,
+      updatedAt: config.updatedAt,
+      source: config.source,
     });
   });
 
@@ -204,7 +220,7 @@ export function registerAuthRoutes({
     if (!credential) return res.status(400).json({ ok: false, error: "google credential is required" });
 
     try {
-      const payload = await verifyGoogleCredential(credential);
+      const { payload, config } = await verifyGoogleCredential(pool, credential);
       const email = normalizeEmail(payload.email);
       const userRes = await loadUserRecordByEmail(pool, email);
       const row = userRes.rows[0];
@@ -287,7 +303,12 @@ export function registerAuthRoutes({
         return res.status(403).json({ ok: false, error: "google email must be verified" });
       }
       if (message === "google_workspace_domain_required") {
-        return res.status(403).json({ ok: false, error: `use your @${GOOGLE_WORKSPACE_DOMAIN} Google account` });
+        const config = await loadGoogleWorkspaceAuthSettings(pool, {
+          googleWorkspaceEnabled: Boolean(GOOGLE_WORKSPACE_CLIENT_ID),
+          googleClientId: GOOGLE_WORKSPACE_CLIENT_ID,
+          googleHostedDomain: GOOGLE_WORKSPACE_DOMAIN,
+        });
+        return res.status(403).json({ ok: false, error: `use your @${config.googleHostedDomain} Google account` });
       }
       console.error("Google start auth failed:", error);
       return res.status(401).json({ ok: false, error: "google sign-in failed" });
@@ -301,7 +322,7 @@ export function registerAuthRoutes({
     if (!phone) return res.status(400).json({ ok: false, error: "phone number is required" });
 
     try {
-      const payload = await verifyGoogleCredential(credential);
+      const { payload } = await verifyGoogleCredential(pool, credential);
       const email = normalizeEmail(payload.email);
       const name = String(payload.name || email).trim();
       const firstName = normalizeNamePart(payload.given_name);
@@ -391,7 +412,12 @@ export function registerAuthRoutes({
         return res.status(403).json({ ok: false, error: "google email must be verified" });
       }
       if (message === "google_workspace_domain_required") {
-        return res.status(403).json({ ok: false, error: `use your @${GOOGLE_WORKSPACE_DOMAIN} Google account` });
+        const config = await loadGoogleWorkspaceAuthSettings(pool, {
+          googleWorkspaceEnabled: Boolean(GOOGLE_WORKSPACE_CLIENT_ID),
+          googleClientId: GOOGLE_WORKSPACE_CLIENT_ID,
+          googleHostedDomain: GOOGLE_WORKSPACE_DOMAIN,
+        });
+        return res.status(403).json({ ok: false, error: `use your @${config.googleHostedDomain} Google account` });
       }
       console.error("Google request access failed:", error);
       return res.status(401).json({ ok: false, error: "google sign-in failed" });

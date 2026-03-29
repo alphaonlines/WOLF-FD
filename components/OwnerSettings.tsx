@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import AdminUsers from "./AdminUsers";
 import AccessPermissions from "./settings/AccessPermissions";
+import AuthWorkspaceSettings from "./settings/AuthWorkspaceSettings";
 import EmployeePermissions from "./settings/EmployeePermissions";
 import SocialIntegrationsSettings from "./settings/SocialIntegrationsSettings";
 
-type SettingsPanel = "users" | "employees" | "permissions" | "social";
+type SettingsPanel = "users" | "employees" | "permissions" | "auth" | "social";
 
 type OwnerSettingsProps = {
   onOpenChangePassword: () => void;
@@ -73,6 +74,15 @@ const OwnerSettings: React.FC<OwnerSettingsProps> = ({
           </button>
           <button
             type="button"
+            onClick={() => setPanel("auth")}
+            className={`px-3 py-1.5 text-sm font-semibold rounded-lg ${
+              panel === "auth" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+            }`}
+          >
+            Login & Auth
+          </button>
+          <button
+            type="button"
             onClick={() => setPanel("social")}
             className={`px-3 py-1.5 text-sm font-semibold rounded-lg ${
               panel === "social" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
@@ -89,6 +99,8 @@ const OwnerSettings: React.FC<OwnerSettingsProps> = ({
         <EmployeePermissions />
       ) : panel === "permissions" ? (
         <AccessPermissions />
+      ) : panel === "auth" ? (
+        <AuthWorkspaceSettings />
       ) : (
         <SocialIntegrationsSettings />
       )}
