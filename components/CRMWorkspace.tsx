@@ -507,14 +507,35 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
 
   const handleSaveCustomer = async () => {
     const fullName = combineName(draft.firstName, draft.lastName);
-    if (!fullName || (!draft.phone.trim() && !draft.email.trim())) {
-      setErrorMessage("Add a customer name and at least a phone number or email.");
-      return;
-    }
     setSaving("customer");
     setStatusMessage(null);
     setErrorMessage(null);
     try {
+      const queueDetails = [draft.visualDescription.trim(), draft.notes.trim()].filter(Boolean).join(" · ");
+      let upListUpdated = false;
+      if (draft.queueId && draft.activeCustomerId) {
+        const row = await updateCrmUpsQueueCustomerInApi(draft.queueId, draft.activeCustomerId, {
+          customer: fullName || undefined,
+          customerType: undefined,
+          details: queueDetails,
+        });
+        setQueue((current) =>
+          current
+            .map((entry) => (entry.id === row.id ? row : entry))
+            .sort((a, b) => a.queuePosition - b.queuePosition)
+        );
+        upListUpdated = true;
+      }
+
+      if (!fullName || (!draft.phone.trim() && !draft.email.trim())) {
+        if (upListUpdated) {
+          setStatusMessage("Up list updated. Add a phone number or email to save the customer account too.");
+          return;
+        }
+        setErrorMessage("Add a customer name and at least a phone number or email.");
+        return;
+      }
+
       const noteBody = [draft.visualDescription.trim(), draft.notes.trim()].filter(Boolean).join("\n\n");
       const result = await upsertCrmCustomerAccount({
         name: fullName,
@@ -524,24 +545,11 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
         notes: noteBody,
       });
 
-      if (draft.queueId && draft.activeCustomerId) {
-        const row = await updateCrmUpsQueueCustomerInApi(draft.queueId, draft.activeCustomerId, {
-          customer: fullName,
-          customerType: undefined,
-          details: draft.visualDescription.trim(),
-        });
-        setQueue((current) =>
-          current
-            .map((entry) => (entry.id === row.id ? row : entry))
-            .sort((a, b) => a.queuePosition - b.queuePosition)
-        );
-      }
-
       setDraft((current) => ({
         ...current,
         accountId: result.customer.id,
       }));
-      setStatusMessage("Customer saved.");
+      setStatusMessage(upListUpdated ? "Customer saved and up list updated." : "Customer saved.");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to save customer.");
     } finally {
