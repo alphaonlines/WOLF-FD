@@ -144,6 +144,7 @@ export const ROLE_FALLBACK_PERMISSION_KEYS: Record<UserRole, string[]> = {
     DASHBOARD_CARD_PERMISSION_BY_ID.tasks,
     DASHBOARD_CARD_PERMISSION_BY_ID["message-board"],
     DASHBOARD_CARD_PERMISSION_BY_ID["pulse-social"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-reviews"],
     DASHBOARD_CARD_PERMISSION_BY_ID["amp-social"],
     DASHBOARD_CARD_PERMISSION_BY_ID["amp-bot"],
   ],

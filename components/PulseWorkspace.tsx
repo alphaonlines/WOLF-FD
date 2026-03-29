@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Activity, BarChart2, Globe, Monitor, Star } from "lucide-react";
-import type { AuthUser } from "../types";
+import { BarChart2, ExternalLink, Globe, Monitor, Star } from "lucide-react";
 import SalesDashboard from "./SalesDashboard";
 import KiosksStatus from "./KiosksStatus";
-import WorkAdvertising from "./WorkAdvertising";
 
 type PulseWorkspaceProps = {
-  authUser: AuthUser;
   isDarkMode: boolean;
   requestedSubTab?: PulseSubTab;
   requestedSubTabToken?: number;
@@ -15,12 +12,12 @@ type PulseWorkspaceProps = {
   showTooltips: boolean;
 };
 
-export type PulseSubTab = "sales" | "alphaos" | "website" | "social" | "reviews";
+export type PulseSubTab = "sales" | "alphaos" | "alphapulse" | "website" | "reviews";
 
 const FD_REVIEWS_URL = "https://www.furnituredistributors.net/content/connect";
+const ALPHAPULSE_URL = "https://furnituredistributors.wolf.discount/alphapulse/";
 
 const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
-  authUser,
   isDarkMode,
   requestedSubTab = "sales",
   requestedSubTabToken,
@@ -61,14 +58,14 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
         <button className={tabBtn(subTab === "alphaos")} onClick={() => setSubTab("alphaos")}>
           <Monitor size={15} /> AlphaOS / Kiosks
         </button>
+        <button className={tabBtn(subTab === "alphapulse")} onClick={() => setSubTab("alphapulse")}>
+          <Globe size={15} /> AlphaPulse
+        </button>
         <button className={tabBtn(subTab === "website")} onClick={() => setSubTab("website")}>
           <Globe size={15} /> Website
         </button>
-        <button className={tabBtn(subTab === "social")} onClick={() => setSubTab("social")}>
-          <Activity size={15} /> Social Analytics
-        </button>
         <button className={tabBtn(subTab === "reviews")} onClick={() => setSubTab("reviews")}>
-          <Star size={15} /> FD Connect Reviews
+          <Star size={15} /> FD Connect
         </button>
       </div>
 
@@ -80,14 +77,9 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
           </div>
         )}
         {subTab === "alphaos" && <KiosksStatus />}
+        {subTab === "alphapulse" && <EmbeddedPage isDarkMode={isDarkMode} src={ALPHAPULSE_URL} title="AlphaPulse" label="AlphaPulse" />}
         {subTab === "website" && <WebsitePage isDarkMode={isDarkMode} />}
-        {subTab === "social" && (
-          <WorkAdvertising
-            authUser={authUser}
-            onOpenSocialIntegrations={() => {}}
-          />
-        )}
-        {subTab === "reviews" && <ReviewsPage isDarkMode={isDarkMode} />}
+        {subTab === "reviews" && <EmbeddedPage isDarkMode={isDarkMode} src={FD_REVIEWS_URL} title="FD Connect Reviews" label="FD Connect" />}
       </div>
     </div>
   );
@@ -108,7 +100,7 @@ const WebsitePage: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => (
       </p>
     </div>
     <a
-      href="https://furnituredistributors.wolf.discount/alphapulse/"
+      href={ALPHAPULSE_URL}
       target="_blank"
       rel="noreferrer"
       className={`mt-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
@@ -122,26 +114,26 @@ const WebsitePage: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => (
   </div>
 );
 
-// ── FD Connect Reviews ───────────────────────────────────
-const ReviewsPage: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => (
+const EmbeddedPage: React.FC<{ isDarkMode: boolean; src: string; title: string; label: string }> = ({ isDarkMode, src, title, label }) => (
   <div className="flex flex-col h-full">
     <iframe
-      src={FD_REVIEWS_URL}
-      title="FD Connect Reviews"
+      src={src}
+      title={title}
       className="flex-1 w-full border-0"
       sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
     />
     <div className={`flex items-center justify-between px-4 py-2 text-xs border-t ${
       isDarkMode ? "border-slate-800 text-slate-500" : "border-slate-200 text-slate-400"
     }`}>
-      <span>furnituredistributors.net/content/connect</span>
+      <span>{src.replace(/^https?:\/\//, "")}</span>
       <a
-        href={FD_REVIEWS_URL}
+        href={src}
         target="_blank"
         rel="noreferrer"
-        className={`font-semibold ${isDarkMode ? "text-sky-400 hover:text-sky-300" : "text-sky-500 hover:text-sky-600"}`}
+        className={`inline-flex items-center gap-1 font-semibold ${isDarkMode ? "text-sky-400 hover:text-sky-300" : "text-sky-500 hover:text-sky-600"}`}
       >
-        Open in new tab ↗
+        <ExternalLink size={12} />
+        Open {label} in new tab
       </a>
     </div>
   </div>

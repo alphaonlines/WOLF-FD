@@ -87,11 +87,11 @@ const getMaintenanceTrackingUrl = () => {
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
-  const [requestedWolfdenSubTab, setRequestedWolfdenSubTab] = useState<'ups' | 'crm' | 'board' | 'meeting' | 'tasks'>('ups');
+  const [requestedWolfdenSubTab, setRequestedWolfdenSubTab] = useState<'ups' | 'crm' | 'board' | 'meeting' | 'tasks' | 'quicklinks'>('ups');
   const [requestedWolfdenSubTabToken, setRequestedWolfdenSubTabToken] = useState(0);
-  const [requestedPulseSubTab, setRequestedPulseSubTab] = useState<'sales' | 'alphaos' | 'website' | 'social' | 'reviews'>('sales');
+  const [requestedPulseSubTab, setRequestedPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('sales');
   const [requestedPulseSubTabToken, setRequestedPulseSubTabToken] = useState(0);
-  const [currentPulseSubTab, setCurrentPulseSubTab] = useState<'sales' | 'alphaos' | 'website' | 'social' | 'reviews'>('sales');
+  const [currentPulseSubTab, setCurrentPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('sales');
   const [requestedAmpSubTab, setRequestedAmpSubTab] = useState<'social' | 'bot'>('social');
   const [requestedAmpSubTabToken, setRequestedAmpSubTabToken] = useState(0);
   const [requestedShopSubTab, setRequestedShopSubTab] = useState<'search' | 'pos'>('search');
@@ -297,14 +297,6 @@ const App: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  useEffect(() => {
-    if (activeTab === Tab.DASHBOARD) {
-      setSidebarOpen(true);
-    } else {
-      setSidebarOpen(false);
-    }
-  }, [activeTab]);
-
   const userRoles = (authUser?.roles || []) as UserRole[];
   const userPermissions = authUser?.permissions || [];
   const permissionMode = authUser?.permissionMode;
@@ -480,13 +472,13 @@ const App: React.FC = () => {
     }, 220);
   };
 
-  const openWolfdenSubTab = (subTab: 'ups' | 'crm' | 'board' | 'meeting' | 'tasks') => {
+  const openWolfdenSubTab = (subTab: 'ups' | 'crm' | 'board' | 'meeting' | 'tasks' | 'quicklinks') => {
     setRequestedWolfdenSubTab(subTab);
     setRequestedWolfdenSubTabToken((current) => current + 1);
     setActiveTab(Tab.WOLFDEN);
   };
 
-  const openPulseSubTab = (subTab: 'sales' | 'alphaos' | 'website' | 'social' | 'reviews') => {
+  const openPulseSubTab = (subTab: 'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews') => {
     setRequestedPulseSubTab(subTab);
     setRequestedPulseSubTabToken((current) => current + 1);
     setActiveTab(Tab.PULSE);
@@ -526,10 +518,11 @@ const App: React.FC = () => {
               if (tab === 'WOLFDEN_CRM' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('crm');
               if (tab === 'WOLFDEN_BOARD' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('board');
               if (tab === 'WOLFDEN_TASKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('tasks');
+              if (tab === 'WOLFDEN_QUICKLINKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('quicklinks');
               if (tab === 'PULSE_SALES' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('sales');
               if (tab === 'PULSE_ALPHAOS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('alphaos');
+              if (tab === 'PULSE_ALPHAPULSE' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('alphapulse');
               if (tab === 'PULSE_WEBSITE' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('website');
-              if (tab === 'PULSE_SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('social');
               if (tab === 'PULSE_REVIEWS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('reviews');
               if (tab === 'AMP_SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('social');
               if (tab === 'AMP_BOT' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('bot');
@@ -583,7 +576,6 @@ const App: React.FC = () => {
       case Tab.PULSE:
         return (
           <PulseWorkspace
-            authUser={authUser!}
             isDarkMode={isDarkMode}
             requestedSubTab={requestedPulseSubTab}
             requestedSubTabToken={requestedPulseSubTabToken}
@@ -779,37 +771,6 @@ const App: React.FC = () => {
                 isDarkMode={isDarkMode}
               />
             )}
-            <div className={`pt-4 mt-4 border-t ${isDarkMode ? 'border-white/6' : 'border-slate-200/80'}`} />
-            <NavItem
-              icon={<Activity size={20} />}
-              label="AlphaPulse"
-              isActive={false}
-              href="https://furnituredistributors.wolf.discount/alphapulse/"
-              target="_blank"
-              rel="noreferrer"
-              isOpen={sidebarOpen}
-              isDarkMode={isDarkMode}
-            />
-            <NavItem
-              icon={<Star size={20} />}
-              label="FD Connect Reviews"
-              isActive={false}
-              href="https://www.furnituredistributors.net/content/connect"
-              target="_blank"
-              rel="noreferrer"
-              isOpen={sidebarOpen}
-              isDarkMode={isDarkMode}
-            />
-            <NavItem
-              icon={<LayoutDashboard size={20} />}
-              label="QuickLinks"
-              isActive={false}
-              href="https://sites.google.com/view/fdserver/home"
-              target="_blank"
-              rel="noreferrer"
-              isOpen={sidebarOpen}
-              isDarkMode={isDarkMode}
-            />
           </nav>
 
           {canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL) && (
