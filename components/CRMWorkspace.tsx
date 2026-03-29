@@ -80,6 +80,7 @@ const CUSTOMER_SEARCH_FIELD_LABELS = {
 
 type CustomerSearchField = keyof typeof CUSTOMER_SEARCH_FIELD_LABELS;
 const CUSTOMER_SEARCH_FIELDS = Object.keys(CUSTOMER_SEARCH_FIELD_LABELS) as CustomerSearchField[];
+type CustomerSearchFieldValues = Partial<Record<CustomerSearchField, string>>;
 
 const buildDraft = (authUser: AuthUser, store: string): CustomerDraft => ({
   leadId: null,
@@ -149,15 +150,17 @@ const splitName = (value: string) => {
 const combineName = (firstName: string, lastName: string) =>
   `${firstName.trim()} ${lastName.trim()}`.trim();
 
-const buildCustomerSearchFromDraft = (draft: CustomerDraft): { fields: CustomerSearchField[]; query: string } => {
+const buildCustomerSearchFromFieldValues = (
+  values: CustomerSearchFieldValues
+): { fields: CustomerSearchField[]; query: string } => {
   const fields = CUSTOMER_SEARCH_FIELDS.filter((field) => {
-    const value = draft[field];
+    const value = values[field];
     return typeof value === "string" && value.trim().length > 0;
   });
 
   return {
     fields,
-    query: fields.map((field) => String(draft[field]).trim()).join(" ").trim(),
+    query: fields.map((field) => String(values[field] || "").trim()).join(" ").trim(),
   };
 };
 
@@ -190,6 +193,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   const [selectedSalespersonName, setSelectedSalespersonName] = useState("");
   const [startDrafts, setStartDrafts] = useState<Record<string, { customer: string; customerType: UpsQueueCustomerType }>>({});
   const [draft, setDraft] = useState<CustomerDraft>(() => buildDraft(authUser, "FD7"));
+  const [customerSearchFieldValues, setCustomerSearchFieldValues] = useState<CustomerSearchFieldValues>({});
   const [customerSearch, setCustomerSearch] = useState<{ fields: CustomerSearchField[]; query: string }>({
     fields: [],
     query: "",
@@ -339,6 +343,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   };
 
   const resetCustomerLookup = () => {
+    setCustomerSearchFieldValues({});
     setCustomerSearch({ fields: [], query: "" });
     setCustomerSearchResults(emptySearch);
     setCustomerSearching(false);
@@ -347,12 +352,16 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
 
   const updateDraftFromInput = <K extends keyof CustomerDraft>(key: K, value: CustomerDraft[K]) => {
     setDraft((current) => {
-      const next = { ...current, [key]: value };
       if (key in CUSTOMER_SEARCH_FIELD_LABELS && typeof value === "string") {
-        setCustomerSearch(buildCustomerSearchFromDraft(next));
+        setCustomerSearchFieldValues((currentSearch) => {
+          const nextSearch = { ...currentSearch, [key]: value };
+          if (!value.trim()) delete nextSearch[key as CustomerSearchField];
+          setCustomerSearch(buildCustomerSearchFromFieldValues(nextSearch));
+          return nextSearch;
+        });
         setCustomerSearchError(null);
       }
-      return next;
+      return { ...current, [key]: value };
     });
   };
 
