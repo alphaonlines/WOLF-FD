@@ -95,14 +95,18 @@ export const APP_THEME_STYLES = `
     @page { size: landscape; margin: 0.35in; }
     body * { visibility: hidden; }
     body { background: #ffffff !important; }
-    .fd-print-area,
-    .fd-print-area * { visibility: visible; }
+    #root,
+    #root * { visibility: hidden !important; }
     .fd-print-area {
-      position: static;
+      position: absolute !important;
+      inset: 0 auto auto 0 !important;
       width: 100%;
+      margin: 0 !important;
       padding: 0 12px !important;
       background: #ffffff !important;
+      visibility: visible !important;
     }
+    .fd-print-area > * { display: none !important; }
     .fd-print-card {
       break-inside: avoid;
       page-break-inside: avoid;
@@ -114,6 +118,10 @@ export const APP_THEME_STYLES = `
     }
     .fd-print-hide { display: none !important; }
     .fd-print-toggle { display: none !important; }
+    .fd-print-only,
+    .fd-print-only * {
+      visibility: visible !important;
+    }
     .fd-print-only { display: block !important; }
     .fd-print-area .grid { display: block !important; }
     .fd-print-area .grid > * { width: 100% !important; margin-bottom: 12px; }
