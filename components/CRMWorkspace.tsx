@@ -66,6 +66,19 @@ const STAGE_OPTIONS: CRMLeadStage[] = ["New", "Contacted", "Appointment", "Quote
 
 const emptySearch: CRMSearchResult = { customers: [], leads: [], orders: [] };
 const todayIso = () => new Date().toISOString().slice(0, 10);
+const CUSTOMER_SEARCH_FIELD_LABELS = {
+  firstName: "First name",
+  lastName: "Last name",
+  visualDescription: "Visual description",
+  phone: "Phone",
+  email: "Email",
+  source: "Source",
+  interest: "Interest",
+  nextAction: "Next action",
+  notes: "Notes",
+} as const;
+
+type CustomerSearchField = keyof typeof CUSTOMER_SEARCH_FIELD_LABELS;
 
 const buildDraft = (authUser: AuthUser, store: string): CustomerDraft => ({
   leadId: null,
@@ -150,9 +163,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   const [salespeople, setSalespeople] = useState<CRMSalespersonOption[]>([]);
   const [queue, setQueue] = useState<CRMUpsQueueItem[]>([]);
   const [selectedQueueId, setSelectedQueueId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<CRMSearchResult>(emptySearch);
-  const [searching, setSearching] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState<null | "customer" | "queue">(null);
@@ -160,6 +170,13 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   const [selectedSalespersonName, setSelectedSalespersonName] = useState("");
   const [startDrafts, setStartDrafts] = useState<Record<string, { customer: string; customerType: UpsQueueCustomerType }>>({});
   const [draft, setDraft] = useState<CustomerDraft>(() => buildDraft(authUser, "FD7"));
+  const [customerSearch, setCustomerSearch] = useState<{ field: CustomerSearchField | null; query: string }>({
+    field: null,
+    query: "",
+  });
+  const [customerSearchResults, setCustomerSearchResults] = useState<CRMSearchResult>(emptySearch);
+  const [customerSearching, setCustomerSearching] = useState(false);
+  const [customerSearchError, setCustomerSearchError] = useState<string | null>(null);
 
   const panelClassName = isDarkMode
     ? "rounded-3xl border border-slate-800 bg-slate-950 shadow-[0_14px_30px_rgba(2,6,23,0.16)]"
@@ -296,6 +313,84 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
+  const resetCustomerLookup = () => {
+    setCustomerSearch({ field: null, query: "" });
+    setCustomerSearchResults(emptySearch);
+    setCustomerSearching(false);
+    setCustomerSearchError(null);
+  };
+
+  const updateDraftFromInput = <K extends keyof CustomerDraft>(key: K, value: CustomerDraft[K]) => {
+    updateDraft(key, value);
+    if (key in CUSTOMER_SEARCH_FIELD_LABELS && typeof value === "string") {
+      setCustomerSearch({ field: key as CustomerSearchField, query: value });
+      setCustomerSearchError(null);
+    }
+  };
+
+  const loadDraftFromQueueCustomer = (item: CRMUpsQueueItem, activeCustomerId?: string | null) => {
+    setSelectedQueueId(item.id);
+    if (item.status !== "working") return;
+
+    const preferredActiveCustomer =
+      (activeCustomerId ? item.activeCustomers.find((entry) => entry.id === activeCustomerId) || null : null) ||
+      (draft.queueId === item.id && draft.activeCustomerId
+        ? item.activeCustomers.find((entry) => entry.id === draft.activeCustomerId) || null
+        : null) ||
+      item.activeCustomers[0] ||
+      null;
+
+    if (!preferredActiveCustomer) return;
+
+    const baseDraft = buildDraft(authUser, item.store || defaultDraftStore);
+    setDraft({
+      ...baseDraft,
+      queueId: item.id,
+      activeCustomerId: preferredActiveCustomer.id,
+      owner: item.rep || baseDraft.owner,
+      ownerUserId: item.repUserId || baseDraft.ownerUserId,
+      ...splitName(preferredActiveCustomer.customer || ""),
+      visualDescription: preferredActiveCustomer.customerDetails || "",
+    });
+    resetCustomerLookup();
+  };
+
+  useEffect(() => {
+    const query = customerSearch.query.trim();
+    if (!query) {
+      setCustomerSearchResults(emptySearch);
+      setCustomerSearching(false);
+      setCustomerSearchError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setCustomerSearching(true);
+    setCustomerSearchError(null);
+
+    const timer = window.setTimeout(() => {
+      void searchCrmRecords(query)
+        .then((results) => {
+          if (cancelled) return;
+          setCustomerSearchResults(results);
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          setCustomerSearchError(error instanceof Error ? error.message : "Customer search failed.");
+          setCustomerSearchResults(emptySearch);
+        })
+        .finally(() => {
+          if (cancelled) return;
+          setCustomerSearching(false);
+        });
+    }, 220);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [customerSearch.query]);
+
   const applyCustomer = (customer: CRMCustomerAccount) => {
     setDraft((current) => ({
       ...current,
@@ -315,6 +410,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       dueDate: customer.dueDate || current.dueDate,
       notes: customer.notes || current.notes,
     }));
+    resetCustomerLookup();
   };
 
   const applyOrder = (order: CRMCustomerOrder) => {
@@ -324,6 +420,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       phone: order.phone || current.phone,
       store: order.location || current.store,
     }));
+    resetCustomerLookup();
   };
 
   const handleAddToQueue = async () => {
@@ -548,22 +645,23 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      setSearchResults(emptySearch);
-      return;
-    }
-    setSearching(true);
-    setStatusMessage(null);
-    setErrorMessage(null);
-    try {
-      setSearchResults(await searchCrmRecords(searchQuery.trim()));
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Search failed.");
-    } finally {
-      setSearching(false);
-    }
-  };
+  const customerSearchMatches = useMemo(() => {
+    const customerEntries = customerSearchResults.customers.map((customer) => ({
+      id: `customer-${customer.id}`,
+      type: "Customer" as const,
+      title: customer.name || "Saved customer",
+      subtitle: [customer.phone || customer.email || "Saved customer", customer.stage || ""].filter(Boolean).join(" · "),
+      onSelect: () => applyCustomer(customer),
+    }));
+    const orderEntries = customerSearchResults.orders.map((order, index) => ({
+      id: `order-${order.saleId}-${index}`,
+      type: "Order" as const,
+      title: order.customerName || "Order match",
+      subtitle: [order.phone || order.receiptNo || order.saleId, order.location || ""].filter(Boolean).join(" · "),
+      onSelect: () => applyOrder(order),
+    }));
+    return [...customerEntries, ...orderEntries].slice(0, 10);
+  }, [customerSearchResults]);
 
   return (
     <div className="px-4 py-4 sm:px-6">
@@ -692,7 +790,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                   return (
                     <div key={item.id} className={`${isSelected ? (isDarkMode ? "bg-slate-900/80" : "bg-sky-50/80") : isDarkMode ? "hover:bg-slate-900/60" : ""}`}>
                       <button
-                        onClick={() => setSelectedQueueId(item.id)}
+                        onClick={() => loadDraftFromQueueCustomer(item)}
                         className="grid w-full grid-cols-[56px_1fr_auto] items-center gap-3 px-4 py-3 text-left"
                       >
                         <div className="text-center">
@@ -902,16 +1000,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                                   <div
                                     key={activeCustomer.id}
                                     onClick={() => {
-                                      setDraft((current) => ({
-                                        ...current,
-                                        queueId: item.id,
-                                        activeCustomerId: activeCustomer.id,
-                                        ...splitName(activeCustomer.customer || combineName(current.firstName, current.lastName)),
-                                        visualDescription: activeCustomer.customerDetails || current.visualDescription,
-                                        owner: item.rep || current.owner,
-                                        ownerUserId: item.repUserId || current.ownerUserId,
-                                        store: item.store || current.store,
-                                      }));
+                                      loadDraftFromQueueCustomer(item, activeCustomer.id);
                                     }}
                                     className={`rounded-2xl border px-3 py-3 ${
                                       isDarkMode
@@ -1006,70 +1095,72 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
 
           <div className="flex flex-col gap-4">
             <div className={`${panelClassName} p-4`}>
-              <div className="flex items-center gap-2">
-                <Search className="h-4 w-4 text-slate-400" />
-                <div className="text-sm font-semibold text-slate-900 dark:text-white">Search</div>
-              </div>
-              <div className="mt-3 flex gap-2">
-                <input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      void handleSearch();
-                    }
-                  }}
-                  placeholder="Name, phone, notes, order..."
-                  className={`min-w-0 flex-1 ${subtleInputClassName}`}
-                />
-                <button onClick={() => void handleSearch()} className={ghostButtonClassName}>
-                  {searching ? "..." : "Go"}
-                </button>
-              </div>
-              {(searchResults.customers.length || searchResults.orders.length) ? (
-                <div className="mt-3 space-y-2">
-                  {searchResults.customers.slice(0, 3).map((customer) => (
-                    <button key={customer.id} onClick={() => applyCustomer(customer)} className={`block w-full rounded-2xl border px-3 py-2 text-left transition ${
-                      isDarkMode
-                        ? "border-slate-800 bg-slate-900 text-slate-100 hover:border-slate-700 hover:bg-slate-800"
-                        : "border-slate-100 bg-slate-50 hover:border-sky-200 hover:bg-white"
-                    }`}>
-                      <div className="text-sm font-medium text-slate-900 dark:text-white">{customer.name}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        {customer.phone || customer.email || "Saved customer"}{customer.stage ? ` · ${customer.stage}` : ""}
-                      </div>
-                    </button>
-                  ))}
-                  {searchResults.orders.slice(0, 2).map((order, index) => (
-                    <button key={`${order.saleId}-${index}`} onClick={() => applyOrder(order)} className={`block w-full rounded-2xl border px-3 py-2 text-left transition ${
-                      isDarkMode
-                        ? "border-slate-800 bg-slate-900 text-slate-100 hover:border-slate-700 hover:bg-slate-800"
-                        : "border-slate-100 bg-slate-50 hover:border-sky-200 hover:bg-white"
-                    }`}>
-                      <div className="text-sm font-medium text-slate-900 dark:text-white">{order.customerName || "Order match"}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{order.phone || order.receiptNo || order.saleId}</div>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-
-            <div className={`${panelClassName} p-4`}>
               <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-semibold text-slate-900 dark:text-white">Customer Panel</div>
+                <div className="flex items-center gap-2">
+                  <Search className="h-4 w-4 text-slate-400" />
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white">Customer Panel</div>
+                </div>
+                {customerSearch.field && customerSearch.query.trim() ? (
+                  <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                    Searching {CUSTOMER_SEARCH_FIELD_LABELS[customerSearch.field]}
+                  </div>
+                ) : null}
               </div>
 
               <div className="mt-3 grid gap-2">
                 <div className="grid grid-cols-2 gap-2">
-                  <input value={draft.firstName} onChange={(event) => updateDraft("firstName", event.target.value)} placeholder="First name" className={subtleInputClassName} />
-                  <input value={draft.lastName} onChange={(event) => updateDraft("lastName", event.target.value)} placeholder="Last name" className={subtleInputClassName} />
+                  <input value={draft.firstName} onChange={(event) => updateDraftFromInput("firstName", event.target.value)} placeholder="First name" className={subtleInputClassName} />
+                  <input value={draft.lastName} onChange={(event) => updateDraftFromInput("lastName", event.target.value)} placeholder="Last name" className={subtleInputClassName} />
                 </div>
-                <input value={draft.visualDescription} onChange={(event) => updateDraft("visualDescription", event.target.value)} placeholder="Visual description" className={subtleInputClassName} />
+                <input value={draft.visualDescription} onChange={(event) => updateDraftFromInput("visualDescription", event.target.value)} placeholder="Visual description" className={subtleInputClassName} />
                 <div className="grid grid-cols-2 gap-2">
-                  <input value={draft.phone} onChange={(event) => updateDraft("phone", event.target.value)} placeholder="Phone" className={subtleInputClassName} />
-                  <input value={draft.email} onChange={(event) => updateDraft("email", event.target.value)} placeholder="Email" className={subtleInputClassName} />
+                  <input value={draft.phone} onChange={(event) => updateDraftFromInput("phone", event.target.value)} placeholder="Phone" className={subtleInputClassName} />
+                  <input value={draft.email} onChange={(event) => updateDraftFromInput("email", event.target.value)} placeholder="Email" className={subtleInputClassName} />
                 </div>
+                {customerSearch.query.trim() ? (
+                  <div className={`rounded-2xl border px-3 py-3 ${
+                    isDarkMode
+                      ? "border-slate-800 bg-slate-900/80"
+                      : "border-slate-200 bg-white/90"
+                  }`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                        Live matches
+                      </div>
+                      <div className="text-xs text-slate-400 dark:text-slate-500">
+                        {customerSearching ? "Searching..." : `${customerSearchMatches.length} shown`}
+                      </div>
+                    </div>
+                    {customerSearchError ? (
+                      <div className="mt-2 text-xs text-rose-600 dark:text-rose-300">{customerSearchError}</div>
+                    ) : null}
+                    {customerSearchMatches.length ? (
+                      <div className="mt-2 space-y-2">
+                        {customerSearchMatches.map((match) => (
+                          <button
+                            key={match.id}
+                            onClick={match.onSelect}
+                            className={`block w-full rounded-2xl border px-3 py-2 text-left transition ${
+                              isDarkMode
+                                ? "border-slate-800 bg-slate-950 text-slate-100 hover:border-slate-700 hover:bg-slate-800"
+                                : "border-slate-100 bg-slate-50 hover:border-sky-200 hover:bg-white"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="text-sm font-medium text-slate-900 dark:text-white">{match.title}</div>
+                              <span className="rounded-full border border-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:border-slate-700 dark:text-slate-300">
+                                {match.type}
+                              </span>
+                            </div>
+                            <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{match.subtitle}</div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : customerSearching ? null : (
+                      <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">No matching customers or orders yet.</div>
+                    )}
+                  </div>
+                ) : null}
                 <div className="grid grid-cols-2 gap-2">
                   <select value={draft.store} onChange={(event) => updateDraft("store", event.target.value)} className={subtleInputClassName}>
                     {LOCATION_OPTIONS.map((location) => <option key={location} value={location}>{location}</option>)}
@@ -1094,17 +1185,23 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                   </select>
                   <input type="date" value={draft.dueDate} onChange={(event) => updateDraft("dueDate", event.target.value)} className={subtleInputClassName} />
                 </div>
-                <input value={draft.source} onChange={(event) => updateDraft("source", event.target.value)} placeholder="Source" className={subtleInputClassName} />
-                <input value={draft.interest} onChange={(event) => updateDraft("interest", event.target.value)} placeholder="Interest" className={subtleInputClassName} />
-                <input value={draft.nextAction} onChange={(event) => updateDraft("nextAction", event.target.value)} placeholder="Next action" className={subtleInputClassName} />
-                <textarea value={draft.notes} onChange={(event) => updateDraft("notes", event.target.value)} rows={4} placeholder="Notes" className={subtleInputClassName} />
+                <input value={draft.source} onChange={(event) => updateDraftFromInput("source", event.target.value)} placeholder="Source" className={subtleInputClassName} />
+                <input value={draft.interest} onChange={(event) => updateDraftFromInput("interest", event.target.value)} placeholder="Interest" className={subtleInputClassName} />
+                <input value={draft.nextAction} onChange={(event) => updateDraftFromInput("nextAction", event.target.value)} placeholder="Next action" className={subtleInputClassName} />
+                <textarea value={draft.notes} onChange={(event) => updateDraftFromInput("notes", event.target.value)} rows={4} placeholder="Notes" className={subtleInputClassName} />
               </div>
 
               <div className="mt-3 flex gap-2">
                 <button onClick={() => void handleSaveCustomer()} disabled={saving !== null} className={successButtonClassName}>
                   {saving === "customer" ? "Saving..." : "Save Customer"}
                 </button>
-                <button onClick={() => setDraft(buildDraft(authUser, defaultDraftStore))} className={ghostButtonClassName}>
+                <button
+                  onClick={() => {
+                    setDraft(buildDraft(authUser, defaultDraftStore));
+                    resetCustomerLookup();
+                  }}
+                  className={ghostButtonClassName}
+                >
                   Clear
                 </button>
               </div>
