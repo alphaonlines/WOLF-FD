@@ -85,7 +85,6 @@ const SalesCorePrintSections: React.FC<SalesCorePrintSectionsProps> = ({
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Store</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Tickets</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Total Retail</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % View</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Own</th>
@@ -101,7 +100,6 @@ const SalesCorePrintSections: React.FC<SalesCorePrintSectionsProps> = ({
                   {printStoreFiltered.map((row) => (
                     <tr key={`store-${row.label}`}>
                       <td className="px-4 py-2 text-slate-700">{row.label || "—"}</td>
-                      <td className="px-4 py-2 text-right text-slate-600">{row.ticketCount}</td>
                       <td className="px-4 py-2 text-right text-slate-700">${Number(row.totalRetail || 0).toLocaleString()}</td>
                       <td className="px-4 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
                       <td className="px-4 py-2 text-right text-slate-600">{row.ownRetailPct.toFixed(1)}%</td>
@@ -115,7 +113,6 @@ const SalesCorePrintSections: React.FC<SalesCorePrintSectionsProps> = ({
                   ))}
                   <tr className="bg-slate-50 font-semibold">
                     <td className="px-4 py-2 text-slate-800">Totals</td>
-                    <td className="px-4 py-2 text-right text-slate-700">{printTotalsStore.totalTickets}</td>
                     <td className="px-4 py-2 text-right text-slate-800">${Number(printTotalsStore.totalRetail || 0).toLocaleString()}</td>
                     <td className="px-4 py-2 text-right text-slate-700">{printTotalsStore.totalRetail > 0 ? "100.0%" : "0.0%"}</td>
                     <td className="px-4 py-2 text-right text-slate-700">--</td>
@@ -148,7 +145,6 @@ const SalesCorePrintSections: React.FC<SalesCorePrintSectionsProps> = ({
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Salesperson</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Tickets</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Total Retail</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % View</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Own</th>
@@ -164,7 +160,6 @@ const SalesCorePrintSections: React.FC<SalesCorePrintSectionsProps> = ({
                   {printSalespersonFiltered.map((row) => (
                     <tr key={`sp-${row.label}`}>
                       <td className="px-4 py-2 text-slate-700">{row.label || "—"}</td>
-                      <td className="px-4 py-2 text-right text-slate-600">{row.ticketCount}</td>
                       <td className="px-4 py-2 text-right text-slate-700">${Number(row.totalRetail || 0).toLocaleString()}</td>
                       <td className="px-4 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
                       <td className="px-4 py-2 text-right text-slate-600">{row.ownRetailPct.toFixed(1)}%</td>
@@ -178,7 +173,6 @@ const SalesCorePrintSections: React.FC<SalesCorePrintSectionsProps> = ({
                   ))}
                   <tr className="bg-slate-50 font-semibold">
                     <td className="px-4 py-2 text-slate-800">Totals</td>
-                    <td className="px-4 py-2 text-right text-slate-700">{printTotalsSalesperson.totalTickets}</td>
                     <td className="px-4 py-2 text-right text-slate-800">${Number(printTotalsSalesperson.totalRetail || 0).toLocaleString()}</td>
                     <td className="px-4 py-2 text-right text-slate-700">{printTotalsSalesperson.totalRetail > 0 ? "100.0%" : "0.0%"}</td>
                     <td className="px-4 py-2 text-right text-slate-700">--</td>
