@@ -2,15 +2,16 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   BarChart3,
+  Bot,
   CheckSquare,
   ChevronDown,
   ClipboardList,
   Globe,
   LayoutDashboard,
-  Link2,
   MessageSquare,
   Monitor,
   Move,
+  Receipt,
   Settings2,
   Star,
   UploadCloud,
@@ -47,7 +48,7 @@ type SnapshotCard = {
   cta: string;
   icon: React.ReactNode;
   onClick: () => void;
-  module: "Dashboard" | "Den" | "Pulse" | "Tools";
+  module: "Dashboard" | "Den" | "Pulse" | "AMP" | "Shop" | "Tools";
   accentClass: string;
   defaultVisible?: boolean;
 };
@@ -213,14 +214,60 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "product-search",
-        title: "Product Search",
-        description: "Search products, pricing, and inventory support tools.",
-        details: "Use this when you need catalog lookup or to get into item-level workflows without dropping into sales or CRM first.",
-        cta: "Open Product Search",
+        title: "Shop Product Search",
+        description: "Search products, pricing, and inventory support tools inside Shop.",
+        details: "Use this when you need catalog lookup or to get into item-level workflows without dropping into Den or Pulse first.",
+        cta: "Open Shop Search",
         icon: <LayoutDashboard size={22} className="text-slate-600" />,
-        onClick: () => onNavigate("PRODUCT_SEARCH"),
-        module: "Tools",
-        accentClass: "from-slate-100 via-slate-50 to-white border-slate-200/80",
+        onClick: () => onNavigate("SHOP_SEARCH"),
+        module: "Shop",
+        accentClass: "from-emerald-100 via-emerald-50 to-white border-emerald-200/80",
+        defaultVisible: true,
+      },
+      {
+        id: "shop-pos",
+        title: "Shop POS",
+        description: "Open the dedicated Shop POS landing page.",
+        details: "This is the new home for POS-specific workflow inside Shop as we wire the live transaction and register views into the module.",
+        cta: "Open Shop POS",
+        icon: <Receipt size={22} className="text-emerald-500" />,
+        onClick: () => onNavigate("SHOP_POS"),
+        module: "Shop",
+        accentClass: "from-emerald-100 via-emerald-50 to-white border-emerald-200/80",
+      },
+      {
+        id: "amp-social",
+        title: "AMP Social Posts",
+        description: "Open the social posts workspace inside AMP.",
+        details: "This takes you straight into the social post and ad view inside the new AMP module so the module opens on the team's current posting workflow.",
+        cta: "Open AMP Social",
+        icon: <Activity size={22} className="text-cyan-500" />,
+        onClick: () => onNavigate("AMP_SOCIAL"),
+        module: "AMP",
+        accentClass: "from-cyan-100 via-cyan-50 to-white border-cyan-200/80",
+        defaultVisible: true,
+      },
+      {
+        id: "amp-bot",
+        title: "AMP AI Bot",
+        description: "Open the AI bot workspace inside AMP.",
+        details: "This puts the bot planning and assistant management view into its own module home next to social posts.",
+        cta: "Open AMP AI Bot",
+        icon: <Bot size={22} className="text-cyan-500" />,
+        onClick: () => onNavigate("AMP_BOT"),
+        module: "AMP",
+        accentClass: "from-cyan-100 via-cyan-50 to-white border-cyan-200/80",
+      },
+      {
+        id: "social-posts",
+        title: "Social Posts",
+        description: "Legacy shortcut into the social workspace.",
+        details: "This card now routes into AMP so older dashboard setups still land in the right module without showing a duplicate sidebar page.",
+        cta: "Open AMP Social",
+        icon: <Activity size={22} className="text-cyan-500" />,
+        onClick: () => onNavigate("AMP_SOCIAL"),
+        module: "AMP",
+        accentClass: "from-cyan-100 via-cyan-50 to-white border-cyan-200/80",
       },
       {
         id: "update-db",
@@ -243,18 +290,6 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
         onClick: () => openExternal("https://furnituredistributors.wolf.discount/fd/manager-specials-upload.html"),
         module: "Tools",
         accentClass: "from-slate-100 via-slate-50 to-white border-slate-200/80",
-      },
-      {
-        id: "quicklinks",
-        title: "QuickLinks",
-        description: "Open the external quick links hub used by the team.",
-        details: "This opens the shared QuickLinks site in a new tab for the broader set of operational shortcuts outside the app.",
-        cta: "Open QuickLinks",
-        icon: <Link2 size={22} className="text-slate-600" />,
-        onClick: () => openExternal("https://sites.google.com/view/fdserver/home"),
-        module: "Tools",
-        accentClass: "from-slate-100 via-slate-50 to-white border-slate-200/80",
-        defaultVisible: true,
       },
     ];
   }, [onNavigate]);

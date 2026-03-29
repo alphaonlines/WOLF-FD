@@ -13,6 +13,8 @@ export enum Tab {
   ADMIN = 'ADMIN',
   WOLFDEN = 'WOLFDEN',
   PULSE = 'PULSE',
+  AMP = 'AMP',
+  SHOP = 'SHOP',
 }
 
 export const TAB_PERMISSION_KEYS: Record<Tab, string> = {
@@ -27,6 +29,8 @@ export const TAB_PERMISSION_KEYS: Record<Tab, string> = {
   [Tab.ADMIN]: MODULE_PERMISSION_KEYS.SETTINGS,
   [Tab.WOLFDEN]: MODULE_PERMISSION_KEYS.WOLFDEN,
   [Tab.PULSE]: MODULE_PERMISSION_KEYS.PULSE,
+  [Tab.AMP]: MODULE_PERMISSION_KEYS.AMP,
+  [Tab.SHOP]: MODULE_PERMISSION_KEYS.SHOP,
 };
 
 export const canAccessTab = (
@@ -63,6 +67,10 @@ export const getTabTitle = (tab: Tab): string => {
       return 'Den';
     case Tab.PULSE:
       return 'Pulse';
+    case Tab.AMP:
+      return 'AMP';
+    case Tab.SHOP:
+      return 'Shop';
     default:
       return 'WOLF FD Dashboard';
   }

@@ -12,6 +12,8 @@ export const MODULE_PERMISSION_KEYS = {
   SETTINGS: "module.settings",
   WOLFDEN: "module.wolfden",
   PULSE: "module.pulse",
+  AMP: "module.amp",
+  SHOP: "module.shop",
 } as const;
 
 export const DASHBOARD_CARD_PERMISSION_BY_ID: Record<string, string> = {
@@ -26,6 +28,10 @@ export const DASHBOARD_CARD_PERMISSION_BY_ID: Record<string, string> = {
   "den-crm": "card.dashboard.den_crm",
   "den-board": "card.dashboard.den_board",
   "den-tasks": "card.dashboard.den_tasks",
+  "amp-social": "card.dashboard.amp_social",
+  "amp-bot": "card.dashboard.amp_bot",
+  "shop-search": "card.dashboard.shop_search",
+  "shop-pos": "card.dashboard.shop_pos",
   "update-db": "card.dashboard.update_db",
   "manager-specials": "card.dashboard.manager_specials",
   kiosks: "card.dashboard.kiosks",
@@ -33,7 +39,6 @@ export const DASHBOARD_CARD_PERMISSION_BY_ID: Record<string, string> = {
   crm: "card.dashboard.crm",
   "social-posts": "card.dashboard.social_posts",
   "product-search": "card.dashboard.product_search",
-  quicklinks: "card.dashboard.quicklinks",
 };
 
 export const FEATURE_PERMISSION_KEYS = {
@@ -44,7 +49,6 @@ export const MODULE_TO_DASHBOARD_CARD_KEYS: Record<string, string[]> = {
   [MODULE_PERMISSION_KEYS.DASHBOARD]: [
     DASHBOARD_CARD_PERMISSION_BY_ID["update-db"],
     DASHBOARD_CARD_PERMISSION_BY_ID["manager-specials"],
-    DASHBOARD_CARD_PERMISSION_BY_ID.quicklinks,
   ],
   [MODULE_PERMISSION_KEYS.SALES]: [
     DASHBOARD_CARD_PERMISSION_BY_ID.sales,
@@ -82,6 +86,14 @@ export const MODULE_TO_DASHBOARD_CARD_KEYS: Record<string, string[]> = {
     DASHBOARD_CARD_PERMISSION_BY_ID["pulse-social"],
     DASHBOARD_CARD_PERMISSION_BY_ID["pulse-reviews"],
   ],
+  [MODULE_PERMISSION_KEYS.AMP]: [
+    DASHBOARD_CARD_PERMISSION_BY_ID["amp-social"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["amp-bot"],
+  ],
+  [MODULE_PERMISSION_KEYS.SHOP]: [
+    DASHBOARD_CARD_PERMISSION_BY_ID["shop-search"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["shop-pos"],
+  ],
 };
 
 const OWNER_DEFAULTS = [
@@ -103,6 +115,8 @@ export const ROLE_FALLBACK_PERMISSION_KEYS: Record<UserRole, string[]> = {
     MODULE_PERMISSION_KEYS.MESSAGE_BOARD,
     MODULE_PERMISSION_KEYS.WOLFDEN,
     MODULE_PERMISSION_KEYS.PULSE,
+    MODULE_PERMISSION_KEYS.AMP,
+    MODULE_PERMISSION_KEYS.SHOP,
     ...Object.values(DASHBOARD_CARD_PERMISSION_BY_ID),
     FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL,
   ],
@@ -114,19 +128,24 @@ export const ROLE_FALLBACK_PERMISSION_KEYS: Record<UserRole, string[]> = {
     MODULE_PERMISSION_KEYS.MESSAGE_BOARD,
     MODULE_PERMISSION_KEYS.WOLFDEN,
     MODULE_PERMISSION_KEYS.PULSE,
+    MODULE_PERMISSION_KEYS.SHOP,
     DASHBOARD_CARD_PERMISSION_BY_ID.tasks,
     DASHBOARD_CARD_PERMISSION_BY_ID["message-board"],
     DASHBOARD_CARD_PERMISSION_BY_ID.crm,
+    DASHBOARD_CARD_PERMISSION_BY_ID["shop-search"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["shop-pos"],
   ],
   Marketing: [
     MODULE_PERMISSION_KEYS.DASHBOARD,
-    MODULE_PERMISSION_KEYS.PRODUCT_SEARCH,
-    MODULE_PERMISSION_KEYS.SOCIAL,
     MODULE_PERMISSION_KEYS.TASKS,
     MODULE_PERMISSION_KEYS.MESSAGE_BOARD,
+    MODULE_PERMISSION_KEYS.PULSE,
+    MODULE_PERMISSION_KEYS.AMP,
     DASHBOARD_CARD_PERMISSION_BY_ID.tasks,
     DASHBOARD_CARD_PERMISSION_BY_ID["message-board"],
-    DASHBOARD_CARD_PERMISSION_BY_ID["social-posts"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-social"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["amp-social"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["amp-bot"],
   ],
 };
 

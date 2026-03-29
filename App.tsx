@@ -1,16 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
   LayoutDashboard,
-  CheckSquare,
-  MessageSquare,
   Sofa,
-  Search,
   Activity,
   Star,
   Moon,
   Sun,
   UploadCloud,
-  Monitor,
   ClipboardList,
   Bot,
   LogOut,
@@ -31,6 +27,8 @@ import TaskManager from './components/TaskManager';
 import OwnerSettings from './components/OwnerSettings';
 import WolfdenWorkspace from './components/WolfdenWorkspace';
 import PulseWorkspace from './components/PulseWorkspace';
+import AmpWorkspace from './components/AmpWorkspace';
+import ShopWorkspace from './components/ShopWorkspace';
 import type { AccessRequestProfile, AuthConfig, AuthUser, UserRole } from './types';
 import { APP_VERSION } from './constants';
 import {
@@ -94,6 +92,10 @@ const App: React.FC = () => {
   const [requestedPulseSubTab, setRequestedPulseSubTab] = useState<'sales' | 'alphaos' | 'website' | 'social' | 'reviews'>('sales');
   const [requestedPulseSubTabToken, setRequestedPulseSubTabToken] = useState(0);
   const [currentPulseSubTab, setCurrentPulseSubTab] = useState<'sales' | 'alphaos' | 'website' | 'social' | 'reviews'>('sales');
+  const [requestedAmpSubTab, setRequestedAmpSubTab] = useState<'social' | 'bot'>('social');
+  const [requestedAmpSubTabToken, setRequestedAmpSubTabToken] = useState(0);
+  const [requestedShopSubTab, setRequestedShopSubTab] = useState<'search' | 'pos'>('search');
+  const [requestedShopSubTabToken, setRequestedShopSubTabToken] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
@@ -490,6 +492,18 @@ const App: React.FC = () => {
     setActiveTab(Tab.PULSE);
   };
 
+  const openAmpSubTab = (subTab: 'social' | 'bot') => {
+    setRequestedAmpSubTab(subTab);
+    setRequestedAmpSubTabToken((current) => current + 1);
+    setActiveTab(Tab.AMP);
+  };
+
+  const openShopSubTab = (subTab: 'search' | 'pos') => {
+    setRequestedShopSubTab(subTab);
+    setRequestedShopSubTabToken((current) => current + 1);
+    setActiveTab(Tab.SHOP);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case Tab.DASHBOARD:
@@ -502,12 +516,12 @@ const App: React.FC = () => {
               return canUsePermission(permissionKey);
             }}
             onNavigate={(tab) => {
-              if (tab === 'SALES' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SALES)) setActiveTab(Tab.SALES);
+              if (tab === 'SALES' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('sales');
               if (tab === 'TASKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.TASKS)) setActiveTab(Tab.TASKS);
               if (tab === 'CRM' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.CRM)) setActiveTab(Tab.CRM);
-              if (tab === 'SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SOCIAL)) setActiveTab(Tab.SOCIAL);
-              if (tab === 'KIOSKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.KIOSKS)) setActiveTab(Tab.KIOSKS);
-              if (tab === 'PRODUCT_SEARCH' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PRODUCT_SEARCH)) setActiveTab(Tab.PRODUCT_SEARCH);
+              if (tab === 'SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('social');
+              if (tab === 'KIOSKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('alphaos');
+              if (tab === 'PRODUCT_SEARCH' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('search');
               if (tab === 'WOLFDEN_UPS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('ups');
               if (tab === 'WOLFDEN_CRM' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('crm');
               if (tab === 'WOLFDEN_BOARD' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('board');
@@ -517,6 +531,10 @@ const App: React.FC = () => {
               if (tab === 'PULSE_WEBSITE' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('website');
               if (tab === 'PULSE_SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('social');
               if (tab === 'PULSE_REVIEWS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('reviews');
+              if (tab === 'AMP_SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('social');
+              if (tab === 'AMP_BOT' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('bot');
+              if (tab === 'SHOP_SEARCH' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('search');
+              if (tab === 'SHOP_POS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('pos');
               if (tab === 'UPDATE' && canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL)) {
                 setUpdatePanelOpen(true);
               }
@@ -572,6 +590,28 @@ const App: React.FC = () => {
             onSubTabChange={setCurrentPulseSubTab}
             itemSortMetric={itemSortMetric}
             showTooltips={showTooltips}
+          />
+        );
+      case Tab.AMP:
+        return (
+          <AmpWorkspace
+            authUser={authUser!}
+            isDarkMode={isDarkMode}
+            requestedSubTab={requestedAmpSubTab}
+            requestedSubTabToken={requestedAmpSubTabToken}
+            onOpenSocialIntegrations={() => {
+              setRequestedSettingsPanel('social');
+              setActiveTab(Tab.ADMIN);
+            }}
+          />
+        );
+      case Tab.SHOP:
+        return (
+          <ShopWorkspace
+            isDarkMode={isDarkMode}
+            requestedSubTab={requestedShopSubTab}
+            requestedSubTabToken={requestedShopSubTabToken}
+            onOpenUploadArea={() => setUpdatePanelOpen(true)}
           />
         );
       default:
@@ -709,42 +749,22 @@ const App: React.FC = () => {
                 isDarkMode={isDarkMode}
               />
             )}
-            {canView(Tab.SALES) && (
+            {canView(Tab.AMP) && (
               <NavItem
-                icon={<LayoutDashboard size={20} />}
-                label="Sales Analysis"
-                isActive={activeTab === Tab.SALES}
-                onClick={() => setActiveTab(Tab.SALES)}
+                icon={<Bot size={20} />}
+                label="AMP"
+                isActive={activeTab === Tab.AMP}
+                onClick={() => setActiveTab(Tab.AMP)}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
             )}
-            {canView(Tab.PRODUCT_SEARCH) && (
+            {canView(Tab.SHOP) && (
               <NavItem
-                icon={<Search size={20} />}
-                label="Product Search"
-                isActive={activeTab === Tab.PRODUCT_SEARCH}
-                onClick={() => setActiveTab(Tab.PRODUCT_SEARCH)}
-                isOpen={sidebarOpen}
-                isDarkMode={isDarkMode}
-              />
-            )}
-            {canView(Tab.SOCIAL) && (
-              <NavItem
-                icon={<Activity size={20} />}
-                label="Social Posts"
-                isActive={activeTab === Tab.SOCIAL}
-                onClick={() => setActiveTab(Tab.SOCIAL)}
-                isOpen={sidebarOpen}
-                isDarkMode={isDarkMode}
-              />
-            )}
-            {canView(Tab.KIOSKS) && (
-              <NavItem
-                icon={<Monitor size={20} />}
-                label="AlphaOS"
-                isActive={activeTab === Tab.KIOSKS}
-                onClick={() => setActiveTab(Tab.KIOSKS)}
+                icon={<ClipboardList size={20} />}
+                label="Shop"
+                isActive={activeTab === Tab.SHOP}
+                onClick={() => setActiveTab(Tab.SHOP)}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
