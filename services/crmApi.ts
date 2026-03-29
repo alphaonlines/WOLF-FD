@@ -505,6 +505,18 @@ const mapCustomerAccount = (row: any): CRMCustomerAccount => ({
   phone: String(row.phone ?? ""),
   email: String(row.email ?? ""),
   store: String(row.store ?? "FD7"),
+  channel: String(row.channel ?? "SMS") as CRMCustomerAccount["channel"],
+  source: String(row.source ?? ""),
+  interest: String(row.interest ?? ""),
+  budget: String(row.budget ?? ""),
+  owner: String(row.owner ?? "Unassigned"),
+  ownerUserId:
+    row.owner_user_id === null || row.owner_user_id === undefined ? null : String(row.owner_user_id),
+  stage: String(row.stage ?? "New") as CRMCustomerAccount["stage"],
+  nextAction: String(row.next_action ?? ""),
+  dueDate: row.due_date ? String(row.due_date).slice(0, 10) : "",
+  lastMessage: String(row.last_message ?? ""),
+  lastTouch: String(row.last_touch ?? ""),
   notes: String(row.notes ?? ""),
 });
 
@@ -543,6 +555,17 @@ export async function upsertCrmCustomerAccount(payload: {
   phone?: string;
   email?: string;
   store?: string;
+  channel?: CRMCustomerAccount["channel"];
+  source?: string;
+  interest?: string;
+  budget?: string;
+  owner?: string;
+  ownerUserId?: string | null;
+  stage?: CRMCustomerAccount["stage"];
+  nextAction?: string;
+  dueDate?: string;
+  lastMessage?: string;
+  lastTouch?: string;
   notes?: string;
 }): Promise<{ customer: CRMCustomerAccount; orders: CRMCustomerOrder[] }> {
   const json = await fetchJson("/api/crm/customers/upsert", {
@@ -553,6 +576,17 @@ export async function upsertCrmCustomerAccount(payload: {
       phone: payload.phone || "",
       email: payload.email || "",
       store: payload.store || "FD7",
+      channel: payload.channel || "SMS",
+      source: payload.source || "",
+      interest: payload.interest || "",
+      budget: payload.budget || "Unspecified",
+      owner: payload.owner || "Unassigned",
+      owner_user_id: payload.ownerUserId || null,
+      stage: payload.stage || "New",
+      next_action: payload.nextAction || "",
+      due_date: payload.dueDate || "",
+      last_message: payload.lastMessage || "",
+      last_touch: payload.lastTouch || "",
       notes: payload.notes || "",
     }),
   });

@@ -665,6 +665,17 @@ CREATE TABLE IF NOT EXISTS crm_customers (
   phone       TEXT NOT NULL DEFAULT '',
   email       TEXT NOT NULL DEFAULT '',
   store       TEXT NOT NULL DEFAULT 'FD7',
+  channel     TEXT NOT NULL DEFAULT 'SMS',
+  source      TEXT NOT NULL DEFAULT '',
+  interest    TEXT NOT NULL DEFAULT '',
+  budget      TEXT NOT NULL DEFAULT 'Unspecified',
+  owner       TEXT NOT NULL DEFAULT 'Unassigned',
+  owner_user_id BIGINT NULL,
+  stage       TEXT NOT NULL DEFAULT 'New',
+  next_action TEXT NOT NULL DEFAULT '',
+  due_date    DATE NULL,
+  last_message TEXT NOT NULL DEFAULT '',
+  last_touch  TEXT NOT NULL DEFAULT '',
   notes       TEXT NOT NULL DEFAULT '',
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -674,6 +685,17 @@ ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS name TEXT;
 ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS phone TEXT;
 ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS store TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS channel TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS source TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS interest TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS budget TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS owner TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS owner_user_id BIGINT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS stage TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS next_action TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS due_date DATE;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS last_message TEXT;
+ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS last_touch TEXT;
 ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS notes TEXT;
 ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
 ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
@@ -681,12 +703,23 @@ ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
 ALTER TABLE crm_customers ALTER COLUMN phone SET DEFAULT '';
 ALTER TABLE crm_customers ALTER COLUMN email SET DEFAULT '';
 ALTER TABLE crm_customers ALTER COLUMN store SET DEFAULT 'FD7';
+ALTER TABLE crm_customers ALTER COLUMN channel SET DEFAULT 'SMS';
+ALTER TABLE crm_customers ALTER COLUMN source SET DEFAULT '';
+ALTER TABLE crm_customers ALTER COLUMN interest SET DEFAULT '';
+ALTER TABLE crm_customers ALTER COLUMN budget SET DEFAULT 'Unspecified';
+ALTER TABLE crm_customers ALTER COLUMN owner SET DEFAULT 'Unassigned';
+ALTER TABLE crm_customers ALTER COLUMN stage SET DEFAULT 'New';
+ALTER TABLE crm_customers ALTER COLUMN next_action SET DEFAULT '';
+ALTER TABLE crm_customers ALTER COLUMN last_message SET DEFAULT '';
+ALTER TABLE crm_customers ALTER COLUMN last_touch SET DEFAULT '';
 ALTER TABLE crm_customers ALTER COLUMN notes SET DEFAULT '';
 ALTER TABLE crm_customers ALTER COLUMN created_at SET DEFAULT now();
 ALTER TABLE crm_customers ALTER COLUMN updated_at SET DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_crm_customers_phone ON crm_customers(phone);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_email_lower ON crm_customers((lower(email)));
+CREATE INDEX IF NOT EXISTS idx_crm_customers_owner_user_id ON crm_customers(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_crm_customers_stage_due ON crm_customers(stage, due_date, id);
 
 CREATE TABLE IF NOT EXISTS board_posts (
   id             BIGSERIAL PRIMARY KEY,

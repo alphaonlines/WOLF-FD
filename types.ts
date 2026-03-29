@@ -156,6 +156,17 @@ export interface CRMCustomerAccount {
   phone: string;
   email: string;
   store: string;
+  channel: CRMLeadChannel;
+  source: string;
+  interest: string;
+  budget: string;
+  owner: string;
+  ownerUserId?: string | null;
+  stage: CRMLeadStage;
+  nextAction: string;
+  dueDate: string;
+  lastMessage: string;
+  lastTouch: string;
   notes: string;
 }
 

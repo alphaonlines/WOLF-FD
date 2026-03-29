@@ -4,7 +4,6 @@ import type {
   AuthUser,
   CRMCustomerAccount,
   CRMCustomerOrder,
-  CRMLead,
   CRMLeadChannel,
   CRMLeadStage,
   CRMOwnerOption,
@@ -16,7 +15,6 @@ import type {
 import { checkPosBackendHealthy } from "../services/posBackendApi";
 import {
   completeCrmUpsQueueCustomerInApi,
-  fetchCrmLeadsFromApi,
   fetchCrmOwnersFromApi,
   fetchCrmSalespeopleFromApi,
   fetchCrmUpsQueueFromApi,
@@ -146,13 +144,11 @@ const namesLikelyMatch = (left: string, right: string) => {
 
 const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => {
   const isManager = authUser.roles.includes("Owner") || authUser.roles.includes("Manager");
-  const [leadScope, setLeadScope] = useState<"team" | "my">(isManager ? "team" : "my");
   const [syncMode, setSyncMode] = useState<SyncMode>("OFFLINE");
   const [selectedStore, setSelectedStore] = useState("FD7");
   const [owners, setOwners] = useState<CRMOwnerOption[]>([]);
   const [salespeople, setSalespeople] = useState<CRMSalespersonOption[]>([]);
   const [queue, setQueue] = useState<CRMUpsQueueItem[]>([]);
-  const [leads, setLeads] = useState<CRMLead[]>([]);
   const [selectedQueueId, setSelectedQueueId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<CRMSearchResult>(emptySearch);
@@ -211,16 +207,14 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       setSyncMode("OFFLINE");
       return;
     }
-    const [ownerRows, salespersonRows, queueRows, leadRows] = await Promise.all([
+    const [ownerRows, salespersonRows, queueRows] = await Promise.all([
       fetchCrmOwnersFromApi(),
       fetchCrmSalespeopleFromApi(),
       fetchCrmUpsQueueFromApi(selectedStore === "ALL" ? undefined : selectedStore),
-      fetchCrmLeadsFromApi(leadScope),
     ]);
     setOwners(ownerRows);
     setSalespeople(salespersonRows);
     setQueue(queueRows);
-    setLeads(leadRows);
     setSyncMode("POS_DB");
   };
 
@@ -243,7 +237,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       stopped = true;
       if (pollId !== null) window.clearInterval(pollId);
     };
-  }, [selectedStore, leadScope]);
+  }, [selectedStore]);
 
   const myQueueItem = useMemo(
     () =>
@@ -302,36 +296,23 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
-  const applyLead = (lead: CRMLead) => {
-    setDraft({
-      leadId: lead.id,
-      accountId: null,
-      queueId: null,
-      ...splitName(lead.name),
-      phone: lead.phone,
-      email: "",
-      store: lead.store || defaultDraftStore,
-      owner: lead.owner || authUser.name || "Unassigned",
-      ownerUserId: lead.ownerUserId || null,
-      channel: lead.channel,
-      source: lead.source,
-      interest: lead.interest,
-      stage: lead.stage,
-      nextAction: lead.nextAction,
-      dueDate: lead.dueDate || todayIso(),
-      notes: lead.notes,
-      visualDescription: "",
-    });
-  };
-
   const applyCustomer = (customer: CRMCustomerAccount) => {
     setDraft((current) => ({
       ...current,
       accountId: customer.id,
+      leadId: customer.id,
       ...splitName(customer.name),
       phone: customer.phone || current.phone,
       email: customer.email || current.email,
       store: customer.store || current.store,
+      owner: customer.owner || current.owner,
+      ownerUserId: customer.ownerUserId || current.ownerUserId,
+      channel: customer.channel || current.channel,
+      source: customer.source || current.source,
+      interest: customer.interest || current.interest,
+      stage: customer.stage || current.stage,
+      nextAction: customer.nextAction || current.nextAction,
+      dueDate: customer.dueDate || current.dueDate,
       notes: customer.notes || current.notes,
     }));
   };
@@ -542,6 +523,16 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
         phone: draft.phone.trim(),
         email: draft.email.trim(),
         store: draft.store,
+        channel: draft.channel,
+        source: draft.source.trim(),
+        interest: draft.interest.trim(),
+        owner: draft.owner,
+        ownerUserId: draft.ownerUserId,
+        stage: draft.stage,
+        nextAction: draft.nextAction.trim(),
+        dueDate: draft.dueDate,
+        lastMessage: "",
+        lastTouch: "",
         notes: noteBody,
       });
 
@@ -1036,7 +1027,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                   {searching ? "..." : "Go"}
                 </button>
               </div>
-              {(searchResults.customers.length || searchResults.leads.length || searchResults.orders.length) ? (
+              {(searchResults.customers.length || searchResults.orders.length) ? (
                 <div className="mt-3 space-y-2">
                   {searchResults.customers.slice(0, 3).map((customer) => (
                     <button key={customer.id} onClick={() => applyCustomer(customer)} className={`block w-full rounded-2xl border px-3 py-2 text-left transition ${
@@ -1045,17 +1036,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                         : "border-slate-100 bg-slate-50 hover:border-sky-200 hover:bg-white"
                     }`}>
                       <div className="text-sm font-medium text-slate-900 dark:text-white">{customer.name}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{customer.phone || customer.email || "Saved customer"}</div>
-                    </button>
-                  ))}
-                  {searchResults.leads.slice(0, 3).map((lead) => (
-                    <button key={lead.id} onClick={() => applyLead(lead)} className={`block w-full rounded-2xl border px-3 py-2 text-left transition ${
-                      isDarkMode
-                        ? "border-slate-800 bg-slate-900 text-slate-100 hover:border-slate-700 hover:bg-slate-800"
-                        : "border-slate-100 bg-slate-50 hover:border-sky-200 hover:bg-white"
-                    }`}>
-                      <div className="text-sm font-medium text-slate-900 dark:text-white">{lead.name}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{lead.phone} · {lead.stage}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        {customer.phone || customer.email || "Saved customer"}{customer.stage ? ` · ${customer.stage}` : ""}
+                      </div>
                     </button>
                   ))}
                   {searchResults.orders.slice(0, 2).map((order, index) => (

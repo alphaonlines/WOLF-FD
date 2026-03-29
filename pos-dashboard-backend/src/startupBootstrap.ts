@@ -536,21 +536,129 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS phone TEXT;`);
   await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS email TEXT;`);
   await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS store TEXT;`);
+  await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS channel TEXT;`);
+  await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS source TEXT;`);
+  await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS interest TEXT;`);
+  await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS budget TEXT;`);
+  await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS owner TEXT;`);
+  await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS owner_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS stage TEXT;`);
+  await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS next_action TEXT;`);
+  await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS due_date DATE;`);
+  await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS last_message TEXT;`);
+  await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS last_touch TEXT;`);
   await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS notes TEXT;`);
   await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_customers ALTER COLUMN phone SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_customers ALTER COLUMN email SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_customers ALTER COLUMN store SET DEFAULT 'FD7';`);
+  await pool.query(`ALTER TABLE crm_customers ALTER COLUMN channel SET DEFAULT 'SMS';`);
+  await pool.query(`ALTER TABLE crm_customers ALTER COLUMN source SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customers ALTER COLUMN interest SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customers ALTER COLUMN budget SET DEFAULT 'Unspecified';`);
+  await pool.query(`ALTER TABLE crm_customers ALTER COLUMN owner SET DEFAULT 'Unassigned';`);
+  await pool.query(`ALTER TABLE crm_customers ALTER COLUMN stage SET DEFAULT 'New';`);
+  await pool.query(`ALTER TABLE crm_customers ALTER COLUMN next_action SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customers ALTER COLUMN last_message SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customers ALTER COLUMN last_touch SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_customers ALTER COLUMN notes SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_customers ALTER COLUMN created_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE crm_customers ALTER COLUMN updated_at SET DEFAULT now();`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_phone ON crm_customers(phone);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_email_lower ON crm_customers((lower(email)));`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_owner_user_id ON crm_customers(owner_user_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_stage_due ON crm_customers(stage, due_date, id);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_name_lower ON crm_customers((lower(name)));`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_notes_lower ON crm_customers((lower(notes)));`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_name_lower ON crm_leads((lower(name)));`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_notes_lower ON crm_leads((lower(notes)));`);
+  await pool.query(`
+    WITH matched_leads AS (
+      SELECT
+        l.*,
+        COALESCE(
+          (
+            SELECT c.id
+            FROM crm_customers c
+            WHERE
+              regexp_replace(COALESCE(l.phone, ''), '\\D', '', 'g') <> ''
+              AND regexp_replace(COALESCE(c.phone, ''), '\\D', '', 'g') = regexp_replace(COALESCE(l.phone, ''), '\\D', '', 'g')
+            ORDER BY c.updated_at DESC
+            LIMIT 1
+          ),
+          l.id
+        ) AS merged_customer_id
+      FROM crm_leads l
+    )
+    INSERT INTO crm_customers (
+      id,
+      name,
+      phone,
+      email,
+      store,
+      channel,
+      source,
+      interest,
+      budget,
+      owner,
+      owner_user_id,
+      stage,
+      next_action,
+      due_date,
+      last_message,
+      last_touch,
+      notes,
+      created_at,
+      updated_at
+    )
+    SELECT
+      merged_customer_id,
+      COALESCE(NULLIF(name, ''), 'Unknown Customer'),
+      COALESCE(phone, ''),
+      '',
+      COALESCE(NULLIF(store, ''), 'FD7'),
+      COALESCE(NULLIF(channel, ''), 'SMS'),
+      COALESCE(source, ''),
+      COALESCE(interest, ''),
+      COALESCE(NULLIF(budget, ''), 'Unspecified'),
+      COALESCE(NULLIF(owner, ''), 'Unassigned'),
+      owner_user_id,
+      COALESCE(NULLIF(stage, ''), 'New'),
+      COALESCE(next_action, ''),
+      due_date,
+      COALESCE(last_message, ''),
+      COALESCE(last_touch, ''),
+      COALESCE(notes, ''),
+      COALESCE(created_at, now()),
+      COALESCE(updated_at, now())
+    FROM matched_leads
+    ON CONFLICT (id) DO UPDATE SET
+      name = COALESCE(NULLIF(EXCLUDED.name, ''), crm_customers.name),
+      phone = CASE WHEN COALESCE(NULLIF(crm_customers.phone, ''), '') = '' THEN EXCLUDED.phone ELSE crm_customers.phone END,
+      store = CASE WHEN COALESCE(NULLIF(crm_customers.store, ''), '') = '' OR crm_customers.store = 'FD7' THEN EXCLUDED.store ELSE crm_customers.store END,
+      channel = CASE WHEN COALESCE(NULLIF(crm_customers.channel, ''), '') = '' THEN EXCLUDED.channel ELSE crm_customers.channel END,
+      source = CASE WHEN COALESCE(NULLIF(crm_customers.source, ''), '') = '' THEN EXCLUDED.source ELSE crm_customers.source END,
+      interest = CASE WHEN COALESCE(NULLIF(crm_customers.interest, ''), '') = '' THEN EXCLUDED.interest ELSE crm_customers.interest END,
+      budget = CASE WHEN COALESCE(NULLIF(crm_customers.budget, ''), '') = '' OR crm_customers.budget = 'Unspecified' THEN EXCLUDED.budget ELSE crm_customers.budget END,
+      owner = CASE WHEN COALESCE(NULLIF(crm_customers.owner, ''), '') = '' OR crm_customers.owner = 'Unassigned' THEN EXCLUDED.owner ELSE crm_customers.owner END,
+      owner_user_id = COALESCE(crm_customers.owner_user_id, EXCLUDED.owner_user_id),
+      stage = CASE
+        WHEN COALESCE(NULLIF(crm_customers.stage, ''), '') = '' OR crm_customers.stage = 'New' THEN EXCLUDED.stage
+        ELSE crm_customers.stage
+      END,
+      next_action = CASE WHEN COALESCE(NULLIF(crm_customers.next_action, ''), '') = '' THEN EXCLUDED.next_action ELSE crm_customers.next_action END,
+      due_date = COALESCE(crm_customers.due_date, EXCLUDED.due_date),
+      last_message = CASE WHEN COALESCE(NULLIF(crm_customers.last_message, ''), '') = '' THEN EXCLUDED.last_message ELSE crm_customers.last_message END,
+      last_touch = CASE WHEN COALESCE(NULLIF(crm_customers.last_touch, ''), '') = '' THEN EXCLUDED.last_touch ELSE crm_customers.last_touch END,
+      notes = CASE
+        WHEN COALESCE(NULLIF(crm_customers.notes, ''), '') = '' THEN EXCLUDED.notes
+        WHEN COALESCE(NULLIF(EXCLUDED.notes, ''), '') = '' THEN crm_customers.notes
+        WHEN position(EXCLUDED.notes in crm_customers.notes) > 0 THEN crm_customers.notes
+        ELSE crm_customers.notes || E'\\n\\n' || EXCLUDED.notes
+      END,
+      updated_at = GREATEST(crm_customers.updated_at, EXCLUDED.updated_at);
+  `);
 }
 
 async function ensureSocialSchema(pool: Pool) {

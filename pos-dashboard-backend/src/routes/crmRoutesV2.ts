@@ -592,6 +592,17 @@ function mapCustomerRow(row: any) {
     phone: String(row.phone ?? ""),
     email: String(row.email ?? ""),
     store: String(row.store ?? "FD7"),
+    channel: String(row.channel ?? "SMS"),
+    source: String(row.source ?? ""),
+    interest: String(row.interest ?? ""),
+    budget: String(row.budget ?? "Unspecified"),
+    owner: String(row.owner ?? "Unassigned"),
+    owner_user_id: row.owner_user_id === null || row.owner_user_id === undefined ? null : String(row.owner_user_id),
+    stage: String(row.stage ?? "New"),
+    next_action: String(row.next_action ?? ""),
+    due_date: row.due_date ? String(row.due_date).slice(0, 10) : null,
+    last_message: String(row.last_message ?? ""),
+    last_touch: String(row.last_touch ?? ""),
     notes: String(row.notes ?? ""),
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -746,7 +757,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         notes,
         created_at,
         updated_at
-      FROM crm_leads
+      FROM crm_customers
       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
       ORDER BY
         CASE stage
@@ -801,7 +812,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     }
 
     const sql = `
-      INSERT INTO crm_leads (
+      INSERT INTO crm_customers (
         id, name, phone, channel, source, interest, budget, store, owner, owner_user_id, stage,
         next_action, due_date, last_message, last_touch, notes, created_at, updated_at
       )
@@ -855,7 +866,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     const id = parseCrmLeadId(req.params.id);
     if (!id) return res.status(400).json({ error: "invalid id" });
 
-    const existing = await pool.query("SELECT owner_user_id FROM crm_leads WHERE id = $1 LIMIT 1", [id]);
+    const existing = await pool.query("SELECT owner_user_id FROM crm_customers WHERE id = $1 LIMIT 1", [id]);
     if (!existing.rows.length) return res.status(404).json({ error: "not found" });
 
     const salesOnly = isSalesOnly(user);
@@ -876,7 +887,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
 
     const r = await pool.query(
       `
-        UPDATE crm_leads
+        UPDATE crm_customers
         SET owner = $1, owner_user_id = $2::bigint, updated_at = now()
         WHERE id = $3
         RETURNING
@@ -898,7 +909,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     if (!id) return res.status(400).json({ error: "invalid id" });
 
     if (isSalesOnly(user)) {
-      const own = await pool.query("SELECT owner_user_id FROM crm_leads WHERE id = $1 LIMIT 1", [id]);
+      const own = await pool.query("SELECT owner_user_id FROM crm_customers WHERE id = $1 LIMIT 1", [id]);
       if (!own.rows.length) return res.status(404).json({ error: "not found" });
       const ownerUserId =
         own.rows[0].owner_user_id === null || own.rows[0].owner_user_id === undefined
@@ -966,7 +977,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
 
     values.push(id);
     const sql = `
-      UPDATE crm_leads
+      UPDATE crm_customers
       SET ${fields.join(", ")}, updated_at = now()
       WHERE id = $${values.length}
       RETURNING
@@ -1828,7 +1839,9 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
 
     const customerRes = await pool.query(
       `
-      SELECT id, name, phone, email, store, notes, created_at, updated_at
+      SELECT
+        id, name, phone, email, store, channel, source, interest, budget, owner, owner_user_id,
+        stage, next_action, due_date, last_message, last_touch, notes, created_at, updated_at
       FROM crm_customers
       WHERE
         ($1::text <> '' AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') LIKE ('%' || $1 || '%'))
@@ -1880,9 +1893,8 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     const phoneDigits = normalizePhone(queryRaw);
     if (!queryRaw) return res.status(400).json({ error: "q is required" });
 
-    const customerSearch = buildLooseSearchClause(["name", "email", "store", "notes"], queryRaw, phoneDigits);
-    const leadSearch = buildLooseSearchClause(
-      ["name", "source", "interest", "store", "owner", "notes", "last_message", "next_action"],
+    const customerSearch = buildLooseSearchClause(
+      ["name", "email", "store", "notes", "source", "interest", "owner", "stage", "last_message", "next_action"],
       queryRaw,
       phoneDigits
     );
@@ -1898,32 +1910,15 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
 
     const customersRes = await pool.query(
       `
-      SELECT id, name, phone, email, store, notes, created_at, updated_at
+      SELECT
+        id, name, phone, email, store, channel, source, interest, budget, owner, owner_user_id,
+        stage, next_action, due_date, last_message, last_touch, notes, created_at, updated_at
       FROM crm_customers
       WHERE ${customerSearch.clause}
       ORDER BY updated_at DESC, lower(name) ASC
       LIMIT 20
       `,
       customerSearch.values
-    );
-
-    const leadValues = [...leadSearch.values];
-    const leadWhereParts = [leadSearch.clause];
-    if (isSalesOnly(user)) {
-      leadValues.push(Number(user.id));
-      leadWhereParts.push(`owner_user_id = $${leadValues.length}`);
-    }
-    const leadsRes = await pool.query(
-      `
-      SELECT
-        id, name, phone, channel, source, interest, budget, store, owner, owner_user_id, stage,
-        next_action, due_date, last_message, last_touch, notes, created_at, updated_at
-      FROM crm_leads
-      WHERE ${leadWhereParts.join(" AND ")}
-      ORDER BY updated_at DESC, due_date ASC NULLS LAST
-      LIMIT 20
-      `,
-      leadValues
     );
 
     const ordersRes = await pool.query(
@@ -1950,7 +1945,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
 
     res.json({
       customers: customersRes.rows.map(mapCustomerRow),
-      leads: leadsRes.rows.map(mapLeadRow),
+      leads: [],
       orders: ordersRes.rows.map(mapCustomerOrderRow),
     });
   });
@@ -1963,6 +1958,16 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : "";
     const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
     const store = typeof req.body?.store === "string" && req.body.store.trim() ? req.body.store.trim() : "FD7";
+    const channel = parseCrmChannel(req.body?.channel) ?? "SMS";
+    const source = typeof req.body?.source === "string" ? req.body.source.trim() : "";
+    const interest = typeof req.body?.interest === "string" ? req.body.interest.trim() : "";
+    const budget =
+      typeof req.body?.budget === "string" && req.body.budget.trim() ? req.body.budget.trim() : "Unspecified";
+    const stage = parseCrmStage(req.body?.stage) ?? "New";
+    const nextAction = typeof req.body?.next_action === "string" ? req.body.next_action.trim() : "";
+    const dueDate = req.body?.due_date ? parseCrmDate(req.body?.due_date) : null;
+    const lastMessage = typeof req.body?.last_message === "string" ? req.body.last_message.trim() : "";
+    const lastTouch = typeof req.body?.last_touch === "string" ? req.body.last_touch.trim() : "";
     const notes = typeof req.body?.notes === "string" ? req.body.notes.trim() : "";
 
     if (!name) return res.status(400).json({ error: "name is required" });
@@ -1983,20 +1988,61 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     );
 
     const id = existing.rows[0]?.id ? String(existing.rows[0].id) : `cust-${Date.now()}`;
+    const ownerResult = await resolveOwner(pool, req.body?.owner_user_id, req.body?.owner);
+    let ownerUserId = ownerResult.ownerUserId;
+    let ownerName = ownerResult.ownerName;
+    if (isSalesOnly(user)) {
+      ownerUserId = Number(user.id);
+      ownerName = user.name || user.email || "Unassigned";
+    }
     const customerRes = await pool.query(
       `
-      INSERT INTO crm_customers (id, name, phone, email, store, notes, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, now(), now())
+      INSERT INTO crm_customers (
+        id, name, phone, email, store, channel, source, interest, budget, owner, owner_user_id,
+        stage, next_action, due_date, last_message, last_touch, notes, created_at, updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::bigint, $12, $13, $14::date, $15, $16, $17, now(), now())
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
         email = EXCLUDED.email,
         store = EXCLUDED.store,
+        channel = EXCLUDED.channel,
+        source = EXCLUDED.source,
+        interest = EXCLUDED.interest,
+        budget = EXCLUDED.budget,
+        owner = EXCLUDED.owner,
+        owner_user_id = EXCLUDED.owner_user_id,
+        stage = EXCLUDED.stage,
+        next_action = EXCLUDED.next_action,
+        due_date = EXCLUDED.due_date,
+        last_message = EXCLUDED.last_message,
+        last_touch = EXCLUDED.last_touch,
         notes = EXCLUDED.notes,
         updated_at = now()
-      RETURNING id, name, phone, email, store, notes, created_at, updated_at
+      RETURNING
+        id, name, phone, email, store, channel, source, interest, budget, owner, owner_user_id,
+        stage, next_action, due_date, last_message, last_touch, notes, created_at, updated_at
     `,
-      [id, name, phone, email, store, notes]
+      [
+        id,
+        name,
+        phone,
+        email,
+        store,
+        channel,
+        source,
+        interest,
+        budget,
+        ownerName,
+        ownerUserId,
+        stage,
+        nextAction,
+        dueDate,
+        lastMessage,
+        lastTouch,
+        notes,
+      ]
     );
 
     const orderRes = await pool.query(
