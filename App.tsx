@@ -89,10 +89,11 @@ const getMaintenanceTrackingUrl = () => {
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
-  const [requestedWolfdenSubTab, setRequestedWolfdenSubTab] = useState<'ups' | 'crm' | 'board' | 'tasks'>('ups');
+  const [requestedWolfdenSubTab, setRequestedWolfdenSubTab] = useState<'ups' | 'crm' | 'board' | 'meeting' | 'tasks'>('ups');
   const [requestedWolfdenSubTabToken, setRequestedWolfdenSubTabToken] = useState(0);
   const [requestedPulseSubTab, setRequestedPulseSubTab] = useState<'sales' | 'alphaos' | 'website' | 'social' | 'reviews'>('sales');
   const [requestedPulseSubTabToken, setRequestedPulseSubTabToken] = useState(0);
+  const [currentPulseSubTab, setCurrentPulseSubTab] = useState<'sales' | 'alphaos' | 'website' | 'social' | 'reviews'>('sales');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
@@ -310,6 +311,7 @@ const App: React.FC = () => {
   const availableTabs = (Object.values(Tab) as Tab[]).filter((tab) =>
     canAccessTab(userRoles, userPermissions, permissionMode, tab)
   );
+  const isSalesHeaderView = activeTab === Tab.SALES || (activeTab === Tab.PULSE && currentPulseSubTab === 'sales');
 
   useEffect(() => {
     if (!authUser) return;
@@ -476,7 +478,7 @@ const App: React.FC = () => {
     }, 220);
   };
 
-  const openWolfdenSubTab = (subTab: 'ups' | 'crm' | 'board' | 'tasks') => {
+  const openWolfdenSubTab = (subTab: 'ups' | 'crm' | 'board' | 'meeting' | 'tasks') => {
     setRequestedWolfdenSubTab(subTab);
     setRequestedWolfdenSubTabToken((current) => current + 1);
     setActiveTab(Tab.WOLFDEN);
@@ -567,6 +569,9 @@ const App: React.FC = () => {
             isDarkMode={isDarkMode}
             requestedSubTab={requestedPulseSubTab}
             requestedSubTabToken={requestedPulseSubTabToken}
+            onSubTabChange={setCurrentPulseSubTab}
+            itemSortMetric={itemSortMetric}
+            showTooltips={showTooltips}
           />
         );
       default:
@@ -837,7 +842,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-4">
-              {activeTab === Tab.SALES && (
+              {isSalesHeaderView && (
                 <div className="relative hidden md:block">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                   <input
@@ -858,7 +863,7 @@ const App: React.FC = () => {
                   />
                 </div>
               )}
-              {activeTab === Tab.SALES && showRange && rangeLabel && (
+              {isSalesHeaderView && showRange && rangeLabel && (
                 <button
                   onClick={() => window.dispatchEvent(new Event('fd-open-range'))}
                   className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full bg-white/70 border border-slate-200 text-slate-600 hover:bg-white"
@@ -868,7 +873,7 @@ const App: React.FC = () => {
                   <span className="text-slate-400">Edit</span>
                 </button>
               )}
-              {activeTab === Tab.SALES && activeFilterLabel && (
+              {isSalesHeaderView && activeFilterLabel && (
                 <div className={`hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border ${
                   isDarkMode
                     ? 'bg-slate-900/80 border-slate-700 text-slate-300'
@@ -884,7 +889,7 @@ const App: React.FC = () => {
                   </button>
                 </div>
               )}
-              {activeTab === Tab.SALES && missingItemData && (
+              {isSalesHeaderView && missingItemData && (
                 <div className={`hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border ${
                   isDarkMode
                     ? 'bg-amber-500/10 text-amber-200 border-amber-500/30'
@@ -893,7 +898,7 @@ const App: React.FC = () => {
                   Missing data for items for this date range
                 </div>
               )}
-              {activeTab === Tab.SALES && missingSalesData && (
+              {isSalesHeaderView && missingSalesData && (
                 <div className={`hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border ${
                   isDarkMode
                     ? 'bg-amber-500/10 text-amber-200 border-amber-500/30'
@@ -902,7 +907,7 @@ const App: React.FC = () => {
                   Missing sales data for this date range
                 </div>
               )}
-              {activeTab === Tab.SALES && (
+              {isSalesHeaderView && (
                 <button
                   onClick={() => window.dispatchEvent(new Event('fd-print-request'))}
                   className={`hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border transition-colors ${
@@ -915,7 +920,7 @@ const App: React.FC = () => {
                   Print Report
                 </button>
               )}
-              {activeTab === Tab.SALES && (
+              {isSalesHeaderView && (
                 <div className={`inline-flex items-center gap-1 rounded-full p-1 text-xs ${
                   isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-slate-100'
                 }`}>
@@ -1019,7 +1024,7 @@ const App: React.FC = () => {
           </>
         )}
 
-        {activeTab === Tab.SALES && (
+        {isSalesHeaderView && (
           <button
             type="button"
             onClick={() => setShowTooltips((prev) => !prev)}

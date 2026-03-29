@@ -10,6 +10,9 @@ type PulseWorkspaceProps = {
   isDarkMode: boolean;
   requestedSubTab?: PulseSubTab;
   requestedSubTabToken?: number;
+  onSubTabChange?: (subTab: PulseSubTab) => void;
+  itemSortMetric: "sales" | "qty";
+  showTooltips: boolean;
 };
 
 export type PulseSubTab = "sales" | "alphaos" | "website" | "social" | "reviews";
@@ -21,12 +24,19 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
   isDarkMode,
   requestedSubTab = "sales",
   requestedSubTabToken,
+  onSubTabChange,
+  itemSortMetric,
+  showTooltips,
 }) => {
   const [subTab, setSubTab] = useState<PulseSubTab>(requestedSubTab);
 
   useEffect(() => {
     setSubTab(requestedSubTab);
   }, [requestedSubTab, requestedSubTabToken]);
+
+  useEffect(() => {
+    onSubTabChange?.(subTab);
+  }, [onSubTabChange, subTab]);
 
   const divider = isDarkMode ? "border-slate-800" : "border-slate-200";
 
@@ -66,7 +76,7 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
       <div className="flex-1 overflow-hidden">
         {subTab === "sales" && (
           <div className="h-full overflow-auto p-5 lg:p-7">
-            <SalesDashboard itemSortMetric="sales" showTooltips />
+            <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />
           </div>
         )}
         {subTab === "alphaos" && <KiosksStatus />}
