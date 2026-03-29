@@ -40,6 +40,8 @@ type SalesReportCardProps = {
   setLowMarginSort: React.Dispatch<React.SetStateAction<LowMarginSort>>;
   saleLink: (saleId: string) => string;
   saleLabel: (saleId: string, salesperson?: string) => string;
+  selectedSalesperson: string | null;
+  onSelectSalesperson: (salesperson: string) => void;
 };
 
 const SalesReportCard: React.FC<SalesReportCardProps> = ({
@@ -66,6 +68,8 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
   setLowMarginSort,
   saleLink,
   saleLabel,
+  selectedSalesperson,
+  onSelectSalesperson,
 }) => {
   const formatAverageTicket = (totalRetail: number, ticketCount: number) => {
     if (!Number.isFinite(totalRetail) || !Number.isFinite(ticketCount) || ticketCount <= 0) {
@@ -98,6 +102,9 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
               ? itemSortMetric === "qty"
                 ? "QTY mode ranks the table by tickets for the selected range."
                 : "Sales mode ranks the table by total retail."
+              : ""}
+            {reportMode === "totals" && reportDimension === "salesperson"
+              ? " Click a salesperson row to open their ticket list."
               : ""}
           </p>
         </div>
@@ -228,8 +235,27 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {reportRowsWithPct.map((row) => (
-                    <tr key={row.label}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{row.label || "(unknown)"}</td>
+                    <tr
+                      key={row.label}
+                      className={
+                        reportDimension === "salesperson" && selectedSalesperson === row.label
+                          ? "bg-blue-50/70"
+                          : undefined
+                      }
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                        {reportDimension === "salesperson" && row.label ? (
+                          <button
+                            type="button"
+                            onClick={() => onSelectSalesperson(row.label)}
+                            className="rounded-md text-left text-blue-600 underline-offset-2 hover:text-blue-800 hover:underline"
+                          >
+                            {row.label}
+                          </button>
+                        ) : (
+                          row.label || "(unknown)"
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                         {Number(row.ticketCount || 0).toLocaleString()}
                       </td>

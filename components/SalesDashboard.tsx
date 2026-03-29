@@ -334,6 +334,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
     saleIdsHigh: [],
   });
   const [salePeopleMap, setSalePeopleMap] = useState<Record<string, string>>({});
+  const salespersonDetailRef = useRef<HTMLDivElement | null>(null);
 
   const isCardCollapsed = (id: string) => !!collapsedCards[id];
   const toggleCard = (id: string) => {
@@ -1158,12 +1159,26 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
     setSelectedStore(null);
     setSearchHint(null);
   };
+  const openSalespersonDetail = (name: string) => {
+    const next = normalizeName(name);
+    if (!next) return;
+    setSelectedSalesperson(next);
+    setSelectedStore(null);
+    setSearchHint(null);
+  };
   const selectStore = (name: string) => {
     const next = normalizeName(name);
     setSelectedStore((prev) => (normalizeName(prev) === next ? null : next));
     setSelectedSalesperson(null);
     setSearchHint(null);
   };
+
+  useEffect(() => {
+    if (!selectedSalesperson || !salespersonDetailRef.current) return;
+    window.requestAnimationFrame(() => {
+      salespersonDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [selectedSalesperson]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -1696,6 +1711,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         setLowMarginSort={setLowMarginSort}
         saleLink={saleLink}
         saleLabel={saleLabel}
+        selectedSalesperson={selectedSalesperson}
+        onSelectSalesperson={openSalespersonDetail}
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -2318,12 +2335,14 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
       </div>
 
       {selectedSalesperson && (
-        <SalespersonDetailCard
-          selectedSalesperson={selectedSalesperson}
-          salespersonTickets={salespersonTickets}
-          saleLink={saleLink}
-          saleLabel={saleLabel}
-        />
+        <div ref={salespersonDetailRef}>
+          <SalespersonDetailCard
+            selectedSalesperson={selectedSalesperson}
+            salespersonTickets={salespersonTickets}
+            saleLink={saleLink}
+            saleLabel={saleLabel}
+          />
+        </div>
       )}
 
       <SalesPrintDialog
