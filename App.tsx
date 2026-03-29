@@ -769,9 +769,6 @@ const App: React.FC = () => {
             <div className="flex items-center gap-4">
               <h1 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
                 <span>{getTabTitle(activeTab)}</span>
-                {activeTab === Tab.SALES && showRange && rangeLabel && (
-                  <span className="text-sm font-semibold text-slate-400">({rangeLabel})</span>
-                )}
               </h1>
             </div>
 
