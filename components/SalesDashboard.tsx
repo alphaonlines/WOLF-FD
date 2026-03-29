@@ -122,6 +122,24 @@ const normalizeStatCardOrder = (value: unknown): string[] => {
   return deduped;
 };
 
+const sortReportRows = (rows: ReportSummaryRow[], itemSortMetric: "sales" | "qty"): ReportSummaryRow[] =>
+  [...rows].sort((a, b) => {
+    if (itemSortMetric === "qty") {
+      return (
+        Number(b.ticketCount || 0) - Number(a.ticketCount || 0) ||
+        Number(b.units || 0) - Number(a.units || 0) ||
+        Number(b.totalRetail || 0) - Number(a.totalRetail || 0) ||
+        String(a.label || "").localeCompare(String(b.label || ""))
+      );
+    }
+    return (
+      Number(b.totalRetail || 0) - Number(a.totalRetail || 0) ||
+      Number(b.ticketCount || 0) - Number(a.ticketCount || 0) ||
+      Number(b.units || 0) - Number(a.units || 0) ||
+      String(a.label || "").localeCompare(String(b.label || ""))
+    );
+  });
+
 const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showTooltips = false }) => {
   const [salesData, setSalesData] = useState<SalespersonPoint[]>([]);
   const [storeData, setStoreData] = useState<StoreData[]>([]);
@@ -386,8 +404,11 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   );
 
   const reportRowsWithPct = useMemo(() => {
-    return withReportPercentages(reportData.rows, reportTotals, currentReportOverallMap, reportOverallTotals);
-  }, [reportData.rows, reportTotals, currentReportOverallMap, reportOverallTotals]);
+    return sortReportRows(
+      withReportPercentages(reportData.rows, reportTotals, currentReportOverallMap, reportOverallTotals),
+      itemSortMetric
+    );
+  }, [reportData.rows, reportTotals, currentReportOverallMap, reportOverallTotals, itemSortMetric]);
 
   const printLowMarginRows = useMemo(() => (printData?.lowMarginRows ?? sortedLowMarginData), [printData, sortedLowMarginData]);
   const printStoreBaseRows = useMemo(() => (printData?.storeRows ?? reportDataStore.rows), [printData, reportDataStore.rows]);
@@ -400,11 +421,17 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   const printTotalsSalesperson = useMemo(() => computeReportTotals(printSalesBaseRows), [printSalesBaseRows]);
   const printOverallTotals = useMemo(() => computeReportTotals(printStoreOverallRows), [printStoreOverallRows]);
   const printRowsWithPctStore = useMemo(() => {
-    return withReportPercentages(printStoreBaseRows, printTotalsStore, printStoreOverallMap, printOverallTotals);
-  }, [printStoreBaseRows, printTotalsStore, printStoreOverallMap, printOverallTotals]);
+    return sortReportRows(
+      withReportPercentages(printStoreBaseRows, printTotalsStore, printStoreOverallMap, printOverallTotals),
+      itemSortMetric
+    );
+  }, [printStoreBaseRows, printTotalsStore, printStoreOverallMap, printOverallTotals, itemSortMetric]);
   const printRowsWithPctSalesperson = useMemo(() => {
-    return withReportPercentages(printSalesBaseRows, printTotalsSalesperson, printSalesOverallMap, printOverallTotals);
-  }, [printSalesBaseRows, printTotalsSalesperson, printSalesOverallMap, printOverallTotals]);
+    return sortReportRows(
+      withReportPercentages(printSalesBaseRows, printTotalsSalesperson, printSalesOverallMap, printOverallTotals),
+      itemSortMetric
+    );
+  }, [printSalesBaseRows, printTotalsSalesperson, printSalesOverallMap, printOverallTotals, itemSortMetric]);
   const printOverallRetailTotal = Number(printOverallTotals.totalRetail || 0);
   const printOverallUnitsTotal = Number(printOverallTotals.totalUnits || 0);
 
@@ -1649,6 +1676,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         collapsed={isCardCollapsed("sales-report")}
         renderHelp={renderHelp}
         cardToggle={renderCardToggle("sales-report")}
+        itemSortMetric={itemSortMetric}
         reportMode={reportMode}
         setReportMode={setReportMode}
         reportDimension={reportDimension}
