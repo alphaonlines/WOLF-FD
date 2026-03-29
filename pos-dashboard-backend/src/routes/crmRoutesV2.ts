@@ -568,19 +568,36 @@ function normalizePhone(value: string): string {
 function buildLooseSearchClause(columns: string[], query: string, phoneDigits: string): SqlClauseBuild {
   const values: any[] = [];
   const conditions: string[] = [];
-  const normalized = query.trim().toLowerCase();
-  if (normalized) {
-    values.push(`%${normalized}%`);
-    const token = `$${values.length}`;
-    conditions.push(`(${columns.map((column) => `lower(COALESCE(${column}, '')) LIKE ${token}`).join(" OR ")})`);
+  const normalizedTokens = query
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+
+  for (const tokenText of normalizedTokens) {
+    const tokenConditions: string[] = [];
+    values.push(`%${tokenText}%`);
+    const textToken = `$${values.length}`;
+    tokenConditions.push(`(${columns.map((column) => `lower(COALESCE(${column}, '')) LIKE ${textToken}`).join(" OR ")})`);
+
+    const tokenDigits = normalizePhone(tokenText);
+    if (tokenDigits) {
+      values.push(`%${tokenDigits}%`);
+      const phoneToken = `$${values.length}`;
+      tokenConditions.push(`regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') LIKE ${phoneToken}`);
+    }
+
+    conditions.push(`(${tokenConditions.join(" OR ")})`);
   }
-  if (phoneDigits) {
+
+  if (!normalizedTokens.length && phoneDigits) {
     values.push(`%${phoneDigits}%`);
     const token = `$${values.length}`;
     conditions.push(`regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') LIKE ${token}`);
   }
   return {
-    clause: conditions.length ? conditions.join(" OR ") : "FALSE",
+    clause: conditions.length ? conditions.join(" AND ") : "FALSE",
     values,
   };
 }
@@ -1899,14 +1916,11 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       phoneDigits
     );
 
-    const orderValues: any[] = [`%${queryRaw.toLowerCase()}%`];
-    const orderParts: string[] = [
-      "(lower(COALESCE(customer_name, '')) LIKE $1 OR lower(COALESCE(receipt_no, '')) LIKE $1 OR lower(COALESCE(location, '')) LIKE $1 OR lower(COALESCE(salesperson, '')) LIKE $1)",
-    ];
-    if (phoneDigits) {
-      orderValues.push(`%${phoneDigits}%`);
-      orderParts.push(`regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') LIKE $${orderValues.length}`);
-    }
+    const orderSearch = buildLooseSearchClause(
+      ["customer_name", "receipt_no", "location", "salesperson"],
+      queryRaw,
+      phoneDigits
+    );
 
     const customersRes = await pool.query(
       `
@@ -1936,11 +1950,11 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         grand_total,
         sale_status
       FROM pos_sales
-      WHERE ${orderParts.join(" OR ")}
+      WHERE ${orderSearch.clause}
       ORDER BY delivery_confirmed_date DESC NULLS LAST, sale_date DESC NULLS LAST
       LIMIT 30
       `,
-      orderValues
+      orderSearch.values
     );
 
     res.json({
