@@ -203,8 +203,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       {
         id: "pulse-social",
         title: "Pulse AlphaPulse",
-        description: "Open the embedded AlphaPulse page inside Pulse.",
-        details: "This lands on the AlphaPulse page in Pulse so the old external menu link now lives inside the module where it belongs.",
+        description: "Open AlphaPulse in a new tab from the Pulse shortcuts.",
+        details: "This keeps AlphaPulse grouped with the Pulse module while still opening the outside page in its own browser tab.",
         cta: "Open AlphaPulse",
         icon: <Activity size={22} className="text-sky-500" />,
         onClick: () => onNavigate("PULSE_ALPHAPULSE"),
@@ -214,9 +214,9 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "pulse-reviews",
-        title: "Pulse FD Connect Reviews",
-        description: "Open embedded FD Connect reviews inside Pulse.",
-        details: "This lands in the reviews iframe inside Pulse and still gives you the quick escape hatch to open the source in a new tab.",
+        title: "Pulse FD Connect",
+        description: "Open FD Connect in a new tab from the Pulse shortcuts.",
+        details: "This keeps the FD Connect shortcut grouped with Pulse while sending you to the outside site in its own tab.",
         cta: "Open Reviews",
         icon: <Star size={22} className="text-sky-500" />,
         onClick: () => onNavigate("PULSE_REVIEWS"),
