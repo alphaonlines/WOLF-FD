@@ -311,34 +311,6 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
     return Array.from(groups.entries());
   }, [availableCards]);
 
-  const quickLinks = useMemo(
-    () => [
-      {
-        id: "den",
-        label: "Den",
-        url: "#",
-        onClick: () => onNavigate("WOLFDEN_UPS"),
-      },
-      {
-        id: "pulse",
-        label: "Pulse",
-        url: "#",
-        onClick: () => onNavigate("PULSE_SALES"),
-      },
-      {
-        id: "quicklinks",
-        label: "QuickLinks",
-        url: "https://sites.google.com/view/fdserver/home",
-      },
-      {
-        id: "specials",
-        label: "Manager Specials",
-        url: "https://furnituredistributors.wolf.discount/fd/manager-specials-upload.html",
-      },
-    ],
-    [onNavigate]
-  );
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -435,43 +407,6 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
             </div>
           </div>
         </div>
-
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className={`text-xs font-semibold uppercase tracking-[0.18em] ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-            Quick access
-          </span>
-          {quickLinks.map((link) =>
-            link.onClick ? (
-              <button
-                key={link.id}
-                type="button"
-                onClick={link.onClick}
-                className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-all hover:-translate-y-0.5 ${
-                  isDarkMode
-                    ? "border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                {link.label}
-              </button>
-            ) : (
-              <a
-                key={link.id}
-                href={link.url}
-                target="_blank"
-                rel="noreferrer"
-                className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-all hover:-translate-y-0.5 ${
-                  isDarkMode
-                    ? "border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                {link.label}
-              </a>
-            )
-          )}
-        </div>
-
         {customizeOpen && (
           <div className={`mt-5 rounded-3xl border p-5 ${subtlePanelClass}`}>
             <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">

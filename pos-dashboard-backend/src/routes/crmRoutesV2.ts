@@ -80,6 +80,11 @@ const UPS_ACTIVE_CUSTOMER_JSON_SQL = `
         'customer', ac.customer,
         'customer_type', ac.customer_type,
         'customer_details', ac.customer_details,
+        'city', ac.city,
+        'wants_needs', ac.wants_needs,
+        'did_purchase', ac.did_purchase,
+        'purchase_amount', ac.purchase_amount,
+        'objection_note', ac.objection_note,
         'started_at', ac.started_at,
         'history_id', ac.history_id
       )
@@ -292,6 +297,13 @@ function mapUpsQueueRow(row: any) {
           customer: String(entry?.customer ?? ""),
           customer_type: entry?.customer_type ? String(entry.customer_type) : null,
           customer_details: entry?.customer_details ? String(entry.customer_details) : null,
+          city: entry?.city ? String(entry.city) : null,
+          wants_needs: entry?.wants_needs ? String(entry.wants_needs) : null,
+          did_purchase:
+            entry?.did_purchase === null || entry?.did_purchase === undefined ? null : Boolean(entry.did_purchase),
+          purchase_amount:
+            entry?.purchase_amount === null || entry?.purchase_amount === undefined ? null : Number(entry.purchase_amount),
+          objection_note: entry?.objection_note ? String(entry.objection_note) : null,
           started_at: entry?.started_at ? String(entry.started_at) : null,
           history_id: entry?.history_id ? String(entry.history_id) : null,
         }))
@@ -1233,6 +1245,63 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     res.json({ rows });
   });
 
+  app.get("/api/crm/ups-history", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const storeRaw = typeof req.query?.store === "string" ? req.query.store.trim() : "";
+    const dateRaw = typeof req.query?.date === "string" ? req.query.date.trim() : "";
+    const reportDate = parseCrmDate(dateRaw) || new Date().toISOString().slice(0, 10);
+    const values: any[] = [reportDate];
+    const where = [
+      `(h.started_at AT TIME ZONE 'America/New_York')::date = $1::date`,
+      `COALESCE(h.counts_as_up, TRUE) = TRUE`,
+    ];
+
+    if (storeRaw && storeRaw !== "ALL") {
+      values.push(storeRaw);
+      where.push(`h.store = $${values.length}`);
+    }
+    if (isSalesOnly(user)) {
+      values.push(Number(user.id));
+      where.push(`h.rep_user_id = $${values.length}`);
+    }
+
+    const historyRows = await pool.query(
+      `
+      SELECT
+        h.id,
+        h.queue_entry_id,
+        h.store,
+        h.rep,
+        h.customer,
+        h.city,
+        h.customer_type,
+        h.customer_details,
+        h.wants_needs,
+        h.did_purchase,
+        h.purchase_amount,
+        h.objection_note,
+        h.started_at,
+        h.completed_at,
+        h.weather_location,
+        h.weather_summary,
+        h.weather_temp_f,
+        h.weather_precip_pct,
+        h.weather_wind_mph,
+        h.weather_fetched_at,
+        h.ended_reason,
+        h.counts_as_up
+      FROM crm_ups_history h
+      WHERE ${where.join(" AND ")}
+      ORDER BY h.store ASC, h.started_at ASC, h.customer ASC, h.id ASC
+    `,
+      values
+    );
+
+    res.json({ rows: historyRows.rows });
+  });
+
   app.post("/api/crm/ups-queue", async (req, res) => {
     const user = authUserFromReq(req);
     if (!user) return res.status(401).json({ error: "unauthorized" });
@@ -1352,12 +1421,14 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         `
         INSERT INTO crm_ups_history (
           id, queue_entry_id, store, rep, rep_user_id, customer, customer_type, customer_details,
+          city, wants_needs, did_purchase, purchase_amount, objection_note,
           started_at, completed_at, weather_location, weather_summary, weather_temp_f, weather_precip_pct,
           weather_wind_mph, weather_fetched_at, weather_source, ended_reason, counts_as_up, is_door_traffic,
           created_at, updated_at
         )
         VALUES (
           $1, $2, $3, $4, $5::bigint, $6, $7, $8,
+          '', '', NULL, NULL, '',
           now(), NULL, $9, $10, $11, $12, $13, $14, $15, 'completed', TRUE, TRUE, now(), now()
         )
       `,
@@ -1391,11 +1462,16 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
           customer,
           customer_type,
           customer_details,
+          city,
+          wants_needs,
+          did_purchase,
+          purchase_amount,
+          objection_note,
           started_at,
           created_at,
           updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6::bigint, $7, $8, $9, now(), now(), now())
+        VALUES ($1, $2, $3, $4, $5, $6::bigint, $7, $8, $9, '', '', NULL, NULL, '', now(), now(), now())
       `,
         [
           activeCustomerId,
@@ -1504,6 +1580,51 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       fields.push(`customer_details = $${values.length}`);
     }
 
+    if (req.body?.city !== undefined) {
+      if (typeof req.body.city !== "string") {
+        return res.status(400).json({ error: "invalid city" });
+      }
+      values.push(req.body.city.trim());
+      fields.push(`city = $${values.length}`);
+    }
+
+    if (req.body?.wants_needs !== undefined) {
+      if (typeof req.body.wants_needs !== "string") {
+        return res.status(400).json({ error: "invalid wants_needs" });
+      }
+      values.push(req.body.wants_needs.trim());
+      fields.push(`wants_needs = $${values.length}`);
+    }
+
+    if (req.body?.did_purchase !== undefined) {
+      const didPurchase = parseCrmBool(req.body.did_purchase);
+      if (didPurchase === null) return res.status(400).json({ error: "invalid did_purchase" });
+      values.push(didPurchase);
+      fields.push(`did_purchase = $${values.length}`);
+    }
+
+    if (req.body?.purchase_amount !== undefined) {
+      const rawValue = req.body.purchase_amount;
+      if (rawValue === "" || rawValue === null) {
+        values.push(null);
+      } else {
+        const parsed = Number(rawValue);
+        if (!Number.isFinite(parsed) || parsed < 0) {
+          return res.status(400).json({ error: "invalid purchase_amount" });
+        }
+        values.push(parsed);
+      }
+      fields.push(`purchase_amount = $${values.length}::numeric`);
+    }
+
+    if (req.body?.objection_note !== undefined) {
+      if (typeof req.body.objection_note !== "string") {
+        return res.status(400).json({ error: "invalid objection_note" });
+      }
+      values.push(req.body.objection_note.trim());
+      fields.push(`objection_note = $${values.length}`);
+    }
+
     if (!fields.length) return res.status(400).json({ error: "no fields to update" });
 
     values.push(customerId);
@@ -1530,6 +1651,28 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       if (req.body?.customer_details !== undefined) {
         historyValues.push(req.body.customer_details.trim());
         historyFields.push(`customer_details = $${historyValues.length}`);
+      }
+      if (req.body?.city !== undefined) {
+        historyValues.push(req.body.city.trim());
+        historyFields.push(`city = $${historyValues.length}`);
+      }
+      if (req.body?.wants_needs !== undefined) {
+        historyValues.push(req.body.wants_needs.trim());
+        historyFields.push(`wants_needs = $${historyValues.length}`);
+      }
+      if (req.body?.did_purchase !== undefined) {
+        const didPurchase = parseCrmBool(req.body.did_purchase);
+        historyValues.push(didPurchase);
+        historyFields.push(`did_purchase = $${historyValues.length}`);
+      }
+      if (req.body?.purchase_amount !== undefined) {
+        const rawValue = req.body.purchase_amount;
+        historyValues.push(rawValue === "" || rawValue === null ? null : Number(rawValue));
+        historyFields.push(`purchase_amount = $${historyValues.length}::numeric`);
+      }
+      if (req.body?.objection_note !== undefined) {
+        historyValues.push(req.body.objection_note.trim());
+        historyFields.push(`objection_note = $${historyValues.length}`);
       }
       if (historyFields.length) {
         historyValues.push(String(activeRow.rows[0].history_id));

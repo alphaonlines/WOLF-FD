@@ -1,6 +1,7 @@
 import type {
   CRMAutomationRule,
   CRMUpsActiveCustomer,
+  CRMUpsHistoryEntry,
   CRMCustomerAccount,
   CRMCustomerOrder,
   CRMLead,
@@ -87,8 +88,38 @@ type ApiUpsActiveCustomerRow = {
   customer?: string | null;
   customer_type?: string | null;
   customer_details?: string | null;
+  city?: string | null;
+  wants_needs?: string | null;
+  did_purchase?: boolean | null;
+  purchase_amount?: number | null;
+  objection_note?: string | null;
   started_at?: string | null;
   history_id?: string | null;
+};
+
+type ApiUpsHistoryRow = {
+  id: string;
+  queue_entry_id?: string | null;
+  store?: string | null;
+  rep?: string | null;
+  customer?: string | null;
+  city?: string | null;
+  customer_type?: string | null;
+  customer_details?: string | null;
+  wants_needs?: string | null;
+  did_purchase?: boolean | null;
+  purchase_amount?: number | null;
+  objection_note?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  weather_location?: string | null;
+  weather_summary?: string | null;
+  weather_temp_f?: number | null;
+  weather_precip_pct?: number | null;
+  weather_wind_mph?: number | null;
+  weather_fetched_at?: string | null;
+  ended_reason?: string | null;
+  counts_as_up?: boolean | null;
 };
 
 type ApiSalespersonRow = {
@@ -210,8 +241,50 @@ const mapUpsActiveCustomer = (row: ApiUpsActiveCustomerRow): CRMUpsActiveCustome
       : (String(row.customer_type) as CRMUpsActiveCustomer["customerType"]),
   customerDetails:
     row.customer_details === null || row.customer_details === undefined ? null : String(row.customer_details),
+  city: row.city === null || row.city === undefined ? null : String(row.city),
+  wantsNeeds: row.wants_needs === null || row.wants_needs === undefined ? null : String(row.wants_needs),
+  didPurchase:
+    row.did_purchase === null || row.did_purchase === undefined ? null : Boolean(row.did_purchase),
+  purchaseAmount:
+    row.purchase_amount === null || row.purchase_amount === undefined ? null : Number(row.purchase_amount),
+  objectionNote:
+    row.objection_note === null || row.objection_note === undefined ? null : String(row.objection_note),
   startedAt: row.started_at ? String(row.started_at) : null,
   historyId: row.history_id === null || row.history_id === undefined ? null : String(row.history_id),
+});
+
+const mapUpsHistory = (row: ApiUpsHistoryRow): CRMUpsHistoryEntry => ({
+  id: String(row.id ?? ""),
+  queueEntryId: row.queue_entry_id === null || row.queue_entry_id === undefined ? "" : String(row.queue_entry_id),
+  store: String(row.store ?? "FD7"),
+  rep: String(row.rep ?? ""),
+  customer: String(row.customer ?? ""),
+  city: row.city === null || row.city === undefined ? null : String(row.city),
+  customerType:
+    row.customer_type === null || row.customer_type === undefined
+      ? null
+      : (String(row.customer_type) as CRMUpsHistoryEntry["customerType"]),
+  customerDetails:
+    row.customer_details === null || row.customer_details === undefined ? null : String(row.customer_details),
+  wantsNeeds: row.wants_needs === null || row.wants_needs === undefined ? null : String(row.wants_needs),
+  didPurchase: row.did_purchase === null || row.did_purchase === undefined ? null : Boolean(row.did_purchase),
+  purchaseAmount:
+    row.purchase_amount === null || row.purchase_amount === undefined ? null : Number(row.purchase_amount),
+  objectionNote:
+    row.objection_note === null || row.objection_note === undefined ? null : String(row.objection_note),
+  startedAt: row.started_at ? String(row.started_at) : null,
+  completedAt: row.completed_at ? String(row.completed_at) : null,
+  weatherLocation: row.weather_location === null || row.weather_location === undefined ? null : String(row.weather_location),
+  weatherSummary: row.weather_summary === null || row.weather_summary === undefined ? null : String(row.weather_summary),
+  weatherTempF:
+    row.weather_temp_f === null || row.weather_temp_f === undefined ? null : Number(row.weather_temp_f),
+  weatherPrecipPct:
+    row.weather_precip_pct === null || row.weather_precip_pct === undefined ? null : Number(row.weather_precip_pct),
+  weatherWindMph:
+    row.weather_wind_mph === null || row.weather_wind_mph === undefined ? null : Number(row.weather_wind_mph),
+  weatherFetchedAt: row.weather_fetched_at ? String(row.weather_fetched_at) : null,
+  endedReason: row.ended_reason === null || row.ended_reason === undefined ? null : String(row.ended_reason),
+  countsAsUp: row.counts_as_up === null || row.counts_as_up === undefined ? true : Boolean(row.counts_as_up),
 });
 
 const mapSalesperson = (row: ApiSalespersonRow): CRMSalespersonOption => ({
@@ -422,12 +495,26 @@ export async function startCrmUpsQueueCustomerInApi(
 export async function updateCrmUpsQueueCustomerInApi(
   id: string,
   activeCustomerId: string,
-  payload: { customer?: string; customerType?: "Regular Up" | "B-Back"; details?: string }
+  payload: {
+    customer?: string;
+    customerType?: "Regular Up" | "B-Back";
+    details?: string;
+    city?: string;
+    wantsNeeds?: string;
+    didPurchase?: boolean;
+    purchaseAmount?: number | null;
+    objectionNote?: string;
+  }
 ): Promise<CRMUpsQueueItem> {
   const body: Record<string, string> = {};
   if (payload.customer !== undefined) body.customer = payload.customer;
   if (payload.customerType !== undefined) body.customer_type = payload.customerType;
   if (payload.details !== undefined) body.customer_details = payload.details;
+  if (payload.city !== undefined) body.city = payload.city;
+  if (payload.wantsNeeds !== undefined) body.wants_needs = payload.wantsNeeds;
+  if (payload.didPurchase !== undefined) body.did_purchase = String(payload.didPurchase);
+  if (payload.purchaseAmount !== undefined) body.purchase_amount = payload.purchaseAmount === null ? "" : String(payload.purchaseAmount);
+  if (payload.objectionNote !== undefined) body.objection_note = payload.objectionNote;
 
   const json = await fetchJson(
     `/api/crm/ups-queue/${encodeURIComponent(id)}/customers/${encodeURIComponent(activeCustomerId)}`,
@@ -451,6 +538,19 @@ export async function completeCrmUpsQueueCustomerInApi(id: string, activeCustome
   );
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
   return rows.map((row: any) => mapUpsQueue(row as ApiUpsQueueRow));
+}
+
+export async function fetchCrmUpsHistoryFromApi(params?: {
+  store?: string;
+  date?: string;
+}): Promise<CRMUpsHistoryEntry[]> {
+  const qs = new URLSearchParams();
+  if (params?.store && params.store.trim()) qs.set("store", params.store.trim());
+  if (params?.date && params.date.trim()) qs.set("date", params.date.trim());
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  const json = await fetchJson(`/api/crm/ups-history${suffix}`);
+  const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
+  return rows.map((row: any) => mapUpsHistory(row as ApiUpsHistoryRow));
 }
 
 export async function removeCrmUpsQueueCustomerInApi(id: string, activeCustomerId: string): Promise<CRMUpsQueueItem[]> {

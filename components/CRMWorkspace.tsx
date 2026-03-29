@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Users } from "lucide-react";
+import { Printer, Search, Users } from "lucide-react";
 import type {
   AuthUser,
   CRMCustomerAccount,
@@ -9,6 +9,7 @@ import type {
   CRMOwnerOption,
   CRMSalespersonOption,
   CRMSearchResult,
+  CRMUpsHistoryEntry,
   CRMUpsQueueItem,
   UpsQueueCustomerType,
 } from "../types";
@@ -17,6 +18,7 @@ import {
   completeCrmUpsQueueCustomerInApi,
   fetchCrmOwnersFromApi,
   fetchCrmSalespeopleFromApi,
+  fetchCrmUpsHistoryFromApi,
   fetchCrmUpsQueueFromApi,
   joinCrmUpsQueueInApi,
   leaveCrmUpsQueueInApi,
@@ -33,6 +35,9 @@ import { APP_VERSION } from "../constants";
 type CRMWorkspaceProps = {
   authUser: AuthUser;
   isDarkMode: boolean;
+  view?: "all" | "queue" | "customers";
+  selectedStore?: string;
+  onStoreChange?: (store: string) => void;
 };
 
 type SyncMode = "POS_DB" | "OFFLINE";
@@ -57,6 +62,11 @@ type CustomerDraft = {
   dueDate: string;
   notes: string;
   visualDescription: string;
+  city: string;
+  wantsNeeds: string;
+  didPurchase: boolean | null;
+  purchaseAmount: string;
+  objectionNote: string;
 };
 
 const LOCATION_OPTIONS = ["Camp", "Base", "G1", "FD7", "FD5"];
@@ -102,6 +112,11 @@ const buildDraft = (authUser: AuthUser, store: string): CustomerDraft => ({
   dueDate: todayIso(),
   notes: "",
   visualDescription: "",
+  city: "",
+  wantsNeeds: "",
+  didPurchase: null,
+  purchaseAmount: "",
+  objectionNote: "",
 });
 
 const formatTime = (value: string | null) => {
@@ -135,6 +150,105 @@ const formatLiveWeather = (item: CRMUpsQueueItem) => {
     item.liveWeatherSummary,
   ].filter(Boolean);
   return parts.length ? parts.join(" · ") : item.store;
+};
+
+const formatCurrency = (value: number | null) => {
+  if (value === null || value === undefined || Number.isNaN(value)) return "";
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
+};
+
+const escapePrintHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const buildWeatherLabel = (entry: CRMUpsHistoryEntry) => {
+  const parts = [
+    entry.weatherLocation,
+    entry.weatherSummary,
+    entry.weatherTempF === null ? null : `${Math.round(entry.weatherTempF)}F`,
+  ].filter(Boolean);
+  return parts.join(" · ");
+};
+
+const openUpsPrintWindow = (rows: CRMUpsHistoryEntry[], selectedStore: string, reportDate: string) => {
+  const printWindow = window.open("", "_blank", "width=1280,height=900");
+  if (!printWindow) return;
+
+  const title = `UPS Daily Sheet · ${reportDate}${selectedStore && selectedStore !== "ALL" ? ` · ${selectedStore}` : ""}`;
+  const bodyRows = rows.length
+    ? rows
+        .map((row) => {
+          const wantsNeeds = row.wantsNeeds || row.customerDetails || "";
+          const didPurchase =
+            row.didPurchase === null ? "" : row.didPurchase ? "Yes" : "No";
+          return `
+            <tr>
+              <td>${escapePrintHtml(formatShortDate(row.startedAt) || reportDate)}</td>
+              <td>${escapePrintHtml(formatTime(row.startedAt) || "")}</td>
+              <td>${escapePrintHtml(formatTime(row.completedAt) || "")}</td>
+              <td>${escapePrintHtml(buildWeatherLabel(row))}</td>
+              <td>${escapePrintHtml(row.customer || "")}</td>
+              <td>${escapePrintHtml(row.city || "")}</td>
+              <td>${escapePrintHtml(wantsNeeds)}</td>
+              <td>${escapePrintHtml(didPurchase)}</td>
+              <td>${escapePrintHtml(formatCurrency(row.purchaseAmount))}</td>
+              <td>${escapePrintHtml(row.objectionNote || "")}</td>
+            </tr>
+          `;
+        })
+        .join("")
+    : `<tr><td colspan="10" class="empty">No UPS entries found for this day.</td></tr>`;
+
+  printWindow.document.open();
+  printWindow.document.write(`<!DOCTYPE html>
+  <html>
+    <head>
+      <title>${escapePrintHtml(title)}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #0f172a; }
+        h1 { margin: 0 0 6px; font-size: 24px; }
+        .meta { margin-bottom: 18px; font-size: 12px; color: #475569; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { border: 1px solid #cbd5e1; padding: 8px; font-size: 11px; vertical-align: top; word-break: break-word; }
+        th { background: #e2e8f0; text-align: left; }
+        .empty { text-align: center; color: #64748b; padding: 18px; }
+        @media print {
+          body { margin: 12px; }
+        }
+      </style>
+    </head>
+    <body>
+      <h1>UPS Daily Sheet</h1>
+      <div class="meta">Date: ${escapePrintHtml(reportDate)}${selectedStore && selectedStore !== "ALL" ? ` · Store: ${escapePrintHtml(selectedStore)}` : ""}</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Time In</th>
+            <th>Time Out</th>
+            <th>Weather</th>
+            <th>Name</th>
+            <th>City</th>
+            <th>Wants / Needs</th>
+            <th>Did They Purchase</th>
+            <th>How Much</th>
+            <th>Objection Note</th>
+          </tr>
+        </thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+      <script>
+        window.addEventListener('load', function () {
+          setTimeout(function () { window.print(); }, 150);
+        });
+      </script>
+    </body>
+  </html>`);
+  printWindow.document.close();
 };
 
 const splitName = (value: string) => {
@@ -178,10 +292,12 @@ const namesLikelyMatch = (left: string, right: string) => {
   return leftTokens.length > 0 && leftTokens.join("|") === rightTokens.join("|");
 };
 
-const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => {
+const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view = "all", selectedStore: controlledStore, onStoreChange }) => {
   const isManager = authUser.roles.includes("Owner") || authUser.roles.includes("Manager");
   const [syncMode, setSyncMode] = useState<SyncMode>("OFFLINE");
-  const [selectedStore, setSelectedStore] = useState("FD7");
+  const [internalStore, setInternalStore] = useState("FD7");
+  const selectedStore = controlledStore ?? internalStore;
+  const setSelectedStore = onStoreChange ?? setInternalStore;
   const [owners, setOwners] = useState<CRMOwnerOption[]>([]);
   const [salespeople, setSalespeople] = useState<CRMSalespersonOption[]>([]);
   const [queue, setQueue] = useState<CRMUpsQueueItem[]>([]);
@@ -201,6 +317,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   const [customerSearchResults, setCustomerSearchResults] = useState<CRMSearchResult>(emptySearch);
   const [customerSearching, setCustomerSearching] = useState(false);
   const [customerSearchError, setCustomerSearchError] = useState<string | null>(null);
+  const [printingUps, setPrintingUps] = useState(false);
   const [openLocationTickets, setOpenLocationTickets] = useState<OpenLocationTicketRow[]>([]);
   const [openLocationTicketLocations, setOpenLocationTicketLocations] = useState<string[]>([]);
   const [loadingOpenLocationTickets, setLoadingOpenLocationTickets] = useState(false);
@@ -335,6 +452,14 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       ...splitName(activeCustomer.customer || combineName(current.firstName, current.lastName)),
       visualDescription: activeCustomer.customerDetails || current.visualDescription,
       notes: current.notes || activeCustomer.customerDetails || "",
+      city: activeCustomer.city || current.city,
+      wantsNeeds: activeCustomer.wantsNeeds || current.wantsNeeds,
+      didPurchase: activeCustomer.didPurchase ?? current.didPurchase,
+      purchaseAmount:
+        activeCustomer.purchaseAmount === null || activeCustomer.purchaseAmount === undefined
+          ? current.purchaseAmount
+          : String(activeCustomer.purchaseAmount),
+      objectionNote: activeCustomer.objectionNote || current.objectionNote,
     }));
   }, [selectedQueueItem]);
 
@@ -388,6 +513,14 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       ownerUserId: item.repUserId || baseDraft.ownerUserId,
       ...splitName(preferredActiveCustomer.customer || ""),
       visualDescription: preferredActiveCustomer.customerDetails || "",
+      city: preferredActiveCustomer.city || "",
+      wantsNeeds: preferredActiveCustomer.wantsNeeds || "",
+      didPurchase: preferredActiveCustomer.didPurchase ?? null,
+      purchaseAmount:
+        preferredActiveCustomer.purchaseAmount === null || preferredActiveCustomer.purchaseAmount === undefined
+          ? ""
+          : String(preferredActiveCustomer.purchaseAmount),
+      objectionNote: preferredActiveCustomer.objectionNote || "",
     });
     resetCustomerLookup();
   };
@@ -668,6 +801,11 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
           customer: fullName || undefined,
           customerType: undefined,
           details: queueDetails,
+          city: draft.city.trim(),
+          wantsNeeds: draft.wantsNeeds.trim(),
+          didPurchase: draft.didPurchase ?? undefined,
+          purchaseAmount: draft.purchaseAmount.trim() ? Number(draft.purchaseAmount) : null,
+          objectionNote: draft.objectionNote.trim(),
         });
         setQueue((current) =>
           current
@@ -717,6 +855,24 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     }
   };
 
+  const handlePrintUpsDay = async () => {
+    setPrintingUps(true);
+    setStatusMessage(null);
+    setErrorMessage(null);
+    try {
+      const reportDate = todayIso();
+      const rows = await fetchCrmUpsHistoryFromApi({
+        store: selectedStore,
+        date: reportDate,
+      });
+      openUpsPrintWindow(rows, selectedStore, reportDate);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to print UPS sheet.");
+    } finally {
+      setPrintingUps(false);
+    }
+  };
+
   const customerSearchMatches = useMemo(() => {
     const queryTokens = customerSearch.query
       .trim()
@@ -761,7 +917,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
             v{APP_VERSION}
           </div>
         </div>
-        <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className={view === "all" ? "grid gap-4 xl:grid-cols-[1.2fr_0.8fr]" : "grid gap-4"}>
           {statusMessage ? (
             <div className={`rounded-2xl border px-4 py-3 text-sm font-medium xl:col-span-2 ${
               isDarkMode
@@ -780,7 +936,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
               {errorMessage}
             </div>
           ) : null}
-          <div className={panelClassName}>
+          {view !== "customers" && <div className={panelClassName}>
             <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-700/70 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-slate-100/90 p-2 text-slate-600 dark:bg-slate-900/78 dark:text-slate-100">
@@ -791,22 +947,24 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                   <div className="text-xs text-slate-500 dark:text-slate-400">Top of the list gets the next customer opportunity.</div>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  value={selectedStore}
-                  onChange={(event) => setSelectedStore(event.target.value)}
-                  className={subtleInputClassName}
-                >
-                  {STORE_FILTER_OPTIONS.map((location) => (
-                    <option key={location} value={location}>
-                      {location === "ALL" ? "All Stores" : location}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+                {!controlledStore && (
+                  <select
+                    value={selectedStore}
+                    onChange={(event) => setSelectedStore(event.target.value)}
+                    className={`w-full min-w-0 sm:w-auto ${subtleInputClassName}`}
+                  >
+                    {STORE_FILTER_OPTIONS.map((location) => (
+                      <option key={location} value={location}>
+                        {location === "ALL" ? "All Stores" : location}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <select
                   value={selectedSalespersonName}
                   onChange={(event) => setSelectedSalespersonName(event.target.value)}
-                  className={`min-w-[220px] ${subtleInputClassName}`}
+                  className={`w-full min-w-0 sm:min-w-[220px] ${subtleInputClassName}`}
                 >
                   <option value="">Add myself to queue</option>
                   {availableSalespeople.map((person) => (
@@ -829,6 +987,16 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                       : selectedSalesperson
                         ? "Add To Queue"
                         : "Check In"}
+                </button>
+                <button
+                  onClick={() => void handlePrintUpsDay()}
+                  disabled={printingUps || syncMode !== "POS_DB"}
+                  className={ghostButtonClassName}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <Printer className="h-4 w-4" />
+                    {printingUps ? "Preparing Print..." : "Print Today's UPS"}
+                  </span>
                 </button>
                 {selectedSalesperson ? (
                   <div className="text-xs text-slate-500 dark:text-slate-400">{selectedSalesperson.totalTickets.toLocaleString()} tickets</div>
@@ -877,7 +1045,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                     <div key={item.id} className={`${isSelected ? (isDarkMode ? "bg-slate-900/80" : "bg-sky-50/80") : isDarkMode ? "hover:bg-slate-900/60" : ""}`}>
                       <button
                         onClick={() => loadDraftFromQueueCustomer(item)}
-                        className="grid w-full grid-cols-[56px_1fr_auto] items-center gap-3 px-4 py-3 text-left"
+                        className="grid w-full grid-cols-[48px_minmax(0,1fr)] items-start gap-3 px-4 py-3 text-left sm:grid-cols-[56px_minmax(0,1fr)_auto] sm:items-center"
                       >
                         <div className="text-center">
                           <div className="text-xs text-slate-400 dark:text-slate-500">#</div>
@@ -914,7 +1082,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                             <div className={weatherSnapshotTextClassName}>{weatherSnapshot}</div>
                           ) : null}
                         </div>
-                        <div className="text-right">
+                        <div className="col-span-2 pl-[60px] text-left sm:col-span-1 sm:pl-0 sm:text-right">
                           <div className="text-[11px] font-medium text-slate-500 dark:text-slate-300">
                             {item.store}
                           </div>
@@ -1177,20 +1345,20 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                 <div className="px-4 py-6 text-sm text-slate-500 dark:text-slate-400">No one is checked into this showroom yet.</div>
               )}
             </div>
-          </div>
+          </div>}
 
-          <div className="flex flex-col gap-4">
-            <div className={`${panelClassName} p-4`}>
+          {view !== "queue" && <div className="flex flex-col gap-4">
+            <div className={`p-4 rounded-3xl border ${isDarkMode ? "border-rose-500/30 bg-rose-500/8" : "border-rose-200 bg-rose-50/60"}`}>
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <div className="text-sm font-semibold text-slate-900 dark:text-white">Open Tickets</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                  <div className={`text-sm font-semibold ${isDarkMode ? "text-rose-200" : "text-rose-800"}`}>Open Tickets — Fully Delivered</div>
+                  <div className={`text-xs ${isDarkMode ? "text-rose-300/70" : "text-rose-600/80"}`}>
                     {openTicketsStore
                       ? `${openTicketsStore}${openLocationTicketLocations.length ? ` · ${openLocationTicketLocations.join(", ")}` : ""}`
                       : "Select a location to view open tickets"}
                   </div>
                 </div>
-                <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                <div className={`text-[11px] font-medium uppercase tracking-[0.18em] ${isDarkMode ? "text-rose-400" : "text-rose-500"}`}>
                   {loadingOpenLocationTickets ? "Loading" : `${openLocationTickets.length} Open`}
                 </div>
               </div>
@@ -1268,12 +1436,12 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
               </div>
 
               <div className="mt-3 grid gap-2">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <input value={draft.firstName} onChange={(event) => updateDraftFromInput("firstName", event.target.value)} placeholder="First name" className={subtleInputClassName} />
                   <input value={draft.lastName} onChange={(event) => updateDraftFromInput("lastName", event.target.value)} placeholder="Last name" className={subtleInputClassName} />
                 </div>
                 <input value={draft.visualDescription} onChange={(event) => updateDraftFromInput("visualDescription", event.target.value)} placeholder="Visual description" className={subtleInputClassName} />
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <input value={draft.phone} onChange={(event) => updateDraftFromInput("phone", event.target.value)} placeholder="Phone" className={subtleInputClassName} />
                   <input value={draft.email} onChange={(event) => updateDraftFromInput("email", event.target.value)} placeholder="Email" className={subtleInputClassName} />
                 </div>
@@ -1321,7 +1489,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                     )}
                   </div>
                 ) : null}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <select value={draft.store} onChange={(event) => updateDraft("store", event.target.value)} className={subtleInputClassName}>
                     {LOCATION_OPTIONS.map((location) => <option key={location} value={location}>{location}</option>)}
                   </select>
@@ -1336,7 +1504,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                     {ownerOptions.map((owner) => <option key={owner.id || owner.name} value={owner.name}>{owner.name}</option>)}
                   </select>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <select value={draft.channel} onChange={(event) => updateDraft("channel", event.target.value as CRMLeadChannel)} className={subtleInputClassName}>
                     {CHANNEL_OPTIONS.map((channel) => <option key={channel} value={channel}>{channel}</option>)}
                   </select>
@@ -1346,12 +1514,36 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                   <input type="date" value={draft.dueDate} onChange={(event) => updateDraft("dueDate", event.target.value)} className={subtleInputClassName} />
                 </div>
                 <input value={draft.source} onChange={(event) => updateDraftFromInput("source", event.target.value)} placeholder="Source" className={subtleInputClassName} />
+                <input value={draft.city} onChange={(event) => updateDraft("city", event.target.value)} placeholder="City" className={subtleInputClassName} />
                 <input value={draft.interest} onChange={(event) => updateDraftFromInput("interest", event.target.value)} placeholder="Interest" className={subtleInputClassName} />
+                <textarea value={draft.wantsNeeds} onChange={(event) => updateDraft("wantsNeeds", event.target.value)} rows={3} placeholder="Wants / Needs" className={subtleInputClassName} />
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[180px_1fr]">
+                  <select
+                    value={draft.didPurchase === null ? "" : draft.didPurchase ? "yes" : "no"}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      updateDraft("didPurchase", value === "" ? null : value === "yes");
+                    }}
+                    className={subtleInputClassName}
+                  >
+                    <option value="">Did they purchase?</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                  <input
+                    value={draft.purchaseAmount}
+                    onChange={(event) => updateDraft("purchaseAmount", event.target.value)}
+                    placeholder="How much did they purchase?"
+                    inputMode="decimal"
+                    className={subtleInputClassName}
+                  />
+                </div>
+                <textarea value={draft.objectionNote} onChange={(event) => updateDraft("objectionNote", event.target.value)} rows={3} placeholder="Objection note" className={subtleInputClassName} />
                 <input value={draft.nextAction} onChange={(event) => updateDraftFromInput("nextAction", event.target.value)} placeholder="Next action" className={subtleInputClassName} />
                 <textarea value={draft.notes} onChange={(event) => updateDraftFromInput("notes", event.target.value)} rows={4} placeholder="Notes" className={subtleInputClassName} />
               </div>
 
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                 <button onClick={() => void handleSaveCustomer()} disabled={saving !== null} className={successButtonClassName}>
                   {saving === "customer" ? "Saving..." : "Save Customer"}
                 </button>
@@ -1367,7 +1559,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
               </div>
             </div>
 
-          </div>
+          </div>}
         </div>
       </div>
     </div>

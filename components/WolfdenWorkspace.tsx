@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { CheckSquare, ExternalLink, Link2, MapPin, MessageSquare, UserCheck, Users, Zap } from "lucide-react";
+import { CheckSquare, MapPin, MessageSquare, UserCheck, Users } from "lucide-react";
 import type { AuthUser } from "../types";
 import { TaskStatus } from "../types";
 import CRMWorkspace from "./CRMWorkspace";
@@ -35,9 +35,6 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
   const selectCls = isDarkMode
     ? "rounded-lg border border-slate-700 bg-slate-900 pl-7 pr-3 py-1.5 text-xs font-semibold text-slate-100 outline-none focus:border-amber-500"
     : "rounded-lg border border-slate-200 bg-white pl-7 pr-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-amber-400";
-  const quickLinkBtn = isDarkMode
-    ? "inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-200 transition-colors hover:bg-slate-800"
-    : "inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50";
 
   const tabBtn = (active: boolean) =>
     `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
@@ -96,55 +93,6 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
             ))}
           </select>
         </div>
-      </div>
-
-      <div className={`flex flex-wrap items-center gap-2 px-6 py-3 border-b ${divider}`}>
-        <span className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-          Den quick links
-        </span>
-        <button type="button" className={quickLinkBtn} onClick={() => setSubTab("ups")}>
-          <UserCheck size={13} />
-          UPS
-        </button>
-        <button type="button" className={quickLinkBtn} onClick={() => setSubTab("crm")}>
-          <Users size={13} />
-          CRM
-        </button>
-        <button type="button" className={quickLinkBtn} onClick={() => setSubTab("board")}>
-          <MessageSquare size={13} />
-          Board
-        </button>
-        <button type="button" className={quickLinkBtn} onClick={() => setSubTab("tasks")}>
-          <CheckSquare size={13} />
-          Tasks
-        </button>
-        <a
-          href="https://sites.google.com/view/fdserver/home"
-          target="_blank"
-          rel="noreferrer"
-          className={quickLinkBtn}
-        >
-          <Link2 size={13} />
-          QuickLinks
-        </a>
-        <a
-          href="https://furnituredistributors.wolf.discount/fd/manager-specials-upload.html"
-          target="_blank"
-          rel="noreferrer"
-          className={quickLinkBtn}
-        >
-          <ExternalLink size={13} />
-          Manager Specials
-        </a>
-        <a
-          href="https://furnituredistributors.wolf.discount/alphapulse/"
-          target="_blank"
-          rel="noreferrer"
-          className={quickLinkBtn}
-        >
-          <Zap size={13} />
-          AlphaPulse
-        </a>
       </div>
 
       {/* Content */}

@@ -103,8 +103,38 @@ export interface CRMUpsActiveCustomer {
   customer: string;
   customerType: UpsQueueCustomerType | null;
   customerDetails: string | null;
+  city: string | null;
+  wantsNeeds: string | null;
+  didPurchase: boolean | null;
+  purchaseAmount: number | null;
+  objectionNote: string | null;
   startedAt: string | null;
   historyId: string | null;
+}
+
+export interface CRMUpsHistoryEntry {
+  id: string;
+  queueEntryId: string;
+  store: string;
+  rep: string;
+  customer: string;
+  city: string | null;
+  customerType: UpsQueueCustomerType | null;
+  customerDetails: string | null;
+  wantsNeeds: string | null;
+  didPurchase: boolean | null;
+  purchaseAmount: number | null;
+  objectionNote: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  weatherLocation: string | null;
+  weatherSummary: string | null;
+  weatherTempF: number | null;
+  weatherPrecipPct: number | null;
+  weatherWindMph: number | null;
+  weatherFetchedAt: string | null;
+  endedReason: string | null;
+  countsAsUp: boolean;
 }
 
 export interface CRMUpsQueueItem {

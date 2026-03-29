@@ -413,6 +413,11 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS customer TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS customer_type TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS customer_details TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS city TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS wants_needs TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS did_purchase BOOLEAN;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS purchase_amount NUMERIC(12,2);`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS objection_note TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
@@ -420,6 +425,9 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN rep SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN customer SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN customer_details SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN city SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN wants_needs SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN objection_note SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN started_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN created_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN updated_at SET DEFAULT now();`);
@@ -483,6 +491,11 @@ async function ensureCrmSchema(pool: Pool) {
       customer                    TEXT NOT NULL DEFAULT '',
       customer_type               TEXT NULL,
       customer_details            TEXT NOT NULL DEFAULT '',
+      city                        TEXT NOT NULL DEFAULT '',
+      wants_needs                 TEXT NOT NULL DEFAULT '',
+      did_purchase                BOOLEAN NULL,
+      purchase_amount             NUMERIC(12,2) NULL,
+      objection_note              TEXT NOT NULL DEFAULT '',
       started_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
       completed_at                TIMESTAMPTZ NULL,
       weather_location            TEXT NULL,
@@ -506,6 +519,11 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS customer TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS customer_type TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS customer_details TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS city TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS wants_needs TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS did_purchase BOOLEAN;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS purchase_amount NUMERIC(12,2);`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS objection_note TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS weather_location TEXT;`);
@@ -524,6 +542,9 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN rep SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN customer SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN customer_details SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN city SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN wants_needs SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN objection_note SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN ended_reason SET DEFAULT 'completed';`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN counts_as_up SET DEFAULT TRUE;`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN is_door_traffic SET DEFAULT TRUE;`);
