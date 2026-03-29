@@ -18,6 +18,13 @@ export function registerSalesDetailRoutes({
   prefixedDateField,
 }: RegisterSalesDetailRoutesDeps) {
   const pro1stItemSql = buildQualifiedPro1stSql();
+  const storeLocationMap: Record<string, string[]> = {
+    FD7: ["Morehead", "Morehead City", "Havelock"],
+    FD5: ["Newport"],
+    G1: ["Greenville"],
+    Base: ["Cherry Point"],
+    Camp: ["Camp LeJeune", "Camp Lejeune"],
+  };
 
   // All tickets for a salesperson within a date range (for detail drill-down)
   app.get("/api/salesperson-tickets", async (req, res) => {
@@ -151,6 +158,54 @@ export function registerSalesDetailRoutes({
       rows: r.rows.map((x: any) => ({
         sale_id: x.sale_id,
         salesperson: x.salesperson,
+      })),
+    });
+  });
+
+  app.get("/api/open-location-tickets", async (req, res) => {
+    const storeQ = parseTextParam(req.query.store);
+    const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
+    if (!storeQ) {
+      return res.status(400).json({ error: "store is required" });
+    }
+
+    const mappedLocations = storeLocationMap[storeQ] ?? [storeQ];
+    const sql = `
+      SELECT
+        sale_id,
+        sale_date,
+        est_delivery_date,
+        delivery_confirmed_date,
+        location,
+        receipt_no,
+        customer_name,
+        grand_total,
+        sale_status
+      FROM pos_sales
+      WHERE
+        lower(COALESCE(sale_status, '')) LIKE 'open%'
+        AND location = ANY($1::text[])
+      ORDER BY
+        est_delivery_date ASC NULLS LAST,
+        sale_date DESC NULLS LAST,
+        sale_id DESC
+      LIMIT $2
+    `;
+    const result = await pool.query(sql, [mappedLocations, limit]);
+    res.json({
+      store: storeQ,
+      locations: mappedLocations,
+      limit,
+      rows: result.rows.map((row: any) => ({
+        sale_id: String(row.sale_id ?? ""),
+        sale_date: row.sale_date ? String(row.sale_date).slice(0, 10) : null,
+        est_delivery_date: row.est_delivery_date ? String(row.est_delivery_date).slice(0, 10) : null,
+        delivery_confirmed_date: row.delivery_confirmed_date ? String(row.delivery_confirmed_date).slice(0, 10) : null,
+        location: String(row.location ?? ""),
+        receipt_no: String(row.receipt_no ?? ""),
+        customer_name: String(row.customer_name ?? ""),
+        grand_total: row.grand_total === null || row.grand_total === undefined ? null : Number(row.grand_total),
+        sale_status: String(row.sale_status ?? ""),
       })),
     });
   });

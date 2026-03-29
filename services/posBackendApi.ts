@@ -317,6 +317,49 @@ export async function fetchSalespersonTickets(params: {
   }));
 }
 
+export type OpenLocationTicketRow = {
+  saleId: string;
+  saleDate: string | null;
+  estDeliveryDate: string | null;
+  deliveryConfirmedDate: string | null;
+  location: string;
+  receiptNo: string;
+  customerName: string;
+  grandTotal: number | null;
+  saleStatus: string;
+};
+
+export async function fetchOpenLocationTickets(params: {
+  store: string;
+  limit?: number;
+}): Promise<{
+  store: string;
+  locations: string[];
+  rows: OpenLocationTicketRow[];
+}> {
+  const qs = new URLSearchParams({
+    store: params.store,
+    limit: String(params.limit ?? 10),
+  });
+  const json = await fetchJson(`/api/open-location-tickets?${qs.toString()}`);
+  const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
+  return {
+    store: String((json as any)?.store ?? params.store),
+    locations: Array.isArray((json as any)?.locations) ? (json as any).locations.map((value: any) => String(value)) : [],
+    rows: rows.map((row: any) => ({
+      saleId: String(row.sale_id ?? ""),
+      saleDate: row.sale_date ? String(row.sale_date) : null,
+      estDeliveryDate: row.est_delivery_date ? String(row.est_delivery_date) : null,
+      deliveryConfirmedDate: row.delivery_confirmed_date ? String(row.delivery_confirmed_date) : null,
+      location: String(row.location ?? ""),
+      receiptNo: String(row.receipt_no ?? ""),
+      customerName: String(row.customer_name ?? ""),
+      grandTotal: row.grand_total === null || row.grand_total === undefined ? null : Number(row.grand_total),
+      saleStatus: String(row.sale_status ?? ""),
+    })),
+  };
+}
+
 export async function fetchLeaderboard(params: {
   start: string;
   end: string;

@@ -12,7 +12,7 @@ import type {
   CRMUpsQueueItem,
   UpsQueueCustomerType,
 } from "../types";
-import { checkPosBackendHealthy } from "../services/posBackendApi";
+import { checkPosBackendHealthy, fetchOpenLocationTickets, type OpenLocationTicketRow } from "../services/posBackendApi";
 import {
   completeCrmUpsQueueCustomerInApi,
   fetchCrmOwnersFromApi,
@@ -109,6 +109,13 @@ const formatTime = (value: string | null) => {
   return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 };
 
+const formatShortDate = (value: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString([], { month: "numeric", day: "numeric", year: "2-digit" });
+};
+
 const formatWeatherSnapshot = (item: CRMUpsQueueItem) => {
   const parts = [
     item.currentWeatherLocation || item.store,
@@ -177,6 +184,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   const [customerSearchResults, setCustomerSearchResults] = useState<CRMSearchResult>(emptySearch);
   const [customerSearching, setCustomerSearching] = useState(false);
   const [customerSearchError, setCustomerSearchError] = useState<string | null>(null);
+  const [openLocationTickets, setOpenLocationTickets] = useState<OpenLocationTicketRow[]>([]);
+  const [openLocationTicketLocations, setOpenLocationTicketLocations] = useState<string[]>([]);
+  const [loadingOpenLocationTickets, setLoadingOpenLocationTickets] = useState(false);
+  const [openLocationTicketsError, setOpenLocationTicketsError] = useState<string | null>(null);
 
   const panelClassName = isDarkMode
     ? "rounded-3xl border border-slate-800 bg-slate-950 shadow-[0_14px_30px_rgba(2,6,23,0.16)]"
@@ -268,6 +279,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   const breakCount = queue.filter((item) => item.status === "on_break").length;
   const selectedQueueItem = queue.find((item) => item.id === selectedQueueId) || myQueueItem || queue[0] || null;
   const defaultDraftStore = !isViewingAllStores ? selectedStore : selectedQueueItem?.store || myQueueItem?.store || "FD7";
+  const openTicketsStore = !isViewingAllStores ? selectedStore : selectedQueueItem?.store || draft.store || null;
   const nextOpportunityId = queue.find((item) => item.status === "waiting")?.id || null;
   const ownerOptions = useMemo(() => {
     const rows = owners.length
@@ -390,6 +402,41 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       window.clearTimeout(timer);
     };
   }, [customerSearch.query]);
+
+  useEffect(() => {
+    if (!openTicketsStore || syncMode !== "POS_DB") {
+      setOpenLocationTickets([]);
+      setOpenLocationTicketLocations([]);
+      setLoadingOpenLocationTickets(false);
+      setOpenLocationTicketsError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingOpenLocationTickets(true);
+    setOpenLocationTicketsError(null);
+
+    void fetchOpenLocationTickets({ store: openTicketsStore, limit: 12 })
+      .then((result) => {
+        if (cancelled) return;
+        setOpenLocationTickets(result.rows);
+        setOpenLocationTicketLocations(result.locations);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setOpenLocationTickets([]);
+        setOpenLocationTicketLocations([]);
+        setOpenLocationTicketsError(error instanceof Error ? error.message : "Unable to load open tickets.");
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingOpenLocationTickets(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [openTicketsStore, syncMode]);
 
   const applyCustomer = (customer: CRMCustomerAccount) => {
     setDraft((current) => ({
@@ -662,6 +709,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     }));
     return [...customerEntries, ...orderEntries].slice(0, 10);
   }, [customerSearchResults]);
+  const saleLink = (saleId: string) =>
+    `https://www.gimmethebest.net/furnituredistributors/online/sale_rec_502.asp?saleid=${saleId.padStart(5, "0")}&type=1`;
+  const itemsLink = (saleId: string) =>
+    `https://www.gimmethebest.net/furnituredistributors/finance/deliverieddetail.asp?saleid=${saleId}`;
 
   return (
     <div className="px-4 py-4 sm:px-6">
@@ -1094,6 +1145,80 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
           </div>
 
           <div className="flex flex-col gap-4">
+            <div className={`${panelClassName} p-4`}>
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white">Open Tickets</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {openTicketsStore
+                      ? `${openTicketsStore}${openLocationTicketLocations.length ? ` · ${openLocationTicketLocations.join(", ")}` : ""}`
+                      : "Select a location to view open tickets"}
+                  </div>
+                </div>
+                <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                  {loadingOpenLocationTickets ? "Loading" : `${openLocationTickets.length} Open`}
+                </div>
+              </div>
+              {openLocationTicketsError ? (
+                <div className="mt-3 text-xs text-rose-600 dark:text-rose-300">{openLocationTicketsError}</div>
+              ) : null}
+              {!openTicketsStore ? (
+                <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">Open tickets follow the selected showroom.</div>
+              ) : loadingOpenLocationTickets ? (
+                <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading open tickets...</div>
+              ) : openLocationTickets.length ? (
+                <div className="mt-3 space-y-2">
+                  {openLocationTickets.map((ticket, index) => (
+                    <div
+                      key={`${ticket.saleId}-${index}`}
+                      className={`rounded-2xl border px-3 py-3 ${
+                        isDarkMode
+                          ? "border-slate-800 bg-slate-900/80"
+                          : "border-slate-200 bg-white/90"
+                      }`}
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                            {ticket.customerName || "Open ticket"}
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            {ticket.location || openTicketsStore} · {ticket.receiptNo || "No receipt"} · {ticket.saleStatus}
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Sale {formatShortDate(ticket.saleDate)}{ticket.estDeliveryDate ? ` · Est ${formatShortDate(ticket.estDeliveryDate)}` : ""}
+                          </div>
+                        </div>
+                        <div className="text-right text-sm font-semibold text-slate-900 dark:text-white">
+                          {ticket.grandTotal !== null ? `$${ticket.grandTotal.toLocaleString()}` : ""}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <a
+                          href={saleLink(ticket.saleId)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={ghostButtonClassName}
+                        >
+                          Sale #{ticket.saleId}
+                        </a>
+                        <a
+                          href={itemsLink(ticket.saleId)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={ghostButtonClassName}
+                        >
+                          Items
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">No open tickets found for this location.</div>
+              )}
+            </div>
+
             <div className={`${panelClassName} p-4`}>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
