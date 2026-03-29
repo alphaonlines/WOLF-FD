@@ -18,6 +18,21 @@ import {
   parseJacksonCatnapperPricebookPdf,
   parseJacksonCatnapperReferenceNotes,
 } from "../parsers/jacksonCatnapperPricebook";
+import {
+  parseAccessoryReferenceNotes,
+  parseGbsProtectallWorkbook,
+  parseGuardsmanWorkbook,
+  parseInnovationsWorkbook,
+} from "../parsers/accessoryWorkbookPricebooks";
+
+const SIBLING_PREFERRED_MANUFACTURERS = new Set([
+  "best",
+  "england",
+  "jackson-catnapper",
+  "guardsman",
+  "gbs-protectall",
+  "innovations",
+]);
 
 type ExecFileAsyncLike = (
   file: string,
@@ -90,7 +105,10 @@ function getUploadSelectionScore(uploadRow: any) {
   if (/\.csv$/.test(name)) score += 120;
   if (/residential price list/.test(name)) score += 600;
   if (/price[_ -]?list|pricebook/.test(name)) score += 180;
+  if (/sku list|pricing by sku/.test(name)) score += 350;
   if (/compressed/.test(name)) score += 20;
+  if (/order form|configurations/.test(name)) score -= 120;
+  if (/kits/.test(name)) score -= 60;
   if (/warranty/.test(name)) score -= 100;
   if (/tariff|delivery schedule|schedule|coastal covers|curfab|pattern|cushion/.test(name)) score -= 220;
   if (/diamond/.test(name)) score -= 120;
@@ -144,18 +162,7 @@ async function resolveUploadRowForProcessing(pool: Pool, uploadRow: any) {
   }
 
   const manufacturerSlug = String(uploadRow.manufacturer_slug || "").trim().toLowerCase();
-  if (manufacturerSlug === "best" && uploadRow.parent_upload_id) {
-    const siblings = await loadUploadChildren(pool, Number(uploadRow.parent_upload_id));
-    const usableSiblings = siblings.filter((row) => String(row.document_type || "").toLowerCase() !== "archive");
-    return choosePreferredUploadCandidate(usableSiblings) || uploadRow;
-  }
-
-  if (manufacturerSlug === "england" && uploadRow.parent_upload_id) {
-    const siblings = await loadUploadChildren(pool, Number(uploadRow.parent_upload_id));
-    const usableSiblings = siblings.filter((row) => String(row.document_type || "").toLowerCase() !== "archive");
-    return choosePreferredUploadCandidate(usableSiblings) || uploadRow;
-  }
-  if (manufacturerSlug === "jackson-catnapper" && uploadRow.parent_upload_id) {
+  if (SIBLING_PREFERRED_MANUFACTURERS.has(manufacturerSlug) && uploadRow.parent_upload_id) {
     const siblings = await loadUploadChildren(pool, Number(uploadRow.parent_upload_id));
     const usableSiblings = siblings.filter((row) => String(row.document_type || "").toLowerCase() !== "archive");
     return choosePreferredUploadCandidate(usableSiblings) || uploadRow;
@@ -492,8 +499,17 @@ async function parseUploadRows(input: {
   if (manufacturerSlug === "jackson-catnapper") {
     return parseJacksonCatnapperPricebookPdf(filePath, input.execFileAsync);
   }
+  if (manufacturerSlug === "guardsman") {
+    return parseGuardsmanWorkbook(filePath);
+  }
+  if (manufacturerSlug === "gbs-protectall") {
+    return parseGbsProtectallWorkbook(filePath);
+  }
+  if (manufacturerSlug === "innovations") {
+    return parseInnovationsWorkbook(filePath);
+  }
   throw new Error(
-    `No parser is available yet for ${resolvedUploadRow.manufacturer}. Liberty, Best, England, and Jackson/Catnapper are currently live.`
+    `No parser is available yet for ${resolvedUploadRow.manufacturer}. Liberty, Best, England, Jackson/Catnapper, Guardsman, GBS ProtectAll, and Innovations are currently live.`
   );
 }
 
@@ -520,6 +536,9 @@ async function parseUploadReferenceNotes(input: {
   }
   if (manufacturerSlug === "jackson-catnapper") {
     return parseJacksonCatnapperReferenceNotes();
+  }
+  if (manufacturerSlug === "guardsman" || manufacturerSlug === "gbs-protectall" || manufacturerSlug === "innovations") {
+    return parseAccessoryReferenceNotes();
   }
   return [];
 }

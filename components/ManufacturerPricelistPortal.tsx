@@ -96,7 +96,10 @@ const getUploadSelectionScore = (upload: ManufacturerPricebookUpload) => {
   if (/\.xlsx?$/.test(name)) score += 250;
   if (/price[_ -]?list|pricebook/.test(name)) score += 180;
   if (/residential price list/.test(name)) score += 600;
+  if (/sku list|pricing by sku/.test(name)) score += 350;
   if (/compressed/.test(name)) score += 20;
+  if (/order form|configurations/.test(name)) score -= 120;
+  if (/kits/.test(name)) score -= 60;
   if (/warranty/.test(name)) score -= 100;
   if (/tariff|delivery schedule|schedule|coastal covers|curfab|pattern|cushion/.test(name)) score -= 220;
   if (/diamond/.test(name)) score -= 120;
@@ -104,6 +107,15 @@ const getUploadSelectionScore = (upload: ManufacturerPricebookUpload) => {
   if (/grade change|cheat sheet/.test(name)) score -= 140;
   return score;
 };
+
+const SIBLING_PREFERRED_MANUFACTURERS = new Set([
+  "best",
+  "england",
+  "jackson-catnapper",
+  "guardsman",
+  "gbs-protectall",
+  "innovations",
+]);
 
 const getPreferredHoldingUpload = (uploads: ManufacturerPricebookUpload[]) =>
   [...uploads].sort((left, right) => getUploadSelectionScore(right) - getUploadSelectionScore(left))[0] || null;
@@ -121,25 +133,11 @@ const getResolvedPreviewUpload = (
       selectedUpload
     );
   }
-  if (selectedUpload?.manufacturerSlug === "best" && selectedUpload.parentUploadId) {
-    return (
-      getPreferredHoldingUpload(
-        uploads.filter(
-          (upload) => upload.parentUploadId === selectedUpload.parentUploadId && upload.documentType !== "archive"
-        )
-      ) || selectedUpload
-    );
-  }
-  if (selectedUpload?.manufacturerSlug === "england" && selectedUpload.parentUploadId) {
-    return (
-      getPreferredHoldingUpload(
-        uploads.filter(
-          (upload) => upload.parentUploadId === selectedUpload.parentUploadId && upload.documentType !== "archive"
-        )
-      ) || selectedUpload
-    );
-  }
-  if (selectedUpload?.manufacturerSlug === "jackson-catnapper" && selectedUpload.parentUploadId) {
+  if (
+    selectedUpload?.manufacturerSlug &&
+    SIBLING_PREFERRED_MANUFACTURERS.has(selectedUpload.manufacturerSlug) &&
+    selectedUpload.parentUploadId
+  ) {
     return (
       getPreferredHoldingUpload(
         uploads.filter(
@@ -344,6 +342,123 @@ const MANUFACTURER_TEMPLATES: Record<string, ManufacturerTemplate> = {
         colorFinish: "Leather/Vinyl Grade A",
         basePrice: "899.00",
         sourceNote: "Leather grade normalized from matrix image.",
+      },
+    ],
+  },
+  Guardsman: {
+    summary: "Guardsman files are structured consumables price lists with section headers like Wood Care and Fabric Care.",
+    quirks: [
+      "These rows are care and cleaning products rather than furniture collections, so category carry-forward matters more than collection mapping.",
+      "Unit price and MSRP both appear; publish should use unit price and preserve MSRP in notes.",
+    ],
+    rows: [
+      {
+        id: "guardsman-1",
+        manufacturer: "Guardsman",
+        category: "Wood Care",
+        productName: "460500",
+        description: "Deep Clean Purifying Wood Cleaner 12.5 oz Aerosol",
+        colorFinish: "",
+        basePrice: "3.50",
+        sourceNote: "MSRP 5.99",
+      },
+      {
+        id: "guardsman-2",
+        manufacturer: "Guardsman",
+        category: "Wood Care",
+        productName: "461100",
+        description: "Anytime Clean & Polish for Wood - Woodland Fresh 16 oz Trigger Spray",
+        colorFinish: "",
+        basePrice: "4.00",
+        sourceNote: "Consumables workbook row.",
+      },
+      {
+        id: "guardsman-3",
+        manufacturer: "Guardsman",
+        category: "",
+        productName: "461700",
+        description: "Revitalizing Lemon Oil with UV Protection 16 oz",
+        colorFinish: "",
+        basePrice: "8.35",
+        sourceNote: "Category intentionally blank in template to surface validation.",
+      },
+    ],
+  },
+  "GBS ProtectAll": {
+    summary: "GBS ProtectAll workbooks read like order forms with section headings, SKU columns, and separate MSRP values.",
+    quirks: [
+      "Rows can inherit a product family such as Ultra-Tech from a standalone section line above the actual SKUs.",
+      "Archive selection should prefer the price list workbook over order-form companions.",
+    ],
+    rows: [
+      {
+        id: "gbs-1",
+        manufacturer: "GBS ProtectAll",
+        category: "Ultra-Tech",
+        productName: "10-PILL-04/6-EMRLDLOPRO",
+        description: "Ultra-Tech Advanced Pillow-LOW Profile",
+        colorFinish: "",
+        basePrice: "29.00",
+        sourceNote: "MSRP 99.99",
+      },
+      {
+        id: "gbs-2",
+        manufacturer: "GBS ProtectAll",
+        category: "Ultra-Tech",
+        productName: "10-PILL-06/6-UTTNLOKGWH",
+        description: "Ultra-Tech Advanced Pillow-LOW Profile KING",
+        colorFinish: "",
+        basePrice: "39.00",
+        sourceNote: "HealthySleep and ProtectAll lines can share one workbook.",
+      },
+      {
+        id: "gbs-3",
+        manufacturer: "GBS ProtectAll",
+        category: "",
+        productName: "",
+        description: "ProtectAll accessory row requiring SKU confirmation",
+        colorFinish: "",
+        basePrice: "29.00",
+        sourceNote: "Template intentionally leaves SKU blank for validation workflow.",
+      },
+    ],
+  },
+  Innovations: {
+    summary: "Innovations archives mix SKU lists, master price lists, and kit breakdowns; the SKU list workbook is the best search source.",
+    quirks: [
+      "Archive selection should prefer SKU list or pricing-by-SKU files over master price and kit worksheets.",
+      "Category and collection data often need to be inferred from terse component descriptions.",
+    ],
+    rows: [
+      {
+        id: "innovations-1",
+        manufacturer: "Innovations",
+        category: "Bunk Beds",
+        productName: "9453G",
+        description: "CAMBRIDGE BUNK HEAD/FOOT/GUARD/HDW GRAY",
+        colorFinish: "",
+        basePrice: "160.00",
+        sourceNote: "Collection inferred from leading description token.",
+      },
+      {
+        id: "innovations-2",
+        manufacturer: "Innovations",
+        category: "Slat Kits",
+        productName: "315",
+        description: "TWIN BUNK BED SLAT KIT",
+        colorFinish: "",
+        basePrice: "18.00",
+        sourceNote: "Component SKU from innovations master parts list.",
+      },
+      {
+        id: "innovations-3",
+        manufacturer: "Innovations",
+        category: "",
+        productName: "967DC",
+        description: "Extension kit slats / center support",
+        colorFinish: "",
+        basePrice: "18.60",
+        sourceNote: "Category intentionally blank in template to surface validation.",
       },
     ],
   },
