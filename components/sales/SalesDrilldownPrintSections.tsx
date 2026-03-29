@@ -41,34 +41,65 @@ const PctTable: React.FC<{ label: "Store" | "Salesperson"; rows: ReturnType<type
 }) => {
   if (!rows.length) return <div className="text-sm text-slate-500">No {label.toLowerCase()} data.</div>;
 
+  const formatAverageTicket = (totalRetail: number, ticketCount: number) => {
+    if (!Number.isFinite(totalRetail) || !Number.isFinite(ticketCount) || ticketCount <= 0) {
+      return "$0";
+    }
+    return `$${(totalRetail / ticketCount).toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
+  const formatPro1stPct = (pro1stSales: number, totalRetail: number) => {
+    if (!Number.isFinite(pro1stSales) || !Number.isFinite(totalRetail) || totalRetail <= 0) {
+      return "0.0%";
+    }
+    return `${((pro1stSales / totalRetail) * 100).toFixed(1)}%`;
+  };
+
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-slate-200 text-sm">
+    <div className="overflow-x-visible">
+      <table className="min-w-full divide-y divide-slate-200 text-[11px] fd-print-detailed-table">
         <thead className="bg-slate-50">
           <tr>
-            <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase">{label}</th>
-            <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Total Retail</th>
-            <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % View</th>
-            <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Own</th>
-            <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Sales % Company</th>
-            <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units Sold</th>
-            <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % View</th>
-            <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Own</th>
-            <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Units % Company</th>
+            <th className="px-3 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase">{label}</th>
+            <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase">Retail</th>
+            <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase">Tickets</th>
+            <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase">Avg Ticket</th>
+            <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase">Pro1st %</th>
+            <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase">Sales % View</th>
+            <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase">Sales % Own</th>
+            <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase">Sales % Co</th>
+            <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase">Units</th>
+            <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase">Units % View</th>
+            <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase">Units % Own</th>
+            <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase">Units % Co</th>
+            <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase">Margin</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-slate-200">
           {rows.map((row) => (
             <tr key={`${label}-${row.label}`}>
-              <td className="px-4 py-2 text-slate-700">{row.label || "—"}</td>
-              <td className="px-4 py-2 text-right text-slate-700">${Number(row.totalRetail || 0).toLocaleString()}</td>
-              <td className="px-4 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
-              <td className="px-4 py-2 text-right text-slate-600">{row.ownRetailPct.toFixed(1)}%</td>
-              <td className="px-4 py-2 text-right text-slate-600">{row.totalRetailPct.toFixed(1)}%</td>
-              <td className="px-4 py-2 text-right text-slate-600">{Number(row.units || 0).toLocaleString()}</td>
-              <td className="px-4 py-2 text-right text-slate-600">{row.unitsPct.toFixed(1)}%</td>
-              <td className="px-4 py-2 text-right text-slate-600">{row.ownUnitsPct.toFixed(1)}%</td>
-              <td className="px-4 py-2 text-right text-slate-600">{row.totalUnitsPct.toFixed(1)}%</td>
+              <td className="px-3 py-2 text-slate-700">{row.label || "—"}</td>
+              <td className="px-3 py-2 text-right text-slate-700">${Number(row.totalRetail || 0).toLocaleString()}</td>
+              <td className="px-3 py-2 text-right text-slate-600">{Number(row.ticketCount || 0).toLocaleString()}</td>
+              <td className="px-3 py-2 text-right text-slate-600">
+                {formatAverageTicket(Number(row.totalRetail || 0), Number(row.ticketCount || 0))}
+              </td>
+              <td className="px-3 py-2 text-right text-slate-600">
+                {formatPro1stPct(Number(row.pro1stSales || 0), Number(row.totalRetail || 0))}
+              </td>
+              <td className="px-3 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
+              <td className="px-3 py-2 text-right text-slate-600">{row.ownRetailPct.toFixed(1)}%</td>
+              <td className="px-3 py-2 text-right text-slate-600">{row.totalRetailPct.toFixed(1)}%</td>
+              <td className="px-3 py-2 text-right text-slate-600">{Number(row.units || 0).toLocaleString()}</td>
+              <td className="px-3 py-2 text-right text-slate-600">{row.unitsPct.toFixed(1)}%</td>
+              <td className="px-3 py-2 text-right text-slate-600">{row.ownUnitsPct.toFixed(1)}%</td>
+              <td className="px-3 py-2 text-right text-slate-600">{row.totalUnitsPct.toFixed(1)}%</td>
+              <td className="px-3 py-2 text-right text-slate-600">
+                {row.avgMarginPct === null || !Number.isFinite(row.avgMarginPct) ? "—" : `${row.avgMarginPct.toFixed(1)}%`}
+              </td>
             </tr>
           ))}
         </tbody>

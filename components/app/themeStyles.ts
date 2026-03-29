@@ -92,6 +92,7 @@ export const APP_THEME_STYLES = `
   .dark .border-slate-700 { border-color: rgba(68, 82, 104, 0.62) !important; }
   .fd-print-only { display: none; }
   @media print {
+    @page { size: landscape; margin: 0.35in; }
     body * { visibility: hidden; }
     body { background: #ffffff !important; }
     .fd-print-area,
@@ -142,6 +143,12 @@ export const APP_THEME_STYLES = `
     }
     .fd-print-area a { color: #0f172a !important; text-decoration: none; }
     .fd-print-area .shadow-sm { box-shadow: none !important; }
+    .fd-print-detailed-table th,
+    .fd-print-detailed-table td {
+      padding: 6px 8px !important;
+      white-space: nowrap !important;
+      vertical-align: top !important;
+    }
   }
   @keyframes overlayDarken {
     0% { background-color: rgba(2, 6, 23, 0.15); }
