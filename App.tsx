@@ -1048,6 +1048,14 @@ const App: React.FC = () => {
                 onUploadComplete={() => {
                   window.dispatchEvent(new Event('fd-refresh-data'));
                 }}
+                onOpenProductSearch={
+                  canView(Tab.PRODUCT_SEARCH)
+                    ? () => {
+                        setActiveTab(Tab.PRODUCT_SEARCH);
+                        closeUpdatePanel();
+                      }
+                    : undefined
+                }
               />
             </div>
           </>

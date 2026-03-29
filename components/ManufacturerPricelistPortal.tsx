@@ -15,7 +15,6 @@ import type {
   ManufacturerReferenceNote,
 } from "../types";
 import {
-  fetchManufacturerCatalog,
   fetchManufacturerPricebookUploads,
   fetchManufacturerReferenceNotes,
   previewManufacturerPricebookUpload,
@@ -23,7 +22,16 @@ import {
   uploadManufacturerPricebookToHolding,
 } from "../services/manufacturerPricelistApi";
 
-type PortalScreen = "ingestion" | "validation" | "search";
+type PortalScreen = "ingestion" | "validation";
+type ValidationSort =
+  | "flagged"
+  | "source"
+  | "manufacturer"
+  | "category"
+  | "product"
+  | "description"
+  | "price_low"
+  | "price_high";
 
 type NormalizedProductRow = {
   id: string;
@@ -69,6 +77,7 @@ type ManufacturerTemplate = {
 
 type ManufacturerPricelistPortalProps = {
   onBack: () => void;
+  onOpenProductSearch?: () => void;
 };
 
 const MANUFACTURERS = [...CANONICAL_PRODUCT_MANUFACTURERS];
@@ -76,7 +85,6 @@ const MANUFACTURERS = [...CANONICAL_PRODUCT_MANUFACTURERS];
 const PORTAL_SCREENS: Array<{ key: PortalScreen; label: string }> = [
   { key: "ingestion", label: "Upload & Ingestion" },
   { key: "validation", label: "Validation & Correction" },
-  { key: "search", label: "Global Search Catalog" },
 ];
 
 const cloneRows = (rows: NormalizedProductRow[]) => rows.map((row) => ({ ...row }));
@@ -541,7 +549,10 @@ const rowToCatalogItem = (row: NormalizedProductRow, manufacturerSlug: string, u
   sourceSortOrder: row.sourceSortOrder ?? 0,
 });
 
-const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = ({ onBack }) => {
+const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = ({
+  onBack,
+  onOpenProductSearch,
+}) => {
   const [activeScreen, setActiveScreen] = useState<PortalScreen>("ingestion");
   const [selectedManufacturer, setSelectedManufacturer] = useState("Ashley");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -552,10 +563,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
   const [rows, setRows] = useState<NormalizedProductRow[]>(cloneRows(MANUFACTURER_TEMPLATES.Ashley.rows));
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [publishedAt, setPublishedAt] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchManufacturerFilter, setSearchManufacturerFilter] = useState("All Manufacturers");
-  const [searchCategoryFilter, setSearchCategoryFilter] = useState("All Categories");
-  const [searchColorFilter, setSearchColorFilter] = useState("All Colors");
+  const [validationSort, setValidationSort] = useState<ValidationSort>("flagged");
   const [replaceExistingOnPublish, setReplaceExistingOnPublish] = useState(true);
   const [holdingUploads, setHoldingUploads] = useState<ManufacturerPricebookUpload[]>([]);
   const [selectedUploadId, setSelectedUploadId] = useState<string | null>(null);
@@ -564,8 +572,6 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
   const [holdingError, setHoldingError] = useState<string | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [publishBusy, setPublishBusy] = useState(false);
-  const [catalogBusy, setCatalogBusy] = useState(false);
-  const [catalogRows, setCatalogRows] = useState<ManufacturerCatalogItem[]>([]);
   const [referenceNotes, setReferenceNotes] = useState<ManufacturerReferenceNote[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -579,43 +585,43 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
   );
   const readyRowsCount = rows.length - flaggedRows.length;
 
-  const searchRows = useMemo(
-    () => (catalogRows.length ? catalogRows.map((row) => catalogItemToRow(row)) : rows),
-    [catalogRows, rows]
-  );
+  const validationRows = useMemo(() => {
+    const alpha = (value: string | undefined) => (value || "").trim().toLowerCase();
+    const money = (value: string) => {
+      const parsed = Number(String(value || "").replace(/[$,]/g, "").trim());
+      return Number.isFinite(parsed) ? parsed : null;
+    };
 
-  const searchCategoryOptions = useMemo(() => {
-    const categories = Array.from(new Set(searchRows.map((row) => row.category.trim()).filter(Boolean))).sort();
-    return ["All Categories", ...categories];
-  }, [searchRows]);
+    return [...rows].sort((left, right) => {
+      const leftMissing = getMissingFields(left);
+      const rightMissing = getMissingFields(right);
 
-  const searchColorOptions = useMemo(() => {
-    const colors = Array.from(new Set(searchRows.map((row) => row.colorFinish.trim()).filter(Boolean))).sort();
-    return ["All Colors", ...colors];
-  }, [searchRows]);
-
-  const searchResults = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-    return searchRows.filter((row) => {
-      if (searchManufacturerFilter !== "All Manufacturers" && row.manufacturer !== searchManufacturerFilter) return false;
-      if (searchCategoryFilter !== "All Categories" && row.category !== searchCategoryFilter) return false;
-      if (searchColorFilter !== "All Colors" && row.colorFinish !== searchColorFilter) return false;
-      if (!query) return true;
-      const haystack = [
-        row.productName,
-        row.description,
-        row.colorFinish,
-        row.manufacturer,
-        row.collectionName || "",
-        row.productType || "",
-        ...(row.featureTags || []),
-        ...(row.searchKeywords || []),
-      ]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(query);
+      if (validationSort === "flagged") {
+        if (leftMissing.length !== rightMissing.length) return rightMissing.length - leftMissing.length;
+        if (left.sourceSortOrder !== right.sourceSortOrder) return (left.sourceSortOrder || 0) - (right.sourceSortOrder || 0);
+        return alpha(left.productName).localeCompare(alpha(right.productName));
+      }
+      if (validationSort === "source") {
+        if ((left.sourceSortOrder || 0) !== (right.sourceSortOrder || 0)) {
+          return (left.sourceSortOrder || 0) - (right.sourceSortOrder || 0);
+        }
+        return alpha(left.productName).localeCompare(alpha(right.productName));
+      }
+      if (validationSort === "manufacturer") return alpha(left.manufacturer).localeCompare(alpha(right.manufacturer));
+      if (validationSort === "category") return alpha(left.category).localeCompare(alpha(right.category));
+      if (validationSort === "product") return alpha(left.productName).localeCompare(alpha(right.productName));
+      if (validationSort === "description") return alpha(left.description).localeCompare(alpha(right.description));
+      if (validationSort === "price_low" || validationSort === "price_high") {
+        const leftPrice = money(left.basePrice);
+        const rightPrice = money(right.basePrice);
+        if (leftPrice === null && rightPrice === null) return alpha(left.productName).localeCompare(alpha(right.productName));
+        if (leftPrice === null) return 1;
+        if (rightPrice === null) return -1;
+        return validationSort === "price_low" ? leftPrice - rightPrice : rightPrice - leftPrice;
+      }
+      return 0;
     });
-  }, [searchRows, searchManufacturerFilter, searchCategoryFilter, searchColorFilter, searchTerm]);
+  }, [rows, validationSort]);
 
   const refreshHoldingUploads = async (manufacturer: string) => {
     const uploads = await fetchManufacturerPricebookUploads(manufacturer);
@@ -627,39 +633,22 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
     return uploads;
   };
 
-  const refreshCatalogData = async (manufacturer: string) => {
-    setCatalogBusy(true);
-    try {
-      const [catalog, notes] = await Promise.all([
-        fetchManufacturerCatalog({ manufacturer, limit: 500 }),
-        fetchManufacturerReferenceNotes(manufacturer),
-      ]);
-      setCatalogRows(catalog);
-      setReferenceNotes(notes);
-    } finally {
-      setCatalogBusy(false);
-    }
-  };
-
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
-        const [uploads, catalog, notes] = await Promise.all([
+        const [uploads, notes] = await Promise.all([
           fetchManufacturerPricebookUploads(selectedManufacturer),
-          fetchManufacturerCatalog({ manufacturer: selectedManufacturer, limit: 500 }),
           fetchManufacturerReferenceNotes(selectedManufacturer),
         ]);
         if (cancelled) return;
         setHoldingUploads(uploads);
-        setCatalogRows(catalog);
         setReferenceNotes(notes);
         const preferredUpload = getPreferredHoldingUpload(uploads);
         setSelectedUploadId((preferredUpload || uploads[0] || null)?.id || null);
       } catch (error: any) {
         if (!cancelled) {
           setHoldingUploads([]);
-          setCatalogRows([]);
           setReferenceNotes([]);
           setHoldingError(String(error?.message || error || "Failed to load manufacturer workspace"));
         }
@@ -747,8 +736,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
       setValidationMessage(
         `Published ${result.publishedRows} ${selectedManufacturer} rows into the searchable catalog.`
       );
-      await Promise.all([refreshHoldingUploads(selectedManufacturer), refreshCatalogData(selectedManufacturer)]);
-      setActiveScreen("search");
+      await refreshHoldingUploads(selectedManufacturer);
     } catch (error: any) {
       setValidationMessage(String(error?.message || error || "Failed to publish manufacturer catalog"));
     } finally {
@@ -817,17 +805,30 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
             <h2 className="mt-3 text-2xl font-semibold text-slate-900">Vendor ingestion and search workspace</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               Upload inconsistent vendor books, validate the normalized rows, and prepare a clean searchable catalog
-              for staff. This workspace is intentionally built around manufacturer-specific review.
+              for staff. This workspace now stays focused on manufacturer upload and correction, while the dedicated
+              Product Search module handles catalog lookup.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onBack}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            <ArrowLeft size={16} />
-            Back to Update Database
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {onOpenProductSearch ? (
+              <button
+                type="button"
+                onClick={onOpenProductSearch}
+                className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+              >
+                <Search size={16} />
+                Open Full Product Search
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <ArrowLeft size={16} />
+              Back to Update Database
+            </button>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
@@ -1119,7 +1120,33 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                   Missing required values are highlighted so staff can correct them inline before publishing.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
+                  <span className="font-semibold text-slate-700">Sort</span>
+                  <select
+                    value={validationSort}
+                    onChange={(event) => setValidationSort(event.target.value as ValidationSort)}
+                    className="bg-transparent text-sm font-semibold text-slate-700 outline-none"
+                  >
+                    <option value="flagged">Needs review first</option>
+                    <option value="source">Original extraction order</option>
+                    <option value="manufacturer">Manufacturer A-Z</option>
+                    <option value="category">Category A-Z</option>
+                    <option value="product">Item # A-Z</option>
+                    <option value="description">Description A-Z</option>
+                    <option value="price_low">Base price low-high</option>
+                    <option value="price_high">Base price high-low</option>
+                  </select>
+                </label>
+                {onOpenProductSearch ? (
+                  <button
+                    type="button"
+                    onClick={onOpenProductSearch}
+                    className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+                  >
+                    Open Full Product Search
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => void resetExtraction()}
@@ -1182,7 +1209,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white">
-                  {rows.map((row) => {
+                  {validationRows.map((row) => {
                     const missingFields = getMissingFields(row);
                     const isMissing = (field: keyof NormalizedProductRow) => missingFields.includes(field as any);
                     const cellClass = (field: keyof NormalizedProductRow) =>
@@ -1266,141 +1293,6 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                       </tr>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeScreen === "search" && (
-        <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-3">
-              <Search className="text-slate-600" />
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">Global Product Search Catalog</h3>
-                <p className="text-sm text-slate-500">Search normalized products by item number, description, or finish.</p>
-              </div>
-            </div>
-
-            <div className="mt-5 space-y-4">
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Search</label>
-                <div className="relative mt-2">
-                  <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="Description or product name"
-                    className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Manufacturer</label>
-                <select
-                  value={searchManufacturerFilter}
-                  onChange={(event) => setSearchManufacturerFilter(event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-                >
-                  {["All Manufacturers", ...MANUFACTURERS].map((manufacturer) => (
-                    <option key={manufacturer} value={manufacturer}>
-                      {manufacturer}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Category</label>
-                <select
-                  value={searchCategoryFilter}
-                  onChange={(event) => setSearchCategoryFilter(event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-                >
-                  {searchCategoryOptions.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Color / Finish</label>
-                <select
-                  value={searchColorFilter}
-                  onChange={(event) => setSearchColorFilter(event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-                >
-                  {searchColorOptions.map((color) => (
-                    <option key={color} value={color}>
-                      {color}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                This catalog is designed for fast staff lookup by SKU, description, collection, dimensions, color, and
-                furniture keywords like round, loveseat, sleeper, white, black, green, wood, or glass.
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-slate-900">{searchResults.length} matching products</div>
-                <div className="text-sm text-slate-500">
-                  Search is centered on description and product name, with manufacturer and finish filters alongside it.
-                </div>
-              </div>
-              {catalogBusy ? (
-                <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Refreshing catalog...</div>
-              ) : null}
-              {publishedAt && (
-                <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                  Last published {publishedAt}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-5 overflow-x-auto rounded-3xl border border-slate-200">
-              <table className="min-w-[1180px] divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3">Manufacturer</th>
-                    <th className="px-4 py-3">Category</th>
-                    <th className="px-4 py-3">Collection</th>
-                    <th className="px-4 py-3">Item #</th>
-                    <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Description</th>
-                    <th className="px-4 py-3">Color / Finish</th>
-                    <th className="px-4 py-3">Dimensions</th>
-                    <th className="px-4 py-3">Tags</th>
-                    <th className="px-4 py-3">Base Price</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
-                  {searchResults.map((row) => (
-                    <tr key={row.id}>
-                      <td className="px-4 py-3 font-medium text-slate-800">{row.manufacturer || "Unassigned"}</td>
-                      <td className="px-4 py-3 text-slate-600">{row.category || "Needs review"}</td>
-                      <td className="px-4 py-3 text-slate-600">{row.collectionName || "Needs review"}</td>
-                      <td className="px-4 py-3 text-slate-600">{row.productName || "Needs review"}</td>
-                      <td className="px-4 py-3 text-slate-600">{row.productType || "Needs review"}</td>
-                      <td className="px-4 py-3 text-slate-600">{row.description || "Needs review"}</td>
-                      <td className="px-4 py-3 text-slate-600">{row.colorFinish || "Optional"}</td>
-                      <td className="px-4 py-3 text-slate-600">{row.dimensionsText || "Varies"}</td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {(row.featureTags || []).slice(0, 4).join(", ") || (row.material || "None")}
-                      </td>
-                      <td className="px-4 py-3 font-semibold text-slate-800">{row.basePrice || "Needs review"}</td>
-                    </tr>
-                  ))}
                 </tbody>
               </table>
             </div>

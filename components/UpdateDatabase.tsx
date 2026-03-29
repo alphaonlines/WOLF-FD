@@ -55,9 +55,10 @@ const detectType = (columns: string[]) => {
 
 type UpdateDatabaseProps = {
   onUploadComplete?: () => void;
+  onOpenProductSearch?: () => void;
 };
 
-const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => {
+const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpenProductSearch }) => {
   const [view, setView] = useState<"default" | "manufacturer_pricelist">("default");
   const [checks, setChecks] = useState<FileCheck[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -293,7 +294,7 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete }) => 
   };
 
   if (view === "manufacturer_pricelist") {
-    return <ManufacturerPricelistPortal onBack={() => setView("default")} />;
+    return <ManufacturerPricelistPortal onBack={() => setView("default")} onOpenProductSearch={onOpenProductSearch} />;
   }
 
   return (
