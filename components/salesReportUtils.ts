@@ -27,7 +27,7 @@ export type ReportTotals = {
   avgMarginPct: number | null;
 };
 
-export const computeReportTotals = (rows: ReportSummaryRow[]): ReportTotals => {
+export const computeReportTotals = (rows: ReportSummaryRow[], distinctTicketCount?: number | null): ReportTotals => {
   const totals = rows.reduce(
     (acc, row) => {
       acc.totalRetail += Number.isFinite(row.totalRetail) ? row.totalRetail : 0;
@@ -41,6 +41,9 @@ export const computeReportTotals = (rows: ReportSummaryRow[]): ReportTotals => {
     },
     { totalRetail: 0, totalPro1stSales: 0, totalUnits: 0, totalTickets: 0, marginWeighted: 0 }
   );
+  if (distinctTicketCount !== null && distinctTicketCount !== undefined && Number.isFinite(distinctTicketCount)) {
+    totals.totalTickets = Number(distinctTicketCount);
+  }
   const avgMarginPct = totals.totalTickets > 0 ? totals.marginWeighted / totals.totalTickets : null;
   return { ...totals, avgMarginPct };
 };

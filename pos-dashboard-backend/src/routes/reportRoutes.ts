@@ -69,25 +69,6 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
       WITH people_counts AS (
         SELECT sale_id, COUNT(*) as cnt FROM pos_sales_people GROUP BY sale_id
       ),
-      primary_salespeople AS (
-        SELECT
-          s.sale_id,
-          NULLIF(
-            trim(
-              (
-                regexp_split_to_array(
-                  regexp_replace(COALESCE(s.salesperson, ''), E'\\s*&\\s*', ' and ', 'g'),
-                  E'\\s+and\\s+',
-                  'i'
-                )
-              )[1]
-            ),
-            ''
-          ) AS primary_salesperson
-        FROM pos_sales s
-        WHERE ${prefixedDateField("s")} >= $1
-          AND ${prefixedDateField("s")} < $2
-      ),
       salesperson_sales AS (
         SELECT DISTINCT sale_id
         FROM pos_sales_people
@@ -120,7 +101,6 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
           p.salesperson,
           p.location,
           p.sale_id,
-          ps.primary_salesperson,
           COALESCE(item_rollup.sales, 0) / NULLIF(pc.cnt, 0) AS sales,
           COALESCE(item_rollup.profit, 0) / NULLIF(pc.cnt, 0) AS profit,
           COALESCE(item_rollup.pro1st_sales, 0) / NULLIF(pc.cnt, 0) AS pro1st_sales,
@@ -129,21 +109,25 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
         JOIN pos_sales s ON s.sale_id = p.sale_id
         LEFT JOIN item_rollup ON item_rollup.sale_id = p.sale_id
         LEFT JOIN people_counts pc ON pc.sale_id = p.sale_id
-        LEFT JOIN primary_salespeople ps ON ps.sale_id = p.sale_id
         WHERE ${prefixedDateField("s")} >= $1
           AND ${prefixedDateField("s")} < $2
           AND p.salesperson IS NOT NULL
           AND p.salesperson <> 'Sales, Store'
           AND ($5::text IS NULL OR p.salesperson ILIKE ('%' || $5::text || '%'))
           AND ($3::text IS NULL OR p.location ILIKE ('%' || $3::text || '%'))
+      ),
+      summary_totals AS (
+        SELECT COUNT(DISTINCT sale_id)::int AS distinct_ticket_count
+        FROM ticket_splits
       )
       SELECT
         salesperson AS label,
-        SUM(CASE WHEN COALESCE(primary_salesperson, '') = COALESCE(salesperson, '') THEN 1 ELSE 0 END)::int AS ticket_count,
+        COUNT(*)::int AS ticket_count,
         ROUND(SUM(sales)::numeric, 2) AS total_retail,
         ROUND(SUM(pro1st_sales)::numeric, 2) AS pro1st_sales,
         ROUND(SUM(qty)::numeric, 2) AS units,
-        ROUND(AVG(CASE WHEN sales > 0 THEN (profit / sales) * 100 ELSE NULL END)::numeric, 2) AS avg_margin_pct
+        ROUND(AVG(CASE WHEN sales > 0 THEN (profit / sales) * 100 ELSE NULL END)::numeric, 2) AS avg_margin_pct,
+        (SELECT distinct_ticket_count FROM summary_totals) AS distinct_ticket_count
       FROM ticket_splits
       GROUP BY 1
       ORDER BY total_retail DESC NULLS LAST;
@@ -198,7 +182,8 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
         ROUND(SUM(sales)::numeric, 2) AS total_retail,
         ROUND(SUM(pro1st_sales)::numeric, 2) AS pro1st_sales,
         ROUND(SUM(qty)::numeric, 2) AS units,
-        ROUND(AVG(CASE WHEN sales > 0 THEN (profit / sales) * 100 ELSE NULL END)::numeric, 2) AS avg_margin_pct
+        ROUND(AVG(CASE WHEN sales > 0 THEN (profit / sales) * 100 ELSE NULL END)::numeric, 2) AS avg_margin_pct,
+        COUNT(DISTINCT sale_id)::int AS distinct_ticket_count
       FROM tickets
       GROUP BY 1
       ORDER BY total_retail DESC NULLS LAST;
@@ -216,6 +201,10 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
         end,
         dimension,
         rows: rowsRes.rows,
+        distinctTicketCount:
+          rowsRes.rows[0]?.distinct_ticket_count === null || rowsRes.rows[0]?.distinct_ticket_count === undefined
+            ? 0
+            : Number(rowsRes.rows[0].distinct_ticket_count),
         availableCategories: categoriesRes.rows.map((r: any) => r.category).filter((v: any) => v),
         availableManufacturers: manufacturersRes.rows.map((r: any) => r.manufacturer).filter((v: any) => v),
       });

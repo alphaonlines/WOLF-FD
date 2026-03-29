@@ -85,6 +85,7 @@ type Summary = {
 
 type ReportRowsState = {
   rows: ReportSummaryRow[];
+  distinctTicketCount: number;
   availableCategories: string[];
   availableManufacturers: string[];
 };
@@ -245,7 +246,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   const [printData, setPrintData] = useState<{
     lowMarginRows: typeof lowMarginData;
     storeRows: ReportSummaryRow[];
+    storeDistinctTicketCount: number;
     salespersonRows: ReportSummaryRow[];
+    salespersonDistinctTicketCount: number;
     storeOverallRows: ReportSummaryRow[];
     salespersonOverallRows: ReportSummaryRow[];
     manufacturerBreakdowns: Array<{
@@ -265,16 +268,19 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   const [reportManufacturer, setReportManufacturer] = useState<string>("ALL");
   const [reportData, setReportData] = useState<ReportRowsState>({
     rows: [],
+    distinctTicketCount: 0,
     availableCategories: [],
     availableManufacturers: [],
   });
   const [reportDataSalesperson, setReportDataSalesperson] = useState<ReportRowsState>({
     rows: [],
+    distinctTicketCount: 0,
     availableCategories: [],
     availableManufacturers: [],
   });
   const [reportDataStore, setReportDataStore] = useState<ReportRowsState>({
     rows: [],
+    distinctTicketCount: 0,
     availableCategories: [],
     availableManufacturers: [],
   });
@@ -393,8 +399,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   }, [lowMarginData, lowMarginSort]);
 
   const reportTotals = useMemo(() => {
-    return computeReportTotals(reportData.rows);
-  }, [reportData.rows]);
+    return computeReportTotals(reportData.rows, reportData.distinctTicketCount);
+  }, [reportData.rows, reportData.distinctTicketCount]);
   const currentReportOverallRows = useMemo(
     () => (reportDimension === "store" ? reportOverallRowsStore : reportOverallRowsSalesperson),
     [reportDimension, reportOverallRowsSalesperson, reportOverallRowsStore]
@@ -418,8 +424,14 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   const printSalesOverallRows = useMemo(() => (printData?.salespersonOverallRows ?? reportOverallRowsSalesperson), [printData, reportOverallRowsSalesperson]);
   const printStoreOverallMap = useMemo(() => new Map(printStoreOverallRows.map((row) => [row.label, row])), [printStoreOverallRows]);
   const printSalesOverallMap = useMemo(() => new Map(printSalesOverallRows.map((row) => [row.label, row])), [printSalesOverallRows]);
-  const printTotalsStore = useMemo(() => computeReportTotals(printStoreBaseRows), [printStoreBaseRows]);
-  const printTotalsSalesperson = useMemo(() => computeReportTotals(printSalesBaseRows), [printSalesBaseRows]);
+  const printTotalsStore = useMemo(
+    () => computeReportTotals(printStoreBaseRows, printData?.storeDistinctTicketCount),
+    [printStoreBaseRows, printData?.storeDistinctTicketCount]
+  );
+  const printTotalsSalesperson = useMemo(
+    () => computeReportTotals(printSalesBaseRows, printData?.salespersonDistinctTicketCount),
+    [printSalesBaseRows, printData?.salespersonDistinctTicketCount]
+  );
   const printOverallTotals = useMemo(() => computeReportTotals(printStoreOverallRows), [printStoreOverallRows]);
   const printRowsWithPctStore = useMemo(() => {
     return sortReportRows(
@@ -471,6 +483,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
     const next = reportDimension === "store" ? reportDataStore : reportDataSalesperson;
     setReportData({
       rows: next.rows,
+      distinctTicketCount: next.distinctTicketCount,
       availableCategories: next.availableCategories,
       availableManufacturers: next.availableManufacturers,
     });
@@ -755,11 +768,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
       setLowMarginData(lowMarginRows.rows);
       setReportDataSalesperson({
         rows: reportSummarySalesperson.rows,
+        distinctTicketCount: reportSummarySalesperson.distinctTicketCount,
         availableCategories: reportSummarySalesperson.availableCategories,
         availableManufacturers: reportSummarySalesperson.availableManufacturers,
       });
       setReportDataStore({
         rows: reportSummaryStore.rows,
+        distinctTicketCount: reportSummaryStore.distinctTicketCount,
         availableCategories: reportSummaryStore.availableCategories,
         availableManufacturers: reportSummaryStore.availableManufacturers,
       });
@@ -772,6 +787,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
       const activeReport = reportDimension === "store" ? reportSummaryStore : reportSummarySalesperson;
       setReportData({
         rows: activeReport.rows,
+        distinctTicketCount: activeReport.distinctTicketCount,
         availableCategories: activeReport.availableCategories,
         availableManufacturers: activeReport.availableManufacturers,
       });
@@ -816,16 +832,19 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
       setLowMarginData([]);
       setReportData({
         rows: [],
+        distinctTicketCount: 0,
         availableCategories: [],
         availableManufacturers: [],
       });
       setReportDataSalesperson({
         rows: [],
+        distinctTicketCount: 0,
         availableCategories: [],
         availableManufacturers: [],
       });
       setReportDataStore({
         rows: [],
+        distinctTicketCount: 0,
         availableCategories: [],
         availableManufacturers: [],
       });
@@ -988,7 +1007,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
       setPrintData({
         lowMarginRows: lowMarginSummary.rows,
         storeRows: storeSummary.rows,
+        storeDistinctTicketCount: storeSummary.distinctTicketCount,
         salespersonRows: salespersonSummary.rows,
+        salespersonDistinctTicketCount: salespersonSummary.distinctTicketCount,
         storeOverallRows: storeOverallSummary.rows,
         salespersonOverallRows: salespersonOverallSummary.rows,
         manufacturerBreakdowns,

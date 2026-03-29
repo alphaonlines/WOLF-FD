@@ -226,6 +226,7 @@ export async function fetchSalesReport(params: {
   manufacturer?: string;
 }): Promise<{
   dimension: "salesperson" | "store";
+  distinctTicketCount: number;
   rows: Array<{
     label: string;
     ticketCount: number;
@@ -250,6 +251,7 @@ export async function fetchSalesReport(params: {
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
   return {
     dimension: ((json as any)?.dimension || params.dimension) as "salesperson" | "store",
+    distinctTicketCount: Number((json as any)?.distinctTicketCount ?? rows[0]?.distinct_ticket_count ?? 0),
     rows: rows.map((r: any) => {
       const rawMargin = r.avg_margin_pct ?? r.avgMarginPct;
       const marginNum = rawMargin === null || rawMargin === undefined || rawMargin === "" ? null : Number(rawMargin);
