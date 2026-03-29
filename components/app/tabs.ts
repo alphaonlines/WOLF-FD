@@ -4,6 +4,7 @@ import { hasPermission, MODULE_PERMISSION_KEYS } from './permissions';
 export enum Tab {
   DASHBOARD = 'DASHBOARD',
   SALES = 'SALES',
+  PRODUCT_SEARCH = 'PRODUCT_SEARCH',
   CRM = 'CRM',
   SOCIAL = 'SOCIAL',
   KIOSKS = 'KIOSKS',
@@ -15,6 +16,7 @@ export enum Tab {
 export const TAB_PERMISSION_KEYS: Record<Tab, string> = {
   [Tab.DASHBOARD]: MODULE_PERMISSION_KEYS.DASHBOARD,
   [Tab.SALES]: MODULE_PERMISSION_KEYS.SALES,
+  [Tab.PRODUCT_SEARCH]: MODULE_PERMISSION_KEYS.PRODUCT_SEARCH,
   [Tab.CRM]: MODULE_PERMISSION_KEYS.CRM,
   [Tab.SOCIAL]: MODULE_PERMISSION_KEYS.SOCIAL,
   [Tab.KIOSKS]: MODULE_PERMISSION_KEYS.KIOSKS,
@@ -39,6 +41,8 @@ export const getTabTitle = (tab: Tab): string => {
       return 'WOLF FD Dashboard';
     case Tab.SALES:
       return 'Sales Analysis';
+    case Tab.PRODUCT_SEARCH:
+      return 'Product Search';
     case Tab.CRM:
       return 'Alpha Pulse CRM';
     case Tab.SOCIAL:

@@ -21,6 +21,12 @@ export const PERMISSION_CATALOG: PermissionCatalogEntry[] = [
     description: "Access sales analytics, reports, and drilldowns.",
   },
   {
+    key: "module.product_search",
+    label: "Product Search Module",
+    scope: "module",
+    description: "Access the dedicated furniture product search workspace.",
+  },
+  {
     key: "module.crm",
     label: "CRM Module",
     scope: "module",
@@ -119,6 +125,7 @@ export const ROLE_DEFAULT_PERMISSION_KEYS: Record<string, string[]> = {
   Manager: [
     "module.dashboard",
     "module.sales",
+    "module.product_search",
     "module.crm",
     "module.social",
     "module.tasks",
@@ -136,6 +143,7 @@ export const ROLE_DEFAULT_PERMISSION_KEYS: Record<string, string[]> = {
   ],
   Sales: [
     "module.dashboard",
+    "module.product_search",
     "module.crm",
     "module.tasks",
     "module.message_board",
@@ -145,6 +153,7 @@ export const ROLE_DEFAULT_PERMISSION_KEYS: Record<string, string[]> = {
   ],
   Marketing: [
     "module.dashboard",
+    "module.product_search",
     "module.social",
     "module.tasks",
     "module.message_board",

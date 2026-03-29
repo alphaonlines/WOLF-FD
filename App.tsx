@@ -22,6 +22,7 @@ import UpdateDatabase from './components/UpdateDatabase';
 import KiosksStatus from './components/KiosksStatus';
 import DashboardOverview from './components/DashboardOverview';
 import CRMWorkspace from './components/CRMWorkspace';
+import ProductSearchWorkspace from './components/ProductSearchWorkspace';
 import MessageBoard from './components/MessageBoard';
 import WolfBot from './components/WolfBot';
 import TaskManager from './components/TaskManager';
@@ -490,6 +491,8 @@ const App: React.FC = () => {
         );
       case Tab.SALES:
         return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
+      case Tab.PRODUCT_SEARCH:
+        return <ProductSearchWorkspace isDarkMode={isDarkMode} onOpenUploadArea={() => setUpdatePanelOpen(true)} />;
       case Tab.CRM:
         return <CRMWorkspace authUser={authUser!} isDarkMode={isDarkMode} />;
       case Tab.SOCIAL:
@@ -623,6 +626,16 @@ const App: React.FC = () => {
                 label="Sales Analysis"
                 isActive={activeTab === Tab.SALES}
                 onClick={() => setActiveTab(Tab.SALES)}
+                isOpen={sidebarOpen}
+                isDarkMode={isDarkMode}
+              />
+            )}
+            {canView(Tab.PRODUCT_SEARCH) && (
+              <NavItem
+                icon={<Search size={20} />}
+                label="Product Search"
+                isActive={activeTab === Tab.PRODUCT_SEARCH}
+                onClick={() => setActiveTab(Tab.PRODUCT_SEARCH)}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
