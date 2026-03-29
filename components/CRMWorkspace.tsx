@@ -258,8 +258,14 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
 
   useEffect(() => {
     if (!selectedQueueItem || selectedQueueItem.status !== "working") return;
-    const activeCustomer = selectedQueueItem.activeCustomers[0];
+    const activeCustomer =
+      (draft.queueId === selectedQueueItem.id && draft.activeCustomerId
+        ? selectedQueueItem.activeCustomers.find((entry) => entry.id === draft.activeCustomerId) || null
+        : null) || selectedQueueItem.activeCustomers[0];
     if (!activeCustomer) return;
+    if (draft.queueId === selectedQueueItem.id && draft.activeCustomerId === activeCustomer.id) {
+      return;
+    }
     setDraft((current) => ({
       ...current,
       queueId: selectedQueueItem.id,
