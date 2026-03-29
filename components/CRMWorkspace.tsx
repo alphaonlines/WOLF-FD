@@ -718,6 +718,14 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   };
 
   const customerSearchMatches = useMemo(() => {
+    const queryTokens = customerSearch.query
+      .trim()
+      .split(/\s+/)
+      .map((token) => token.trim())
+      .filter(Boolean);
+    const shouldPrioritizeOrders =
+      customerSearchResults.orders.length > 0 &&
+      (customerSearch.fields.length <= 1 || queryTokens.length <= 1);
     const customerEntries = customerSearchResults.customers.map((customer) => ({
       id: `customer-${customer.id}`,
       type: "Customer" as const,
@@ -732,8 +740,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       subtitle: [order.phone || order.receiptNo || order.saleId, order.location || ""].filter(Boolean).join(" · "),
       onSelect: () => applyOrder(order),
     }));
-    return [...customerEntries, ...orderEntries].slice(0, 10);
-  }, [customerSearchResults]);
+    return shouldPrioritizeOrders
+      ? [...orderEntries, ...customerEntries].slice(0, 10)
+      : [...customerEntries, ...orderEntries].slice(0, 10);
+  }, [customerSearch, customerSearchResults]);
   const saleLink = (saleId: string) =>
     `https://www.gimmethebest.net/furnituredistributors/online/sale_rec_502.asp?saleid=${saleId.padStart(5, "0")}&type=1`;
   const itemsLink = (saleId: string) =>
