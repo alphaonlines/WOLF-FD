@@ -606,7 +606,11 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
       const location = selectedStore ? selectedStore : undefined;
 
       const currentRange = currentRangeInput;
-      if (!currentRange) throw new Error("Invalid Range A");
+      if (!currentRange) {
+        setError("Invalid date range. Adjust the selected range and try again.");
+        setLoading(false);
+        return;
+      }
 
       const compareRange = compareRangeInput;
       if (compareRange) {

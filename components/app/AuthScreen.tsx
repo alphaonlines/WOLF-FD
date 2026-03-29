@@ -177,6 +177,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-200/80">Furniture Distributors</div>
                   <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">WOLF FD Dashboard</h1>
+                  <div className="mt-1 text-xs font-medium uppercase tracking-[0.24em] text-slate-400">Work Online | Live Free</div>
                 </div>
               </div>
 
@@ -188,7 +189,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
                   Secure sign-in for approved Furniture Distributors employees.
                 </h2>
                 <p className="text-base leading-7 text-slate-300">
-                  Team members can sign in with their Google Workspace account, request dashboard access, and wait for owner approval before entering the live modules.
+                  Team members sign in with their Google Workspace account, request dashboard access if needed, and wait for owner approval before entering the live modules.
                 </p>
               </div>
 
@@ -212,7 +213,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
                 <ul className="mt-3 space-y-2 leading-6">
                   <li>Use your company Google account when Google Workspace sign-in is available.</li>
                   <li>Complete the access request if you have not been approved yet.</li>
-                  <li>Temporary password login can still be used while rollout is in progress.</li>
+                  <li>Wait for approval before dashboard modules unlock for your account.</li>
                 </ul>
               </div>
             </div>
@@ -224,72 +225,33 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
               {stage === "sign_in" ? (
                 <>
                   <div className="mb-6">
-                    <h3 className="text-xl font-semibold text-white">Sign in to the dashboard</h3>
+                    <div className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">WOLF FD Dashboard</div>
+                    <div className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Furniture Distributors</div>
+                    <div className="mt-2 text-xs font-medium uppercase tracking-[0.24em] text-slate-500">Work Online | Live Free</div>
+                    <h3 className="mt-4 text-xl font-semibold text-white">Employee Access</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-400">
-                      Google Workspace is the preferred path for employee rollout. Password login stays available while we finish the transition.
+                      Secure sign-in for approved Furniture Distributors employees.
                     </p>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                      <div className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/80">Google Workspace</div>
-                      <p className="mt-2 text-sm leading-6 text-slate-400">
-                        Sign in with your {googleHostedDomain ? `@${googleHostedDomain}` : "company"} Google account to request or access the dashboard.
-                      </p>
-                      {googleEnabled ? (
-                        <div className="mt-4 space-y-3">
-                          <div ref={googleButtonRef} className="min-h-[44px]" />
-                          {!googleScriptReady && (
-                            <div className="text-xs text-slate-500">Loading Google sign-in…</div>
-                          )}
-                          {googleScriptError && <div className="text-xs text-amber-300">{googleScriptError}</div>}
-                        </div>
-                      ) : (
-                        <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
-                          Google Workspace sign-in is not configured on this environment yet.
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-slate-800" />
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/80">Google Workspace</div>
+                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                      Sign in with your {googleHostedDomain ? `@${googleHostedDomain}` : "company"} Google account to request or access the dashboard.
+                    </p>
+                    {googleEnabled ? (
+                      <div className="mt-4 space-y-3">
+                        <div ref={googleButtonRef} className="min-h-[44px]" />
+                        {!googleScriptReady && (
+                          <div className="text-xs text-slate-500">Loading Google sign-in…</div>
+                        )}
+                        {googleScriptError && <div className="text-xs text-amber-300">{googleScriptError}</div>}
                       </div>
-                      <div className="relative flex justify-center">
-                        <span className="bg-slate-900 px-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Temporary fallback</span>
+                    ) : (
+                      <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+                        Google Workspace sign-in is not configured on this environment yet.
                       </div>
-                    </div>
-
-                    <form
-                      className="space-y-3"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        onLogin();
-                      }}
-                    >
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        placeholder="Employee email"
-                        autoFocus
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      />
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        placeholder="Password"
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      />
-                      <button
-                        type="submit"
-                        disabled={pending}
-                        className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70"
-                      >
-                        {pending ? "Signing in..." : "Sign in with password"}
-                      </button>
-                    </form>
+                    )}
                   </div>
                 </>
               ) : null}
