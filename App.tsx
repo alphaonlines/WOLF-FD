@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Sofa,
   Activity,
+  Search,
   Star,
   Moon,
   Sun,
