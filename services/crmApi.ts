@@ -1,5 +1,6 @@
 import type {
   CRMAutomationRule,
+  CRMUpsActiveCustomer,
   CRMCustomerAccount,
   CRMCustomerOrder,
   CRMLead,
@@ -76,6 +77,18 @@ type ApiUpsQueueRow = {
   live_weather_wind_mph?: number | null;
   live_weather_fetched_at?: string | null;
   helped_today_count?: number | null;
+  active_customer_count?: number | null;
+  active_customers?: ApiUpsActiveCustomerRow[] | null;
+};
+
+type ApiUpsActiveCustomerRow = {
+  id: string;
+  queue_entry_id?: string | null;
+  customer?: string | null;
+  customer_type?: string | null;
+  customer_details?: string | null;
+  started_at?: string | null;
+  history_id?: string | null;
 };
 
 type ApiSalespersonRow = {
@@ -180,6 +193,25 @@ const mapUpsQueue = (row: ApiUpsQueueRow): CRMUpsQueueItem => ({
   liveWeatherWindMph: row.live_weather_wind_mph === null || row.live_weather_wind_mph === undefined ? null : Number(row.live_weather_wind_mph),
   liveWeatherFetchedAt: row.live_weather_fetched_at ? String(row.live_weather_fetched_at) : null,
   helpedTodayCount: row.helped_today_count === null || row.helped_today_count === undefined ? 0 : Number(row.helped_today_count),
+  activeCustomerCount:
+    row.active_customer_count === null || row.active_customer_count === undefined ? 0 : Number(row.active_customer_count),
+  activeCustomers: Array.isArray(row.active_customers)
+    ? row.active_customers.map((entry) => mapUpsActiveCustomer(entry))
+    : [],
+});
+
+const mapUpsActiveCustomer = (row: ApiUpsActiveCustomerRow): CRMUpsActiveCustomer => ({
+  id: String(row.id ?? ""),
+  queueEntryId: row.queue_entry_id === null || row.queue_entry_id === undefined ? "" : String(row.queue_entry_id),
+  customer: String(row.customer ?? ""),
+  customerType:
+    row.customer_type === null || row.customer_type === undefined
+      ? null
+      : (String(row.customer_type) as CRMUpsActiveCustomer["customerType"]),
+  customerDetails:
+    row.customer_details === null || row.customer_details === undefined ? null : String(row.customer_details),
+  startedAt: row.started_at ? String(row.started_at) : null,
+  historyId: row.history_id === null || row.history_id === undefined ? null : String(row.history_id),
 });
 
 const mapSalesperson = (row: ApiSalespersonRow): CRMSalespersonOption => ({
@@ -389,6 +421,7 @@ export async function startCrmUpsQueueCustomerInApi(
 
 export async function updateCrmUpsQueueCustomerInApi(
   id: string,
+  activeCustomerId: string,
   payload: { customer?: string; customerType?: "Regular Up" | "B-Back"; details?: string }
 ): Promise<CRMUpsQueueItem> {
   const body: Record<string, string> = {};
@@ -396,30 +429,39 @@ export async function updateCrmUpsQueueCustomerInApi(
   if (payload.customerType !== undefined) body.customer_type = payload.customerType;
   if (payload.details !== undefined) body.customer_details = payload.details;
 
-  const json = await fetchJson(`/api/crm/ups-queue/${encodeURIComponent(id)}/customer`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const json = await fetchJson(
+    `/api/crm/ups-queue/${encodeURIComponent(id)}/customers/${encodeURIComponent(activeCustomerId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
   return mapUpsQueue((json as any)?.row as ApiUpsQueueRow);
 }
 
-export async function completeCrmUpsQueueCustomerInApi(id: string): Promise<CRMUpsQueueItem[]> {
-  const json = await fetchJson(`/api/crm/ups-queue/${encodeURIComponent(id)}/complete`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({}),
-  });
+export async function completeCrmUpsQueueCustomerInApi(id: string, activeCustomerId: string): Promise<CRMUpsQueueItem[]> {
+  const json = await fetchJson(
+    `/api/crm/ups-queue/${encodeURIComponent(id)}/customers/${encodeURIComponent(activeCustomerId)}/complete`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }
+  );
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
   return rows.map((row: any) => mapUpsQueue(row as ApiUpsQueueRow));
 }
 
-export async function removeCrmUpsQueueCustomerInApi(id: string): Promise<CRMUpsQueueItem[]> {
-  const json = await fetchJson(`/api/crm/ups-queue/${encodeURIComponent(id)}/remove-up`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({}),
-  });
+export async function removeCrmUpsQueueCustomerInApi(id: string, activeCustomerId: string): Promise<CRMUpsQueueItem[]> {
+  const json = await fetchJson(
+    `/api/crm/ups-queue/${encodeURIComponent(id)}/customers/${encodeURIComponent(activeCustomerId)}/remove-up`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }
+  );
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
   return rows.map((row: any) => mapUpsQueue(row as ApiUpsQueueRow));
 }

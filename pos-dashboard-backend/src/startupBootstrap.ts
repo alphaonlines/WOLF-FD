@@ -374,6 +374,90 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_queue_active_history_id ON crm_ups_queue(active_history_id);`);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS crm_ups_active_customers (
+      id               TEXT PRIMARY KEY,
+      queue_entry_id   TEXT NOT NULL,
+      history_id       TEXT NULL,
+      store            TEXT NOT NULL DEFAULT 'FD7',
+      rep              TEXT NOT NULL DEFAULT '',
+      rep_user_id      BIGINT NULL,
+      customer         TEXT NOT NULL DEFAULT '',
+      customer_type    TEXT NULL,
+      customer_details TEXT NOT NULL DEFAULT '',
+      started_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS queue_entry_id TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS history_id TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS store TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS rep TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS rep_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS customer TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS customer_type TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS customer_details TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN store SET DEFAULT 'FD7';`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN rep SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN customer SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN customer_details SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN started_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_active_customers_queue_entry_id ON crm_ups_active_customers(queue_entry_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_active_customers_history_id ON crm_ups_active_customers(history_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_active_customers_rep_user_id ON crm_ups_active_customers(rep_user_id);`);
+  await pool.query(`
+    INSERT INTO crm_ups_active_customers (
+      id,
+      queue_entry_id,
+      history_id,
+      store,
+      rep,
+      rep_user_id,
+      customer,
+      customer_type,
+      customer_details,
+      started_at,
+      created_at,
+      updated_at
+    )
+    SELECT
+      'upactive-' || COALESCE(NULLIF(q.active_history_id, ''), q.id || '-' || floor(extract(epoch from COALESCE(q.started_at, now())))::text),
+      q.id,
+      q.active_history_id,
+      q.store,
+      q.rep,
+      q.rep_user_id,
+      q.current_customer,
+      q.current_customer_type,
+      COALESCE(q.current_customer_details, ''),
+      COALESCE(q.started_at, now()),
+      now(),
+      now()
+    FROM crm_ups_queue q
+    WHERE
+      q.status = 'working'
+      AND COALESCE(NULLIF(q.current_customer, ''), '') <> ''
+      AND NOT EXISTS (
+        SELECT 1
+        FROM crm_ups_active_customers ac
+        WHERE ac.queue_entry_id = q.id
+          AND (
+            (q.active_history_id IS NOT NULL AND q.active_history_id <> '' AND ac.history_id = q.active_history_id)
+            OR (
+              (q.active_history_id IS NULL OR q.active_history_id = '')
+              AND ac.customer = q.current_customer
+              AND COALESCE(ac.started_at, now()) = COALESCE(q.started_at, now())
+            )
+          )
+      );
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS crm_ups_history (
       id                          TEXT PRIMARY KEY,
       queue_entry_id              TEXT NOT NULL,

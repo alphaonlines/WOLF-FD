@@ -45,6 +45,7 @@ type CustomerDraft = {
   leadId: string | null;
   accountId: string | null;
   queueId: string | null;
+  activeCustomerId: string | null;
   firstName: string;
   lastName: string;
   phone: string;
@@ -74,6 +75,7 @@ const buildDraft = (authUser: AuthUser, store: string): CustomerDraft => ({
   leadId: null,
   accountId: null,
   queueId: null,
+  activeCustomerId: null,
   firstName: "",
   lastName: "",
   phone: "",
@@ -233,7 +235,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
 
   const myQueueItem = useMemo(() => queue.find((item) => item.repUserId === authUser.id) || null, [queue, authUser.id]);
   const isViewingAllStores = selectedStore === "ALL";
-  const activeCount = queue.filter((item) => item.status === "working").length;
+  const activeCount = queue.reduce((total, item) => total + item.activeCustomerCount, 0);
   const waitingCount = queue.filter((item) => item.status === "waiting").length;
   const breakCount = queue.filter((item) => item.status === "on_break").length;
   const selectedQueueItem = queue.find((item) => item.id === selectedQueueId) || myQueueItem || queue[0] || null;
@@ -257,19 +259,21 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   );
 
   useEffect(() => {
-    if (!selectedQueueItem) return;
-    if (selectedQueueItem.status !== "working") return;
+    if (!selectedQueueItem || selectedQueueItem.status !== "working") return;
+    const activeCustomer = selectedQueueItem.activeCustomers[0];
+    if (!activeCustomer) return;
     setDraft((current) => ({
       ...current,
       queueId: selectedQueueItem.id,
+      activeCustomerId: activeCustomer.id,
       store: selectedQueueItem.store || current.store,
       owner: selectedQueueItem.rep || current.owner,
       ownerUserId: selectedQueueItem.repUserId || current.ownerUserId,
-      ...splitName(selectedQueueItem.currentCustomer || combineName(current.firstName, current.lastName)),
-      visualDescription: selectedQueueItem.currentCustomerDetails || current.visualDescription,
-      notes: current.notes || selectedQueueItem.currentCustomerDetails || "",
+      ...splitName(activeCustomer.customer || combineName(current.firstName, current.lastName)),
+      visualDescription: activeCustomer.customerDetails || current.visualDescription,
+      notes: current.notes || activeCustomer.customerDetails || "",
     }));
-  }, [selectedQueueItem?.id]);
+  }, [selectedQueueItem]);
 
   const updateDraft = <K extends keyof CustomerDraft>(key: K, value: CustomerDraft[K]) => {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -371,6 +375,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
         customerType: startDraft.customerType,
         details: startDraft.customer.trim(),
       });
+      const latestActiveCustomer = row.activeCustomers[0] || null;
       setQueue((current) =>
         current
           .map((entry) => (entry.id === row.id ? row : entry))
@@ -379,8 +384,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       setDraft((current) => ({
         ...current,
         queueId: row.id,
-        ...splitName(row.currentCustomer || combineName(current.firstName, current.lastName)),
-        visualDescription: row.currentCustomerDetails || current.visualDescription,
+        activeCustomerId: latestActiveCustomer?.id || null,
+        ...splitName(latestActiveCustomer?.customer || combineName(current.firstName, current.lastName)),
+        visualDescription: latestActiveCustomer?.customerDetails || current.visualDescription,
         store: row.store || current.store,
         owner: row.rep || current.owner,
         ownerUserId: row.repUserId || current.ownerUserId,
@@ -397,11 +403,11 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     }
   };
 
-  const handleCompleteCustomer = async (item: CRMUpsQueueItem) => {
+  const handleCompleteCustomer = async (item: CRMUpsQueueItem, activeCustomerId: string) => {
     setStatusMessage(null);
     setErrorMessage(null);
     try {
-      const rows = await completeCrmUpsQueueCustomerInApi(item.id);
+      const rows = await completeCrmUpsQueueCustomerInApi(item.id, activeCustomerId);
       setQueue([...rows].sort((a, b) => a.queuePosition - b.queuePosition));
       setDraft(buildDraft(authUser, defaultDraftStore));
       setStartDrafts((current) => ({
@@ -413,11 +419,11 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     }
   };
 
-  const handleRemoveCustomerFromUps = async (item: CRMUpsQueueItem) => {
+  const handleRemoveCustomerFromUps = async (item: CRMUpsQueueItem, activeCustomerId: string) => {
     setStatusMessage(null);
     setErrorMessage(null);
     try {
-      const rows = await removeCrmUpsQueueCustomerInApi(item.id);
+      const rows = await removeCrmUpsQueueCustomerInApi(item.id, activeCustomerId);
       setQueue([...rows].sort((a, b) => a.queuePosition - b.queuePosition));
       setDraft(buildDraft(authUser, defaultDraftStore));
       setStartDrafts((current) => ({
@@ -461,12 +467,12 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   };
 
   const handleSyncQueueCard = async () => {
-    if (!draft.queueId) return;
+    if (!draft.queueId || !draft.activeCustomerId) return;
     setSaving("queue");
     setStatusMessage(null);
     setErrorMessage(null);
     try {
-      const row = await updateCrmUpsQueueCustomerInApi(draft.queueId, {
+      const row = await updateCrmUpsQueueCustomerInApi(draft.queueId, draft.activeCustomerId, {
         customer: combineName(draft.firstName, draft.lastName),
         details: draft.visualDescription.trim(),
       });
@@ -647,7 +653,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                 <div className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{waitingCount}</div>
               </div>
               <div className="border-l border-slate-100 px-4 py-3 dark:border-slate-700/70 md:border-x">
-                <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">With Customer</div>
+                <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Active Customers</div>
                 <div className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{activeCount}</div>
               </div>
               <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-700/70 md:border-r md:border-t-0">
@@ -702,7 +708,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                           </div>
                           <div className="mt-1 truncate text-sm text-slate-400">
                             {item.status === "working"
-                              ? `${item.currentCustomer || "Unnamed customer"}${item.currentCustomerDetails ? ` · ${item.currentCustomerDetails}` : ""}`
+                              ? item.activeCustomerCount > 1
+                                ? `${item.activeCustomerCount} active customers · latest ${item.currentCustomer || "Unnamed customer"}${item.currentCustomerDetails ? ` · ${item.currentCustomerDetails}` : ""}`
+                                : `${item.currentCustomer || "Unnamed customer"}${item.currentCustomerDetails ? ` · ${item.currentCustomerDetails}` : ""}`
                               : item.status === "on_break"
                                 ? "Unavailable and skipped until returned to queue."
                               : `Checked in ${formatTime(item.checkedInAt) || ""}`}
@@ -836,35 +844,74 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                                   Weather snapshot: {weatherSnapshot}
                                 </div>
                               ) : null}
-                              <div className="flex flex-wrap gap-2">
-                                <button
-                                  onClick={() => void handleCompleteCustomer(item)}
-                                  className={successButtonClassName}
-                                >
-                                  Complete
-                                </button>
-                                <button
-                                  onClick={() => void handleRemoveCustomerFromUps(item)}
-                                  className={warningButtonClassName}
-                                >
-                                  Remove Up
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setDraft((current) => ({
-                                      ...current,
-                                      queueId: item.id,
-                                      ...splitName(item.currentCustomer || combineName(current.firstName, current.lastName)),
-                                      visualDescription: item.currentCustomerDetails || current.visualDescription,
-                                      owner: item.rep || current.owner,
-                                      ownerUserId: item.repUserId || current.ownerUserId,
-                                      store: item.store || current.store,
-                                    }));
-                                  }}
-                                  className={ghostButtonClassName}
-                                >
-                                  Load Into Panel
-                                </button>
+                              <div className="space-y-2">
+                                {item.activeCustomers.map((activeCustomer, index) => (
+                                  <div
+                                    key={activeCustomer.id}
+                                    className={`rounded-2xl border px-3 py-3 ${
+                                      isDarkMode
+                                        ? "border-slate-800 bg-slate-950/70"
+                                        : "border-slate-200 bg-white/90"
+                                    }`}
+                                  >
+                                    <div className="flex flex-wrap items-start justify-between gap-2">
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                                            {activeCustomer.customer || "Unnamed customer"}
+                                          </div>
+                                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                            activeCustomer.customerType === "B-Back"
+                                              ? breakBadgeClassName
+                                              : workingBadgeClassName
+                                          }`}>
+                                            {activeCustomer.customerType === "B-Back" ? "B-Back" : "New Opportunity"}
+                                          </span>
+                                        </div>
+                                        <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                          {activeCustomer.customerDetails || "No extra notes yet."}
+                                        </div>
+                                      </div>
+                                      <div className="text-right text-[11px] text-slate-400 dark:text-slate-500">
+                                        <div>Customer {index + 1}</div>
+                                        <div>{formatTime(activeCustomer.startedAt)}</div>
+                                      </div>
+                                    </div>
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                      <button
+                                        onClick={() => void handleCompleteCustomer(item, activeCustomer.id)}
+                                        disabled={!canManageRow || saving === "queue"}
+                                        className={successButtonClassName}
+                                      >
+                                        Complete
+                                      </button>
+                                      <button
+                                        onClick={() => void handleRemoveCustomerFromUps(item, activeCustomer.id)}
+                                        disabled={!canManageRow || saving === "queue"}
+                                        className={warningButtonClassName}
+                                      >
+                                        Remove Up
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setDraft((current) => ({
+                                            ...current,
+                                            queueId: item.id,
+                                            activeCustomerId: activeCustomer.id,
+                                            ...splitName(activeCustomer.customer || combineName(current.firstName, current.lastName)),
+                                            visualDescription: activeCustomer.customerDetails || current.visualDescription,
+                                            owner: item.rep || current.owner,
+                                            ownerUserId: item.repUserId || current.ownerUserId,
+                                            store: item.store || current.store,
+                                          }));
+                                        }}
+                                        className={ghostButtonClassName}
+                                      >
+                                        Load Into Panel
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           )}
@@ -962,7 +1009,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                 {draft.queueId ? (
                   <button
                     onClick={() => void handleSyncQueueCard()}
-                    disabled={saving === "queue"}
+                    disabled={saving === "queue" || !draft.activeCustomerId}
                     className={`${ghostButtonClassName} text-xs`}
                   >
                     Sync Opportunity Card

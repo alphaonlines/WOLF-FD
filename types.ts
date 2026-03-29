@@ -97,6 +97,16 @@ export interface CRMUpsItem {
 export type UpsQueueStatus = "waiting" | "working" | "on_break";
 export type UpsQueueCustomerType = "Regular Up" | "B-Back";
 
+export interface CRMUpsActiveCustomer {
+  id: string;
+  queueEntryId: string;
+  customer: string;
+  customerType: UpsQueueCustomerType | null;
+  customerDetails: string | null;
+  startedAt: string | null;
+  historyId: string | null;
+}
+
 export interface CRMUpsQueueItem {
   id: string;
   store: string;
@@ -122,6 +132,8 @@ export interface CRMUpsQueueItem {
   liveWeatherWindMph: number | null;
   liveWeatherFetchedAt: string | null;
   helpedTodayCount: number;
+  activeCustomerCount: number;
+  activeCustomers: CRMUpsActiveCustomer[];
 }
 
 export interface CRMCustomerOrder {

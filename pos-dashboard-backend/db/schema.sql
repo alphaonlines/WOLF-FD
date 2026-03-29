@@ -596,18 +596,68 @@ ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS queue_position INTEGER;
 ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMPTZ;
 ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_customer TEXT;
 ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_customer_type TEXT;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_customer_details TEXT;
 ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_location TEXT;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_summary TEXT;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_temp_f NUMERIC(5,1);
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_precip_pct INTEGER;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_wind_mph NUMERIC(5,1);
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_fetched_at TIMESTAMPTZ;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS current_weather_source TEXT;
+ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS active_history_id TEXT;
 ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
 ALTER TABLE crm_ups_queue ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
 
 ALTER TABLE crm_ups_queue ALTER COLUMN store SET DEFAULT 'FD7';
 ALTER TABLE crm_ups_queue ALTER COLUMN status SET DEFAULT 'waiting';
+ALTER TABLE crm_ups_queue ALTER COLUMN rep_user_id DROP NOT NULL;
 ALTER TABLE crm_ups_queue ALTER COLUMN checked_in_at SET DEFAULT now();
 ALTER TABLE crm_ups_queue ALTER COLUMN created_at SET DEFAULT now();
 ALTER TABLE crm_ups_queue ALTER COLUMN updated_at SET DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_crm_ups_queue_store_pos ON crm_ups_queue(store, queue_position ASC);
 CREATE INDEX IF NOT EXISTS idx_crm_ups_queue_rep_user_id ON crm_ups_queue(rep_user_id);
+CREATE INDEX IF NOT EXISTS idx_crm_ups_queue_active_history_id ON crm_ups_queue(active_history_id);
+
+CREATE TABLE IF NOT EXISTS crm_ups_active_customers (
+  id               TEXT PRIMARY KEY,
+  queue_entry_id   TEXT NOT NULL,
+  history_id       TEXT NULL,
+  store            TEXT NOT NULL DEFAULT 'FD7',
+  rep              TEXT NOT NULL DEFAULT '',
+  rep_user_id      BIGINT NULL,
+  customer         TEXT NOT NULL DEFAULT '',
+  customer_type    TEXT NULL,
+  customer_details TEXT NOT NULL DEFAULT '',
+  started_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS queue_entry_id TEXT;
+ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS history_id TEXT;
+ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS store TEXT;
+ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS rep TEXT;
+ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS rep_user_id BIGINT;
+ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS customer TEXT;
+ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS customer_type TEXT;
+ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS customer_details TEXT;
+ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;
+ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
+ALTER TABLE crm_ups_active_customers ALTER COLUMN store SET DEFAULT 'FD7';
+ALTER TABLE crm_ups_active_customers ALTER COLUMN rep SET DEFAULT '';
+ALTER TABLE crm_ups_active_customers ALTER COLUMN customer SET DEFAULT '';
+ALTER TABLE crm_ups_active_customers ALTER COLUMN customer_details SET DEFAULT '';
+ALTER TABLE crm_ups_active_customers ALTER COLUMN started_at SET DEFAULT now();
+ALTER TABLE crm_ups_active_customers ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE crm_ups_active_customers ALTER COLUMN updated_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_crm_ups_active_customers_queue_entry_id ON crm_ups_active_customers(queue_entry_id);
+CREATE INDEX IF NOT EXISTS idx_crm_ups_active_customers_history_id ON crm_ups_active_customers(history_id);
+CREATE INDEX IF NOT EXISTS idx_crm_ups_active_customers_rep_user_id ON crm_ups_active_customers(rep_user_id);
 
 CREATE TABLE IF NOT EXISTS crm_customers (
   id          TEXT PRIMARY KEY,
