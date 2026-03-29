@@ -96,6 +96,9 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
   }, [onSubTabChange, subTab]);
 
   const divider = isDarkMode ? "border-slate-800" : "border-slate-200";
+  const stickyBarClass = isDarkMode
+    ? "sticky top-20 z-20 border-b border-slate-800 bg-[#121b27]/94 backdrop-blur-xl"
+    : "sticky top-20 z-20 border-b border-slate-200 bg-white/92 backdrop-blur-xl";
 
   const tabBtn = (active: boolean) =>
     `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
@@ -111,7 +114,7 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
   return (
     <div className="flex flex-col h-full">
       {/* Sub-tab bar */}
-      <div className={`flex items-center gap-2 px-6 py-3 border-b ${divider} flex-wrap`}>
+      <div className={`flex items-center gap-2 px-6 py-3 ${divider} ${stickyBarClass} flex-wrap`}>
         <button className={tabBtn(subTab === "sales")} onClick={() => setSubTab("sales")}>
           <BarChart2 size={15} /> Sales Analysis
         </button>

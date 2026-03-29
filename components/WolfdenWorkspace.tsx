@@ -35,6 +35,9 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
   }, [requestedSubTab, requestedSubTabToken]);
 
   const divider = isDarkMode ? "border-slate-800" : "border-slate-200";
+  const stickyBarClass = isDarkMode
+    ? "sticky top-20 z-20 border-b border-slate-800 bg-[#121b27]/94 backdrop-blur-xl"
+    : "sticky top-20 z-20 border-b border-slate-200 bg-white/92 backdrop-blur-xl";
   const selectCls = isDarkMode
     ? "rounded-lg border border-slate-700 bg-slate-900 pl-7 pr-3 py-1.5 text-xs font-semibold text-slate-100 outline-none focus:border-amber-500"
     : "rounded-lg border border-slate-200 bg-white pl-7 pr-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-amber-400";
@@ -69,7 +72,7 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
   return (
     <div className="flex flex-col h-full">
       {/* Sub-tab bar */}
-      <div className={`flex items-center gap-2 px-6 py-3 border-b ${divider} flex-wrap`}>
+      <div className={`flex items-center gap-2 px-6 py-3 ${divider} ${stickyBarClass} flex-wrap`}>
         <button className={tabBtn(subTab === "ups")} onClick={() => setSubTab("ups")}>
           <UserCheck size={15} /> UPS List
         </button>
