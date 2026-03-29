@@ -1624,24 +1624,26 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
       )}
 
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={statCardOrder}
-          strategy={rectSortingStrategy}
+      <div className="mb-6">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {statCardOrder.map((id) => (
-              <SortableItem key={id} id={id} className="h-full">
-                {renderStatCard(id)}
-              </SortableItem>
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+          <SortableContext
+            items={statCardOrder}
+            strategy={rectSortingStrategy}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {statCardOrder.map((id) => (
+                <SortableItem key={id} id={id} className="h-full">
+                  {renderStatCard(id)}
+                </SortableItem>
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </div>
 
       <SalesReportCard
         collapsed={isCardCollapsed("sales-report")}
