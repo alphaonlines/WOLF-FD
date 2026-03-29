@@ -90,6 +90,10 @@ export function hasPermission(
   permissionMode: PermissionMode | undefined,
   permissionKey: string
 ): boolean {
+  if (roles.includes("Owner") && OWNER_DEFAULTS.includes(permissionKey)) {
+    return true;
+  }
+
   const explicit = Array.isArray(explicitPermissions) ? explicitPermissions.filter(Boolean) : [];
   if (permissionMode === "explicit") return explicit.includes(permissionKey);
 
