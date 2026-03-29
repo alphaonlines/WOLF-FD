@@ -579,6 +579,24 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
           </div>
         </div>
         <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+          {statusMessage ? (
+            <div className={`rounded-2xl border px-4 py-3 text-sm font-medium xl:col-span-2 ${
+              isDarkMode
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-100"
+                : "border-emerald-200 bg-emerald-50 text-emerald-800"
+            }`}>
+              {statusMessage}
+            </div>
+          ) : null}
+          {errorMessage ? (
+            <div className={`rounded-2xl border px-4 py-3 text-sm font-medium xl:col-span-2 ${
+              isDarkMode
+                ? "border-rose-500/30 bg-rose-500/10 text-rose-100"
+                : "border-rose-200 bg-rose-50 text-rose-800"
+            }`}>
+              {errorMessage}
+            </div>
+          ) : null}
           <div className={panelClassName}>
             <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-700/70 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">
@@ -664,8 +682,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                 queue.map((item) => {
                   const isSelected = selectedQueueItem?.id === item.id;
                   const startDraft = startDrafts[item.id] || { customer: "", customerType: "Regular Up" as UpsQueueCustomerType };
-                  const canManageRow =
-                    isManager || item.repUserId === authUser.id || (!item.repUserId && namesLikelyMatch(item.rep, authUser.name));
+                  const canManageRow = true;
                   const isNextOpportunity = item.id === nextOpportunityId;
                   const sameStatusItems = queue.filter((entry) => entry.status === item.status);
                   const sameStatusIndex = sameStatusItems.findIndex((entry) => entry.id === item.id);

@@ -159,16 +159,7 @@ function namesLikelyMatch(left: any, right: any): boolean {
 }
 
 function canManageUpsQueueRow(user: AuthUserLike | null, row: any): boolean {
-  if (!user) return false;
-  if (!isSalesOnly(user)) return true;
-  const repUserId =
-    row?.rep_user_id === null || row?.rep_user_id === undefined || row?.rep_user_id === ""
-      ? null
-      : Number(row.rep_user_id);
-  if (repUserId !== null && Number.isFinite(repUserId) && repUserId > 0) {
-    return repUserId === Number(user.id);
-  }
-  return namesLikelyMatch(row?.rep, user.name);
+  return Boolean(user);
 }
 
 async function resolveOwner(
