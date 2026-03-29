@@ -29,7 +29,6 @@ import {
   startCrmUpsQueueCustomerInApi,
   updateCrmLeadInApi,
   updateCrmUpsQueueStatusInApi,
-  updateCrmUpsQueueCustomerInApi,
   upsertCrmCustomerAccount,
 } from "../services/crmApi";
 import { APP_VERSION } from "../constants";
@@ -466,25 +465,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     }
   };
 
-  const handleSyncQueueCard = async () => {
-    if (!draft.queueId || !draft.activeCustomerId) return;
-    setSaving("queue");
-    setStatusMessage(null);
-    setErrorMessage(null);
-    try {
-      const row = await updateCrmUpsQueueCustomerInApi(draft.queueId, draft.activeCustomerId, {
-        customer: combineName(draft.firstName, draft.lastName),
-        details: draft.visualDescription.trim(),
-      });
-      setQueue((current) => current.map((entry) => (entry.id === row.id ? row : entry)));
-      setStatusMessage("Opportunity card updated.");
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to update opportunity card.");
-    } finally {
-      setSaving(null);
-    }
-  };
-
   const handleSaveLead = async () => {
     const fullName = combineName(draft.firstName, draft.lastName);
     if (!fullName || !draft.phone.trim()) {
@@ -844,14 +824,74 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                                   Weather snapshot: {weatherSnapshot}
                                 </div>
                               ) : null}
+                              <div className="grid gap-2 md:grid-cols-[1.8fr_150px_auto]">
+                                <input
+                                  value={startDraft.customer}
+                                  onChange={(event) =>
+                                    setStartDrafts((current) => ({
+                                      ...current,
+                                      [item.id]: { ...startDraft, customer: event.target.value },
+                                    }))
+                                  }
+                                  onKeyDown={(event) => {
+                                    if (event.key === "Enter") {
+                                      event.preventDefault();
+                                      void handleStartCustomer(item);
+                                    }
+                                  }}
+                                  placeholder="Add another customer / opportunity notes"
+                                  className={subtleInputClassName}
+                                />
+                                <select
+                                  value={startDraft.customerType}
+                                  onChange={(event) =>
+                                    setStartDrafts((current) => ({
+                                      ...current,
+                                      [item.id]: {
+                                        ...startDraft,
+                                        customerType: event.target.value as UpsQueueCustomerType,
+                                      },
+                                    }))
+                                  }
+                                  className={subtleInputClassName}
+                                >
+                                  <option value="Regular Up">New Opportunity</option>
+                                  <option value="B-Back">B-Back</option>
+                                </select>
+                                <button
+                                  onClick={() => void handleStartCustomer(item)}
+                                  disabled={saving === "queue"}
+                                  className={successButtonClassName}
+                                >
+                                  Add Customer
+                                </button>
+                              </div>
                               <div className="space-y-2">
                                 {item.activeCustomers.map((activeCustomer, index) => (
                                   <div
                                     key={activeCustomer.id}
+                                    onClick={() => {
+                                      setDraft((current) => ({
+                                        ...current,
+                                        queueId: item.id,
+                                        activeCustomerId: activeCustomer.id,
+                                        ...splitName(activeCustomer.customer || combineName(current.firstName, current.lastName)),
+                                        visualDescription: activeCustomer.customerDetails || current.visualDescription,
+                                        owner: item.rep || current.owner,
+                                        ownerUserId: item.repUserId || current.ownerUserId,
+                                        store: item.store || current.store,
+                                      }));
+                                    }}
                                     className={`rounded-2xl border px-3 py-3 ${
                                       isDarkMode
                                         ? "border-slate-800 bg-slate-950/70"
                                         : "border-slate-200 bg-white/90"
+                                    } cursor-pointer transition ${
+                                      draft.activeCustomerId === activeCustomer.id
+                                        ? isDarkMode
+                                          ? "ring-1 ring-sky-400/60"
+                                          : "ring-1 ring-sky-300"
+                                        : ""
                                     }`}
                                   >
                                     <div className="flex flex-wrap items-start justify-between gap-2">
@@ -879,35 +919,24 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                                     </div>
                                     <div className="mt-3 flex flex-wrap gap-2">
                                       <button
-                                        onClick={() => void handleCompleteCustomer(item, activeCustomer.id)}
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          void handleCompleteCustomer(item, activeCustomer.id);
+                                        }}
                                         disabled={!canManageRow || saving === "queue"}
                                         className={successButtonClassName}
                                       >
                                         Complete
                                       </button>
                                       <button
-                                        onClick={() => void handleRemoveCustomerFromUps(item, activeCustomer.id)}
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          void handleRemoveCustomerFromUps(item, activeCustomer.id);
+                                        }}
                                         disabled={!canManageRow || saving === "queue"}
                                         className={warningButtonClassName}
                                       >
                                         Remove Up
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          setDraft((current) => ({
-                                            ...current,
-                                            queueId: item.id,
-                                            activeCustomerId: activeCustomer.id,
-                                            ...splitName(activeCustomer.customer || combineName(current.firstName, current.lastName)),
-                                            visualDescription: activeCustomer.customerDetails || current.visualDescription,
-                                            owner: item.rep || current.owner,
-                                            ownerUserId: item.repUserId || current.ownerUserId,
-                                            store: item.store || current.store,
-                                          }));
-                                        }}
-                                        className={ghostButtonClassName}
-                                      >
-                                        Load Into Panel
                                       </button>
                                     </div>
                                   </div>
@@ -1006,15 +1035,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
             <div className={`${panelClassName} p-4`}>
               <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-semibold text-slate-900 dark:text-white">Customer Panel</div>
-                {draft.queueId ? (
-                  <button
-                    onClick={() => void handleSyncQueueCard()}
-                    disabled={saving === "queue" || !draft.activeCustomerId}
-                    className={`${ghostButtonClassName} text-xs`}
-                  >
-                    Sync Opportunity Card
-                  </button>
-                ) : null}
               </div>
 
               <div className="mt-3 grid gap-2">
