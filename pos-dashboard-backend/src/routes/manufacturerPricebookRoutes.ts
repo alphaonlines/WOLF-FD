@@ -65,7 +65,7 @@ function safeFileName(name: string) {
 
 function inferDocumentType(originalName: string, explicitType?: string) {
   const normalizedExplicit = normalizeText(explicitType).toLowerCase();
-  if (normalizedExplicit) return normalizedExplicit;
+  if (normalizedExplicit && normalizedExplicit !== "auto") return normalizedExplicit;
   const lower = originalName.toLowerCase();
   if (lower.endsWith(".zip")) return "archive";
   if (lower.includes("warranty")) return "warranty";
@@ -73,6 +73,78 @@ function inferDocumentType(originalName: string, explicitType?: string) {
   if (lower.includes("return")) return "return_policy";
   if (lower.includes("assembly")) return "assembly";
   return "pricebook";
+}
+
+function getUploadSelectionScore(uploadRow: any) {
+  let score = 0;
+  const name = `${String(uploadRow.original_name || "")} ${String(uploadRow.storage_name || "")}`.toLowerCase();
+  const documentType = String(uploadRow.document_type || "pricebook").toLowerCase();
+  if (documentType === "archive") score -= 1000;
+  if (uploadRow.parent_upload_id) score += 25;
+  if (/\.xlsx?$/.test(name)) score += 250;
+  if (/\.csv$/.test(name)) score += 120;
+  if (/residential price list/.test(name)) score += 600;
+  if (/price[_ -]?list|pricebook/.test(name)) score += 180;
+  if (/compressed/.test(name)) score += 20;
+  if (/warranty/.test(name)) score -= 100;
+  if (/diamond/.test(name)) score -= 120;
+  if (/fabric/.test(name)) score -= 120;
+  if (/grade change|cheat sheet/.test(name)) score -= 140;
+  return score;
+}
+
+async function loadUploadChildren(pool: Pool, parentUploadId: number) {
+  const result = await pool.query(
+    `
+      SELECT
+        id,
+        manufacturer,
+        manufacturer_slug,
+        original_name,
+        storage_name,
+        relative_path,
+        document_type,
+        mime_type,
+        file_size_bytes,
+        replace_existing,
+        status,
+        parsed_row_count,
+        last_error,
+        previewed_at,
+        published_at,
+        uploaded_by_user_id,
+        parent_upload_id,
+        extracted_file_count,
+        created_at
+      FROM manufacturer_pricebook_uploads
+      WHERE parent_upload_id = $1
+      ORDER BY created_at DESC
+    `,
+    [parentUploadId]
+  );
+  return result.rows;
+}
+
+function choosePreferredUploadCandidate(rows: any[]) {
+  return [...rows].sort((left, right) => getUploadSelectionScore(right) - getUploadSelectionScore(left))[0] || null;
+}
+
+async function resolveUploadRowForProcessing(pool: Pool, uploadRow: any) {
+  const documentType = String(uploadRow.document_type || "pricebook").toLowerCase();
+  if (documentType === "archive") {
+    const children = await loadUploadChildren(pool, Number(uploadRow.id));
+    const usableChildren = children.filter((row) => String(row.document_type || "").toLowerCase() !== "archive");
+    return choosePreferredUploadCandidate(usableChildren) || uploadRow;
+  }
+
+  const manufacturerSlug = String(uploadRow.manufacturer_slug || "").trim().toLowerCase();
+  if (manufacturerSlug === "best" && uploadRow.parent_upload_id) {
+    const siblings = await loadUploadChildren(pool, Number(uploadRow.parent_upload_id));
+    const usableSiblings = siblings.filter((row) => String(row.document_type || "").toLowerCase() !== "archive");
+    return choosePreferredUploadCandidate(usableSiblings) || uploadRow;
+  }
+
+  return uploadRow;
 }
 
 function toNumericUserId(req: any) {
@@ -374,16 +446,18 @@ async function loadUploadByIdOr404(pool: Pool, uploadId: string, res: any) {
 }
 
 async function parseUploadRows(input: {
+  pool: Pool;
   holdingDir: string;
   uploadRow: any;
   execFileAsync: ExecFileAsyncLike;
 }) {
-  const filePath = path.join(input.holdingDir, String(input.uploadRow.relative_path || ""));
+  const resolvedUploadRow = await resolveUploadRowForProcessing(input.pool, input.uploadRow);
+  const filePath = path.join(input.holdingDir, String(resolvedUploadRow.relative_path || ""));
   if (!fs.existsSync(filePath)) {
-    throw new Error(`Holding file is missing at ${input.uploadRow.relative_path}`);
+    throw new Error(`Holding file is missing at ${resolvedUploadRow.relative_path}`);
   }
 
-  const manufacturerSlug = String(input.uploadRow.manufacturer_slug || "").trim().toLowerCase();
+  const manufacturerSlug = String(resolvedUploadRow.manufacturer_slug || "").trim().toLowerCase();
   if (manufacturerSlug === "liberty") {
     return parseLibertyPricebookPdf(filePath, input.execFileAsync);
   }
@@ -395,18 +469,20 @@ async function parseUploadRows(input: {
     }
     return parseBestPricebookWorkbook(filePath);
   }
-  throw new Error(`No parser is available yet for ${input.uploadRow.manufacturer}. Liberty and Best are currently live.`);
+  throw new Error(`No parser is available yet for ${resolvedUploadRow.manufacturer}. Liberty and Best are currently live.`);
 }
 
 async function parseUploadReferenceNotes(input: {
+  pool: Pool;
   holdingDir: string;
   uploadRow: any;
   execFileAsync: ExecFileAsyncLike;
 }) {
-  const filePath = path.join(input.holdingDir, String(input.uploadRow.relative_path || ""));
+  const resolvedUploadRow = await resolveUploadRowForProcessing(input.pool, input.uploadRow);
+  const filePath = path.join(input.holdingDir, String(resolvedUploadRow.relative_path || ""));
   if (!fs.existsSync(filePath)) return [];
-  const manufacturerSlug = String(input.uploadRow.manufacturer_slug || "").trim().toLowerCase();
-  if (String(input.uploadRow.document_type || "pricebook") === "archive") return [];
+  const manufacturerSlug = String(resolvedUploadRow.manufacturer_slug || "").trim().toLowerCase();
+  if (String(resolvedUploadRow.document_type || "pricebook") === "archive") return [];
   if (manufacturerSlug === "liberty") {
     return parseLibertyReferenceNotesFromPdf(filePath, input.execFileAsync);
   }
@@ -608,6 +684,8 @@ export function registerManufacturerPricebookRoutes({
         previewed_at,
         published_at,
         uploaded_by_user_id,
+        parent_upload_id,
+        extracted_file_count,
         created_at
       FROM manufacturer_pricebook_uploads
       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
@@ -746,8 +824,8 @@ export function registerManufacturerPricebookRoutes({
     if (!uploadRow) return;
 
     try {
-      const rows = await parseUploadRows({ holdingDir, uploadRow, execFileAsync });
-      const notes = await parseUploadReferenceNotes({ holdingDir, uploadRow, execFileAsync });
+      const rows = await parseUploadRows({ pool, holdingDir, uploadRow, execFileAsync });
+      const notes = await parseUploadReferenceNotes({ pool, holdingDir, uploadRow, execFileAsync });
       await pool.query(
         `
           UPDATE manufacturer_pricebook_uploads
@@ -817,8 +895,8 @@ export function registerManufacturerPricebookRoutes({
     try {
       const draftRows = Array.isArray(req.body?.rows) ? normalizeDraftRows(req.body.rows, uploadRow) : [];
       const rows =
-        draftRows.length > 0 ? draftRows : await parseUploadRows({ holdingDir, uploadRow, execFileAsync });
-      const notes = await parseUploadReferenceNotes({ holdingDir, uploadRow, execFileAsync });
+        draftRows.length > 0 ? draftRows : await parseUploadRows({ pool, holdingDir, uploadRow, execFileAsync });
+      const notes = await parseUploadReferenceNotes({ pool, holdingDir, uploadRow, execFileAsync });
       if (!rows.length) {
         return res.status(400).json({ ok: false, error: "No normalized rows were produced for publish" });
       }

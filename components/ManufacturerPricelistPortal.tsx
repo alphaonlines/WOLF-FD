@@ -542,7 +542,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
   const [activeScreen, setActiveScreen] = useState<PortalScreen>("ingestion");
   const [selectedManufacturer, setSelectedManufacturer] = useState("Ashley");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [selectedDocumentType, setSelectedDocumentType] = useState("pricebook");
+  const [selectedDocumentType, setSelectedDocumentType] = useState("auto");
   const [dragActive, setDragActive] = useState(false);
   const [ingestionStage, setIngestionStage] = useState<"idle" | "ready" | "extracting" | "review">("idle");
   const [extractionProgress, setExtractionProgress] = useState(0);
@@ -679,7 +679,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
   const startExtraction = async () => {
     const targetUpload = getResolvedPreviewUpload(holdingUploads, selectedUploadId);
     if (!targetUpload) {
-      setHoldingError("Upload a pricebook PDF, spreadsheet, CSV, or ZIP first. ZIP bundles now auto-unpack when they contain supported files.");
+      setHoldingError("Upload a pricebook PDF, spreadsheet, CSV, or ZIP first. ZIP bundles now auto-unpack and the portal will try to detect the best usable file automatically.");
       return;
     }
     if (targetUpload.documentType === "archive") {
@@ -794,9 +794,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
         );
       }
       setHoldingMessage(messageParts.join(" "));
-      if (selectedDocumentType !== "archive" && uploadedRows.length === 1) {
-        setSelectedFiles([]);
-      }
+      setSelectedFiles([]);
     } catch (error: any) {
       setHoldingError(String(error?.message || error || "Failed to upload file to holding"));
     } finally {
@@ -970,6 +968,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                   onChange={(event) => setSelectedDocumentType(event.target.value)}
                   className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
                 >
+                  <option value="auto">Auto Detect</option>
                   <option value="pricebook">Pricebook</option>
                   <option value="archive">ZIP archive</option>
                   <option value="warranty">Warranty</option>
@@ -979,8 +978,8 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                 </select>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                Use `ZIP archive` when the manufacturer sends a Google Drive bundle. Archives can live in holding now so
-                we can inspect them and build the next manufacturer parser from the real files.
+                `Auto Detect` now handles normal PDF, Excel, CSV, and ZIP uploads by filename. Only change this when
+                you want to override the detected type for warranty, freight, returns, or other reference documents.
               </div>
             </div>
 
@@ -1175,7 +1174,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                       ) : (
                         <div className="mt-3 text-xs text-slate-500">
                           {upload.extractedFileCount
-                            ? `Archive unpacked. Select one of the extracted child files to preview.`
+                            ? `Archive unpacked. The portal will auto-detect the best extracted file when you load validation.`
                             : "Archive stored, but no supported extracted pricebook file is available yet."}
                         </div>
                       )}
