@@ -2,6 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { RefreshCcw, Save, Settings2 } from "lucide-react";
 import type { SocialAccount, SocialPlatform } from "../../services/socialApi";
 import { fetchSocialAccounts, upsertSocialAccount } from "../../services/socialApi";
+import {
+  getSocialAccountReadiness,
+  SOCIAL_PLATFORM_META_BY_ID,
+  SOCIAL_PLATFORM_OPTIONS,
+} from "../workAdvertising/socialPlatformGuidance";
 
 type AccountDraft = {
   draftKey: string;
@@ -13,13 +18,8 @@ type AccountDraft = {
   refreshToken: string;
   tokenExpiresAt: string;
   active: boolean;
+  configJsonText: string;
 };
-
-const PLATFORM_OPTIONS: Array<{ id: SocialPlatform; label: string; helpText: string }> = [
-  { id: "facebook", label: "Facebook", helpText: "Use your Facebook Page ID and page token." },
-  { id: "instagram", label: "Instagram", helpText: "Use your Instagram professional account ID and access token." },
-  { id: "google", label: "Google Business Profile", helpText: "Use the accounts/{accountId}/locations/{locationId} path and Google token." },
-];
 
 const toLocalInputValue = (iso: string | null | undefined) => {
   if (!iso) return "";
@@ -47,9 +47,10 @@ const makeAccountDrafts = (accounts: SocialAccount[]): AccountDraft[] => {
     refreshToken: "",
     tokenExpiresAt: toLocalInputValue(account.tokenExpiresAt || null),
     active: Boolean(account.active),
+    configJsonText: JSON.stringify(account.configJson || {}, null, 2),
   }));
 
-  for (const platform of PLATFORM_OPTIONS.map((item) => item.id)) {
+  for (const platform of SOCIAL_PLATFORM_OPTIONS.map((item) => item.id)) {
     if (!drafts.some((draft) => draft.platform === platform)) {
       drafts.push({
         draftKey: `new-${platform}`,
@@ -61,6 +62,7 @@ const makeAccountDrafts = (accounts: SocialAccount[]): AccountDraft[] => {
         refreshToken: "",
         tokenExpiresAt: "",
         active: false,
+        configJsonText: "{}",
       });
     }
   }
@@ -121,6 +123,7 @@ const SocialIntegrationsSettings: React.FC = () => {
         refreshToken: "",
         tokenExpiresAt: "",
         active: false,
+        configJsonText: "{}",
       },
     ]);
   };
@@ -132,6 +135,12 @@ const SocialIntegrationsSettings: React.FC = () => {
     setError(null);
     setMessage(null);
     try {
+      let configJson: Record<string, any> = {};
+      try {
+        configJson = draft.configJsonText.trim() ? JSON.parse(draft.configJsonText) : {};
+      } catch {
+        throw new Error("Extra config must be valid JSON before you can save this integration.");
+      }
       const next = await upsertSocialAccount({
         id: draft.id,
         platform: draft.platform,
@@ -141,7 +150,7 @@ const SocialIntegrationsSettings: React.FC = () => {
         refreshToken: draft.refreshToken,
         tokenExpiresAt: fromLocalInputValue(draft.tokenExpiresAt),
         active: draft.active,
-        configJson: {},
+        configJson,
       });
       if (!next) throw new Error(`Unable to save ${draft.platform} integration.`);
       const updatedAccounts = (() => {
@@ -211,14 +220,23 @@ const SocialIntegrationsSettings: React.FC = () => {
       )}
 
       <section className="space-y-5">
-        {PLATFORM_OPTIONS.map((platform) => {
+        {SOCIAL_PLATFORM_OPTIONS.map((platform) => {
           const drafts = accountDrafts.filter((item) => item.platform === platform.id);
+          const platformMeta = SOCIAL_PLATFORM_META_BY_ID[platform.id];
           return (
             <div key={platform.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h4 className="text-lg font-semibold text-slate-900">{platform.label}</h4>
-                  <p className="mt-1 text-sm text-slate-500">{platform.helpText}</p>
+                  <p className="mt-1 text-sm text-slate-500">{platformMeta.helpText}</p>
+                  <a
+                    href={platformMeta.docsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-flex text-xs font-semibold text-blue-700 underline-offset-2 hover:underline"
+                  >
+                    Open official setup docs
+                  </a>
                 </div>
                 <button
                   type="button"
@@ -232,11 +250,42 @@ const SocialIntegrationsSettings: React.FC = () => {
               <div className="mt-5 space-y-4">
                 {drafts.map((draft, index) => {
                   const saved = draft.id ? accounts.find((item) => item.id === draft.id) || null : null;
+                  const readiness = getSocialAccountReadiness(platform.id, saved);
                   return (
                     <div key={draft.draftKey} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                          {platform.label} {index + 1}
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                            {platform.label} {index + 1}
+                          </div>
+                          <div className="mt-2 inline-flex items-center gap-2">
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                readiness.severity === "ready"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : readiness.severity === "warning"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : "bg-rose-100 text-rose-800"
+                              }`}
+                            >
+                              {readiness.headline}
+                            </span>
+                            <span className="text-xs text-slate-500">{readiness.tokenExpiryLabel}</span>
+                          </div>
+                          {(readiness.issues.length > 0 || readiness.warnings.length > 0) && (
+                            <div className="mt-2 space-y-1 text-xs">
+                              {readiness.issues.map((issue) => (
+                                <div key={`${draft.draftKey}-issue-${issue}`} className="text-rose-700">
+                                  {issue}
+                                </div>
+                              ))}
+                              {readiness.warnings.map((warning) => (
+                                <div key={`${draft.draftKey}-warning-${warning}`} className="text-amber-700">
+                                  {warning}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
                           <input
@@ -260,23 +309,25 @@ const SocialIntegrationsSettings: React.FC = () => {
                           type="text"
                           value={draft.externalId}
                           onChange={(event) => updateAccountDraft(draft.draftKey, { externalId: event.target.value })}
-                          placeholder={
-                            platform.id === "google" ? "accounts/123/locations/456" : "External account/page ID"
-                          }
+                          placeholder={platformMeta.externalIdPlaceholder}
                           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400"
                         />
                         <input
                           type="password"
                           value={draft.accessToken}
                           onChange={(event) => updateAccountDraft(draft.draftKey, { accessToken: event.target.value })}
-                          placeholder={saved?.accessTokenConfigured ? `Token saved: ${saved.tokenPreview}` : "Access token"}
+                          placeholder={
+                            saved?.accessTokenConfigured ? `Token saved: ${saved.tokenPreview}` : platformMeta.accessTokenLabel
+                          }
                           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400"
                         />
                         <input
                           type="password"
                           value={draft.refreshToken}
                           onChange={(event) => updateAccountDraft(draft.draftKey, { refreshToken: event.target.value })}
-                          placeholder={saved?.refreshTokenConfigured ? "Refresh token saved" : "Refresh token (optional)"}
+                          placeholder={
+                            saved?.refreshTokenConfigured ? "Refresh token saved" : `${platformMeta.refreshTokenLabel} (optional)`
+                          }
                           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400"
                         />
                         <input
@@ -285,6 +336,38 @@ const SocialIntegrationsSettings: React.FC = () => {
                           onChange={(event) => updateAccountDraft(draft.draftKey, { tokenExpiresAt: event.target.value })}
                           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400"
                         />
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
+                        <label className="block">
+                          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            {platformMeta.externalIdLabel}
+                          </div>
+                          <div className="text-xs text-slate-500">
+                            {platformMeta.helpText}
+                          </div>
+                        </label>
+                        <label className="block">
+                          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Extra Config JSON
+                          </div>
+                          <textarea
+                            value={draft.configJsonText}
+                            onChange={(event) => updateAccountDraft(draft.draftKey, { configJsonText: event.target.value })}
+                            rows={6}
+                            spellCheck={false}
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs outline-none focus:border-slate-400"
+                            placeholder={platformMeta.configExample}
+                          />
+                        </label>
+                      </div>
+
+                      <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3 text-xs text-slate-600">
+                        {platformMeta.requirements.map((line) => (
+                          <div key={`${draft.draftKey}-requirement-${line}`} className="mt-1 first:mt-0">
+                            {line}
+                          </div>
+                        ))}
                       </div>
 
                       <button

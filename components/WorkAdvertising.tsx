@@ -29,6 +29,11 @@ import {
   updateSocialPost,
   uploadSocialAsset,
 } from "../services/socialApi";
+import {
+  getSocialAccountReadiness,
+  SOCIAL_PLATFORM_META_BY_ID,
+  SOCIAL_PLATFORM_OPTIONS,
+} from "./workAdvertising/socialPlatformGuidance";
 
 type ComposerForm = {
   id: string | null;
@@ -51,12 +56,6 @@ type ComposerForm = {
     assetKind: string;
   } | null;
 };
-
-const PLATFORM_OPTIONS: Array<{ id: SocialPlatform; label: string }> = [
-  { id: "facebook", label: "Facebook" },
-  { id: "instagram", label: "Instagram" },
-  { id: "google", label: "Google" },
-];
 
 const emptyForm = (): ComposerForm => ({
   id: null,
@@ -105,7 +104,7 @@ const formatWhen = (iso: string | null | undefined) => {
 
 const defaultAccountIds = (accounts: SocialAccount[]) => {
   const out: Partial<Record<SocialPlatform, string>> = {};
-  for (const platform of PLATFORM_OPTIONS.map((item) => item.id)) {
+  for (const platform of SOCIAL_PLATFORM_OPTIONS.map((item) => item.id)) {
     const preferred = accounts.find((item) => item.platform === platform && item.active) || accounts.find((item) => item.platform === platform);
     if (preferred?.id) out[platform] = preferred.id;
   }
@@ -183,6 +182,18 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
     }),
     [accounts]
   );
+  const selectedAccountsByPlatform = useMemo(() => {
+    return Object.fromEntries(
+      SOCIAL_PLATFORM_OPTIONS.map((platform) => {
+        const selectedAccountId = form.platformAccountIds[platform.id];
+        const account =
+          (selectedAccountId ? accounts.find((item) => item.id === selectedAccountId) : null) ||
+          accounts.find((item) => item.platform === platform.id && item.active) ||
+          null;
+        return [platform.id, account];
+      })
+    ) as Record<SocialPlatform, SocialAccount | null>;
+  }, [accounts, form.platformAccountIds]);
 
   const accountLabelById = useMemo(
     () =>
@@ -195,39 +206,92 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
     [accounts]
   );
   const isOwner = authUser.roles.includes("Owner");
-  const missingPlatformConnections = useMemo(() => {
-    return form.platforms.filter((platform) => {
-      const selectedAccountId = form.platformAccountIds[platform];
-      const selectedAccount =
-        (selectedAccountId ? accounts.find((item) => item.id === selectedAccountId) : null) ||
-        accounts.find((item) => item.platform === platform && item.active) ||
-        null;
-      if (!selectedAccount) return true;
-      return !selectedAccount.active || !selectedAccount.accessTokenConfigured || !selectedAccount.externalId;
-    });
-  }, [accounts, form.platformAccountIds, form.platforms]);
+  const selectedPlatformStatus = useMemo(
+    () =>
+      form.platforms.map((platformId) => ({
+        platform: platformId,
+        label: SOCIAL_PLATFORM_META_BY_ID[platformId].label,
+        docsUrl: SOCIAL_PLATFORM_META_BY_ID[platformId].docsUrl,
+        account: selectedAccountsByPlatform[platformId],
+        readiness: getSocialAccountReadiness(platformId, selectedAccountsByPlatform[platformId]),
+      })),
+    [form.platforms, selectedAccountsByPlatform]
+  );
+  const missingPlatformConnections = useMemo(
+    () => selectedPlatformStatus.filter((item) => !item.readiness.ready).map((item) => item.platform),
+    [selectedPlatformStatus]
+  );
   const connectionStatus = useMemo(
     () =>
-      PLATFORM_OPTIONS.map((platform) => {
-        const selectedAccountId = form.platformAccountIds[platform.id];
-        const selectedAccount =
-          (selectedAccountId ? accounts.find((item) => item.id === selectedAccountId) : null) ||
-          accounts.find((item) => item.platform === platform.id && item.active) ||
-          null;
-        const ready = Boolean(
-          selectedAccount && selectedAccount.active && selectedAccount.accessTokenConfigured && selectedAccount.externalId
-        );
-        return {
-          platform: platform.id,
-          label: platform.label,
-          ready,
-          summary: selectedAccount
-            ? selectedAccount.label || selectedAccount.externalId || `${platform.label} connection`
-            : "No saved connection",
-        };
-      }),
-    [accounts, form.platformAccountIds]
+      SOCIAL_PLATFORM_OPTIONS.map((platform) => ({
+        platform: platform.id,
+        label: platform.label,
+        docsUrl: SOCIAL_PLATFORM_META_BY_ID[platform.id].docsUrl,
+        readiness: getSocialAccountReadiness(platform.id, selectedAccountsByPlatform[platform.id]),
+      })),
+    [selectedAccountsByPlatform]
   );
+  const composerReadiness = useMemo(() => {
+    const blocking: string[] = [];
+    const warnings: string[] = [];
+    const selectedPlatforms = new Set(form.platforms);
+
+    if (!form.title.trim() && !form.caption.trim()) {
+      blocking.push("Add a title or caption before you schedule or publish.");
+    }
+    if (!form.platforms.length) {
+      blocking.push("Choose at least one platform before you schedule or publish.");
+    }
+
+    for (const status of selectedPlatformStatus) {
+      for (const issue of status.readiness.issues) {
+        blocking.push(`${status.label}: ${issue}`);
+      }
+      for (const warning of status.readiness.warnings) {
+        warnings.push(`${status.label}: ${warning}`);
+      }
+    }
+
+    if (selectedPlatforms.has("instagram")) {
+      if (!form.asset) {
+        blocking.push("Instagram requires an uploaded image or video asset.");
+      } else if (form.asset.assetKind === "gif") {
+        blocking.push("Instagram does not support direct GIF publishing here. Export it as MP4 or JPG first.");
+      } else {
+        warnings.push("Instagram will fetch the media from this server at publish time, so leave the asset stored and reachable.");
+      }
+    }
+
+    if (selectedPlatforms.has("google")) {
+      if (form.asset && form.asset.assetKind !== "image") {
+        blocking.push("Google Business Profile local posts only support image assets in this scheduler.");
+      }
+      if (form.googleTopicType === "EVENT" || form.googleTopicType === "OFFER") {
+        const start = fromLocalInputValue(form.googleEventStartLocal);
+        const end = fromLocalInputValue(form.googleEventEndLocal);
+        if (!start || !end) {
+          blocking.push(`Google ${form.googleTopicType.toLowerCase()} posts need both a start and end time.`);
+        } else if (new Date(start).getTime() >= new Date(end).getTime()) {
+          blocking.push("Google event timing is invalid. End time must be after the start time.");
+        }
+      }
+    }
+
+    if (selectedPlatforms.has("facebook") && form.asset?.assetKind === "video") {
+      warnings.push("Facebook video publishing still depends on the publish_video permission on the saved Page token.");
+    }
+
+    return { blocking, warnings };
+  }, [
+    form.asset,
+    form.caption,
+    form.googleEventEndLocal,
+    form.googleEventStartLocal,
+    form.googleTopicType,
+    form.platforms,
+    form.title,
+    selectedPlatformStatus,
+  ]);
 
   const setField = <K extends keyof ComposerForm>(key: K, value: ComposerForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -320,6 +384,9 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
     setError(null);
     setMessage(null);
     try {
+      if (composerReadiness.blocking.length) {
+        throw new Error(composerReadiness.blocking[0]);
+      }
       const scheduledFor = fromLocalInputValue(form.scheduledForLocal);
       if (!scheduledFor) throw new Error("Choose a schedule date and time first.");
       const basePayload = {
@@ -360,6 +427,9 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
     setError(null);
     setMessage(null);
     try {
+      if (composerReadiness.blocking.length) {
+        throw new Error(composerReadiness.blocking[0]);
+      }
       const basePayload = {
         title: form.title,
         caption: form.caption,
@@ -459,7 +529,7 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
                 className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900"
               >
                 <AlertTriangle size={15} />
-                Configure {missingPlatformConnections.map((platform) => PLATFORM_OPTIONS.find((item) => item.id === platform)?.label || platform).join(", ")}
+                Configure {missingPlatformConnections.map((platform) => SOCIAL_PLATFORM_OPTIONS.find((item) => item.id === platform)?.label || platform).join(", ")}
               </button>
             )}
             <button
@@ -657,7 +727,7 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
           <div className="mt-4">
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Platforms</div>
             <div className="flex flex-wrap gap-2">
-              {PLATFORM_OPTIONS.map((platform) => {
+              {SOCIAL_PLATFORM_OPTIONS.map((platform) => {
                 const selected = form.platforms.includes(platform.id);
                 return (
                   <button
@@ -682,7 +752,7 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Platform Destinations</div>
               <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {form.platforms.map((platformId) => {
-                  const platform = PLATFORM_OPTIONS.find((item) => item.id === platformId);
+                  const platform = SOCIAL_PLATFORM_OPTIONS.find((item) => item.id === platformId);
                   const options = accountsByPlatform[platformId];
                   return (
                     <label key={platformId} className="block">
@@ -752,6 +822,91 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
             </div>
           </div>
 
+          <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Readiness Check</div>
+                <div className="mt-1 text-sm text-slate-600">
+                  Save Draft can stay incomplete. Schedule and Publish Now use the checks below.
+                </div>
+              </div>
+              {isOwner && missingPlatformConnections.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onOpenSocialIntegrations}
+                  className="rounded-full border border-amber-200 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800"
+                >
+                  Configure Missing APIs
+                </button>
+              )}
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {selectedPlatformStatus.map((item) => (
+                <div key={`readiness-${item.platform}`} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">{item.label}</div>
+                      <div className="mt-1 text-xs text-slate-500">{item.readiness.summary}</div>
+                    </div>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        item.readiness.severity === "ready"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : item.readiness.severity === "warning"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-rose-100 text-rose-800"
+                      }`}
+                    >
+                      {item.readiness.headline}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-xs text-slate-500">{item.readiness.tokenExpiryLabel}</div>
+                  {item.readiness.issues.length > 0 && (
+                    <div className="mt-2 space-y-1 text-xs text-rose-700">
+                      {item.readiness.issues.map((issue) => (
+                        <div key={`${item.platform}-issue-${issue}`}>{issue}</div>
+                      ))}
+                    </div>
+                  )}
+                  {item.readiness.warnings.length > 0 && (
+                    <div className="mt-2 space-y-1 text-xs text-amber-700">
+                      {item.readiness.warnings.map((warning) => (
+                        <div key={`${item.platform}-warning-${warning}`}>{warning}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {composerReadiness.blocking.length > 0 && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+                  {composerReadiness.blocking.map((issue) => (
+                    <div key={`blocking-${issue}`} className="mt-1 first:mt-0">
+                      {issue}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {composerReadiness.warnings.length > 0 && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  {composerReadiness.warnings.map((warning) => (
+                    <div key={`warning-${warning}`} className="mt-1 first:mt-0">
+                      {warning}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!selectedPlatformStatus.length && (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
+                  Select at least one platform to run a readiness check.
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               type="button"
@@ -764,7 +919,7 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
             <button
               type="button"
               onClick={() => void schedulePost()}
-              disabled={busyKey !== null}
+              disabled={busyKey !== null || composerReadiness.blocking.length > 0}
               className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
               <Clock3 size={15} /> Schedule
@@ -772,7 +927,7 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
             <button
               type="button"
               onClick={() => void publishNow()}
-              disabled={busyKey !== null}
+              disabled={busyKey !== null || composerReadiness.blocking.length > 0}
               className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
               <Send size={15} /> Publish Now
@@ -803,16 +958,35 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-sm font-semibold text-slate-900">{item.label}</div>
-                      <div className="mt-1 text-xs text-slate-500">{item.summary}</div>
+                      <div className="mt-1 text-xs text-slate-500">{item.readiness.summary}</div>
+                      <div className="mt-1 text-[11px] text-slate-400">{item.readiness.tokenExpiryLabel}</div>
                     </div>
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        item.ready ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                        item.readiness.severity === "ready"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : item.readiness.severity === "warning"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-rose-100 text-rose-800"
                       }`}
                     >
-                      {item.ready ? "Ready" : "Needs setup"}
+                      {item.readiness.headline}
                     </span>
                   </div>
+                  {(item.readiness.issues.length > 0 || item.readiness.warnings.length > 0) && (
+                    <div className="mt-2 space-y-1 text-xs">
+                      {item.readiness.issues.slice(0, 2).map((issue) => (
+                        <div key={`${item.platform}-side-issue-${issue}`} className="text-rose-700">
+                          {issue}
+                        </div>
+                      ))}
+                      {item.readiness.warnings.slice(0, 2).map((warning) => (
+                        <div key={`${item.platform}-side-warning-${warning}`} className="text-amber-700">
+                          {warning}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -821,10 +995,10 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
           <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
             <h4 className="text-sm font-semibold text-amber-950">Platform notes</h4>
             <div className="mt-2 space-y-2 text-sm text-amber-900/90">
-              <div>Facebook supports scheduled posting and media uploads to Pages.</div>
-              <div>Instagram requires a public media URL at publish time, so uploads stay on this server first.</div>
-              <div>Google is treated as Google Business Profile local posts in this release.</div>
-              <div>GIFs should usually be exported from Canva as MP4 if you want Instagram support.</div>
+              <div>Facebook uses the current Pages API connection you save in Settings, and the official docs still call for Page-level posting permissions.</div>
+              <div>Instagram requires a professional account, public media at publish time, and can still be blocked by Meta Page Publishing Authorization.</div>
+              <div>Google uses Business Profile local posts with OAuth 2.0 and works best when you also store a refresh token.</div>
+              <div>Meta added an alt_text field for image publishing in March 2025, but this release still uses the simpler caption-first flow.</div>
             </div>
           </div>
         </div>
@@ -856,7 +1030,7 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
               className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
             >
               <option value="all">All platforms</option>
-              {PLATFORM_OPTIONS.map((platform) => (
+              {SOCIAL_PLATFORM_OPTIONS.map((platform) => (
                 <option key={platform.id} value={platform.id}>
                   {platform.label}
                 </option>
@@ -913,7 +1087,7 @@ const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocia
                             key={`${post.id}-${platform}-account`}
                             className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
                           >
-                            {(PLATFORM_OPTIONS.find((item) => item.id === platform)?.label || platform)}:{" "}
+                            {(SOCIAL_PLATFORM_OPTIONS.find((item) => item.id === platform)?.label || platform)}:{" "}
                             {accountLabelById.get(accountId) || `Account ${accountId}`}
                           </span>
                         );
