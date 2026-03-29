@@ -30,6 +30,12 @@ const formatDimensions = (item: ManufacturerCatalogItem) => {
   return parts.length ? parts.join(" · ") : "—";
 };
 
+const buildExternalItemSearchUrl = (sku: string) => {
+  const normalizedSku = String(sku || "").trim();
+  if (!normalizedSku) return "";
+  return `https://www.furnituredistributors.net/Product/SiteSearch?search=${encodeURIComponent(normalizedSku)}`;
+};
+
 const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkMode, onOpenUploadArea }) => {
   const CATALOG_FETCH_LIMIT = 5000;
   const [query, setQuery] = useState("");
@@ -281,6 +287,7 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
             ) : sortedItems.length ? (
               sortedItems.map((item) => {
                 const active = item.id === selectedId;
+                const itemSearchUrl = buildExternalItemSearchUrl(item.sku);
                 return (
                   <button
                     key={item.id}
@@ -310,6 +317,23 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
                     <div className={`mt-2 text-xs ${subtleTextClassName}`}>
                       SKU {item.sku || "—"} · {formatDimensions(item)} · {item.material || item.colorFinish || "No finish captured"}
                     </div>
+                    {itemSearchUrl ? (
+                      <div className="mt-3">
+                        <a
+                          href={itemSearchUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                            isDarkMode
+                              ? "border border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/18"
+                              : "border border-sky-300 bg-sky-100 text-sky-900 hover:bg-sky-200"
+                          }`}
+                        >
+                          Item Search: {item.sku}
+                        </a>
+                      </div>
+                    ) : null}
                   </button>
                 );
               })
@@ -325,6 +349,22 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
           <h3 className={`text-lg font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Product Detail</h3>
           {selectedItem ? (
             <div className="mt-4 space-y-4">
+              {buildExternalItemSearchUrl(selectedItem.sku) ? (
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={buildExternalItemSearchUrl(selectedItem.sku)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`inline-flex items-center rounded-full px-3 py-2 text-sm font-semibold transition ${
+                      isDarkMode
+                        ? "border border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/18"
+                        : "border border-sky-300 bg-sky-100 text-sky-900 hover:bg-sky-200"
+                    }`}
+                  >
+                    Open item number search for {selectedItem.sku}
+                  </a>
+                </div>
+              ) : null}
               <div>
                 <div className={`text-xs font-semibold uppercase tracking-[0.22em] ${isDarkMode ? "text-sky-300" : "text-sky-700"}`}>
                   {selectedItem.manufacturer}
