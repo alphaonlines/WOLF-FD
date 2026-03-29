@@ -6,7 +6,6 @@ import {
   MessageSquare,
   Paperclip,
   Pencil,
-  PhoneCall,
   Send,
   Trash2,
   Forward,
@@ -31,6 +30,7 @@ type ViewMode = "channel" | "dm";
 
 type MessageBoardProps = {
   authUser: AuthUser;
+  onMessageSent?: (info: { author: string; body: string; channel: string | null }) => void;
 };
 
 const LOCAL_CHANNELS: BoardChannel[] = [
@@ -251,7 +251,7 @@ const renderMessageBody = (body: string) => {
   );
 };
 
-const MessageBoard: React.FC<MessageBoardProps> = ({ authUser }) => {
+const MessageBoard: React.FC<MessageBoardProps> = ({ authUser, onMessageSent }) => {
   const isLeadershipUser = authUser.roles.includes("Owner") || authUser.roles.includes("Manager");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const messageListRef = useRef<HTMLDivElement | null>(null);
@@ -275,7 +275,6 @@ const MessageBoard: React.FC<MessageBoardProps> = ({ authUser }) => {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [meetingMessage, setMeetingMessage] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingBody, setEditingBody] = useState("");
   const [forwardMessageId, setForwardMessageId] = useState<string | null>(null);
@@ -472,6 +471,11 @@ const MessageBoard: React.FC<MessageBoardProps> = ({ authUser }) => {
         setUsers(nextUsers);
       }
 
+      onMessageSent?.({
+        author: authUser.name || authUser.email,
+        body,
+        channel: viewMode === "channel" ? activeTargetId : null,
+      });
       setDraft("");
       setPriorityDraft(false);
       setSelectedAttachment({ file: null, upload: null });
@@ -592,20 +596,6 @@ const MessageBoard: React.FC<MessageBoardProps> = ({ authUser }) => {
   return (
     <div className="grid grid-cols-1 gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
       <aside className="space-y-4 rounded-[28px] border border-slate-200/70 bg-slate-950 p-4 text-white shadow-[0_18px_50px_rgba(15,23,42,0.22)]">
-        <button
-          type="button"
-          onClick={() => setMeetingMessage("Start Meeting is ready for the pop-up flow next. For now this is just the launch point.")}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
-        >
-          <PhoneCall size={16} /> Start Meeting
-        </button>
-
-        {meetingMessage ? (
-          <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-3 text-xs text-emerald-100">
-            {meetingMessage}
-          </div>
-        ) : null}
-
         <section>
           <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Channels</div>
           <div className="space-y-1">

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { CheckSquare, MapPin, MessageSquare, UserCheck, Users } from "lucide-react";
+import { CheckSquare, CalendarClock, MapPin, MessageSquare, UserCheck, Users } from "lucide-react";
 import type { AuthUser } from "../types";
 import { TaskStatus } from "../types";
 import CRMWorkspace from "./CRMWorkspace";
 import MessageBoard from "./MessageBoard";
 import TaskManager from "./TaskManager";
 import { createTask } from "../services/tasksService";
+import MeetingRoom from "./MeetingRoom";
 
 type WolfdenWorkspaceProps = {
   authUser: AuthUser;
@@ -14,7 +15,7 @@ type WolfdenWorkspaceProps = {
   requestedSubTabToken?: number;
 };
 
-export type WolfdenSubTab = "ups" | "crm" | "board" | "tasks";
+export type WolfdenSubTab = "ups" | "crm" | "board" | "meeting" | "tasks";
 
 const STORE_OPTIONS = ["ALL", "Camp", "Base", "G1", "FD7", "FD5"];
 
@@ -76,6 +77,9 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
         <button className={tabBtn(subTab === "board")} onClick={() => setSubTab("board")}>
           <MessageSquare size={15} /> Message Board
         </button>
+        <button className={tabBtn(subTab === "meeting")} onClick={() => setSubTab("meeting")}>
+          <CalendarClock size={15} /> Meeting Room
+        </button>
         <button className={tabBtn(subTab === "tasks")} onClick={() => setSubTab("tasks")}>
           <CheckSquare size={15} /> Tasks
         </button>
@@ -100,6 +104,7 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
         {subTab === "ups" && <CRMWorkspace authUser={authUser} isDarkMode={isDarkMode} view="queue" selectedStore={selectedStore} onStoreChange={setSelectedStore} />}
         {subTab === "crm" && <CRMWorkspace authUser={authUser} isDarkMode={isDarkMode} view="customers" selectedStore={selectedStore} onStoreChange={setSelectedStore} />}
         {subTab === "board" && <MessageBoard authUser={authUser} onMessageSent={handleMessageSent} />}
+        {subTab === "meeting" && <MeetingRoom isDarkMode={isDarkMode} />}
         {subTab === "tasks" && (
           <div className="h-full overflow-auto px-5 py-5 lg:px-7 lg:py-7">
             <TaskManager />
