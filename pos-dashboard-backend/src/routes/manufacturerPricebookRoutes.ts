@@ -151,6 +151,11 @@ async function resolveUploadRowForProcessing(pool: Pool, uploadRow: any) {
     const usableSiblings = siblings.filter((row) => String(row.document_type || "").toLowerCase() !== "archive");
     return choosePreferredUploadCandidate(usableSiblings) || uploadRow;
   }
+  if (manufacturerSlug === "jackson-catnapper" && uploadRow.parent_upload_id) {
+    const siblings = await loadUploadChildren(pool, Number(uploadRow.parent_upload_id));
+    const usableSiblings = siblings.filter((row) => String(row.document_type || "").toLowerCase() !== "archive");
+    return choosePreferredUploadCandidate(usableSiblings) || uploadRow;
+  }
 
   return uploadRow;
 }

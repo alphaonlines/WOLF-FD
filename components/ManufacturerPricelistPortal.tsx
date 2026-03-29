@@ -3,7 +3,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   CheckCircle2,
-  Database,
   FileSpreadsheet,
   Search,
   UploadCloud,
@@ -132,6 +131,15 @@ const getResolvedPreviewUpload = (
     );
   }
   if (selectedUpload?.manufacturerSlug === "england" && selectedUpload.parentUploadId) {
+    return (
+      getPreferredHoldingUpload(
+        uploads.filter(
+          (upload) => upload.parentUploadId === selectedUpload.parentUploadId && upload.documentType !== "archive"
+        )
+      ) || selectedUpload
+    );
+  }
+  if (selectedUpload?.manufacturerSlug === "jackson-catnapper" && selectedUpload.parentUploadId) {
     return (
       getPreferredHoldingUpload(
         uploads.filter(
@@ -456,6 +464,45 @@ const MANUFACTURER_TEMPLATES: Record<string, ManufacturerTemplate> = {
       },
     ],
   },
+  "Jackson/Catnapper": {
+    summary: "Jackson/Catnapper books often mix Jackson and Catnapper collections inside one kiosk list with upholstery callouts and intro tags.",
+    quirks: [
+      "Rows may need manual separation between Jackson and Catnapper naming when the PDF groups both brands together.",
+      "Validation should confirm whether intro tags, cover grades, or motion options belong in the description or source notes.",
+    ],
+    rows: [
+      {
+        id: "jackson-catnapper-1",
+        manufacturer: "Jackson/Catnapper",
+        category: "Motion Upholstery",
+        productName: "4498 Sofa",
+        description: "Power reclining sofa with console and cupholders",
+        colorFinish: "Smoke",
+        basePrice: "1499.00",
+        sourceNote: "Combined kiosk row may need brand separation between Jackson and Catnapper collections.",
+      },
+      {
+        id: "jackson-catnapper-2",
+        manufacturer: "Jackson/Catnapper",
+        category: "",
+        productName: "4499 Loveseat",
+        description: "Power reclining loveseat",
+        colorFinish: "Smoke",
+        basePrice: "1299.00",
+        sourceNote: "Category missing from sample template to keep validation workflow visible.",
+      },
+      {
+        id: "jackson-catnapper-3",
+        manufacturer: "Jackson/Catnapper",
+        category: "Motion Upholstery",
+        productName: "",
+        description: "Rocker recliner with chaise seating",
+        colorFinish: "Sable",
+        basePrice: "899.00",
+        sourceNote: "Item number intentionally blank in template to reflect OCR cleanup needs.",
+      },
+    ],
+  },
 };
 
 const requiredFieldLabels: Array<keyof Pick<
@@ -583,8 +630,6 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
         .filter((entry) => entry.missingFields.length > 0),
     [rows]
   );
-  const readyRowsCount = rows.length - flaggedRows.length;
-
   const validationRows = useMemo(() => {
     const alpha = (value: string | undefined) => (value || "").trim().toLowerCase();
     const money = (value: string) => {
@@ -795,74 +840,8 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600">
-              <Database size={14} />
-              Manufacturer Price Book Portal
-            </div>
-            <h2 className="mt-3 text-2xl font-semibold text-slate-900">Vendor ingestion and search workspace</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Upload inconsistent vendor books, validate the normalized rows, and prepare a clean searchable catalog
-              for staff. This workspace now stays focused on manufacturer upload and correction, while the dedicated
-              Product Search module handles catalog lookup.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {onOpenProductSearch ? (
-              <button
-                type="button"
-                onClick={onOpenProductSearch}
-                className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
-              >
-                <Search size={16} />
-                Open Full Product Search
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              <ArrowLeft size={16} />
-              Back to Update Database
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-sm font-semibold text-slate-900">{selectedManufacturer} ingestion brief</div>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{template.summary}</p>
-            <div className="mt-3 space-y-2 text-sm text-slate-600">
-              {template.quirks.map((quirk) => (
-                <div key={quirk} className="rounded-xl border border-slate-200 bg-white px-3 py-2">
-                  {quirk}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Rows</div>
-              <div className="mt-2 text-2xl font-semibold text-slate-900">{rows.length}</div>
-              <div className="mt-1 text-sm text-slate-500">Extracted normalized rows</div>
-            </div>
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Flagged</div>
-              <div className="mt-2 text-2xl font-semibold text-amber-900">{flaggedRows.length}</div>
-              <div className="mt-1 text-sm text-amber-700">Need manual review before publish</div>
-            </div>
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Ready</div>
-              <div className="mt-2 text-2xl font-semibold text-emerald-900">{readyRowsCount}</div>
-              <div className="mt-1 text-sm text-emerald-700">Rows with required fields complete</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
           {PORTAL_SCREENS.map((screen) => (
             <button
               key={screen.key}
@@ -877,6 +856,26 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
               {screen.label}
             </button>
           ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {onOpenProductSearch ? (
+            <button
+              type="button"
+              onClick={onOpenProductSearch}
+              className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+            >
+              <Search size={16} />
+              Open Full Product Search
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <ArrowLeft size={16} />
+            Back to Update Database
+          </button>
         </div>
       </div>
 

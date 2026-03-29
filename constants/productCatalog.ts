@@ -5,6 +5,7 @@ export const CANONICAL_PRODUCT_MANUFACTURERS = [
   "Ashley",
   "Best",
   "England",
+  "Jackson/Catnapper",
   "Liberty",
   "Vaughan-Bassett",
 ] as const;
