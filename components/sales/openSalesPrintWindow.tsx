@@ -189,12 +189,21 @@ const printStyles = `
   }
 `;
 
-export const openSalesPrintWindow = (props: SalesPrintContentProps): boolean => {
-  const printWindow = window.open("", "_blank", "noopener,noreferrer,width=1280,height=900");
-  if (!printWindow) return false;
-
-  const markup = renderToStaticMarkup(<SalesPrintContent {...props} />);
-  const title = `WOLF FD Sales Report${props.rangeLabel ? ` - ${props.rangeLabel}` : ""}`;
+const writeDocument = (printWindow: Window, bodyMarkup: string, title: string, autoPrint: boolean) => {
+  const printScript = autoPrint
+    ? `
+    <script>
+      window.addEventListener('load', function () {
+        setTimeout(function () {
+          window.focus();
+          window.print();
+        }, 250);
+      });
+      window.addEventListener('afterprint', function () {
+        setTimeout(function () { window.close(); }, 150);
+      });
+    </script>`
+    : "";
 
   printWindow.document.open();
   printWindow.document.write(`<!DOCTYPE html>
@@ -207,20 +216,41 @@ export const openSalesPrintWindow = (props: SalesPrintContentProps): boolean => 
     <style>${printStyles}</style>
   </head>
   <body>
-    ${markup}
-    <script>
-      window.addEventListener('load', function () {
-        setTimeout(function () {
-          window.focus();
-          window.print();
-        }, 250);
-      });
-      window.addEventListener('afterprint', function () {
-        setTimeout(function () { window.close(); }, 150);
-      });
-    </script>
+    ${bodyMarkup}
+    ${printScript}
   </body>
 </html>`);
   printWindow.document.close();
+};
+
+export const openSalesPrintWindowShell = (): Window | null => {
+  const printWindow = window.open("", "_blank", "width=1280,height=900");
+  if (!printWindow) return null;
+  writeDocument(
+    printWindow,
+    `<div class="fd-print-root"><div class="fd-print-block"><div class="fd-print-title">Preparing report...</div><div class="fd-print-meta"><div>Your Sales Analysis printout is loading.</div></div></div></div>`,
+    "Preparing Sales Report",
+    false
+  );
+  return printWindow;
+};
+
+export const renderSalesPrintWindow = (printWindow: Window, props: SalesPrintContentProps): boolean => {
+  if (printWindow.closed) return false;
+
+  const markup = renderToStaticMarkup(<SalesPrintContent {...props} />);
+  const title = `WOLF FD Sales Report${props.rangeLabel ? ` - ${props.rangeLabel}` : ""}`;
+  writeDocument(printWindow, markup, title, true);
+  return true;
+};
+
+export const renderSalesPrintError = (printWindow: Window, message: string): boolean => {
+  if (printWindow.closed) return false;
+  writeDocument(
+    printWindow,
+    `<div class="fd-print-root"><div class="fd-print-block"><div class="fd-print-title">Sales report unavailable</div><div class="fd-print-meta"><div>${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div></div></div></div>`,
+    "Sales Report Unavailable",
+    false
+  );
   return true;
 };

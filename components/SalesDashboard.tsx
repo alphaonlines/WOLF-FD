@@ -66,7 +66,11 @@ import SortableItem from "./sales/SortableItem";
 import SalesPrintDialog from "./sales/SalesPrintDialog";
 import SalesReportCard from "./sales/SalesReportCard";
 import SalespersonDetailCard, { type SalespersonTicketRow } from "./sales/SalespersonDetailCard";
-import { openSalesPrintWindow } from "./sales/openSalesPrintWindow";
+import {
+  openSalesPrintWindowShell,
+  renderSalesPrintError,
+  renderSalesPrintWindow,
+} from "./sales/openSalesPrintWindow";
 import {
   computeReportTotals,
   type ReportSummaryRow,
@@ -899,6 +903,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
 
   const runPrint = async () => {
     setPrintLoading(true);
+    const printWindow = openSalesPrintWindowShell();
     try {
       const currentRange = currentRangeInput;
       if (!currentRange) return;
@@ -1015,7 +1020,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         categoryBreakdowns,
       });
       setPrintDialogOpen(false);
-      openSalesPrintWindow({
+      if (printWindow) {
+        renderSalesPrintWindow(printWindow, {
         rangeLabel: printRangeA,
         compareLabel: printRangeB || undefined,
         generatedAt: new Date(),
@@ -1085,7 +1091,14 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
           formatShortDate,
           formatMarginPct,
         },
-      });
+        });
+      }
+    } catch (error) {
+      if (printWindow) {
+        const message = error instanceof Error ? error.message : "The report could not be loaded. Please try again.";
+        renderSalesPrintError(printWindow, message);
+      }
+      console.error("Sales Analysis print failed", error);
     } finally {
       setPrintLoading(false);
     }
