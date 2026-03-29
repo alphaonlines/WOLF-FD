@@ -9,6 +9,14 @@ type ProductSearchWorkspaceProps = {
   onOpenUploadArea: () => void;
 };
 
+type ProductSort =
+  | "relevance"
+  | "manufacturer"
+  | "category"
+  | "item"
+  | "price_low"
+  | "price_high";
+
 const formatCurrency = (value: number | null) =>
   value === null || Number.isNaN(value) ? "—" : value.toLocaleString(undefined, { style: "currency", currency: "USD" });
 
@@ -28,6 +36,7 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
   const [manufacturer, setManufacturer] = useState("");
   const [category, setCategory] = useState("");
   const [color, setColor] = useState("");
+  const [sortBy, setSortBy] = useState<ProductSort>("relevance");
   const [items, setItems] = useState<ManufacturerCatalogItem[]>([]);
   const [notes, setNotes] = useState<ManufacturerReferenceNote[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -101,6 +110,40 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
     () => Array.from(new Set(items.map((item) => item.colorFamily || item.colorFinish).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
     [items]
   );
+  const sortedItems = useMemo(() => {
+    const alpha = (value: string | undefined) => (value || "").trim().toLowerCase();
+    return [...items].sort((left, right) => {
+      if (sortBy === "relevance") return 0;
+      if (sortBy === "manufacturer") {
+        return (
+          alpha(left.manufacturer).localeCompare(alpha(right.manufacturer)) ||
+          alpha(left.description || left.collectionName || left.sku).localeCompare(
+            alpha(right.description || right.collectionName || right.sku)
+          )
+        );
+      }
+      if (sortBy === "category") {
+        return (
+          alpha(left.category).localeCompare(alpha(right.category)) ||
+          alpha(left.description || left.collectionName || left.sku).localeCompare(
+            alpha(right.description || right.collectionName || right.sku)
+          )
+        );
+      }
+      if (sortBy === "item") {
+        return alpha(left.sku).localeCompare(alpha(right.sku)) || alpha(left.description).localeCompare(alpha(right.description));
+      }
+      if (sortBy === "price_low" || sortBy === "price_high") {
+        const leftPrice = left.basePrice;
+        const rightPrice = right.basePrice;
+        if (leftPrice === null && rightPrice === null) return alpha(left.sku).localeCompare(alpha(right.sku));
+        if (leftPrice === null) return 1;
+        if (rightPrice === null) return -1;
+        return sortBy === "price_low" ? leftPrice - rightPrice : rightPrice - leftPrice;
+      }
+      return 0;
+    });
+  }, [items, sortBy]);
 
   return (
     <div className="space-y-5">
@@ -215,13 +258,28 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
               <h3 className={`text-lg font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Catalog Results</h3>
               <p className={`text-sm ${subtleTextClassName}`}>Dedicated search module now, inventory and POS hooks later.</p>
             </div>
+            <label className={`flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${isDarkMode ? "border border-slate-700 bg-slate-900 text-slate-300" : "border border-slate-300 bg-white text-slate-700"}`}>
+              <span>Sort</span>
+              <select
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value as ProductSort)}
+                className={`bg-transparent text-xs font-semibold outline-none ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}
+              >
+                <option value="relevance">Relevance / extraction order</option>
+                <option value="manufacturer">Manufacturer A-Z</option>
+                <option value="category">Category A-Z</option>
+                <option value="item">Item # A-Z</option>
+                <option value="price_low">Price low-high</option>
+                <option value="price_high">Price high-low</option>
+              </select>
+            </label>
           </div>
 
           <div className="mt-4 space-y-3">
             {loading ? (
               <div className={`rounded-2xl px-4 py-6 text-sm ${subtleTextClassName}`}>Loading product catalog...</div>
-            ) : items.length ? (
-              items.map((item) => {
+            ) : sortedItems.length ? (
+              sortedItems.map((item) => {
                 const active = item.id === selectedId;
                 return (
                   <button
