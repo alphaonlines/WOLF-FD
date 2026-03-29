@@ -24,6 +24,12 @@ type ModelCollectionMeta = {
   collectionName: string;
   collectionCode: string;
 };
+type DimensionColumns = {
+  labelIndex: number;
+  heightIndex: number;
+  widthIndex: number;
+  depthIndex: number;
+};
 
 function cleanText(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
@@ -196,6 +202,107 @@ function chooseBasePrice(pricing: Array<{ label: string; price: number }>) {
   return preferred || null;
 }
 
+function isLikelyCollectionName(value: string, nonEmptyValuesLength: number) {
+  const normalized = cleanText(value);
+  if (!normalized) return false;
+  if (nonEmptyValuesLength > 4) return false;
+  if (/collection|how to order|matching products|note:/i.test(normalized)) return false;
+  if (/^(fabric|diamond pricing|special cording|signature series leather)/i.test(normalized.toLowerCase())) {
+    return false;
+  }
+  if (/^[A-Z0-9][A-Z0-9/ _-]*$/.test(normalized) && /[0-9/_-]/.test(normalized) && normalized === normalized.toUpperCase()) {
+    return false;
+  }
+  return /[a-z]/i.test(normalized);
+}
+
+function detectDimensionColumns(row: string[]): DimensionColumns | null {
+  const heightIndex = row.findIndex((value) => /^height$/i.test(value));
+  const widthIndex = row.findIndex((value) => /^width$/i.test(value));
+  const depthIndex = row.findIndex((value) => /^depth$/i.test(value));
+  if (heightIndex < 0 || widthIndex < 0 || depthIndex < 0) return null;
+  return {
+    labelIndex: Math.max(0, Math.min(heightIndex, widthIndex, depthIndex) - 1),
+    heightIndex,
+    widthIndex,
+    depthIndex,
+  };
+}
+
+function parseFractionalInches(value: string) {
+  const normalized = cleanText(value).replace(/"/g, "");
+  if (!normalized) return null;
+  const mixedFraction = normalized.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+  if (mixedFraction) {
+    const whole = Number(mixedFraction[1]);
+    const numerator = Number(mixedFraction[2]);
+    const denominator = Number(mixedFraction[3]);
+    if (denominator) return whole + numerator / denominator;
+  }
+  const simpleFraction = normalized.match(/^(\d+)\/(\d+)$/);
+  if (simpleFraction) {
+    const numerator = Number(simpleFraction[1]);
+    const denominator = Number(simpleFraction[2]);
+    if (denominator) return numerator / denominator;
+  }
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeDimensionLabel(value: string) {
+  return cleanText(value).toLowerCase().replace(/[^a-z0-9& ]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function matchesDimensionLabel(row: ParsedManufacturerCatalogRow, label: string) {
+  const normalizedLabel = normalizeDimensionLabel(label);
+  if (!normalizedLabel || normalizedLabel === "seat") return false;
+  const description = normalizeDimensionLabel(row.description);
+  const productType = normalizeDimensionLabel(row.productType);
+
+  if (normalizedLabel.includes("storage ottoman")) return description.includes("storage ottoman");
+  if (normalizedLabel.includes("club chair")) return description.includes("club chair");
+  if (normalizedLabel.includes("chair and a half")) {
+    return description.includes("chair and a half") || description.includes("chair & a half");
+  }
+  if (normalizedLabel.includes("loveseat")) return description.includes("loveseat") || productType.includes("loveseat");
+  if (normalizedLabel.includes("sofa")) return description.includes("sofa") || productType === "sofa";
+  if (normalizedLabel.includes("recliner")) return productType.includes("recliner") || description.includes("recliner");
+  if (normalizedLabel.includes("ottoman")) return description.includes("ottoman") || productType === "ottoman";
+  if (normalizedLabel.includes("barstool")) return description.includes("barstool") || productType === "barstool";
+  if (normalizedLabel.includes("bench")) return description.includes("bench") || productType === "bench";
+  if (normalizedLabel.includes("chair")) return description.includes("chair") || productType.includes("chair");
+  return description.includes(normalizedLabel) || productType.includes(normalizedLabel);
+}
+
+function applyDimensionsRow(
+  row: string[],
+  columns: DimensionColumns,
+  currentSectionRows: ParsedManufacturerCatalogRow[]
+) {
+  const label = cleanText(row[columns.labelIndex]);
+  const heightText = cleanText(row[columns.heightIndex]);
+  const widthText = cleanText(row[columns.widthIndex]);
+  const depthText = cleanText(row[columns.depthIndex]);
+  const hasMeasurements = Boolean(heightText || widthText || depthText);
+  if (!label || !hasMeasurements) return false;
+  if (/measurements are approximate|may vary by base option/i.test(`${label} ${heightText} ${widthText} ${depthText}`)) {
+    return true;
+  }
+
+  const target = [...currentSectionRows].reverse().find((entry) => matchesDimensionLabel(entry, label));
+  if (!target) return false;
+
+  const parts: string[] = [];
+  if (heightText) parts.push(`H ${heightText}`);
+  if (widthText) parts.push(`W ${widthText}`);
+  if (depthText) parts.push(`D ${depthText}`);
+  target.dimensionsText = parts.join(" x ");
+  target.heightInches = parseFractionalInches(heightText);
+  target.widthInches = parseFractionalInches(widthText);
+  target.depthInches = parseFractionalInches(depthText);
+  return true;
+}
+
 function buildSourceNote(params: {
   collectionName: string;
   category: string;
@@ -238,6 +345,8 @@ function parseProductSheet(
   let currentHeaderLabels = new Map<number, string>();
   let pendingNotes: string[] = [];
   let matchingProducts: string[] = [];
+  let currentSectionRows: ParsedManufacturerCatalogRow[] = [];
+  let currentDimensionColumns: DimensionColumns | null = null;
   let sortOrder = sortOrderStart;
 
   for (let index = 0; index < rows.length; index += 1) {
@@ -258,13 +367,7 @@ function parseProductSheet(
       row.some((value) => /^\d{4,}[A-Z]*$/.test(value)) ||
       row.some((value) => /diamond pricing|leather|special cording|fabric/i.test(value));
 
-    if (
-      first &&
-      !/[0-9/_-]/.test(first) &&
-      nonEmptyValues.length <= 4 &&
-      !/collection|how to order|matching products|note:/i.test(first) &&
-      !/^(fabric|diamond pricing|special cording|signature series leather)/i.test(first.toLowerCase())
-    ) {
+    if (first && isLikelyCollectionName(first, nonEmptyValues.length)) {
       currentCollectionName = first;
       continue;
     }
@@ -278,20 +381,24 @@ function parseProductSheet(
       first !== "Warranty"
     ) {
       currentCollectionCode = first.replace(/\s+/g, " ").trim();
+      currentSectionRows = [];
+      currentDimensionColumns = null;
       continue;
     }
 
-    if (
-      !hasPriceNumbers &&
-      second === "" &&
-      !/collection|how to order|matching products|note:/i.test(first) &&
-      !/^(fabric|diamond pricing|special cording|signature series leather)/i.test(first.toLowerCase())
-    ) {
+    if (!hasPriceNumbers && second === "" && isLikelyCollectionName(first, nonEmptyValues.length)) {
       currentCollectionName = first;
       continue;
     }
 
+    const detectedDimensionColumns = detectDimensionColumns(row);
+    if (detectedDimensionColumns) {
+      currentDimensionColumns = detectedDimensionColumns;
+      if (!hasPriceNumbers) continue;
+    }
+
     if (looksLikeHeaderRow) {
+      currentDimensionColumns = null;
       if (hasPriceNumbers || hasFabricHeader) {
         currentHeaderLabels = buildHeaderLabels(recentHeaderRows.slice(-3), row);
       }
@@ -317,6 +424,14 @@ function parseProductSheet(
 
     if (/^set of/i.test(first) || /\*you must/i.test(first.toLowerCase()) || /body & the 2nd cover/i.test(first.toLowerCase())) {
       pendingNotes.push(first);
+      continue;
+    }
+
+    if (
+      currentDimensionColumns &&
+      applyDimensionsRow(row, currentDimensionColumns, currentSectionRows) &&
+      !hasPriceNumbers
+    ) {
       continue;
     }
 
@@ -350,7 +465,7 @@ function parseProductSheet(
         ...featureTags,
       ]);
 
-      parsedRows.push({
+      const parsedRow: ParsedManufacturerCatalogRow = {
         manufacturer: "Best",
         manufacturerSlug: "best",
         collectionCode: collectionMeta.collectionCode,
@@ -388,7 +503,9 @@ function parseProductSheet(
           matchingProducts,
         }),
         sourceSortOrder: ++sortOrder,
-      });
+      };
+      parsedRows.push(parsedRow);
+      currentSectionRows.push(parsedRow);
       continue;
     }
 
@@ -459,6 +576,7 @@ function resolveCollectionMeta(params: {
   const collectionCodeUpper = params.collectionCode.toUpperCase();
   const skuFamily = skuUpper.match(/^[A-Z]+[0-9]{2,4}/i)?.[0] || "";
   const collectionFamily = collectionCodeUpper.match(/^[A-Z]+[0-9]{2,4}/i)?.[0] || "";
+  const fallbackCollectionCode = cleanText(params.collectionCode) || skuUpper.match(/^[A-Z]*\d{3,4}/i)?.[0] || "";
   const found =
     params.modelCollectionMap.get(skuUpper) ||
     params.modelCollectionMap.get(skuFamily) ||
@@ -468,7 +586,7 @@ function resolveCollectionMeta(params: {
   return (
     found || {
       collectionName: formatCollectionName(params.currentCollectionName) || params.collectionCode,
-      collectionCode: cleanText(params.collectionCode),
+      collectionCode: fallbackCollectionCode,
     }
   );
 }
@@ -476,6 +594,11 @@ function resolveCollectionMeta(params: {
 function normalizeCoverLabel(label: string) {
   const value = cleanText(label);
   if (!value) return "";
+  if (/^special cording(?:\s+\([^)]+\))?\s+\d+[a-z0-9]*$/i.test(value)) return "Special Cording";
+  if (/^leather(?:\s+\([^)]+\))?\s+\d+[a-z0-9]*$/i.test(value)) return "Leather";
+  if (/^diamond pricing(?:\s+\([^)]+\))?\s+\d+[a-z0-9]*$/i.test(value)) return "Diamond Pricing";
+  if (/^natural instincts(?:\s+\([^)]+\))?\s+\d+[a-z0-9]*$/i.test(value)) return "Natural Instincts";
+  if (/^[a-g]\s+\d+[a-z0-9]*$/i.test(value)) return `Fabric ${value.slice(0, 1).toUpperCase()}`;
   if (/^fabric\s+[a-g]$/i.test(value)) {
     return `Fabric ${value.slice(-1).toUpperCase()}`;
   }
