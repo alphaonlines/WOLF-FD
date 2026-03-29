@@ -88,6 +88,25 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
     return `${((pro1stSales / totalRetail) * 100).toFixed(1)}%`;
   };
 
+  const renderPctBreakdown = (
+    viewValue: string,
+    ownValue: string,
+    companyValue: string,
+    tone: "sales" | "units" = "sales"
+  ) => (
+    <div className={`space-y-1 text-xs ${tone === "sales" ? "text-slate-600" : "text-slate-500"}`}>
+      <div>
+        <span className="font-medium text-slate-700">View:</span> {viewValue}
+      </div>
+      <div>
+        <span className="font-medium text-slate-700">Own:</span> {ownValue}
+      </div>
+      <div>
+        <span className="font-medium text-slate-700">Co:</span> {companyValue}
+      </div>
+    </div>
+  );
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card" data-print-id="sales-report">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -163,66 +182,46 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
       {!collapsed &&
         (reportMode === "totals" ? (
           reportRowsWithPct.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
+            <div className="rounded-xl border border-slate-200">
+              <table className="w-full table-fixed divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <th className="w-[16%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                       {reportDimension === "store" ? "Store" : "Salesperson"}
                       {renderHelp("Grouping based on sales report.")}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <th className="w-[12%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                       Total Retail
                       {renderHelp("Raw sales dollars for this row.")}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Pro1st % of Sale
+                    <th className="w-[10%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                      Pro1st %
                       {renderHelp(
                         "Pro1st dollars divided by total retail for this row, shown as a percent of sale and excluding mattress, box spring, and foundation-related lines."
                       )}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Sales % of View
+                    <th className="w-[15%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                      Sales Mix
                       {renderHelp(
-                        "Percent of this row's retail against the visible rows after category/manufacturer filters. These values add up to 100%."
+                        "Shows sales percent versus the visible rows, this salesperson/store's own total, and company total."
                       )}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Sales % of Own Total
-                      {renderHelp(
-                        "Percent of this row's retail against that salesperson/store's own total retail for the selected date range."
-                      )}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Sales % of Company
-                      {renderHelp("Percent of this row's retail against company total retail for the selected date range.")}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <th className="w-[10%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                       Units Sold
                       {renderHelp("Sum of qty_sold from item report, filtered by category/manufacturer.")}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Average Ticket
+                    <th className="w-[12%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                      Avg Ticket
                       {renderHelp("Average retail per ticket for this row.")}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Units % of View
+                    <th className="w-[15%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                      Units Mix
                       {renderHelp(
-                        "Percent of this row's units against the visible rows after category/manufacturer filters. These values add up to 100%."
+                        "Shows unit percent versus the visible rows, this salesperson/store's own total, and company total."
                       )}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Units % of Own Total
-                      {renderHelp(
-                        "Percent of this row's units against that salesperson/store's own total units for the selected date range."
-                      )}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Units % of Company
-                      {renderHelp("Percent of this row's units against company total units for the selected date range.")}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Avg Margin %
+                    <th className="w-[10%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                      Margin
                       {renderHelp("Average of per-ticket margin (profit ÷ sales) in the range.")}
                     </th>
                   </tr>
@@ -237,7 +236,7 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                           : undefined
                       }
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                      <td className="px-3 py-3 text-sm font-medium text-slate-900">
                         {reportDimension === "salesperson" && row.label ? (
                           <button
                             type="button"
@@ -250,62 +249,70 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                           row.label || "(unknown)"
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${Number(row.totalRetail || 0).toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-3 py-3 text-sm text-slate-500">${Number(row.totalRetail || 0).toLocaleString()}</td>
+                      <td className="px-3 py-3 text-sm text-slate-500">
                         {formatPro1stPct(Number(row.pro1stSales || 0), Number(row.totalRetail || 0))}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.retailPct.toFixed(1)}%</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.ownRetailPct.toFixed(1)}%</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.totalRetailPct.toFixed(1)}%</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-3 py-3 align-top">
+                        {renderPctBreakdown(
+                          `${row.retailPct.toFixed(1)}%`,
+                          `${row.ownRetailPct.toFixed(1)}%`,
+                          `${row.totalRetailPct.toFixed(1)}%`
+                        )}
+                      </td>
+                      <td className="px-3 py-3 text-sm text-slate-500">
                         {Number(row.units || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-3 py-3 text-sm text-slate-500">
                         {formatAverageTicket(Number(row.totalRetail || 0), Number(row.ticketCount || 0))}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.unitsPct.toFixed(1)}%</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.ownUnitsPct.toFixed(1)}%</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.totalUnitsPct.toFixed(1)}%</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{formatMarginPct(row.avgMarginPct)}</td>
+                      <td className="px-3 py-3 align-top">
+                        {renderPctBreakdown(
+                          `${row.unitsPct.toFixed(1)}%`,
+                          `${row.ownUnitsPct.toFixed(1)}%`,
+                          `${row.totalUnitsPct.toFixed(1)}%`,
+                          "units"
+                        )}
+                      </td>
+                      <td className="px-3 py-3 text-sm text-slate-500">{formatMarginPct(row.avgMarginPct)}</td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot className="bg-slate-50">
                   <tr>
-                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">Totals</td>
-                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                    <td className="px-3 py-3 text-sm font-semibold text-slate-700">Totals</td>
+                    <td className="px-3 py-3 text-sm font-semibold text-slate-700">
                       ${Number(reportTotals.totalRetail || 0).toLocaleString()}
                     </td>
-                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                    <td className="px-3 py-3 text-sm font-semibold text-slate-700">
                       {formatPro1stPct(Number(reportTotals.totalPro1stSales || 0), Number(reportTotals.totalRetail || 0))}
                     </td>
-                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">
-                      {reportTotals.totalRetail > 0 ? "100.0" : "0.0"}%
+                    <td className="px-3 py-3 align-top">
+                      {renderPctBreakdown(
+                        reportTotals.totalRetail > 0 ? "100.0%" : "0.0%",
+                        "--",
+                        `${reportOverallTotals.totalRetail > 0
+                          ? ((reportTotals.totalRetail / reportOverallTotals.totalRetail) * 100).toFixed(1)
+                          : "0.0"}%`
+                      )}
                     </td>
-                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">--</td>
-                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">
-                      {reportOverallTotals.totalRetail > 0
-                        ? ((reportTotals.totalRetail / reportOverallTotals.totalRetail) * 100).toFixed(1)
-                        : "0.0"}
-                      %
-                    </td>
-                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                    <td className="px-3 py-3 text-sm font-semibold text-slate-700">
                       {Number(reportTotals.totalUnits || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                     </td>
-                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                    <td className="px-3 py-3 text-sm font-semibold text-slate-700">
                       {formatAverageTicket(Number(reportTotals.totalRetail || 0), Number(reportTotals.totalTickets || 0))}
                     </td>
-                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">
-                      {reportTotals.totalUnits > 0 ? "100.0" : "0.0"}%
+                    <td className="px-3 py-3 align-top">
+                      {renderPctBreakdown(
+                        reportTotals.totalUnits > 0 ? "100.0%" : "0.0%",
+                        "--",
+                        `${reportOverallTotals.totalUnits > 0
+                          ? ((reportTotals.totalUnits / reportOverallTotals.totalUnits) * 100).toFixed(1)
+                          : "0.0"}%`,
+                        "units"
+                      )}
                     </td>
-                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">--</td>
-                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">
-                      {reportOverallTotals.totalUnits > 0
-                        ? ((reportTotals.totalUnits / reportOverallTotals.totalUnits) * 100).toFixed(1)
-                        : "0.0"}
-                      %
-                    </td>
-                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">{formatMarginPct(reportTotals.avgMarginPct)}</td>
+                    <td className="px-3 py-3 text-sm font-semibold text-slate-700">{formatMarginPct(reportTotals.avgMarginPct)}</td>
                   </tr>
                 </tfoot>
               </table>
