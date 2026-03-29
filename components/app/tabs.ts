@@ -68,7 +68,7 @@ export const getTabTitle = (tab: Tab): string => {
     case Tab.PULSE:
       return 'Pulse';
     case Tab.AMP:
-      return 'AMP';
+      return 'A.I., Marketing, and Promotions';
     case Tab.SHOP:
       return 'Shop';
     default:

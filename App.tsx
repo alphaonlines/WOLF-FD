@@ -745,7 +745,7 @@ const App: React.FC = () => {
             {canView(Tab.AMP) && (
               <NavItem
                 icon={<Bot size={20} />}
-                label="AMP"
+                label="A.I., Marketing, and Promotions"
                 isActive={activeTab === Tab.AMP}
                 onClick={() => setActiveTab(Tab.AMP)}
                 isOpen={sidebarOpen}

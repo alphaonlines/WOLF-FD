@@ -48,7 +48,7 @@ type SnapshotCard = {
   cta: string;
   icon: React.ReactNode;
   onClick: () => void;
-  module: "Dashboard" | "Den" | "Pulse" | "AMP" | "Shop" | "Tools";
+  module: "Dashboard" | "Den" | "Pulse" | "A.I., Marketing, and Promotions" | "Shop" | "Tools";
   accentClass: string;
   defaultVisible?: boolean;
 };
@@ -248,36 +248,36 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "amp-social",
-        title: "AMP Social Posts",
-        description: "Open the social posts workspace inside AMP.",
-        details: "This takes you straight into the social post and ad view inside the new AMP module so the module opens on the team's current posting workflow.",
-        cta: "Open AMP Social",
+        title: "A.I., Marketing, and Promotions Social Posts",
+        description: "Open the social posts workspace inside A.I., Marketing, and Promotions.",
+        details: "This takes you straight into the social post and ad view inside the new A.I., Marketing, and Promotions module so the module opens on the team's current posting workflow.",
+        cta: "Open Social Posts",
         icon: <Activity size={22} className="text-cyan-500" />,
         onClick: () => onNavigate("AMP_SOCIAL"),
-        module: "AMP",
+        module: "A.I., Marketing, and Promotions",
         accentClass: "from-cyan-100 via-cyan-50 to-white border-cyan-200/80",
         defaultVisible: true,
       },
       {
         id: "amp-bot",
-        title: "AMP AI Bot",
-        description: "Open the AI bot workspace inside AMP.",
+        title: "A.I., Marketing, and Promotions AI Bot",
+        description: "Open the AI bot workspace inside A.I., Marketing, and Promotions.",
         details: "This puts the bot planning and assistant management view into its own module home next to social posts.",
-        cta: "Open AMP AI Bot",
+        cta: "Open AI Bot",
         icon: <Bot size={22} className="text-cyan-500" />,
         onClick: () => onNavigate("AMP_BOT"),
-        module: "AMP",
+        module: "A.I., Marketing, and Promotions",
         accentClass: "from-cyan-100 via-cyan-50 to-white border-cyan-200/80",
       },
       {
         id: "social-posts",
         title: "Social Posts",
         description: "Legacy shortcut into the social workspace.",
-        details: "This card now routes into AMP so older dashboard setups still land in the right module without showing a duplicate sidebar page.",
-        cta: "Open AMP Social",
+        details: "This card now routes into A.I., Marketing, and Promotions so older dashboard setups still land in the right module without showing a duplicate sidebar page.",
+        cta: "Open Social Posts",
         icon: <Activity size={22} className="text-cyan-500" />,
         onClick: () => onNavigate("AMP_SOCIAL"),
-        module: "AMP",
+        module: "A.I., Marketing, and Promotions",
         accentClass: "from-cyan-100 via-cyan-50 to-white border-cyan-200/80",
       },
       {
