@@ -14,6 +14,10 @@ import {
   parseLibertyPricebookPdf,
   parseLibertyReferenceNotesFromPdf,
 } from "../parsers/libertyPricebook";
+import {
+  parseJacksonCatnapperPricebookPdf,
+  parseJacksonCatnapperReferenceNotes,
+} from "../parsers/jacksonCatnapperPricebook";
 
 type ExecFileAsyncLike = (
   file: string,
@@ -485,8 +489,11 @@ async function parseUploadRows(input: {
   if (manufacturerSlug === "england") {
     return parseEnglandPricebookPdf(filePath, input.execFileAsync);
   }
+  if (manufacturerSlug === "jackson-catnapper") {
+    return parseJacksonCatnapperPricebookPdf(filePath, input.execFileAsync);
+  }
   throw new Error(
-    `No parser is available yet for ${resolvedUploadRow.manufacturer}. Liberty, Best, and England are currently live.`
+    `No parser is available yet for ${resolvedUploadRow.manufacturer}. Liberty, Best, England, and Jackson/Catnapper are currently live.`
   );
 }
 
@@ -510,6 +517,9 @@ async function parseUploadReferenceNotes(input: {
   }
   if (manufacturerSlug === "england") {
     return parseEnglandReferenceNotes();
+  }
+  if (manufacturerSlug === "jackson-catnapper") {
+    return parseJacksonCatnapperReferenceNotes();
   }
   return [];
 }
