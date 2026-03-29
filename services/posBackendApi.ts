@@ -230,6 +230,7 @@ export async function fetchSalesReport(params: {
     label: string;
     ticketCount: number;
     totalRetail: number;
+    pro1stSales: number;
     units: number;
     avgMarginPct: number | null;
   }>;
@@ -253,12 +254,13 @@ export async function fetchSalesReport(params: {
       const rawMargin = r.avg_margin_pct ?? r.avgMarginPct;
       const marginNum = rawMargin === null || rawMargin === undefined || rawMargin === "" ? null : Number(rawMargin);
       return {
-      label: String(r.label ?? ""),
-      ticketCount: Number(r.ticket_count ?? r.ticketCount ?? 0),
-      totalRetail: Number(r.total_retail ?? r.totalRetail ?? 0),
-      units: Number(r.units ?? 0),
-      avgMarginPct: Number.isFinite(marginNum as number) ? (marginNum as number) : null,
-    };
+        label: String(r.label ?? ""),
+        ticketCount: Number(r.ticket_count ?? r.ticketCount ?? 0),
+        totalRetail: Number(r.total_retail ?? r.totalRetail ?? 0),
+        pro1stSales: Number(r.pro1st_sales ?? r.pro1stSales ?? 0),
+        units: Number(r.units ?? 0),
+        avgMarginPct: Number.isFinite(marginNum as number) ? (marginNum as number) : null,
+      };
     }),
     availableCategories: Array.isArray((json as any)?.availableCategories) ? (json as any).availableCategories : [],
     availableManufacturers: Array.isArray((json as any)?.availableManufacturers) ? (json as any).availableManufacturers : [],

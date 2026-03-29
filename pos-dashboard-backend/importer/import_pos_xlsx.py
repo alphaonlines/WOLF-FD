@@ -577,6 +577,10 @@ def clean_item_rows(df: pd.DataFrame, source_file: str) -> pd.DataFrame:
             row.get("item_no"),
             row.get("manufacturer"),
         ]
+        normalized = [str(val).lower() for val in fields if val]
+        excluded_terms = ("mattress", "box spring", "box springs", "boxspring", "boxsprings")
+        if any(term in s for s in normalized for term in excluded_terms):
+            return False
         for val in fields:
             if not val:
                 continue

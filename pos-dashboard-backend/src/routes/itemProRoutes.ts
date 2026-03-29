@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseDateParam, parseTextParam } from "../parsers";
+import { buildPro1stExcludedSql, buildQualifiedPro1stSql } from "../pro1stSql";
 
 type RegisterItemProRoutesDeps = {
   app: Express;
@@ -15,6 +16,10 @@ export function registerItemProRoutes({
   itemDateField,
   prefixedDateField,
 }: RegisterItemProRoutesDeps) {
+  const pro1stItemSql = buildQualifiedPro1stSql();
+  const aliasedPro1stItemSql = buildQualifiedPro1stSql("i.");
+  const aliasedExcludedPro1stSql = buildPro1stExcludedSql("i.");
+
   // Best sellers (items)
   app.get("/api/items/best-sellers", async (req, res) => {
     const start = parseDateParam(req.query.start, "1900-01-01");
@@ -36,78 +41,22 @@ export function registerItemProRoutes({
     )
     SELECT
       CASE
-        WHEN (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
-        )
+        WHEN ${pro1stItemSql}
         THEN 'Pro1st'
         ELSE item_description
       END AS item_description,
       CASE
-        WHEN (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
-        )
+        WHEN ${pro1stItemSql}
         THEN NULL
         ELSE category
       END AS category,
       CASE
-        WHEN (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
-        )
+        WHEN ${pro1stItemSql}
         THEN NULL
         ELSE manufacturer
       END AS manufacturer,
       CASE
-        WHEN (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
-        )
+        WHEN ${pro1stItemSql}
         THEN NULL
         ELSE item_no
       END AS item_no,
@@ -136,78 +85,22 @@ export function registerItemProRoutes({
       AND item_description <> ''
     GROUP BY
       CASE
-        WHEN (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
-        )
+        WHEN ${pro1stItemSql}
         THEN 'Pro1st'
         ELSE item_description
       END,
       CASE
-        WHEN (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
-        )
+        WHEN ${pro1stItemSql}
         THEN NULL
         ELSE category
       END,
       CASE
-        WHEN (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
-        )
+        WHEN ${pro1stItemSql}
         THEN NULL
         ELSE manufacturer
       END,
       CASE
-        WHEN (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
-        )
+        WHEN ${pro1stItemSql}
         THEN NULL
         ELSE item_no
       END
@@ -434,7 +327,9 @@ export function registerItemProRoutes({
       WHERE ${prefixedDateField("s")} >= $1
         AND ${prefixedDateField("s")} < $2
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
-        AND (i.category IS NULL OR i.category NOT ILIKE '%mattress%')
+        AND NOT (
+          ${aliasedExcludedPro1stSql}
+        )
       GROUP BY i.sale_id
     ),
     people_counts AS (
@@ -465,24 +360,9 @@ export function registerItemProRoutes({
       WHERE ${prefixedDateField("s")} >= $1
         AND ${prefixedDateField("s")} < $2
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
-        AND (
-          i.is_pro1st = TRUE
-          OR i.item_description ILIKE '%pro1st%'
-          OR i.item_description ILIKE '%pro 1st%'
-          OR i.item_description ILIKE '%pro-1st%'
-          OR i.category ILIKE '%pro1st%'
-          OR i.category ILIKE '%pro 1st%'
-          OR i.category ILIKE '%pro-1st%'
-          OR i.item_no ILIKE '%pro1st%'
-          OR i.item_no ILIKE '%pro 1st%'
-          OR i.item_no ILIKE '%pro-1st%'
-          OR i.manufacturer ILIKE '%pro1st%'
-          OR i.manufacturer ILIKE '%pro 1st%'
-          OR i.manufacturer ILIKE '%pro-1st%'
-        )
+        AND ${aliasedPro1stItemSql}
         AND i.sale_id IS NOT NULL
         AND i.sale_id <> ''
-        AND (i.category IS NULL OR i.category NOT ILIKE '%mattress%')
     ),
     sales_with_profit AS (
       SELECT
@@ -563,24 +443,9 @@ export function registerItemProRoutes({
         AND ${prefixedDateField("s")} < $2
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
         AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM pos_sales_people WHERE salesperson ILIKE ('%' || $4 || '%')))
-        AND (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
-        )
+        AND ${pro1stItemSql}
         AND sale_id IS NOT NULL
         AND sale_id <> ''
-        AND (category IS NULL OR category NOT ILIKE '%mattress%')
       GROUP BY sale_id
     ),
     sales_base AS (
@@ -620,24 +485,9 @@ export function registerItemProRoutes({
         AND ${prefixedDateField("s")} < $2
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
         AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM pos_sales_people WHERE salesperson ILIKE ('%' || $4 || '%')))
-        AND (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
-        )
+        AND ${pro1stItemSql}
         AND sale_id IS NOT NULL
         AND sale_id <> ''
-        AND (category IS NULL OR category NOT ILIKE '%mattress%')
       GROUP BY sale_id
     ),
     people_counts AS (
@@ -679,24 +529,9 @@ export function registerItemProRoutes({
         AND ${prefixedDateField("s")} < $2
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
         AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM pos_sales_people WHERE salesperson ILIKE ('%' || $4 || '%')))
-        AND (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
-        )
+        AND ${pro1stItemSql}
         AND sale_id IS NOT NULL
         AND sale_id <> ''
-        AND (category IS NULL OR category NOT ILIKE '%mattress%')
       GROUP BY sale_id
     ),
     sales_base AS (
@@ -798,22 +633,7 @@ export function registerItemProRoutes({
       AND ${prefixedDateField("s")} < $2
       AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
       AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM salesperson_sales))
-        AND (
-          i.is_pro1st = TRUE
-          OR i.item_description ILIKE '%pro1st%'
-        OR i.item_description ILIKE '%pro 1st%'
-        OR i.item_description ILIKE '%pro-1st%'
-        OR i.category ILIKE '%pro1st%'
-        OR i.category ILIKE '%pro 1st%'
-        OR i.category ILIKE '%pro-1st%'
-        OR i.item_no ILIKE '%pro1st%'
-        OR i.item_no ILIKE '%pro 1st%'
-        OR i.item_no ILIKE '%pro-1st%'
-        OR i.manufacturer ILIKE '%pro1st%'
-        OR i.manufacturer ILIKE '%pro 1st%'
-          OR i.manufacturer ILIKE '%pro-1st%'
-      )
-      AND (i.category IS NULL OR i.category NOT ILIKE '%mattress%')
+      AND ${aliasedPro1stItemSql}
     GROUP BY day
     ORDER BY day;
   `;

@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseDateParam, parseTextParam } from "../parsers";
+import { buildQualifiedPro1stSql } from "../pro1stSql";
 
 type RegisterReportRoutesDeps = {
   app: Express;
@@ -9,6 +10,8 @@ type RegisterReportRoutesDeps = {
 };
 
 export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterReportRoutesDeps) {
+  const pro1stItemSql = buildQualifiedPro1stSql("i.");
+
   // Sales report (totals by salesperson or store, with item filters)
   app.get("/api/report/sales-summary", async (req, res) => {
     const start = parseDateParam(req.query.start, "1900-01-01");
@@ -75,6 +78,13 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
         SELECT i.sale_id,
           SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS sales,
           SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS profit,
+          SUM(
+            CASE
+              WHEN ${pro1stItemSql}
+              THEN CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END
+              ELSE 0
+            END
+          ) AS pro1st_sales,
           SUM(CASE WHEN i.qty_sold IS NULL OR i.qty_sold <> i.qty_sold THEN 0 ELSE i.qty_sold END) AS qty
         FROM pos_sale_items i
         JOIN pos_sales s ON s.sale_id = i.sale_id
@@ -93,6 +103,7 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
           p.sale_id,
           COALESCE(item_rollup.sales, 0) / NULLIF(pc.cnt, 0) AS sales,
           COALESCE(item_rollup.profit, 0) / NULLIF(pc.cnt, 0) AS profit,
+          COALESCE(item_rollup.pro1st_sales, 0) / NULLIF(pc.cnt, 0) AS pro1st_sales,
           COALESCE(item_rollup.qty, 0) / NULLIF(pc.cnt, 0) AS qty
         FROM pos_sales_people p
         JOIN pos_sales s ON s.sale_id = p.sale_id
@@ -109,6 +120,7 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
         salesperson AS label,
         COUNT(*)::int AS ticket_count,
         ROUND(SUM(sales)::numeric, 2) AS total_retail,
+        ROUND(SUM(pro1st_sales)::numeric, 2) AS pro1st_sales,
         ROUND(SUM(qty)::numeric, 2) AS units,
         ROUND(AVG(CASE WHEN sales > 0 THEN (profit / sales) * 100 ELSE NULL END)::numeric, 2) AS avg_margin_pct
       FROM ticket_splits
@@ -126,6 +138,13 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
         SELECT i.sale_id,
           SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS sales,
           SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS profit,
+          SUM(
+            CASE
+              WHEN ${pro1stItemSql}
+              THEN CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END
+              ELSE 0
+            END
+          ) AS pro1st_sales,
           SUM(CASE WHEN i.qty_sold IS NULL OR i.qty_sold <> i.qty_sold THEN 0 ELSE i.qty_sold END) AS qty
         FROM pos_sale_items i
         JOIN pos_sales s ON s.sale_id = i.sale_id
@@ -143,6 +162,7 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
           s.sale_id,
           COALESCE(item_rollup.sales, 0) AS sales,
           COALESCE(item_rollup.profit, 0) AS profit,
+          COALESCE(item_rollup.pro1st_sales, 0) AS pro1st_sales,
           COALESCE(item_rollup.qty, 0) AS qty
         FROM pos_sales s
         LEFT JOIN item_rollup ON item_rollup.sale_id = s.sale_id
@@ -155,6 +175,7 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
         location AS label,
         COUNT(*)::int AS ticket_count,
         ROUND(SUM(sales)::numeric, 2) AS total_retail,
+        ROUND(SUM(pro1st_sales)::numeric, 2) AS pro1st_sales,
         ROUND(SUM(qty)::numeric, 2) AS units,
         ROUND(AVG(CASE WHEN sales > 0 THEN (profit / sales) * 100 ELSE NULL END)::numeric, 2) AS avg_margin_pct
       FROM tickets

@@ -155,6 +155,10 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                       {renderHelp("Raw sales dollars for this row.")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Pro1st
+                      {renderHelp("Pro1st sales dollars for this row, excluding mattress and box spring lines.")}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Sales % of View
                       {renderHelp(
                         "Percent of this row's retail against the visible rows after category/manufacturer filters. These values add up to 100%."
@@ -205,6 +209,7 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                     <tr key={row.label}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{row.label || "(unknown)"}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${Number(row.totalRetail || 0).toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${Number(row.pro1stSales || 0).toLocaleString()}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.retailPct.toFixed(1)}%</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.ownRetailPct.toFixed(1)}%</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.totalRetailPct.toFixed(1)}%</td>
@@ -226,6 +231,9 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                     <td className="px-6 py-3 text-sm font-semibold text-slate-700">Totals</td>
                     <td className="px-6 py-3 text-sm font-semibold text-slate-700">
                       ${Number(reportTotals.totalRetail || 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-3 text-sm font-semibold text-slate-700">
+                      ${Number(reportTotals.totalPro1stSales || 0).toLocaleString()}
                     </td>
                     <td className="px-6 py-3 text-sm font-semibold text-slate-700">
                       {reportTotals.totalRetail > 0 ? "100.0" : "0.0"}%

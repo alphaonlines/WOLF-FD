@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseDateParam, parseTextParam } from "../parsers";
+import { buildQualifiedPro1stSql } from "../pro1stSql";
 import { registerItemProRoutes } from "./itemProRoutes";
 
 type RegisterSalesDetailRoutesDeps = {
@@ -16,6 +17,8 @@ export function registerSalesDetailRoutes({
   itemDateField,
   prefixedDateField,
 }: RegisterSalesDetailRoutesDeps) {
+  const pro1stItemSql = buildQualifiedPro1stSql();
+
   // All tickets for a salesperson within a date range (for detail drill-down)
   app.get("/api/salesperson-tickets", async (req, res) => {
     const start = parseDateParam(req.query.start, "1900-01-01");
@@ -54,21 +57,7 @@ export function registerSalesDetailRoutes({
         AND ${itemDateField} < $2
         AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
         AND ($3::text IS NULL OR sale_id IN (SELECT sale_id FROM pos_sales WHERE salesperson ILIKE ('%' || $3 || '%')))
-        AND (
-          is_pro1st = TRUE
-          OR item_description ILIKE '%pro1st%'
-          OR item_description ILIKE '%pro 1st%'
-          OR item_description ILIKE '%pro-1st%'
-          OR category ILIKE '%pro1st%'
-          OR category ILIKE '%pro 1st%'
-          OR category ILIKE '%pro-1st%'
-          OR item_no ILIKE '%pro1st%'
-          OR item_no ILIKE '%pro 1st%'
-          OR item_no ILIKE '%pro-1st%'
-          OR manufacturer ILIKE '%pro1st%'
-          OR manufacturer ILIKE '%pro 1st%'
-          OR manufacturer ILIKE '%pro-1st%'
-        )
+        AND ${pro1stItemSql}
         AND sale_id IS NOT NULL
         AND sale_id <> ''
       GROUP BY sale_id
