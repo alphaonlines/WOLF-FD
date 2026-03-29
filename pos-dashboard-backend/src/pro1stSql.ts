@@ -5,6 +5,14 @@ const PRO1ST_EXCLUDED_PATTERNS = [
   "%box springs%",
   "%boxspring%",
   "%boxsprings%",
+  "%foundation%",
+  "%foundations%",
+  "%adjustable base%",
+  "%adjustable bases%",
+  "%power base%",
+  "%power bases%",
+  "%bunkie board%",
+  "%bunkie boards%",
 ];
 
 const buildQualifiedColumn = (columnPrefix: string, columnName: string) => `${columnPrefix}${columnName}`;
