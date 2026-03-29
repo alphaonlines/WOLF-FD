@@ -582,7 +582,8 @@ const App: React.FC = () => {
             requestedSubTab={requestedPulseSubTab}
             requestedSubTabToken={requestedPulseSubTabToken}
             onSubTabChange={setCurrentPulseSubTab}
-            onOpenSalesAnalysis={() => setActiveTab(Tab.SALES)}
+            itemSortMetric={itemSortMetric}
+            showTooltips={showTooltips}
           />
         );
       case Tab.AMP:

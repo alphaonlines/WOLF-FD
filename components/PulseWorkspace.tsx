@@ -8,7 +8,8 @@ type PulseWorkspaceProps = {
   requestedSubTab?: PulseSubTab;
   requestedSubTabToken?: number;
   onSubTabChange?: (subTab: PulseSubTab) => void;
-  onOpenSalesAnalysis?: () => void;
+  itemSortMetric: "sales" | "qty";
+  showTooltips: boolean;
 };
 
 export type PulseSubTab = "sales" | "alphaos" | "alphapulse" | "website" | "reviews";
@@ -81,7 +82,8 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
   requestedSubTab = "sales",
   requestedSubTabToken,
   onSubTabChange,
-  onOpenSalesAnalysis,
+  itemSortMetric,
+  showTooltips,
 }) => {
   const [subTab, setSubTab] = useState<PulseSubTab>(requestedSubTab);
 
@@ -140,7 +142,11 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
       {/* Content */}
       <PulsePaneBoundary isDarkMode={isDarkMode} label={subTab} onReset={() => setSubTab("sales")}>
         <div className="flex-1 overflow-hidden">
-        {subTab === "sales" && <PulseSalesPage isDarkMode={isDarkMode} onOpenSalesAnalysis={onOpenSalesAnalysis} />}
+        {subTab === "sales" && (
+          <div className="h-full overflow-auto p-5 lg:p-7">
+            <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />
+          </div>
+        )}
         {subTab === "alphaos" && <KiosksStatus />}
         {subTab === "website" && <WebsitePage isDarkMode={isDarkMode} />}
         </div>
@@ -175,38 +181,6 @@ const WebsitePage: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => (
     >
       Open AlphaPulse →
     </a>
-  </div>
-);
-
-const PulseSalesPage: React.FC<{ isDarkMode: boolean; onOpenSalesAnalysis?: () => void }> = ({ isDarkMode, onOpenSalesAnalysis }) => (
-  <div className="h-full overflow-auto p-5 lg:p-7">
-    <div className={`rounded-3xl border p-5 md:p-6 ${
-      isDarkMode ? "border-slate-800 bg-slate-950" : "border-slate-200/80 bg-slate-50/90"
-    }`}>
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-500">Pulse Sales Analysis</div>
-          <h2 className={`mt-2 text-2xl font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-            Open the full sales dashboard
-          </h2>
-          <p className={`mt-2 max-w-3xl text-sm leading-6 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-            Sales Analysis is the first stop in Pulse, but it now opens the full report in its dedicated view so the heavy analytics screen does not blank the module shell.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onOpenSalesAnalysis}
-          className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-            isDarkMode
-              ? "border-sky-500/30 bg-sky-500/10 text-sky-200 hover:bg-sky-500/18"
-              : "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
-          }`}
-        >
-          <BarChart2 size={16} />
-          Open Sales Analysis
-        </button>
-      </div>
-    </div>
   </div>
 );
 
