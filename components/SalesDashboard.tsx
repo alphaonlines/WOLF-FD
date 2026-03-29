@@ -64,10 +64,9 @@ import {
 } from "./salesUtils";
 import SortableItem from "./sales/SortableItem";
 import SalesPrintDialog from "./sales/SalesPrintDialog";
-import SalesDrilldownPrintSections from "./sales/SalesDrilldownPrintSections";
-import SalesCorePrintSections from "./sales/SalesCorePrintSections";
 import SalesReportCard from "./sales/SalesReportCard";
 import SalespersonDetailCard, { type SalespersonTicketRow } from "./sales/SalespersonDetailCard";
+import { openSalesPrintWindow } from "./sales/openSalesPrintWindow";
 import {
   computeReportTotals,
   type ReportSummaryRow,
@@ -1016,7 +1015,77 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         categoryBreakdowns,
       });
       setPrintDialogOpen(false);
-      setTimeout(() => window.print(), 60);
+      openSalesPrintWindow({
+        rangeLabel: printRangeA,
+        compareLabel: printRangeB || undefined,
+        generatedAt: new Date(),
+        selectedSalesperson,
+        selectedStore,
+        drilldownProps: {
+          printIncludeManufacturer,
+          printIncludeCategory,
+          printData: {
+            manufacturerBreakdowns,
+            categoryBreakdowns,
+          },
+          printStoreOverallMap: new Map(storeOverallSummary.rows.map((row) => [row.label, row])),
+          printSalesOverallMap: new Map(salespersonOverallSummary.rows.map((row) => [row.label, row])),
+          printOverallTotals: computeReportTotals(storeOverallSummary.rows),
+        },
+        coreProps: {
+          printIncludeLowMargin,
+          printIncludeStore,
+          printIncludeSalesperson,
+          printLowMarginFiltered: lowMarginSummary.rows.filter((row) => {
+            const total = Number(row.grandTotal || 0);
+            const profit = Number(row.profit || 0);
+            const margin = row.marginPct === null ? 0 : Number(row.marginPct || 0);
+            return !(total === 0 && profit === 0 && margin === 0);
+          }),
+          printStoreFiltered: sortReportRows(
+            withReportPercentages(
+              storeSummary.rows,
+              computeReportTotals(storeSummary.rows, storeSummary.distinctTicketCount),
+              new Map(storeOverallSummary.rows.map((row) => [row.label, row])),
+              computeReportTotals(storeOverallSummary.rows)
+            ).filter((row) => {
+              const retail = Number(row.totalRetail || 0);
+              const units = Number(row.units || 0);
+              const tickets = Number(row.ticketCount || 0);
+              const retailPct = Number(row.retailPct || 0);
+              const unitsPct = Number(row.unitsPct || 0);
+              return !(retail === 0 && units === 0 && tickets === 0) && !(retailPct === 0 && unitsPct === 0);
+            }),
+            itemSortMetric
+          ),
+          printSalespersonFiltered: sortReportRows(
+            withReportPercentages(
+              salespersonSummary.rows,
+              computeReportTotals(salespersonSummary.rows, salespersonSummary.distinctTicketCount),
+              new Map(salespersonOverallSummary.rows.map((row) => [row.label, row])),
+              computeReportTotals(storeOverallSummary.rows)
+            ).filter((row) => {
+              const retail = Number(row.totalRetail || 0);
+              const units = Number(row.units || 0);
+              const tickets = Number(row.ticketCount || 0);
+              const retailPct = Number(row.retailPct || 0);
+              const unitsPct = Number(row.unitsPct || 0);
+              return !(retail === 0 && units === 0 && tickets === 0) && !(retailPct === 0 && unitsPct === 0);
+            }),
+            itemSortMetric
+          ),
+          printTotalsStore: computeReportTotals(storeSummary.rows, storeSummary.distinctTicketCount),
+          printTotalsSalesperson: computeReportTotals(
+            salespersonSummary.rows,
+            salespersonSummary.distinctTicketCount
+          ),
+          printOverallRetailTotal: Number(computeReportTotals(storeOverallSummary.rows).totalRetail || 0),
+          printOverallUnitsTotal: Number(computeReportTotals(storeOverallSummary.rows).totalUnits || 0),
+          saleLabel,
+          formatShortDate,
+          formatMarginPct,
+        },
+      });
     } finally {
       setPrintLoading(false);
     }
@@ -1630,21 +1699,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   }
 
   return (
-    <div className="space-y-6 animate-fade-in relative fd-print-area">
-      <div className="fd-print-only fd-print-header">
-        <div className="fd-print-title">WOLF FD Sales Report</div>
-        <div className="fd-print-meta">
-          <div>Range: {printRangeA || "N/A"}</div>
-          {printRangeB && <div>Compare: {printRangeB}</div>}
-          <div>
-            Generated: {printGeneratedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}{" "}
-            {printGeneratedAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-          </div>
-          {selectedSalesperson && <div>Salesperson: {selectedSalesperson}</div>}
-          {selectedStore && <div>Store: {selectedStore}</div>}
-        </div>
-      </div>
-      <div className="fd-print-hide space-y-6">
+    <div className="space-y-6 animate-fade-in relative">
+      <div className="space-y-6">
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-3 text-blue-800 fd-print-hide">
           <Database size={18} className="text-blue-500" />
           <span className="text-sm font-medium">All figures are based on delivered date.</span>
@@ -2383,33 +2439,6 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         onPrint={runPrint}
       />
       </div>
-      <div className="fd-print-only space-y-6">
-        <SalesDrilldownPrintSections
-          printIncludeManufacturer={printIncludeManufacturer}
-          printIncludeCategory={printIncludeCategory}
-          printData={printData}
-          printStoreOverallMap={printStoreOverallMap}
-          printSalesOverallMap={printSalesOverallMap}
-          printOverallTotals={printOverallTotals}
-        />
-
-        <SalesCorePrintSections
-          printIncludeLowMargin={printIncludeLowMargin}
-          printIncludeStore={printIncludeStore}
-          printIncludeSalesperson={printIncludeSalesperson}
-          printLowMarginFiltered={printLowMarginFiltered}
-          printStoreFiltered={printStoreFiltered}
-          printSalespersonFiltered={printSalespersonFiltered}
-          printTotalsStore={printTotalsStore}
-          printTotalsSalesperson={printTotalsSalesperson}
-          printOverallRetailTotal={printOverallRetailTotal}
-          printOverallUnitsTotal={printOverallUnitsTotal}
-          saleLabel={saleLabel}
-          formatShortDate={formatShortDate}
-          formatMarginPct={formatMarginPct}
-        />
-      </div>
-
     </div>
   );
 };

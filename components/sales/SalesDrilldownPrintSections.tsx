@@ -5,13 +5,13 @@ import {
   withReportPercentages,
 } from "../salesReportUtils";
 
-type BreakdownEntry = {
+export type BreakdownEntry = {
   label: string;
   storeRows: ReportSummaryRow[];
   salespersonRows: ReportSummaryRow[];
 };
 
-type SalesDrilldownPrintSectionsProps = {
+export type SalesDrilldownPrintSectionsProps = {
   printIncludeManufacturer: boolean;
   printIncludeCategory: boolean;
   printData: {

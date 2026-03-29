@@ -1,7 +1,7 @@
 import React from "react";
 import type { ReportRowWithPct, ReportTotals } from "../salesReportUtils";
 
-type LowMarginRow = {
+export type LowMarginRow = {
   saleId: string;
   saleDate: string;
   salesperson: string;
@@ -9,7 +9,7 @@ type LowMarginRow = {
   marginPct: number | null;
 };
 
-type SalesCorePrintSectionsProps = {
+export type SalesCorePrintSectionsProps = {
   printIncludeLowMargin: boolean;
   printIncludeStore: boolean;
   printIncludeSalesperson: boolean;
