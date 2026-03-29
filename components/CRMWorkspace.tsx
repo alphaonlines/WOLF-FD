@@ -28,6 +28,7 @@ import {
   searchCrmRecords,
   startCrmUpsQueueCustomerInApi,
   updateCrmLeadInApi,
+  updateCrmUpsQueueCustomerInApi,
   updateCrmUpsQueueStatusInApi,
   upsertCrmCustomerAccount,
 } from "../services/crmApi";
@@ -146,7 +147,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
   const [searching, setSearching] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [saving, setSaving] = useState<null | "lead" | "account" | "queue">(null);
+  const [saving, setSaving] = useState<null | "customer" | "queue">(null);
   const [joinBusy, setJoinBusy] = useState(false);
   const [selectedSalespersonName, setSelectedSalespersonName] = useState("");
   const [startDrafts, setStartDrafts] = useState<Record<string, { customer: string; customerType: UpsQueueCustomerType }>>({});
@@ -465,71 +466,76 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     }
   };
 
-  const handleSaveLead = async () => {
-    const fullName = combineName(draft.firstName, draft.lastName);
-    if (!fullName || !draft.phone.trim()) {
-      setErrorMessage("Customer name and phone are required for a lead.");
-      return;
-    }
-    const payload: CRMLead = {
-      id: draft.leadId || `lead-${Date.now()}`,
-      name: fullName,
-      phone: draft.phone.trim(),
-      channel: draft.channel,
-      source: draft.source.trim() || "Showroom Walk-In",
-      interest: draft.interest.trim(),
-      budget: "Unspecified",
-      store: draft.store,
-      owner: draft.owner,
-      ownerUserId: draft.ownerUserId,
-      stage: draft.stage,
-      nextAction: draft.nextAction.trim() || "Follow up",
-      dueDate: draft.dueDate || todayIso(),
-      lastMessage: draft.visualDescription.trim(),
-      lastTouch: new Date().toISOString(),
-      notes: [draft.visualDescription.trim(), draft.notes.trim()].filter(Boolean).join("\n\n"),
-    };
-    setSaving("lead");
-    setStatusMessage(null);
-    setErrorMessage(null);
-    try {
-      if (draft.leadId) {
-        await updateCrmLeadInApi(draft.leadId, payload);
-        setLeads((current) => current.map((lead) => (lead.id === payload.id ? payload : lead)));
-      } else {
-        await createCrmLeadInApi(payload);
-        setLeads((current) => [payload, ...current]);
-        setDraft((current) => ({ ...current, leadId: payload.id }));
-      }
-      setStatusMessage("Lead saved.");
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to save lead.");
-    } finally {
-      setSaving(null);
-    }
-  };
-
-  const handleSaveAccount = async () => {
+  const handleSaveCustomer = async () => {
     const fullName = combineName(draft.firstName, draft.lastName);
     if (!fullName || (!draft.phone.trim() && !draft.email.trim())) {
-      setErrorMessage("Add a name and either a phone number or email for the account.");
+      setErrorMessage("Add a customer name and at least a phone number or email.");
       return;
     }
-    setSaving("account");
+    setSaving("customer");
     setStatusMessage(null);
     setErrorMessage(null);
     try {
+      const noteBody = [draft.visualDescription.trim(), draft.notes.trim()].filter(Boolean).join("\n\n");
       const result = await upsertCrmCustomerAccount({
         name: fullName,
         phone: draft.phone.trim(),
         email: draft.email.trim(),
         store: draft.store,
-        notes: [draft.visualDescription.trim(), draft.notes.trim()].filter(Boolean).join("\n\n"),
+        notes: noteBody,
       });
-      setDraft((current) => ({ ...current, accountId: result.customer.id }));
-      setStatusMessage("Account saved.");
+
+      let leadId = draft.leadId;
+      if (draft.phone.trim()) {
+        const payload: CRMLead = {
+          id: draft.leadId || `lead-${Date.now()}`,
+          name: fullName,
+          phone: draft.phone.trim(),
+          channel: draft.channel,
+          source: draft.source.trim() || "Showroom Walk-In",
+          interest: draft.interest.trim(),
+          budget: "Unspecified",
+          store: draft.store,
+          owner: draft.owner,
+          ownerUserId: draft.ownerUserId,
+          stage: draft.stage,
+          nextAction: draft.nextAction.trim() || "Follow up",
+          dueDate: draft.dueDate || todayIso(),
+          lastMessage: draft.visualDescription.trim(),
+          lastTouch: new Date().toISOString(),
+          notes: noteBody,
+        };
+        if (draft.leadId) {
+          await updateCrmLeadInApi(draft.leadId, payload);
+          setLeads((current) => current.map((lead) => (lead.id === payload.id ? payload : lead)));
+        } else {
+          await createCrmLeadInApi(payload);
+          setLeads((current) => [payload, ...current]);
+        }
+        leadId = payload.id;
+      }
+
+      if (draft.queueId && draft.activeCustomerId) {
+        const row = await updateCrmUpsQueueCustomerInApi(draft.queueId, draft.activeCustomerId, {
+          customer: fullName,
+          customerType: undefined,
+          details: draft.visualDescription.trim(),
+        });
+        setQueue((current) =>
+          current
+            .map((entry) => (entry.id === row.id ? row : entry))
+            .sort((a, b) => a.queuePosition - b.queuePosition)
+        );
+      }
+
+      setDraft((current) => ({
+        ...current,
+        accountId: result.customer.id,
+        leadId,
+      }));
+      setStatusMessage(draft.phone.trim() ? "Customer saved and follow-up updated." : "Customer saved.");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to save account.");
+      setErrorMessage(error instanceof Error ? error.message : "Unable to save customer.");
     } finally {
       setSaving(null);
     }
@@ -1078,11 +1084,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
               </div>
 
               <div className="mt-3 flex gap-2">
-                <button onClick={() => void handleSaveLead()} disabled={saving !== null} className={successButtonClassName}>
-                  {draft.leadId ? "Update Lead" : "Save Lead"}
-                </button>
-                <button onClick={() => void handleSaveAccount()} disabled={saving !== null} className={ghostButtonClassName}>
-                  Save Account
+                <button onClick={() => void handleSaveCustomer()} disabled={saving !== null} className={successButtonClassName}>
+                  {saving === "customer" ? "Saving..." : "Save Customer"}
                 </button>
                 <button onClick={() => setDraft(buildDraft(authUser, defaultDraftStore))} className={ghostButtonClassName}>
                   Clear
