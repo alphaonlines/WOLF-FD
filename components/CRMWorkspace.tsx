@@ -162,7 +162,34 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     : "rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white disabled:opacity-50";
   const successButtonClassName = isDarkMode
     ? "rounded-xl border border-emerald-400/35 bg-emerald-400/14 px-3 py-2 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-400/20 disabled:opacity-50"
-    : "rounded-xl border border-emerald-300 bg-emerald-50/90 px-3 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50";
+    : "rounded-xl border border-emerald-500 bg-emerald-100 px-3 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-200 disabled:opacity-50";
+  const dangerButtonClassName = isDarkMode
+    ? "rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-500/18 disabled:opacity-50"
+    : "rounded-xl border border-red-500 bg-red-100 px-3 py-2 text-sm font-semibold text-red-950 transition hover:bg-red-200 disabled:opacity-50";
+  const warningButtonClassName = isDarkMode
+    ? "rounded-xl border border-amber-400/30 bg-amber-400/12 px-3 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/20 disabled:opacity-50"
+    : "rounded-xl border border-amber-500 bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-950 transition hover:bg-amber-200 disabled:opacity-50";
+  const waitingBadgeClassName = isDarkMode
+    ? "bg-slate-700/60 text-slate-200"
+    : "border border-slate-300 bg-slate-200 text-slate-800";
+  const workingBadgeClassName = isDarkMode
+    ? "bg-emerald-500/16 text-emerald-200"
+    : "border border-emerald-300 bg-emerald-100 text-emerald-950";
+  const breakBadgeClassName = isDarkMode
+    ? "bg-amber-500/16 text-amber-200"
+    : "border border-amber-300 bg-amber-100 text-amber-950";
+  const nextOpportunityBadgeClassName = isDarkMode
+    ? "rounded-full bg-sky-400/14 px-2 py-0.5 text-[11px] font-medium text-sky-200"
+    : "rounded-full border border-sky-300 bg-sky-100 px-2 py-0.5 text-[11px] font-medium text-sky-900";
+  const weatherSnapshotTextClassName = isDarkMode
+    ? "mt-1 truncate text-xs text-emerald-300/90"
+    : "mt-1 truncate text-xs font-medium text-emerald-800";
+  const liveWeatherTextClassName = isDarkMode
+    ? "mt-0.5 max-w-[210px] truncate text-[11px] text-emerald-300"
+    : "mt-0.5 max-w-[210px] truncate text-[11px] font-medium text-emerald-800";
+  const weatherCalloutClassName = isDarkMode
+    ? "rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-medium text-emerald-100"
+    : "rounded-xl border border-emerald-300 bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-950";
 
   const loadData = async () => {
     const healthy = await checkPosBackendHealthy();
@@ -660,15 +687,15 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                             <span className="truncate font-semibold text-slate-900 dark:text-white">{item.rep}</span>
                             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                               item.status === "working"
-                                ? "bg-emerald-500/16 text-emerald-200"
+                                ? workingBadgeClassName
                                 : item.status === "on_break"
-                                  ? "bg-amber-500/16 text-amber-200"
-                                  : "bg-slate-700/60 text-slate-200"
+                                  ? breakBadgeClassName
+                                  : waitingBadgeClassName
                             }`}>
                               {item.status === "working" ? "With Customer" : item.status === "on_break" ? "On Break" : "Waiting"}
                             </span>
                             {isNextOpportunity ? (
-                              <span className="rounded-full bg-sky-400/14 px-2 py-0.5 text-[11px] font-medium text-sky-200">
+                              <span className={nextOpportunityBadgeClassName}>
                                 Next Opportunity
                               </span>
                             ) : null}
@@ -681,14 +708,14 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                               : `Checked in ${formatTime(item.checkedInAt) || ""}`}
                           </div>
                           {item.status === "working" && weatherSnapshot ? (
-                            <div className="mt-1 truncate text-xs text-emerald-300/90">{weatherSnapshot}</div>
+                            <div className={weatherSnapshotTextClassName}>{weatherSnapshot}</div>
                           ) : null}
                         </div>
                         <div className="text-right">
                           <div className="text-[11px] font-medium text-slate-500 dark:text-slate-300">
                             {item.store}
                           </div>
-                          <div className="mt-0.5 max-w-[210px] truncate text-[11px] text-emerald-500 dark:text-emerald-300">
+                          <div className={liveWeatherTextClassName}>
                             {liveWeather}
                           </div>
                           <div className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
@@ -796,7 +823,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                                 <button
                                   onClick={() => void handleLeaveQueue(item)}
                                   disabled={!canManageRow || saving === "queue"}
-                                  className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100 disabled:opacity-50"
+                                  className={dangerButtonClassName}
                                 >
                                   Remove From Queue
                                 </button>
@@ -805,20 +832,20 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                           ) : (
                             <div className="space-y-2">
                               {weatherSnapshot ? (
-                                <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-medium text-emerald-100">
+                                <div className={weatherCalloutClassName}>
                                   Weather snapshot: {weatherSnapshot}
                                 </div>
                               ) : null}
                               <div className="flex flex-wrap gap-2">
                                 <button
                                   onClick={() => void handleCompleteCustomer(item)}
-                                  className="rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 dark:bg-emerald-400 dark:hover:bg-emerald-300"
+                                  className={successButtonClassName}
                                 >
                                   Complete
                                 </button>
                                 <button
                                   onClick={() => void handleRemoveCustomerFromUps(item)}
-                                  className="rounded-xl border border-amber-400/30 bg-amber-400/12 px-3 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/20"
+                                  className={warningButtonClassName}
                                 >
                                   Remove Up
                                 </button>
@@ -853,7 +880,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
                               <button
                                 onClick={() => void handleLeaveQueue(item)}
                                 disabled={!canManageRow || saving === "queue"}
-                                className="rounded-xl border border-red-400/30 bg-red-400/12 px-3 py-2 text-sm font-semibold text-red-100 disabled:opacity-50"
+                                className={dangerButtonClassName}
                               >
                                 Remove From Queue
                               </button>
