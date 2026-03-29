@@ -133,6 +133,79 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
   const requestLastName = requestProfile?.lastName || "";
   const requestEmail = requestProfile?.email || "";
 
+  if (stage === "sign_in") {
+    return (
+      <div className="fixed inset-0 z-40 flex min-h-screen items-center justify-center overflow-y-auto bg-slate-950 px-4 py-8">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/94 via-slate-900/88 to-slate-800/72 backdrop-blur-md" />
+        <div
+          className="pointer-events-none absolute inset-0 transition-colors duration-300"
+          style={{
+            background: `radial-gradient(circle at center, rgba(2,6,23,0) 0px, rgba(2,6,23,0) 140px, rgba(2,6,23,${darkness}) 280px)`,
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <style>
+            {`
+              @keyframes breatheGlow {
+                0%, 100% { opacity: 0.35; transform: scale(0.98); }
+                50% { opacity: 0.8; transform: scale(1.02); }
+              }
+              @keyframes orbitA {
+                0%, 100% { transform: translate(-50%, -50%) rotate(0deg) translateX(12px); opacity: 0.6; }
+                50% { transform: translate(-50%, -50%) rotate(180deg) translateX(24px); opacity: 0.35; }
+              }
+              @keyframes orbitB {
+                0%, 100% { transform: translate(-50%, -50%) rotate(0deg) translateX(-14px); opacity: 0.45; }
+                50% { transform: translate(-50%, -50%) rotate(-180deg) translateX(-28px); opacity: 0.7; }
+              }
+            `}
+          </style>
+          <div className="absolute -top-28 -left-24 h-64 w-64 rounded-full bg-blue-500/25 blur-3xl animate-[floatY_7s_ease-in-out_infinite]" />
+          <div className="absolute -bottom-28 -right-24 h-64 w-64 rounded-full bg-cyan-400/18 blur-3xl animate-[floatY_6s_ease-in-out_infinite_reverse]" />
+          <div className="absolute left-1/2 top-1/2 h-[520px] w-[520px] rounded-full border border-blue-400/20 animate-[orbitA_14s_ease-in-out_infinite]" />
+          <div className="absolute left-1/2 top-1/2 h-[360px] w-[360px] rounded-full border border-cyan-300/20 animate-[orbitB_12s_ease-in-out_infinite]" />
+        </div>
+
+        <div className="relative z-10 w-full max-w-xl rounded-[2rem] border border-slate-700/60 bg-slate-950/82 p-6 text-slate-100 shadow-2xl shadow-black/45 backdrop-blur-xl sm:p-8">
+          <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-slate-700 bg-slate-950/90 text-4xl shadow-lg">
+            🐺
+          </div>
+
+          <div className="mt-6 text-xs font-semibold uppercase tracking-[0.3em] text-cyan-200/80">Furniture Distributors</div>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">WOLF FD Dashboard</h1>
+          <div className="mt-2 text-xs font-medium uppercase tracking-[0.24em] text-slate-400">Work Online | Live Free</div>
+
+          <div className="mt-8 inline-flex rounded-full border border-cyan-400/25 bg-cyan-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-100/90">
+            Employee Access
+          </div>
+          <h2 className="mt-5 text-2xl font-semibold leading-tight text-white">
+            Secure sign-in for approved Furniture Distributors employees.
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-slate-300">
+            Sign in with your {googleHostedDomain ? `@${googleHostedDomain}` : "company"} Google account to request or access the dashboard.
+          </p>
+
+          <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/80">Google Workspace</div>
+            {googleEnabled ? (
+              <div className="mt-4 space-y-3">
+                <div ref={googleButtonRef} className="min-h-[44px]" />
+                {!googleScriptReady && (
+                  <div className="text-xs text-slate-500">Loading Google sign-in…</div>
+                )}
+                {googleScriptError && <div className="text-xs text-amber-300">{googleScriptError}</div>}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+                Google Workspace sign-in is not configured on this environment yet.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-40 flex min-h-screen items-center justify-center overflow-y-auto bg-slate-950 px-4 py-8">
       <div className="absolute inset-0 bg-gradient-to-br from-slate-950/94 via-slate-900/88 to-slate-800/72 backdrop-blur-md" />
