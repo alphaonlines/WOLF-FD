@@ -87,9 +87,11 @@ const getUploadSelectionScore = (upload: ManufacturerPricebookUpload) => {
   if (upload.documentType === "archive") score -= 1000;
   if (upload.parentUploadId) score += 25;
   if (/\.xlsx?$/.test(name)) score += 250;
+  if (/price[_ -]?list|pricebook/.test(name)) score += 180;
   if (/residential price list/.test(name)) score += 600;
   if (/compressed/.test(name)) score += 20;
   if (/warranty/.test(name)) score -= 100;
+  if (/tariff|delivery schedule|schedule|coastal covers|curfab|pattern|cushion/.test(name)) score -= 220;
   if (/diamond/.test(name)) score -= 120;
   if (/fabric/.test(name)) score -= 120;
   if (/grade change|cheat sheet/.test(name)) score -= 140;
@@ -113,6 +115,15 @@ const getResolvedPreviewUpload = (
     );
   }
   if (selectedUpload?.manufacturerSlug === "best" && selectedUpload.parentUploadId) {
+    return (
+      getPreferredHoldingUpload(
+        uploads.filter(
+          (upload) => upload.parentUploadId === selectedUpload.parentUploadId && upload.documentType !== "archive"
+        )
+      ) || selectedUpload
+    );
+  }
+  if (selectedUpload?.manufacturerSlug === "england" && selectedUpload.parentUploadId) {
     return (
       getPreferredHoldingUpload(
         uploads.filter(

@@ -88,6 +88,7 @@ function getUploadSelectionScore(uploadRow: any) {
   if (/price[_ -]?list|pricebook/.test(name)) score += 180;
   if (/compressed/.test(name)) score += 20;
   if (/warranty/.test(name)) score -= 100;
+  if (/tariff|delivery schedule|schedule|coastal covers|curfab|pattern|cushion/.test(name)) score -= 220;
   if (/diamond/.test(name)) score -= 120;
   if (/fabric/.test(name)) score -= 120;
   if (/grade change|cheat sheet/.test(name)) score -= 140;
@@ -140,6 +141,12 @@ async function resolveUploadRowForProcessing(pool: Pool, uploadRow: any) {
 
   const manufacturerSlug = String(uploadRow.manufacturer_slug || "").trim().toLowerCase();
   if (manufacturerSlug === "best" && uploadRow.parent_upload_id) {
+    const siblings = await loadUploadChildren(pool, Number(uploadRow.parent_upload_id));
+    const usableSiblings = siblings.filter((row) => String(row.document_type || "").toLowerCase() !== "archive");
+    return choosePreferredUploadCandidate(usableSiblings) || uploadRow;
+  }
+
+  if (manufacturerSlug === "england" && uploadRow.parent_upload_id) {
     const siblings = await loadUploadChildren(pool, Number(uploadRow.parent_upload_id));
     const usableSiblings = siblings.filter((row) => String(row.document_type || "").toLowerCase() !== "archive");
     return choosePreferredUploadCandidate(usableSiblings) || uploadRow;
