@@ -1458,14 +1458,14 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         return res.status(400).json({ error: "customer is required" });
       }
       values.push(req.body.customer.trim());
-      fields.push(`current_customer = $${values.length}`);
+      fields.push(`customer = $${values.length}`);
     }
 
     if (req.body?.customer_type !== undefined) {
       const customerType = parseUpsQueueCustomerType(req.body.customer_type);
       if (!customerType) return res.status(400).json({ error: "invalid customer_type" });
       values.push(customerType);
-      fields.push(`current_customer_type = $${values.length}`);
+      fields.push(`customer_type = $${values.length}`);
     }
 
     if (req.body?.customer_details !== undefined) {
@@ -1473,7 +1473,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         return res.status(400).json({ error: "invalid customer_details" });
       }
       values.push(req.body.customer_details.trim());
-      fields.push(`current_customer_details = $${values.length}`);
+      fields.push(`customer_details = $${values.length}`);
     }
 
     if (!fields.length) return res.status(400).json({ error: "no fields to update" });
