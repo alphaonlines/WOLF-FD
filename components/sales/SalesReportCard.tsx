@@ -75,6 +75,13 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
     })}`;
   };
 
+  const formatPro1stPct = (pro1stSales: number, totalRetail: number) => {
+    if (!Number.isFinite(pro1stSales) || !Number.isFinite(totalRetail) || totalRetail <= 0) {
+      return "0.0%";
+    }
+    return `${((pro1stSales / totalRetail) * 100).toFixed(1)}%`;
+  };
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card" data-print-id="sales-report">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -155,8 +162,10 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                       {renderHelp("Raw sales dollars for this row.")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Pro1st
-                      {renderHelp("Pro1st sales dollars for this row, excluding mattress and box spring lines.")}
+                      Pro1st % of Sale
+                      {renderHelp(
+                        "Pro1st dollars divided by total retail for this row, shown as a percent of sale and excluding mattress, box spring, and foundation-related lines."
+                      )}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Sales % of View
@@ -209,7 +218,9 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                     <tr key={row.label}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{row.label || "(unknown)"}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${Number(row.totalRetail || 0).toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${Number(row.pro1stSales || 0).toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        {formatPro1stPct(Number(row.pro1stSales || 0), Number(row.totalRetail || 0))}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.retailPct.toFixed(1)}%</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.ownRetailPct.toFixed(1)}%</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.totalRetailPct.toFixed(1)}%</td>
@@ -233,7 +244,7 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                       ${Number(reportTotals.totalRetail || 0).toLocaleString()}
                     </td>
                     <td className="px-6 py-3 text-sm font-semibold text-slate-700">
-                      ${Number(reportTotals.totalPro1stSales || 0).toLocaleString()}
+                      {formatPro1stPct(Number(reportTotals.totalPro1stSales || 0), Number(reportTotals.totalRetail || 0))}
                     </td>
                     <td className="px-6 py-3 text-sm font-semibold text-slate-700">
                       {reportTotals.totalRetail > 0 ? "100.0" : "0.0"}%
