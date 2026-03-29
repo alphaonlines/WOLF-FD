@@ -16,7 +16,6 @@ import type {
 import { checkPosBackendHealthy } from "../services/posBackendApi";
 import {
   completeCrmUpsQueueCustomerInApi,
-  createCrmLeadInApi,
   fetchCrmLeadsFromApi,
   fetchCrmOwnersFromApi,
   fetchCrmSalespeopleFromApi,
@@ -27,7 +26,6 @@ import {
   reorderCrmUpsQueueInApi,
   searchCrmRecords,
   startCrmUpsQueueCustomerInApi,
-  updateCrmLeadInApi,
   updateCrmUpsQueueCustomerInApi,
   updateCrmUpsQueueStatusInApi,
   upsertCrmCustomerAccount,
@@ -407,6 +405,12 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
     setStatusMessage(null);
     setErrorMessage(null);
     try {
+      if (draft.queueId === item.id && draft.activeCustomerId === activeCustomerId) {
+        await updateCrmUpsQueueCustomerInApi(item.id, activeCustomerId, {
+          customer: combineName(draft.firstName, draft.lastName),
+          details: draft.visualDescription.trim(),
+        });
+      }
       const rows = await completeCrmUpsQueueCustomerInApi(item.id, activeCustomerId);
       setQueue([...rows].sort((a, b) => a.queuePosition - b.queuePosition));
       setDraft(buildDraft(authUser, defaultDraftStore));
@@ -414,6 +418,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
         ...current,
         [item.id]: { customer: "", customerType: "Regular Up" },
       }));
+      setStatusMessage("Up completed and saved to history.");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to complete customer.");
     }
@@ -485,36 +490,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
         notes: noteBody,
       });
 
-      let leadId = draft.leadId;
-      if (draft.phone.trim()) {
-        const payload: CRMLead = {
-          id: draft.leadId || `lead-${Date.now()}`,
-          name: fullName,
-          phone: draft.phone.trim(),
-          channel: draft.channel,
-          source: draft.source.trim() || "Showroom Walk-In",
-          interest: draft.interest.trim(),
-          budget: "Unspecified",
-          store: draft.store,
-          owner: draft.owner,
-          ownerUserId: draft.ownerUserId,
-          stage: draft.stage,
-          nextAction: draft.nextAction.trim() || "Follow up",
-          dueDate: draft.dueDate || todayIso(),
-          lastMessage: draft.visualDescription.trim(),
-          lastTouch: new Date().toISOString(),
-          notes: noteBody,
-        };
-        if (draft.leadId) {
-          await updateCrmLeadInApi(draft.leadId, payload);
-          setLeads((current) => current.map((lead) => (lead.id === payload.id ? payload : lead)));
-        } else {
-          await createCrmLeadInApi(payload);
-          setLeads((current) => [payload, ...current]);
-        }
-        leadId = payload.id;
-      }
-
       if (draft.queueId && draft.activeCustomerId) {
         const row = await updateCrmUpsQueueCustomerInApi(draft.queueId, draft.activeCustomerId, {
           customer: fullName,
@@ -531,9 +506,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode }) => 
       setDraft((current) => ({
         ...current,
         accountId: result.customer.id,
-        leadId,
       }));
-      setStatusMessage(draft.phone.trim() ? "Customer saved and follow-up updated." : "Customer saved.");
+      setStatusMessage("Customer saved.");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to save customer.");
     } finally {
