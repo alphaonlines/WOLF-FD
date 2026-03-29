@@ -988,7 +988,7 @@ export function registerManufacturerPricebookRoutes({
     const category = typeof req.query?.category === "string" ? String(req.query.category).trim() : "";
     const color = typeof req.query?.color === "string" ? String(req.query.color).trim() : "";
     const query = typeof req.query?.query === "string" ? String(req.query.query).trim() : "";
-    const limit = Math.min(Math.max(Number(req.query?.limit ?? 200), 1), 500);
+    const limit = Math.min(Math.max(Number(req.query?.limit ?? 200), 1), 5000);
 
     const values: any[] = [];
     const where: string[] = [];

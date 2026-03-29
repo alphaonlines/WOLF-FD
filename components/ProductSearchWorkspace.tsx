@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { RefreshCw, Search, UploadCloud } from "lucide-react";
 import type { ManufacturerCatalogItem, ManufacturerReferenceNote } from "../types";
+import { CANONICAL_PRODUCT_MANUFACTURERS } from "../constants/productCatalog";
 import { fetchManufacturerCatalog, fetchManufacturerReferenceNotes } from "../services/manufacturerPricelistApi";
 
 type ProductSearchWorkspaceProps = {
@@ -83,7 +84,13 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
 
   const selectedItem = items.find((item) => item.id === selectedId) || null;
   const manufacturerOptions = useMemo(
-    () => Array.from(new Set(items.map((item) => item.manufacturer).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    () =>
+      Array.from(
+        new Set([
+          ...CANONICAL_PRODUCT_MANUFACTURERS,
+          ...items.map((item) => item.manufacturer).filter(Boolean),
+        ])
+      ).sort((a, b) => a.localeCompare(b)),
     [items]
   );
   const categoryOptions = useMemo(

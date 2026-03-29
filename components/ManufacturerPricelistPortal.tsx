@@ -8,6 +8,7 @@ import {
   Search,
   UploadCloud,
 } from "lucide-react";
+import { CANONICAL_PRODUCT_MANUFACTURERS } from "../constants/productCatalog";
 import type {
   ManufacturerCatalogItem,
   ManufacturerPricebookUpload,
@@ -70,16 +71,7 @@ type ManufacturerPricelistPortalProps = {
   onBack: () => void;
 };
 
-const MANUFACTURERS = [
-  "Ashley",
-  "Albany",
-  "AAmerica",
-  "Archbold",
-  "Best",
-  "England",
-  "Liberty",
-  "Vaughan-Bassett",
-];
+const MANUFACTURERS = [...CANONICAL_PRODUCT_MANUFACTURERS];
 
 const PORTAL_SCREENS: Array<{ key: PortalScreen; label: string }> = [
   { key: "ingestion", label: "Upload & Ingestion" },
