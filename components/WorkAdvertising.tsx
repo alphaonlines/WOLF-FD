@@ -1,5 +1,6 @@
 import React, { startTransition, useEffect, useMemo, useState } from "react";
 import {
+  AlertTriangle,
   CalendarClock,
   CheckCircle2,
   Clock3,
@@ -12,6 +13,7 @@ import {
   UploadCloud,
   XCircle,
 } from "lucide-react";
+import type { AuthUser } from "../types";
 import type {
   SocialAccount,
   SocialPlatform,
@@ -26,7 +28,6 @@ import {
   scheduleSocialPost,
   updateSocialPost,
   uploadSocialAsset,
-  upsertSocialAccount,
 } from "../services/socialApi";
 
 type ComposerForm = {
@@ -49,18 +50,6 @@ type ComposerForm = {
     publicUrl: string;
     assetKind: string;
   } | null;
-};
-
-type AccountDraft = {
-  draftKey: string;
-  id: string | null;
-  platform: SocialPlatform;
-  label: string;
-  externalId: string;
-  accessToken: string;
-  refreshToken: string;
-  tokenExpiresAt: string;
-  active: boolean;
 };
 
 const PLATFORM_OPTIONS: Array<{ id: SocialPlatform; label: string }> = [
@@ -123,58 +112,14 @@ const defaultAccountIds = (accounts: SocialAccount[]) => {
   return out;
 };
 
-const makeAccountDrafts = (accounts: SocialAccount[]): AccountDraft[] => {
-  const drafts = accounts.map((account) => ({
-    draftKey: account.id,
-    id: account.id,
-    platform: account.platform,
-    label: account.label || "",
-    externalId: account.externalId || "",
-    accessToken: "",
-    refreshToken: "",
-    tokenExpiresAt: toLocalInputValue(account.tokenExpiresAt || null),
-    active: Boolean(account.active),
-  }));
-
-  for (const platform of ["facebook", "instagram"] as SocialPlatform[]) {
-    if (!drafts.some((draft) => draft.platform === platform)) {
-      drafts.push({
-        draftKey: `new-${platform}`,
-        id: null,
-        platform,
-        label: "",
-        externalId: "",
-        accessToken: "",
-        refreshToken: "",
-        tokenExpiresAt: "",
-        active: false,
-      });
-    }
-  }
-
-  if (!drafts.some((draft) => draft.platform === "google")) {
-    drafts.push({
-      draftKey: "new-google-1",
-      id: null,
-      platform: "google",
-      label: "",
-      externalId: "",
-      accessToken: "",
-      refreshToken: "",
-      tokenExpiresAt: "",
-      active: false,
-    });
-  }
-
-  return drafts;
+type WorkAdvertisingProps = {
+  authUser: AuthUser;
+  onOpenSocialIntegrations: () => void;
 };
 
-const WorkAdvertising: React.FC = () => {
+const WorkAdvertising: React.FC<WorkAdvertisingProps> = ({ authUser, onOpenSocialIntegrations }) => {
   const [posts, setPosts] = useState<SocialPostRecord[]>([]);
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
-  const [accountDrafts, setAccountDrafts] = useState<AccountDraft[]>(() =>
-    makeAccountDrafts([])
-  );
   const [form, setForm] = useState<ComposerForm>(() => emptyForm());
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [platformFilter, setPlatformFilter] = useState<string>("all");
@@ -192,7 +137,6 @@ const WorkAdvertising: React.FC = () => {
       startTransition(() => {
         setPosts(nextPosts);
         setAccounts(nextAccounts);
-        setAccountDrafts(makeAccountDrafts(nextAccounts));
         setForm((current) => ({
           ...current,
           platformAccountIds: {
@@ -249,6 +193,40 @@ const WorkAdvertising: React.FC = () => {
         ])
       ),
     [accounts]
+  );
+  const isOwner = authUser.roles.includes("Owner");
+  const missingPlatformConnections = useMemo(() => {
+    return form.platforms.filter((platform) => {
+      const selectedAccountId = form.platformAccountIds[platform];
+      const selectedAccount =
+        (selectedAccountId ? accounts.find((item) => item.id === selectedAccountId) : null) ||
+        accounts.find((item) => item.platform === platform && item.active) ||
+        null;
+      if (!selectedAccount) return true;
+      return !selectedAccount.active || !selectedAccount.accessTokenConfigured || !selectedAccount.externalId;
+    });
+  }, [accounts, form.platformAccountIds, form.platforms]);
+  const connectionStatus = useMemo(
+    () =>
+      PLATFORM_OPTIONS.map((platform) => {
+        const selectedAccountId = form.platformAccountIds[platform.id];
+        const selectedAccount =
+          (selectedAccountId ? accounts.find((item) => item.id === selectedAccountId) : null) ||
+          accounts.find((item) => item.platform === platform.id && item.active) ||
+          null;
+        const ready = Boolean(
+          selectedAccount && selectedAccount.active && selectedAccount.accessTokenConfigured && selectedAccount.externalId
+        );
+        return {
+          platform: platform.id,
+          label: platform.label,
+          ready,
+          summary: selectedAccount
+            ? selectedAccount.label || selectedAccount.externalId || `${platform.label} connection`
+            : "No saved connection",
+        };
+      }),
+    [accounts, form.platformAccountIds]
   );
 
   const setField = <K extends keyof ComposerForm>(key: K, value: ComposerForm[K]) => {
@@ -439,88 +417,6 @@ const WorkAdvertising: React.FC = () => {
     }
   };
 
-  const updateAccountDraft = (draftKey: string, patch: Partial<AccountDraft>) => {
-    setAccountDrafts((current) =>
-      current.map((draft) => (draft.draftKey === draftKey ? { ...draft, ...patch } : draft))
-    );
-  };
-
-  const addAccountDraft = (platform: SocialPlatform) => {
-    setAccountDrafts((current) => [
-      ...current,
-      {
-        draftKey: `new-${platform}-${Date.now()}`,
-        id: null,
-        platform,
-        label: "",
-        externalId: "",
-        accessToken: "",
-        refreshToken: "",
-        tokenExpiresAt: "",
-        active: false,
-      },
-    ]);
-  };
-
-  const saveAccount = async (draftKey: string) => {
-    const draft = accountDrafts.find((item) => item.draftKey === draftKey);
-    if (!draft) return;
-    setBusyKey(`account-${draftKey}`);
-    setError(null);
-    setMessage(null);
-    try {
-      const next = await upsertSocialAccount({
-        id: draft.id,
-        platform: draft.platform,
-        label: draft.label,
-        externalId: draft.externalId,
-        accessToken: draft.accessToken,
-        refreshToken: draft.refreshToken,
-        tokenExpiresAt: fromLocalInputValue(draft.tokenExpiresAt),
-        active: draft.active,
-        configJson: {},
-      });
-      if (!next) throw new Error(`Unable to save ${draft.platform} account settings.`);
-      setAccounts((current) => {
-        const exists = current.some((item) => item.id === next.id);
-        const updated = exists ? current.map((item) => (item.id === next.id ? next : item)) : [...current, next];
-        return [...updated].sort((a, b) => a.platform.localeCompare(b.platform) || a.label.localeCompare(b.label));
-      });
-      setAccountDrafts((current) =>
-        current.map((item) =>
-          item.draftKey === draftKey
-            ? {
-                ...item,
-                draftKey: next.id,
-                id: next.id,
-                platform: next.platform,
-                label: next.label,
-                externalId: next.externalId,
-                accessToken: "",
-                refreshToken: "",
-                tokenExpiresAt: toLocalInputValue(next.tokenExpiresAt),
-                active: next.active,
-              }
-            : item
-        )
-      );
-      setForm((current) => ({
-        ...current,
-        platformAccountIds: {
-          ...current.platformAccountIds,
-          ...(current.platforms.includes(next.platform) && !current.platformAccountIds[next.platform]
-            ? { [next.platform]: next.id }
-            : {}),
-        },
-      }));
-      setMessage(`${draft.platform[0].toUpperCase()}${draft.platform.slice(1)} connection saved.`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : `Unable to save ${draft.platform} account.`);
-    } finally {
-      setBusyKey(null);
-    }
-  };
-
   const togglePlatform = (platform: SocialPlatform) => {
     setForm((current) => {
       const exists = current.platforms.includes(platform);
@@ -556,6 +452,16 @@ const WorkAdvertising: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap gap-3">
+            {isOwner && missingPlatformConnections.length > 0 && (
+              <button
+                type="button"
+                onClick={onOpenSocialIntegrations}
+                className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900"
+              >
+                <AlertTriangle size={15} />
+                Configure {missingPlatformConnections.map((platform) => PLATFORM_OPTIONS.find((item) => item.id === platform)?.label || platform).join(", ")}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => void loadWorkspace()}
@@ -876,112 +782,39 @@ const WorkAdvertising: React.FC = () => {
 
         <div className="space-y-6">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2">
-              <Settings2 size={16} className="text-slate-500" />
-              <h3 className="text-lg font-semibold text-slate-900">Platform Connections</h3>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Settings2 size={16} className="text-slate-500" />
+                <h3 className="text-lg font-semibold text-slate-900">Connection Status</h3>
+              </div>
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={onOpenSocialIntegrations}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+                >
+                  Open Integrations
+                </button>
+              )}
             </div>
-            <div className="mt-4 space-y-5">
-              {PLATFORM_OPTIONS.map((platform) => {
-                const drafts = accountDrafts.filter((item) => item.platform === platform.id);
-                return (
-                  <div key={platform.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-semibold text-slate-900">{platform.label}</div>
-                        <div className="text-xs text-slate-500">
-                          {platform.id === "facebook" && "Use your Facebook Page ID."}
-                          {platform.id === "instagram" && "Use your Instagram professional account ID."}
-                          {platform.id === "google" && "Add one or more accounts/{accountId}/locations/{locationId} destinations."}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => addAccountDraft(platform.id)}
-                        className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
-                      >
-                        Add {platform.label}
-                      </button>
+            <div className="mt-4 space-y-3">
+              {connectionStatus.map((item) => (
+                <div key={item.platform} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">{item.label}</div>
+                      <div className="mt-1 text-xs text-slate-500">{item.summary}</div>
                     </div>
-
-                    <div className="mt-4 space-y-4">
-                      {drafts.map((draft, index) => {
-                        const saved = draft.id ? accounts.find((item) => item.id === draft.id) || null : null;
-                        const buttonLabel =
-                          busyKey === `account-${draft.draftKey}`
-                            ? "Saving..."
-                            : draft.id
-                              ? "Save Changes"
-                              : "Save Connection";
-                        return (
-                          <div key={draft.draftKey} className="rounded-3xl border border-slate-200 bg-white p-4">
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                                {platform.label} {index + 1}
-                              </div>
-                              <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
-                                <input
-                                  type="checkbox"
-                                  checked={draft.active}
-                                  onChange={(event) => updateAccountDraft(draft.draftKey, { active: event.target.checked })}
-                                />
-                                Active
-                              </label>
-                            </div>
-
-                            <div className="mt-3 space-y-3">
-                              <input
-                                type="text"
-                                value={draft.label}
-                                onChange={(event) => updateAccountDraft(draft.draftKey, { label: event.target.value })}
-                                placeholder={`${platform.label} label`}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
-                              />
-                              <input
-                                type="text"
-                                value={draft.externalId}
-                                onChange={(event) => updateAccountDraft(draft.draftKey, { externalId: event.target.value })}
-                                placeholder={
-                                  platform.id === "google" ? "accounts/123/locations/456" : "External account/page ID"
-                                }
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
-                              />
-                              <input
-                                type="password"
-                                value={draft.accessToken}
-                                onChange={(event) => updateAccountDraft(draft.draftKey, { accessToken: event.target.value })}
-                                placeholder={saved?.accessTokenConfigured ? `Token saved: ${saved.tokenPreview}` : "Access token"}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
-                              />
-                              <input
-                                type="password"
-                                value={draft.refreshToken}
-                                onChange={(event) => updateAccountDraft(draft.draftKey, { refreshToken: event.target.value })}
-                                placeholder={saved?.refreshTokenConfigured ? "Refresh token saved" : "Refresh token (optional)"}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
-                              />
-                              <input
-                                type="datetime-local"
-                                value={draft.tokenExpiresAt}
-                                onChange={(event) => updateAccountDraft(draft.draftKey, { tokenExpiresAt: event.target.value })}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400"
-                              />
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => void saveAccount(draft.draftKey)}
-                              disabled={busyKey !== null}
-                              className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                            >
-                              <Save size={14} /> {buttonLabel}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        item.ready ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {item.ready ? "Ready" : "Needs setup"}
+                    </span>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
 

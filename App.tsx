@@ -135,6 +135,7 @@ const App: React.FC = () => {
       return false;
     }
   });
+  const [requestedSettingsPanel, setRequestedSettingsPanel] = useState<'users' | 'employees' | 'permissions' | 'social' | null>(null);
 
   useEffect(() => {
     if (DASHBOARD_LOCKED) {
@@ -496,7 +497,15 @@ const App: React.FC = () => {
       case Tab.CRM:
         return <CRMWorkspace authUser={authUser!} isDarkMode={isDarkMode} />;
       case Tab.SOCIAL:
-        return <WorkAdvertising />;
+        return (
+          <WorkAdvertising
+            authUser={authUser!}
+            onOpenSocialIntegrations={() => {
+              setRequestedSettingsPanel('social');
+              setActiveTab(Tab.ADMIN);
+            }}
+          />
+        );
       case Tab.KIOSKS:
         return <KiosksStatus />;
       case Tab.MESSAGE_BOARD:
@@ -504,7 +513,13 @@ const App: React.FC = () => {
       case Tab.TASKS:
         return <TaskManager />;
       case Tab.ADMIN:
-        return <OwnerSettings onOpenChangePassword={openChangePasswordModal} />;
+        return (
+          <OwnerSettings
+            onOpenChangePassword={openChangePasswordModal}
+            requestedPanel={requestedSettingsPanel}
+            onConsumeRequestedPanel={() => setRequestedSettingsPanel(null)}
+          />
+        );
       default:
         return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
     }

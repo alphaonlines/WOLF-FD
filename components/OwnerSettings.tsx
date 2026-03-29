@@ -2,15 +2,28 @@ import React, { useState } from "react";
 import AdminUsers from "./AdminUsers";
 import AccessPermissions from "./settings/AccessPermissions";
 import EmployeePermissions from "./settings/EmployeePermissions";
+import SocialIntegrationsSettings from "./settings/SocialIntegrationsSettings";
 
-type SettingsPanel = "users" | "employees" | "permissions";
+type SettingsPanel = "users" | "employees" | "permissions" | "social";
 
 type OwnerSettingsProps = {
   onOpenChangePassword: () => void;
+  requestedPanel?: SettingsPanel | null;
+  onConsumeRequestedPanel?: () => void;
 };
 
-const OwnerSettings: React.FC<OwnerSettingsProps> = ({ onOpenChangePassword }) => {
+const OwnerSettings: React.FC<OwnerSettingsProps> = ({
+  onOpenChangePassword,
+  requestedPanel = null,
+  onConsumeRequestedPanel,
+}) => {
   const [panel, setPanel] = useState<SettingsPanel>("users");
+
+  React.useEffect(() => {
+    if (!requestedPanel) return;
+    setPanel(requestedPanel);
+    onConsumeRequestedPanel?.();
+  }, [requestedPanel, onConsumeRequestedPanel]);
 
   return (
     <div className="space-y-6">
@@ -58,10 +71,27 @@ const OwnerSettings: React.FC<OwnerSettingsProps> = ({ onOpenChangePassword }) =
           >
             Access Permissions
           </button>
+          <button
+            type="button"
+            onClick={() => setPanel("social")}
+            className={`px-3 py-1.5 text-sm font-semibold rounded-lg ${
+              panel === "social" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+            }`}
+          >
+            Social Integrations
+          </button>
         </div>
       </section>
 
-      {panel === "users" ? <AdminUsers /> : panel === "employees" ? <EmployeePermissions /> : <AccessPermissions />}
+      {panel === "users" ? (
+        <AdminUsers />
+      ) : panel === "employees" ? (
+        <EmployeePermissions />
+      ) : panel === "permissions" ? (
+        <AccessPermissions />
+      ) : (
+        <SocialIntegrationsSettings />
+      )}
     </div>
   );
 };
