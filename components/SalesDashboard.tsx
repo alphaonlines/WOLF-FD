@@ -1581,7 +1581,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
           {selectedStore && <div>Store: {selectedStore}</div>}
         </div>
       </div>
-      <div className="fd-print-hide">
+      <div className="fd-print-hide space-y-6">
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-3 text-blue-800 fd-print-hide">
           <Database size={18} className="text-blue-500" />
           <span className="text-sm font-medium">All figures are based on delivered date.</span>
