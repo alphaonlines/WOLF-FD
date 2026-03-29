@@ -98,6 +98,7 @@ function mapUploadRow(row: any, publicBaseUrl: string) {
 }
 
 function mapMessageRow(row: any, publicBaseUrl: string) {
+  if (!row) return null;
   return {
     id: String(row.id ?? ""),
     scope: String(row.scope ?? "channel"),
@@ -118,6 +119,14 @@ function mapMessageRow(row: any, publicBaseUrl: string) {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function ensureMappedMessageRow(row: any, publicBaseUrl: string) {
+  const mapped = mapMessageRow(row, publicBaseUrl);
+  if (!mapped) {
+    throw new Error("Board message could not be loaded after mutation.");
+  }
+  return mapped;
 }
 
 function mapContactRow(row: any) {
@@ -457,28 +466,25 @@ export function registerBoardRoutes(app: Express, pool: Pool, boardUploadsDir: s
     const authorName = user.name || user.email;
     const authorEmail = user.email || "";
 
-    const result = await pool.query(
+    const insertResult = await pool.query(
       `
-      WITH inserted AS (
-        INSERT INTO board_messages (
-          scope,
-          channel,
-          body,
-          priority,
-          author_name,
-          author_email,
-          author_user_id,
-          recipient_user_id,
-          recipient_name,
-          recipient_email,
-          attachment_upload_id,
-          created_at,
-          updated_at
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now(), now())
-        RETURNING id
+      INSERT INTO board_messages (
+        scope,
+        channel,
+        body,
+        priority,
+        author_name,
+        author_email,
+        author_user_id,
+        recipient_user_id,
+        recipient_name,
+        recipient_email,
+        attachment_upload_id,
+        created_at,
+        updated_at
       )
-      ${buildMessageSelectSql(`INNER JOIN inserted i ON i.id = m.id`)}
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now(), now())
+      RETURNING id
       `,
       [
         scope,
@@ -494,8 +500,10 @@ export function registerBoardRoutes(app: Express, pool: Pool, boardUploadsDir: s
         attachmentUploadId,
       ]
     );
+    const createdMessageId = Number(insertResult.rows[0]?.id);
+    const createdRow = Number.isFinite(createdMessageId) ? await loadMessageForAccess(pool, createdMessageId) : null;
 
-    res.status(201).json({ row: mapMessageRow(result.rows[0], publicBaseUrl) });
+    res.status(201).json({ row: ensureMappedMessageRow(createdRow, publicBaseUrl) });
   });
 
   app.patch("/api/board/messages/:messageId", async (req, res) => {
@@ -512,23 +520,22 @@ export function registerBoardRoutes(app: Express, pool: Pool, boardUploadsDir: s
     if (!nextBody) return res.status(400).json({ error: "body is required" });
     const nextPriority = req.body?.priority === undefined ? Boolean(existing.priority) : Boolean(req.body.priority);
 
-    const result = await pool.query(
+    const updateResult = await pool.query(
       `
-      WITH updated AS (
-        UPDATE board_messages
-        SET body = $2,
-            priority = $3,
-            edited_at = now(),
-            updated_at = now()
-        WHERE id = $1
-        RETURNING id
-      )
-      ${buildMessageSelectSql(`INNER JOIN updated u2 ON u2.id = m.id`)}
+      UPDATE board_messages
+      SET body = $2,
+          priority = $3,
+          edited_at = now(),
+          updated_at = now()
+      WHERE id = $1
+      RETURNING id
       `,
       [messageId, nextBody, nextPriority]
     );
+    const updatedMessageId = Number(updateResult.rows[0]?.id);
+    const updatedRow = Number.isFinite(updatedMessageId) ? await loadMessageForAccess(pool, updatedMessageId) : null;
 
-    res.json({ row: mapMessageRow(result.rows[0], publicBaseUrl) });
+    res.json({ row: ensureMappedMessageRow(updatedRow, publicBaseUrl) });
   });
 
   app.delete("/api/board/messages/:messageId", async (req, res) => {
@@ -584,29 +591,26 @@ export function registerBoardRoutes(app: Express, pool: Pool, boardUploadsDir: s
 
     const authorName = user.name || user.email;
     const authorEmail = user.email || "";
-    const result = await pool.query(
+    const insertResult = await pool.query(
       `
-      WITH inserted AS (
-        INSERT INTO board_messages (
-          scope,
-          channel,
-          body,
-          priority,
-          author_name,
-          author_email,
-          author_user_id,
-          recipient_user_id,
-          recipient_name,
-          recipient_email,
-          attachment_upload_id,
-          forwarded_from_message_id,
-          created_at,
-          updated_at
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now(), now())
-        RETURNING id
+      INSERT INTO board_messages (
+        scope,
+        channel,
+        body,
+        priority,
+        author_name,
+        author_email,
+        author_user_id,
+        recipient_user_id,
+        recipient_name,
+        recipient_email,
+        attachment_upload_id,
+        forwarded_from_message_id,
+        created_at,
+        updated_at
       )
-      ${buildMessageSelectSql(`INNER JOIN inserted i ON i.id = m.id`)}
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now(), now())
+      RETURNING id
       `,
       [
         scope,
@@ -623,7 +627,9 @@ export function registerBoardRoutes(app: Express, pool: Pool, boardUploadsDir: s
         messageId,
       ]
     );
+    const forwardedMessageId = Number(insertResult.rows[0]?.id);
+    const forwardedRow = Number.isFinite(forwardedMessageId) ? await loadMessageForAccess(pool, forwardedMessageId) : null;
 
-    res.status(201).json({ row: mapMessageRow(result.rows[0], publicBaseUrl) });
+    res.status(201).json({ row: ensureMappedMessageRow(forwardedRow, publicBaseUrl) });
   });
 }
