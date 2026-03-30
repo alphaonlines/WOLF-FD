@@ -22,6 +22,8 @@ import { registerTrackingRoutes } from "./routes/trackingRoutes";
 import { registerBoardRoutes } from "./routes/boardRoutes";
 import { registerPublicSocialRoutes, registerSocialRoutes } from "./routes/socialRoutes";
 import { registerManufacturerPricebookRoutes } from "./routes/manufacturerPricebookRoutes";
+import { registerObjectionVotesRoutes } from "./routes/objectionVotesRoutes";
+import { registerCustomObjectionsRoutes } from "./routes/customObjectionsRoutes";
 import {
   type AuthUserView,
   buildAuthUser,
@@ -159,6 +161,8 @@ export function registerAllRoutes({
   });
 
   registerTaskRoutes(app, pool);
+  registerObjectionVotesRoutes(app, pool);
+  registerCustomObjectionsRoutes(app, pool);
   registerCrmRoutes(app, pool);
   registerBoardRoutes(app, pool, boardUploadsDir, socialPublicBaseUrl);
   registerManufacturerPricebookRoutes({

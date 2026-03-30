@@ -746,7 +746,7 @@ const App: React.FC = () => {
             {canView(Tab.AMP) && (
               <NavItem
                 icon={<Bot size={20} />}
-                label="A.I., Marketing, and Promotions"
+                label="AMP"
                 isActive={activeTab === Tab.AMP}
                 onClick={() => setActiveTab(Tab.AMP)}
                 isOpen={sidebarOpen}
@@ -763,7 +763,10 @@ const App: React.FC = () => {
                 isDarkMode={isDarkMode}
               />
             )}
-            {canView(Tab.ADMIN) && (
+          </nav>
+
+          {canView(Tab.ADMIN) && (
+            <div className={`px-3 pb-1`}>
               <NavItem
                 icon={<Settings size={20} />}
                 label="Settings"
@@ -772,8 +775,8 @@ const App: React.FC = () => {
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
-            )}
-          </nav>
+            </div>
+          )}
 
           {canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL) && (
             <div className={`p-3 border-t ${isDarkMode ? 'border-white/6' : 'border-slate-200/80'}`}>

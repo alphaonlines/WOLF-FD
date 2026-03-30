@@ -1,10 +1,121 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, Circle, Clock, Plus, User } from "lucide-react";
+import { AlertCircle, CheckCircle2, Circle, Clock, Plus, User, Send, Check } from "lucide-react";
 import { INITIAL_TASKS } from "../constants";
 import { Task, TaskStatus } from "../types";
 import { createTask, getNextSortIndex, seedLocalTasksIfEmpty, subscribeTasks, updateTask } from "../services/tasksService";
+import { createCustomObjection } from "../services/customObjectionsApi";
+import { updateTaskInApi } from "../services/tasksApi";
 
 type ColumnId = TaskStatus | "OVERDUE";
+
+const ObjectionPublishForm: React.FC<{ task: Task; onUpdated: () => void }> = ({ task, onUpdated }) => {
+  const [label, setLabel] = useState(task.taskMeta?.submitted_text?.slice(0, 60) || "");
+  const [rebuttals, setRebuttals] = useState<string[]>(
+    task.taskMeta?.rebuttals || ["", "", "", "", ""]
+  );
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleRebuttalChange = (idx: number, value: string) => {
+    const newRebuttals = [...rebuttals];
+    newRebuttals[idx] = value;
+    setRebuttals(newRebuttals);
+  };
+
+  const handlePublish = async () => {
+    if (!label.trim()) {
+      setError("Objection label is required");
+      return;
+    }
+    const validRebuttals = rebuttals.filter((r) => r.trim());
+    if (validRebuttals.length === 0) {
+      setError("At least one rebuttal is required");
+      return;
+    }
+
+    setPublishing(true);
+    setError(null);
+    try {
+      await createCustomObjection({
+        label: label.trim(),
+        rebuttals: validRebuttals,
+      });
+      await updateTaskInApi(task.id, { status: "DONE" });
+      setPublished(true);
+      setTimeout(onUpdated, 1500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to publish");
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  if (published) {
+    return (
+      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-center gap-3">
+        <Check className="text-emerald-600 shrink-0" size={20} />
+        <div>
+          <p className="text-sm font-medium text-emerald-800">Published to Objections List!</p>
+          <p className="text-xs text-emerald-600">Task marked as done.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Objection Label</label>
+        <input
+          type="text"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="e.g., It's too expensive"
+          className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+        />
+        <p className="text-xs text-slate-500 mt-1">The objection customers raise</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Rebuttals (at least 1)</label>
+        <div className="space-y-2">
+          {rebuttals.map((r, idx) => (
+            <input
+              key={idx}
+              type="text"
+              value={r}
+              onChange={(e) => handleRebuttalChange(idx, e.target.value)}
+              placeholder={`Rebuttal ${idx + 1}`}
+              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          ))}
+        </div>
+      </div>
+
+      {error && (
+        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+          {error}
+        </div>
+      )}
+
+      <button
+        onClick={handlePublish}
+        disabled={publishing || !label.trim()}
+        className="w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-medium px-4 py-2.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {publishing ? (
+          <>Publishing...</>
+        ) : (
+          <>
+            <Send size={16} />
+            Publish to Objections List
+          </>
+        )}
+      </button>
+    </div>
+  );
+};
 
 const Columns: Array<{ id: ColumnId; label: string; icon: React.ReactNode; droppable: boolean }> = [
   { id: TaskStatus.TODO, label: "To Do", icon: <Circle size={18} className="text-slate-500" />, droppable: true },
@@ -318,9 +429,16 @@ const TaskManager: React.FC = () => {
                       title="Click for details"
                     >
                       <div className="flex justify-between items-start mb-2 gap-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${getPriorityColor(task.priority)}`}>
-                          {task.priority}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${getPriorityColor(task.priority)}`}>
+                            {task.priority}
+                          </span>
+                          {task.taskType === "objection_submission" && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 font-medium">
+                              Objection
+                            </span>
+                          )}
+                        </div>
                         <select
                           value={task.status}
                           onChange={(e) => void handleStatusChange(task.id, e.target.value as TaskStatus)}
@@ -453,11 +571,16 @@ const TaskManager: React.FC = () => {
 
       {selectedTask && (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
-            <div className="p-5 border-b border-slate-200 flex items-start justify-between gap-4">
+          <div className={`w-full max-w-lg bg-white rounded-xl shadow-xl border overflow-hidden ${selectedTask.taskType === "objection_submission" ? "border-amber-300" : "border-slate-200"}`}>
+            <div className="p-5 border-b flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-xs text-slate-500">Task</p>
                 <h4 className="text-lg font-semibold text-slate-900 truncate">{selectedTask.title}</h4>
+                {selectedTask.taskType === "objection_submission" && (
+                  <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 font-medium">
+                    Objection Submission
+                  </span>
+                )}
               </div>
               <button
                 onClick={() => setDetailsTaskId(null)}
@@ -468,31 +591,43 @@ const TaskManager: React.FC = () => {
             </div>
 
             <div className="p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                  <p className="text-xs text-slate-500 mb-1">Assignee</p>
-                  <p className="text-sm text-slate-800">{selectedTask.assignee}</p>
-                </div>
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                  <p className="text-xs text-slate-500 mb-1">Status</p>
-                  <p className="text-sm text-slate-800">
-                    {selectedTask.status === TaskStatus.TODO && "To Do"}
-                    {selectedTask.status === TaskStatus.IN_PROGRESS && "In Progress"}
-                    {selectedTask.status === TaskStatus.DONE && "Completed"}
-                  </p>
-                </div>
-              </div>
+              {selectedTask.taskType === "objection_submission" && selectedTask.taskMeta ? (
+                <>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <p className="text-xs text-amber-600 font-medium mb-1">Submitted Objection</p>
+                    <p className="text-sm text-slate-800">{selectedTask.taskMeta.submitted_text || "—"}</p>
+                  </div>
+                  <ObjectionPublishForm task={selectedTask} onUpdated={() => setDetailsTaskId(null)} />
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                      <p className="text-xs text-slate-500 mb-1">Assignee</p>
+                      <p className="text-sm text-slate-800">{selectedTask.assignee}</p>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                      <p className="text-xs text-slate-500 mb-1">Status</p>
+                      <p className="text-sm text-slate-800">
+                        {selectedTask.status === TaskStatus.TODO && "To Do"}
+                        {selectedTask.status === TaskStatus.IN_PROGRESS && "In Progress"}
+                        {selectedTask.status === TaskStatus.DONE && "Completed"}
+                      </p>
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Due date</label>
-                <input
-                  type="date"
-                  value={detailsDueDate}
-                  onChange={(e) => setDetailsDueDate(e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-xs text-slate-500 mt-1">Tasks past their due date automatically appear in Overdue.</p>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Due date</label>
+                    <input
+                      type="date"
+                      value={detailsDueDate}
+                      onChange={(e) => setDetailsDueDate(e.target.value)}
+                      className="w-full border border-slate-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">Tasks past their due date automatically appear in Overdue.</p>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="p-5 border-t border-slate-200 flex items-center justify-between gap-3">
@@ -509,12 +644,14 @@ const TaskManager: React.FC = () => {
                 >
                   Cancel
                 </button>
-                <button
-                  onClick={() => void saveDueDate()}
-                  className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-                >
-                  Save
-                </button>
+                {selectedTask.taskType !== "objection_submission" && (
+                  <button
+                    onClick={() => void saveDueDate()}
+                    className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                  >
+                    Save
+                  </button>
+                )}
               </div>
             </div>
           </div>

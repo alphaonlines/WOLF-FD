@@ -17,6 +17,8 @@ function mapTaskRow(row: any) {
     priority: row.priority,
     deadline: row.deadline ? String(row.deadline).slice(0, 10) : null,
     sort_index: Number(row.sort_index ?? 0),
+    task_type: row.task_type,
+    task_meta: typeof row.task_meta === "object" ? row.task_meta : null,
     responded_at: row.responded_at,
     completed_at: row.completed_at,
     created_at: row.created_at,
@@ -35,6 +37,8 @@ export function registerTaskRoutes(app: Express, pool: Pool) {
         priority,
         deadline,
         sort_index,
+        task_type,
+        task_meta,
         responded_at,
         completed_at,
         created_at,
@@ -56,6 +60,8 @@ export function registerTaskRoutes(app: Express, pool: Pool) {
     const priority = parseTaskPriority(req.body?.priority) ?? "medium";
     const deadline = parseTaskDeadline(req.body?.deadline);
     const sortIndexExplicit = parseIntBody(req.body?.sort_index);
+    const taskType = typeof req.body?.task_type === "string" && req.body.task_type.trim() ? req.body.task_type.trim() : null;
+    const taskMeta = req.body?.task_meta !== undefined && req.body?.task_meta !== null ? req.body.task_meta : {};
 
     const respondedAt = status === "IN_PROGRESS" ? new Date().toISOString() : null;
     const completedAt = status === "DONE" ? new Date().toISOString() : null;
@@ -68,11 +74,11 @@ export function registerTaskRoutes(app: Express, pool: Pool) {
           ).rows[0]?.next ?? 0;
 
     const sql = `
-      INSERT INTO tasks (title, assignee, status, priority, deadline, sort_index, responded_at, completed_at, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5::date, $6, $7::timestamptz, $8::timestamptz, now(), now())
-      RETURNING id, title, assignee, status, priority, deadline, sort_index, responded_at, completed_at, created_at, updated_at;
+      INSERT INTO tasks (title, assignee, status, priority, deadline, sort_index, task_type, task_meta, responded_at, completed_at, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5::date, $6, $7, $8::jsonb, $9::timestamptz, $10::timestamptz, now(), now())
+      RETURNING id, title, assignee, status, priority, deadline, sort_index, task_type, task_meta, responded_at, completed_at, created_at, updated_at;
     `;
-    const r = await pool.query(sql, [title, assignee, status, priority, deadline, sortIndex, respondedAt, completedAt]);
+    const r = await pool.query(sql, [title, assignee, status, priority, deadline, sortIndex, taskType, taskMeta, respondedAt, completedAt]);
     res.status(201).json({ row: mapTaskRow(r.rows[0]) });
   });
 
@@ -122,6 +128,22 @@ export function registerTaskRoutes(app: Express, pool: Pool) {
       fields.push(`sort_index = $${values.length}`);
     }
 
+    const taskType = req.body?.task_type !== undefined 
+      ? (typeof req.body.task_type === "string" && req.body.task_type.trim() ? req.body.task_type.trim() : null)
+      : null;
+    if (taskType !== null || req.body?.task_type === null) {
+      values.push(taskType);
+      fields.push(`task_type = $${values.length}`);
+    }
+
+    const taskMeta = req.body?.task_meta !== undefined 
+      ? (req.body.task_meta === null ? null : req.body.task_meta)
+      : null;
+    if (taskMeta !== null || req.body?.task_meta === null) {
+      values.push(taskMeta);
+      fields.push(`task_meta = $${values.length}::jsonb`);
+    }
+
     if (!fields.length) return res.status(400).json({ error: "no fields to update" });
 
     if (status === "IN_PROGRESS") {
@@ -140,7 +162,7 @@ export function registerTaskRoutes(app: Express, pool: Pool) {
       UPDATE tasks
       SET ${fields.join(", ")}, updated_at = now()
       WHERE id = $${values.length}
-      RETURNING id, title, assignee, status, priority, deadline, sort_index, responded_at, completed_at, created_at, updated_at;
+      RETURNING id, title, assignee, status, priority, deadline, sort_index, task_type, task_meta, responded_at, completed_at, created_at, updated_at;
     `;
     const r = await pool.query(sql, values);
     if (!r.rows.length) return res.status(404).json({ error: "not found" });

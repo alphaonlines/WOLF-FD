@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Printer, Search, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, Printer, Search, Users } from "lucide-react";
 import type {
   AuthUser,
   CRMCustomerAccount,
@@ -29,8 +29,12 @@ import {
   updateCrmUpsQueueCustomerInApi,
   updateCrmUpsQueueStatusInApi,
   upsertCrmCustomerAccount,
+  findCrmCustomerAccount,
+  fetchCustomerVisitsByName,
+  type CRMCustomerVisit,
 } from "../services/crmApi";
 import { APP_VERSION } from "../constants";
+import ObjectionsDrawer from "./crm/ObjectionsDrawer";
 
 type CRMWorkspaceProps = {
   authUser: AuthUser;
@@ -322,6 +326,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
   const [openLocationTicketLocations, setOpenLocationTicketLocations] = useState<string[]>([]);
   const [loadingOpenLocationTickets, setLoadingOpenLocationTickets] = useState(false);
   const [openLocationTicketsError, setOpenLocationTicketsError] = useState<string | null>(null);
+  const [openTicketsExpanded, setOpenTicketsExpanded] = useState(false);
+  const [customerProfileVisits, setCustomerProfileVisits] = useState<{ visitCount: number; visits: CRMCustomerVisit[] } | null>(null);
+  const [customerProfileOrders, setCustomerProfileOrders] = useState<CRMCustomerOrder[]>([]);
+  const [loadingCustomerProfile, setLoadingCustomerProfile] = useState(false);
 
   const panelClassName = isDarkMode
     ? "rounded-3xl border border-slate-800 bg-slate-950 shadow-[0_14px_30px_rgba(2,6,23,0.16)]"
@@ -335,6 +343,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
   const successButtonClassName = isDarkMode
     ? "rounded-xl border border-emerald-400/35 bg-emerald-400/14 px-3 py-2 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-400/20 disabled:opacity-50"
     : "rounded-xl border border-emerald-500 bg-emerald-100 px-3 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-200 disabled:opacity-50";
+  const startButtonClassName = isDarkMode
+    ? "rounded-xl border border-emerald-400/35 bg-emerald-400/14 px-5 py-2.5 text-base font-bold text-emerald-100 transition hover:bg-emerald-400/20 disabled:opacity-50"
+    : "rounded-xl border border-emerald-500 bg-emerald-100 px-5 py-2.5 text-base font-bold text-emerald-950 transition hover:bg-emerald-200 disabled:opacity-50";
   const dangerButtonClassName = isDarkMode
     ? "rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-500/18 disabled:opacity-50"
     : "rounded-xl border border-red-500 bg-red-100 px-3 py-2 text-sm font-semibold text-red-950 transition hover:bg-red-200 disabled:opacity-50";
@@ -490,6 +501,26 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
     });
   };
 
+  const loadCustomerProfile = (name: string, phone?: string) => {
+    setCustomerProfileVisits(null);
+    setCustomerProfileOrders([]);
+    if (!name.trim()) return;
+    setLoadingCustomerProfile(true);
+    const fetches: Promise<void>[] = [
+      fetchCustomerVisitsByName(name)
+        .then((data) => setCustomerProfileVisits(data))
+        .catch(() => {}),
+    ];
+    if (phone && phone.trim()) {
+      fetches.push(
+        findCrmCustomerAccount({ phone })
+          .then(({ orders }) => setCustomerProfileOrders(orders))
+          .catch(() => {})
+      );
+    }
+    Promise.all(fetches).finally(() => setLoadingCustomerProfile(false));
+  };
+
   const loadDraftFromQueueCustomer = (item: CRMUpsQueueItem, activeCustomerId?: string | null) => {
     setSelectedQueueId(item.id);
     if (item.status !== "working") return;
@@ -523,6 +554,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       objectionNote: preferredActiveCustomer.objectionNote || "",
     });
     resetCustomerLookup();
+    loadCustomerProfile(preferredActiveCustomer.customer || "", undefined);
   };
 
   useEffect(() => {
@@ -560,6 +592,35 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       window.clearTimeout(timer);
     };
   }, [customerSearch.query]);
+
+  // When phone is added to a queue-loaded customer, fetch their orders
+  useEffect(() => {
+    const phone = draft.phone?.trim();
+    if (!phone || !draft.queueId || syncMode !== "POS_DB") return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void findCrmCustomerAccount({ phone })
+        .then(({ orders }) => { if (!cancelled) setCustomerProfileOrders(orders); })
+        .catch(() => {});
+    }, 400);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [draft.phone, draft.queueId, syncMode]);
+
+  // Auto-load customer profile when name is typed (debounced)
+  useEffect(() => {
+    const name = combineName(draft.firstName, draft.lastName);
+    if (name.length < 2) {
+      setCustomerProfileVisits(null);
+      setCustomerProfileOrders([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      loadCustomerProfile(name, draft.phone?.trim() || undefined);
+    }, 600);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [draft.firstName, draft.lastName]);
 
   useEffect(() => {
     if (!openTicketsStore || syncMode !== "POS_DB") {
@@ -616,6 +677,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       notes: customer.notes || current.notes,
     }));
     resetCustomerLookup();
+    if (customer.name?.trim()) loadCustomerProfile(customer.name.trim(), customer.phone?.trim() || undefined);
   };
 
   const applyOrder = (order: CRMCustomerOrder) => {
@@ -626,6 +688,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       store: order.location || current.store,
     }));
     resetCustomerLookup();
+    const name = order.customerName?.trim();
+    if (name) loadCustomerProfile(name, order.phone?.trim() || undefined);
   };
 
   const handleAddToQueue = async () => {
@@ -702,6 +766,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
         ...current,
         [item.id]: { customer: "", customerType: "Regular Up" },
       }));
+      loadCustomerProfile(startDraft.customer.trim());
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to start customer.");
     } finally {
@@ -907,6 +972,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
 
   return (
     <div className="px-4 py-4 sm:px-6">
+      <ObjectionsDrawer isDarkMode={isDarkMode} />
       <div className="mx-auto flex max-w-7xl flex-col gap-4">
         <div className="flex items-center justify-between gap-3 px-1">
           <div>
@@ -976,7 +1042,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                 <button
                   onClick={() => void handleAddToQueue()}
                   disabled={joinBusy || syncMode !== "POS_DB" || isViewingAllStores || (!selectedSalesperson && !!myQueueItem)}
-                  className={ghostButtonClassName}
+                  className={!selectedSalesperson && !myQueueItem && !isViewingAllStores ? successButtonClassName : ghostButtonClassName}
                 >
                   {isViewingAllStores
                     ? "Select Store"
@@ -1157,7 +1223,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                                 <button
                                   onClick={() => void handleStartCustomer(item)}
                                   disabled={saving === "queue"}
-                                  className={successButtonClassName}
+                                  className={startButtonClassName}
                                 >
                                   Start
                                 </button>
@@ -1244,7 +1310,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                                 <button
                                   onClick={() => void handleStartCustomer(item)}
                                   disabled={saving === "queue"}
-                                  className={successButtonClassName}
+                                  className={startButtonClassName}
                                 >
                                   Add Customer
                                 </button>
@@ -1318,12 +1384,95 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                               </div>
                             </div>
                           )}
+                          {/* Inline customer profile card — shows when this item's active customer is selected */}
+                          {isSelected && item.status === "working" && draft.queueId === item.id && (customerProfileVisits !== null || customerProfileOrders.length > 0 || loadingCustomerProfile) ? (
+                            <div className={`mt-3 rounded-2xl border px-3 py-3 space-y-2 ${isDarkMode ? "border-slate-800 bg-slate-900/60" : "border-slate-200 bg-white/80"}`}>
+                              <div className="flex items-center justify-between gap-2">
+                                <div className={`text-xs font-semibold uppercase tracking-[0.18em] ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Customer Profile</div>
+                                {loadingCustomerProfile ? (
+                                  <div className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Loading...</div>
+                                ) : customerProfileVisits ? (
+                                  <div className="flex items-center gap-2">
+                                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${customerProfileVisits.visitCount > 0 ? (isDarkMode ? "bg-sky-400/15 text-sky-300" : "bg-sky-100 text-sky-700") : (isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500")}`}>
+                                      {customerProfileVisits.visitCount} visit{customerProfileVisits.visitCount !== 1 ? "s" : ""}
+                                    </span>
+                                    {customerProfileVisits.visits[0]?.startedAt ? (
+                                      <span className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Last: {formatShortDate(customerProfileVisits.visits[0].startedAt)}</span>
+                                    ) : null}
+                                  </div>
+                                ) : null}
+                              </div>
+                              {customerProfileVisits && customerProfileVisits.visits.length > 0 ? (
+                                <div className="space-y-1">
+                                  <div className={`text-[11px] uppercase tracking-[0.14em] font-medium ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Recent Visits</div>
+                                  {customerProfileVisits.visits.slice(0, 3).map((visit) => (
+                                    <div key={visit.id} className={`rounded-xl border px-2.5 py-2 text-xs flex items-start justify-between gap-2 ${isDarkMode ? "border-slate-800 bg-slate-950" : "border-slate-100 bg-slate-50"}`}>
+                                      <div>
+                                        <span className={`font-medium ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>{formatShortDate(visit.startedAt)}</span>
+                                        <span className={`ml-2 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{visit.rep}</span>
+                                        {visit.customerType ? <span className={`ml-2 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>· {visit.customerType}</span> : null}
+                                      </div>
+                                      {visit.didPurchase ? (
+                                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${isDarkMode ? "bg-emerald-400/15 text-emerald-300" : "bg-emerald-100 text-emerald-700"}`}>
+                                          {visit.purchaseAmount ? `$${Number(visit.purchaseAmount).toLocaleString()}` : "Purchased"}
+                                        </span>
+                                      ) : visit.didPurchase === false ? (
+                                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500"}`}>No sale</span>
+                                      ) : null}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : customerProfileVisits && !loadingCustomerProfile ? (
+                                <div className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>No visit history found.</div>
+                              ) : null}
+                              {customerProfileOrders.length > 0 ? (
+                                <div className="space-y-1">
+                                  <div className={`text-[11px] uppercase tracking-[0.14em] font-medium ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Purchase Tickets ({customerProfileOrders.length})</div>
+                                  {customerProfileOrders.slice(0, 3).map((order, i) => (
+                                    <div key={`${order.saleId}-${i}`} className={`rounded-xl border px-2.5 py-2 text-xs flex items-start justify-between gap-2 ${isDarkMode ? "border-slate-800 bg-slate-950" : "border-slate-100 bg-slate-50"}`}>
+                                      <div>
+                                        <span className={`font-medium ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>{order.customerName || "—"}</span>
+                                        <span className={`ml-2 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{formatShortDate(order.saleDate)}</span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 shrink-0">
+                                        {order.grandTotal !== null ? <span className={`font-semibold ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>${Number(order.grandTotal).toLocaleString()}</span> : null}
+                                        <a href={saleLink(order.saleId)} target="_blank" rel="noopener noreferrer" className={`rounded-lg border px-1.5 py-0.5 text-[10px] font-semibold ${isDarkMode ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-white"}`}>#{order.saleId}</a>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+                              {/* Quick edit fields */}
+                              <div className="pt-1 space-y-2 border-t border-slate-100 dark:border-slate-800">
+                                <div className={`text-[11px] uppercase tracking-[0.14em] font-medium ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Quick Edit</div>
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                  <input value={draft.phone} onChange={(e) => updateDraftFromInput("phone", e.target.value)} placeholder="Phone" className={subtleInputClassName} />
+                                  <input value={draft.city} onChange={(e) => updateDraft("city", e.target.value)} placeholder="City" className={subtleInputClassName} />
+                                </div>
+                                <input value={draft.interest} onChange={(e) => updateDraftFromInput("interest", e.target.value)} placeholder="Interest" className={subtleInputClassName} />
+                                <textarea value={draft.wantsNeeds} onChange={(e) => updateDraft("wantsNeeds", e.target.value)} rows={2} placeholder="Wants / Needs" className={subtleInputClassName} />
+                                <textarea value={draft.objectionNote} onChange={(e) => updateDraft("objectionNote", e.target.value)} rows={2} placeholder="Objection note" className={subtleInputClassName} />
+                                <div className="grid gap-2 sm:grid-cols-[180px_1fr]">
+                                  <select value={draft.didPurchase === null ? "" : draft.didPurchase ? "yes" : "no"} onChange={(e) => { const v = e.target.value; updateDraft("didPurchase", v === "" ? null : v === "yes"); }} className={subtleInputClassName}>
+                                    <option value="">Did they purchase?</option>
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                  </select>
+                                  <input value={draft.purchaseAmount} onChange={(e) => updateDraft("purchaseAmount", e.target.value)} placeholder="Purchase amount" inputMode="decimal" className={subtleInputClassName} />
+                                </div>
+                                <button onClick={() => void handleSaveCustomer()} disabled={saving !== null} className={successButtonClassName}>
+                                  {saving === "customer" ? "Saving..." : "Save Customer"}
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
+
                           {item.status === "waiting" ? (
                             <div className="mt-2 flex flex-wrap gap-2">
                               <button
                                 onClick={() => void handleUpdateQueueStatus(item, "on_break")}
                                 disabled={!canManageRow || saving === "queue"}
-                                className={successButtonClassName}
+                                className={warningButtonClassName}
                               >
                                 On Break
                               </button>
@@ -1348,79 +1497,85 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
           </div>}
 
           {view !== "queue" && <div className="flex flex-col gap-4">
-            <div className={`p-4 rounded-3xl border ${isDarkMode ? "border-rose-500/30 bg-rose-500/8" : "border-rose-200 bg-rose-50/60"}`}>
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className={`text-sm font-semibold ${isDarkMode ? "text-rose-200" : "text-rose-800"}`}>Open Tickets — Fully Delivered</div>
-                  <div className={`text-xs ${isDarkMode ? "text-rose-300/70" : "text-rose-600/80"}`}>
-                    {openTicketsStore
-                      ? `${openTicketsStore}${openLocationTicketLocations.length ? ` · ${openLocationTicketLocations.join(", ")}` : ""}`
-                      : "Select a location to view open tickets"}
-                  </div>
-                </div>
-                <div className={`text-[11px] font-medium uppercase tracking-[0.18em] ${isDarkMode ? "text-rose-400" : "text-rose-500"}`}>
-                  {loadingOpenLocationTickets ? "Loading" : `${openLocationTickets.length} Open`}
-                </div>
-              </div>
-              {openLocationTicketsError ? (
-                <div className="mt-3 text-xs text-rose-600 dark:text-rose-300">{openLocationTicketsError}</div>
-              ) : null}
-              {!openTicketsStore ? (
-                <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">Open tickets follow the selected showroom.</div>
-              ) : loadingOpenLocationTickets ? (
-                <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading open tickets...</div>
-              ) : openLocationTickets.length ? (
-                <div className="mt-3 space-y-2">
-                  {openLocationTickets.map((ticket, index) => (
-                    <div
-                      key={`${ticket.saleId}-${index}`}
-                      className={`rounded-2xl border px-3 py-3 ${
-                        isDarkMode
-                          ? "border-slate-800 bg-slate-900/80"
-                          : "border-slate-200 bg-white/90"
-                      }`}
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold text-slate-900 dark:text-white">
-                            {ticket.customerName || "Open ticket"}
-                          </div>
-                          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            {ticket.location || openTicketsStore} · {ticket.receiptNo || "No receipt"} · {ticket.saleStatus}
-                          </div>
-                          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            Sale {formatShortDate(ticket.saleDate)}{ticket.estDeliveryDate ? ` · Est ${formatShortDate(ticket.estDeliveryDate)}` : ""}
-                          </div>
-                        </div>
-                        <div className="text-right text-sm font-semibold text-slate-900 dark:text-white">
-                          {ticket.grandTotal !== null ? `$${ticket.grandTotal.toLocaleString()}` : ""}
-                        </div>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <a
-                          href={saleLink(ticket.saleId)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={ghostButtonClassName}
-                        >
-                          Sale #{ticket.saleId}
-                        </a>
-                        <a
-                          href={itemsLink(ticket.saleId)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={ghostButtonClassName}
-                        >
-                          Items
-                        </a>
-                      </div>
+            {/* Open Tickets — collapsible, hidden when empty after load */}
+            {(loadingOpenLocationTickets || openLocationTickets.length > 0 || !openTicketsStore) && (
+              <div className={`rounded-3xl border ${isDarkMode ? "border-rose-500/30 bg-rose-500/8" : "border-rose-200 bg-rose-50/60"}`}>
+                <button
+                  onClick={() => setOpenTicketsExpanded((v) => !v)}
+                  className="flex w-full items-center justify-between gap-2 p-4 text-left"
+                >
+                  <div>
+                    <div className={`text-sm font-semibold ${isDarkMode ? "text-rose-200" : "text-rose-800"}`}>Open Tickets — Fully Delivered</div>
+                    <div className={`text-xs ${isDarkMode ? "text-rose-300/70" : "text-rose-600/80"}`}>
+                      {openTicketsStore
+                        ? `${openTicketsStore}${openLocationTicketLocations.length ? ` · ${openLocationTicketLocations.join(", ")}` : ""}`
+                        : "Select a location to view open tickets"}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">No open tickets found for this location.</div>
-              )}
-            </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className={`text-[11px] font-medium uppercase tracking-[0.18em] ${isDarkMode ? "text-rose-400" : "text-rose-500"}`}>
+                      {loadingOpenLocationTickets ? "Loading" : `${openLocationTickets.length} Open`}
+                    </div>
+                    {openTicketsExpanded
+                      ? <ChevronUp size={16} className={isDarkMode ? "text-rose-400" : "text-rose-500"} />
+                      : <ChevronDown size={16} className={isDarkMode ? "text-rose-400" : "text-rose-500"} />
+                    }
+                  </div>
+                </button>
+                {openTicketsExpanded && (
+                  <div className="px-4 pb-4">
+                    {openLocationTicketsError ? (
+                      <div className="text-xs text-rose-600 dark:text-rose-300">{openLocationTicketsError}</div>
+                    ) : null}
+                    {!openTicketsStore ? (
+                      <div className="text-sm text-slate-500 dark:text-slate-400">Open tickets follow the selected showroom.</div>
+                    ) : loadingOpenLocationTickets ? (
+                      <div className="text-sm text-slate-500 dark:text-slate-400">Loading open tickets...</div>
+                    ) : openLocationTickets.length ? (
+                      <div className="space-y-2">
+                        {openLocationTickets.map((ticket, index) => (
+                          <div
+                            key={`${ticket.saleId}-${index}`}
+                            className={`rounded-2xl border px-3 py-3 ${
+                              isDarkMode
+                                ? "border-slate-800 bg-slate-900/80"
+                                : "border-slate-200 bg-white/90"
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                                  {ticket.customerName || "Open ticket"}
+                                </div>
+                                <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                  {ticket.location || openTicketsStore} · {ticket.receiptNo || "No receipt"} · {ticket.saleStatus}
+                                </div>
+                                <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                  Sale {formatShortDate(ticket.saleDate)}{ticket.estDeliveryDate ? ` · Est ${formatShortDate(ticket.estDeliveryDate)}` : ""}
+                                </div>
+                              </div>
+                              <div className="text-right text-sm font-semibold text-slate-900 dark:text-white">
+                                {ticket.grandTotal !== null ? `$${ticket.grandTotal.toLocaleString()}` : ""}
+                              </div>
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <a href={saleLink(ticket.saleId)} target="_blank" rel="noopener noreferrer" className={ghostButtonClassName}>
+                                Sale #{ticket.saleId}
+                              </a>
+                              <a href={itemsLink(ticket.saleId)} target="_blank" rel="noopener noreferrer" className={ghostButtonClassName}>
+                                Items
+                              </a>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-slate-500 dark:text-slate-400">No open tickets found for this location.</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className={`${panelClassName} p-4`}>
               <div className="flex items-center justify-between gap-2">
@@ -1434,6 +1589,72 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                   </div>
                 ) : null}
               </div>
+
+              {/* Customer profile — shown when a customer name is loaded */}
+              {(customerProfileVisits !== null || customerProfileOrders.length > 0 || loadingCustomerProfile) ? (
+                <div className={`mt-3 rounded-2xl border px-3 py-3 space-y-2 ${isDarkMode ? "border-slate-800 bg-slate-900/60" : "border-slate-200 bg-white/80"}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className={`text-xs font-semibold uppercase tracking-[0.18em] ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Customer Profile</div>
+                    {loadingCustomerProfile ? (
+                      <div className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Loading...</div>
+                    ) : customerProfileVisits ? (
+                      <div className="flex items-center gap-2">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${customerProfileVisits.visitCount > 0 ? (isDarkMode ? "bg-sky-400/15 text-sky-300" : "bg-sky-100 text-sky-700") : (isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500")}`}>
+                          {customerProfileVisits.visitCount} visit{customerProfileVisits.visitCount !== 1 ? "s" : ""}
+                        </span>
+                        {customerProfileVisits.visits[0]?.startedAt ? (
+                          <span className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Last: {formatShortDate(customerProfileVisits.visits[0].startedAt)}</span>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Recent visits */}
+                  {customerProfileVisits && customerProfileVisits.visits.length > 0 ? (
+                    <div className="space-y-1">
+                      <div className={`text-[11px] uppercase tracking-[0.14em] font-medium ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Recent Visits</div>
+                      {customerProfileVisits.visits.slice(0, 5).map((visit) => (
+                        <div key={visit.id} className={`rounded-xl border px-2.5 py-2 text-xs flex items-start justify-between gap-2 ${isDarkMode ? "border-slate-800 bg-slate-950" : "border-slate-100 bg-slate-50"}`}>
+                          <div>
+                            <span className={`font-medium ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>{formatShortDate(visit.startedAt)}</span>
+                            <span className={`ml-2 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{visit.rep}</span>
+                            {visit.customerType ? <span className={`ml-2 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>· {visit.customerType}</span> : null}
+                          </div>
+                          {visit.didPurchase ? (
+                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${isDarkMode ? "bg-emerald-400/15 text-emerald-300" : "bg-emerald-100 text-emerald-700"}`}>
+                              {visit.purchaseAmount ? `$${Number(visit.purchaseAmount).toLocaleString()}` : "Purchased"}
+                            </span>
+                          ) : visit.didPurchase === false ? (
+                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500"}`}>No sale</span>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : customerProfileVisits && !loadingCustomerProfile ? (
+                    <div className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>No visit history found for this customer.</div>
+                  ) : null}
+
+                  {/* Purchase tickets */}
+                  {customerProfileOrders.length > 0 ? (
+                    <div className="space-y-1">
+                      <div className={`text-[11px] uppercase tracking-[0.14em] font-medium ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Purchase Tickets ({customerProfileOrders.length})</div>
+                      {customerProfileOrders.slice(0, 5).map((order, i) => (
+                        <div key={`${order.saleId}-${i}`} className={`rounded-xl border px-2.5 py-2 text-xs flex items-start justify-between gap-2 ${isDarkMode ? "border-slate-800 bg-slate-950" : "border-slate-100 bg-slate-50"}`}>
+                          <div>
+                            <span className={`font-medium ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>{order.customerName || "—"}</span>
+                            <span className={`ml-2 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{formatShortDate(order.saleDate)}</span>
+                            <span className={`ml-2 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>· {order.location} · {order.saleStatus}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {order.grandTotal !== null ? <span className={`font-semibold ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>${Number(order.grandTotal).toLocaleString()}</span> : null}
+                            <a href={saleLink(order.saleId)} target="_blank" rel="noopener noreferrer" className={`rounded-lg border px-1.5 py-0.5 text-[10px] font-semibold ${isDarkMode ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-white"}`}>#{order.saleId}</a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
               <div className="mt-3 grid gap-2">
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -1551,6 +1772,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                   onClick={() => {
                     setDraft(buildDraft(authUser, defaultDraftStore));
                     resetCustomerLookup();
+                    setCustomerProfileVisits(null);
+                    setCustomerProfileOrders([]);
                   }}
                   className={ghostButtonClassName}
                 >

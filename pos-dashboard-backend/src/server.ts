@@ -1,4 +1,6 @@
 import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ path: "/home/alphahs/WOLF-CENTRAL.env" });
 import express from "express";
 import cors from "cors";
 import fs from "fs";
@@ -130,4 +132,8 @@ async function startServer() {
   });
 }
 
-void startServer();
+if (require.main === module) {
+  void startServer();
+}
+
+export { app };

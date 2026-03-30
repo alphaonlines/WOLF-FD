@@ -108,9 +108,32 @@ Backend deploy flow for route/schema/runtime changes:
 
 ## Working Snapshot
 
-- Current active areas: CRM queue/workflow polish, Sales Analysis reporting, employee permissions, manufacturer pricebook ingest/publish, and Product Search.
+**See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
+
+- Current display version: `0.3.29.24`
+- Current active sprint: Objections Drawer full rework + DB-backed objection list + TaskManager special cards + sticky-tabs-to-header UX
 - The backend route surface is now modularized under `pos-dashboard-backend/src/routes/`.
 - Older pre-cleanup AGENTS detail was condensed on `2026-03-28 23:14 EDT`; use `git log --follow -- AGENTS.md` if you need the full historical trail.
+
+### Key Recent Additions (2026-03-29 sprint)
+- `components/crm/ObjectionsDrawer.tsx` — 14 hardcoded furniture objections, voting system, submit-to-tasks. Needs UX rework (see TODO.md).
+- `services/objectionVotesApi.ts` — voting API client
+- `pos-dashboard-backend/src/routes/objectionVotesRoutes.ts` — objection vote CRUD (`GET/POST/DELETE /api/objection-votes`), auto-creates `objection_votes` table
+- `components/settings/AccessPermissions.tsx` — role pill UI, Support role added
+- `types.ts:302` — `UserRole` now includes `"Support"`
+- `components/app/permissions.ts` — Support role defaults: Dashboard + Tasks + Message Board
+- `pos-dashboard-backend/src/permissionCatalog.ts` — Support role defaults (same as above)
+- `pos-dashboard-backend/src/startupBootstrap.ts` — Support role seeded in roles table
+- CRM customer profile card now shows inline in expanded working queue item (visits + quick edit)
+- Open Tickets red box now collapsed by default, hides when empty
+
+### Next Tasks for New Agent
+1. Rework ObjectionsDrawer UX (see TODO.md — "Redesign ObjectionsDrawer UX" section)
+2. Add `task_type`/`task_meta` to tasks table + routes + types + service
+3. Create `custom_objections` table + API routes + frontend service
+4. TaskManager special card for `task_type === 'objection_submission'`
+5. Settings page section for managing custom objections
+6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
 

@@ -2045,6 +2045,47 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     });
   });
 
+  app.get("/api/crm/customers/visits-by-name", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+
+    const nameRaw = typeof req.query?.name === "string" ? req.query.name.trim() : "";
+    if (!nameRaw) return res.status(400).json({ error: "name is required" });
+
+    // Fuzzy: split into tokens and require each to appear in the stored customer field
+    const tokens = nameRaw.toLowerCase().split(/\s+/).filter(Boolean);
+    const conditions = tokens.map((_, i) => `lower(customer) LIKE $${i + 1}`).join(" AND ");
+    const values = tokens.map((t) => `%${t}%`);
+
+    const countRes = await pool.query(
+      `SELECT COUNT(*)::int AS visit_count FROM crm_ups_history WHERE ${conditions}`,
+      values
+    );
+    const recentRes = await pool.query(
+      `SELECT id, store, rep, customer, customer_type, started_at, completed_at, did_purchase, purchase_amount
+       FROM crm_ups_history
+       WHERE ${conditions}
+       ORDER BY started_at DESC NULLS LAST
+       LIMIT 15`,
+      values
+    );
+
+    res.json({
+      visitCount: Number(countRes.rows[0]?.visit_count ?? 0),
+      visits: recentRes.rows.map((row) => ({
+        id: String(row.id ?? ""),
+        store: String(row.store ?? ""),
+        rep: String(row.rep ?? ""),
+        customer: String(row.customer ?? ""),
+        customerType: row.customer_type ? String(row.customer_type) : null,
+        startedAt: row.started_at ? String(row.started_at) : null,
+        completedAt: row.completed_at ? String(row.completed_at) : null,
+        didPurchase: row.did_purchase === null || row.did_purchase === undefined ? null : Boolean(row.did_purchase),
+        purchaseAmount: row.purchase_amount === null || row.purchase_amount === undefined ? null : Number(row.purchase_amount),
+      })),
+    });
+  });
+
   app.get("/api/crm/search", async (req, res) => {
     const user = authUserFromReq(req);
     if (!user) return res.status(401).json({ error: "unauthorized" });

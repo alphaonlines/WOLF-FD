@@ -31,6 +31,8 @@ export interface Task {
   status: TaskStatus;
   priority: "low" | "medium" | "high";
   sortIndex?: number;
+  taskType?: string;
+  taskMeta?: Record<string, any>;
   createdAt?: string;
   respondedAt?: string;
   completedAt?: string;
@@ -299,7 +301,7 @@ export interface ManufacturerCatalogItem {
   sourceSortOrder: number;
 }
 
-export type UserRole = "Owner" | "Manager" | "Sales" | "Marketing";
+export type UserRole = "Owner" | "Manager" | "Sales" | "Marketing" | "Support";
 export type PermissionMode = "role" | "explicit";
 
 export interface AuthUser {

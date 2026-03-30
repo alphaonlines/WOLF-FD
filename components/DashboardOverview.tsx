@@ -48,7 +48,7 @@ type SnapshotCard = {
   cta: string;
   icon: React.ReactNode;
   onClick: () => void;
-  module: "Dashboard" | "Den" | "Pulse" | "A.I., Marketing, and Promotions" | "Shop" | "Tools";
+  module: "Dashboard" | "Den" | "Pulse" | "AMP" | "Shop" | "Tools";
   accentClass: string;
   defaultVisible?: boolean;
 };
@@ -110,7 +110,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
     return [
       {
         id: "den-ups",
-        title: "Den UPS List",
+        title: "UPS List",
         description: "Jump straight into the active UPS queue and store coverage.",
         details: "This opens Den on the UPS list so you can see who is up, what store is selected, and where floor follow-up needs attention first.",
         cta: "Open UPS List",
@@ -122,7 +122,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "den-crm",
-        title: "Den CRM",
+        title: "CRM",
         description: "Open customer search and account follow-up inside Den.",
         details: "Use this when you want the customer side of Den without starting in the UPS queue first.",
         cta: "Open CRM",
@@ -134,7 +134,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "den-board",
-        title: "Den Message Board",
+        title: "Message Board",
         description: "See internal notes, updates, and team chatter.",
         details: "This opens Den directly on the message board so you can review new notes without navigating through other sections first.",
         cta: "Open Board",
@@ -145,7 +145,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "den-meeting",
-        title: "Den Meeting Room",
+        title: "Meeting Room",
         description: "Open the Den meeting room directly from the dashboard.",
         details: "This jumps straight into the Den meeting room so the stat meeting page is one click away from the home dashboard.",
         cta: "Open Meeting Room",
@@ -156,7 +156,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "den-tasks",
-        title: "Den Tasks",
+        title: "Tasks",
         description: "Open the task lane board for assignments and completion tracking.",
         details: "This goes directly to Den tasks so you can update ownership, move work between stages, and review what is due today.",
         cta: "Open Tasks",
@@ -167,7 +167,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "pulse-sales",
-        title: "Pulse Sales Analysis",
+        title: "Sales Analysis",
         description: "Open the full sales dashboard inside Pulse.",
         details: "Use this card for sold dollars, units, margins, category mix, manufacturer mix, and the print-ready sales reporting workflow.",
         cta: "Open Sales",
@@ -179,7 +179,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "pulse-alphaos",
-        title: "Pulse AlphaOS / Kiosks",
+        title: "AlphaOS / Kiosks",
         description: "Check kiosk health and system status from Pulse.",
         details: "This lands on the AlphaOS view in Pulse so you can see device state and store-facing system health without leaving the dashboard flow.",
         cta: "Open AlphaOS",
@@ -191,7 +191,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "pulse-website",
-        title: "Pulse Website",
+        title: "Website",
         description: "Placeholder for the AlphaPulse website analytics module.",
         details: "This opens the website card inside Pulse, ready for the analytics integration once the reporting backend is wired up.",
         cta: "Open Website",
@@ -202,7 +202,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "pulse-social",
-        title: "Pulse AlphaPulse",
+        title: "AlphaPulse",
         description: "Open AlphaPulse in a new tab from the Pulse shortcuts.",
         details: "This keeps AlphaPulse grouped with the Pulse module while still opening the outside page in its own browser tab.",
         cta: "Open AlphaPulse",
@@ -214,7 +214,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "pulse-reviews",
-        title: "Pulse FD Connect",
+        title: "FD Connect",
         description: "Open FD Connect in a new tab from the Pulse shortcuts.",
         details: "This keeps the FD Connect shortcut grouped with Pulse while sending you to the outside site in its own tab.",
         cta: "Open Reviews",
@@ -225,7 +225,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "product-search",
-        title: "Shop Product Search",
+        title: "Product Search",
         description: "Search products, pricing, and inventory support tools inside Shop.",
         details: "Use this when you need catalog lookup or to get into item-level workflows without dropping into Den or Pulse first.",
         cta: "Open Shop Search",
@@ -237,7 +237,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "shop-pos",
-        title: "Shop POS",
+        title: "POS",
         description: "Open the dedicated Shop POS landing page.",
         details: "This is the new home for POS-specific workflow inside Shop as we wire the live transaction and register views into the module.",
         cta: "Open Shop POS",
@@ -248,36 +248,47 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       },
       {
         id: "amp-social",
-        title: "A.I., Marketing, and Promotions Social Posts",
-        description: "Open the social posts workspace inside A.I., Marketing, and Promotions.",
-        details: "This takes you straight into the social post and ad view inside the new A.I., Marketing, and Promotions module so the module opens on the team's current posting workflow.",
+        title: "Social Posts",
+        description: "Open the social posts workspace inside AMP.",
+        details: "This takes you straight into the social post and ad view inside AMP so the module opens on the team's current posting workflow.",
         cta: "Open Social Posts",
         icon: <Activity size={22} className="text-cyan-500" />,
         onClick: () => onNavigate("AMP_SOCIAL"),
-        module: "A.I., Marketing, and Promotions",
+        module: "AMP",
         accentClass: "from-cyan-100 via-cyan-50 to-white border-cyan-200/80",
         defaultVisible: true,
       },
       {
         id: "amp-bot",
-        title: "A.I., Marketing, and Promotions AI Bot",
-        description: "Open the AI bot workspace inside A.I., Marketing, and Promotions.",
-        details: "This puts the bot planning and assistant management view into its own module home next to social posts.",
-        cta: "Open AI Bot",
+        title: "AI",
+        description: "Open the AI bot workspace inside AMP.",
+        details: "This puts the bot planning and assistant management view front and center inside AMP.",
+        cta: "Open AI",
         icon: <Bot size={22} className="text-cyan-500" />,
         onClick: () => onNavigate("AMP_BOT"),
-        module: "A.I., Marketing, and Promotions",
+        module: "AMP",
+        accentClass: "from-cyan-100 via-cyan-50 to-white border-cyan-200/80",
+      },
+      {
+        id: "amp-promotions",
+        title: "Promotions",
+        description: "Open the promotions workspace inside AMP.",
+        details: "Manage active promotions, markdown events, and campaign planning from the AMP promotions view.",
+        cta: "Open Promotions",
+        icon: <Zap size={22} className="text-cyan-500" />,
+        onClick: () => onNavigate("AMP_PROMOTIONS"),
+        module: "AMP",
         accentClass: "from-cyan-100 via-cyan-50 to-white border-cyan-200/80",
       },
       {
         id: "social-posts",
         title: "Social Posts",
         description: "Legacy shortcut into the social workspace.",
-        details: "This card now routes into A.I., Marketing, and Promotions so older dashboard setups still land in the right module without showing a duplicate sidebar page.",
+        details: "This card routes into AMP so older dashboard setups still land in the right module.",
         cta: "Open Social Posts",
         icon: <Activity size={22} className="text-cyan-500" />,
         onClick: () => onNavigate("AMP_SOCIAL"),
-        module: "A.I., Marketing, and Promotions",
+        module: "AMP",
         accentClass: "from-cyan-100 via-cyan-50 to-white border-cyan-200/80",
       },
       {
@@ -585,9 +596,17 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
                             ? isDarkMode
                               ? "bg-sky-500/15 text-sky-300 hover:bg-sky-500/25"
                               : "bg-sky-50 text-sky-700 hover:bg-sky-100"
-                            : isDarkMode
-                              ? "bg-slate-100 text-slate-950 hover:bg-white"
-                              : "bg-slate-900 text-white hover:bg-slate-800"
+                            : card.module === "AMP"
+                              ? isDarkMode
+                                ? "bg-cyan-500/15 text-cyan-300 hover:bg-cyan-500/25"
+                                : "bg-cyan-50 text-cyan-700 hover:bg-cyan-100"
+                              : card.module === "Shop"
+                                ? isDarkMode
+                                  ? "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
+                                  : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                : isDarkMode
+                                  ? "bg-slate-100 text-slate-950 hover:bg-white"
+                                  : "bg-slate-900 text-white hover:bg-slate-800"
                       }`}
                       onClick={(event) => {
                         event.stopPropagation();

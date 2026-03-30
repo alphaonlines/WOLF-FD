@@ -150,6 +150,13 @@ export const ROLE_FALLBACK_PERMISSION_KEYS: Record<UserRole, string[]> = {
     DASHBOARD_CARD_PERMISSION_BY_ID["amp-social"],
     DASHBOARD_CARD_PERMISSION_BY_ID["amp-bot"],
   ],
+  Support: [
+    MODULE_PERMISSION_KEYS.DASHBOARD,
+    MODULE_PERMISSION_KEYS.TASKS,
+    MODULE_PERMISSION_KEYS.MESSAGE_BOARD,
+    DASHBOARD_CARD_PERMISSION_BY_ID.tasks,
+    DASHBOARD_CARD_PERMISSION_BY_ID["message-board"],
+  ],
 };
 
 export function hasPermission(

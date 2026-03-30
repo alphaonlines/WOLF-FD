@@ -4,8 +4,9 @@ import AccessPermissions from "./settings/AccessPermissions";
 import AuthWorkspaceSettings from "./settings/AuthWorkspaceSettings";
 import EmployeePermissions from "./settings/EmployeePermissions";
 import SocialIntegrationsSettings from "./settings/SocialIntegrationsSettings";
+import ObjectionsSettings from "./settings/ObjectionsSettings";
 
-type SettingsPanel = "users" | "employees" | "permissions" | "auth" | "social";
+type SettingsPanel = "users" | "employees" | "permissions" | "auth" | "social" | "objections";
 
 type OwnerSettingsProps = {
   onOpenChangePassword: () => void;
@@ -90,6 +91,15 @@ const OwnerSettings: React.FC<OwnerSettingsProps> = ({
           >
             Social Integrations
           </button>
+          <button
+            type="button"
+            onClick={() => setPanel("objections")}
+            className={`px-3 py-1.5 text-sm font-semibold rounded-lg ${
+              panel === "objections" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+            }`}
+          >
+            Objections
+          </button>
         </div>
       </section>
 
@@ -101,6 +111,8 @@ const OwnerSettings: React.FC<OwnerSettingsProps> = ({
         <AccessPermissions />
       ) : panel === "auth" ? (
         <AuthWorkspaceSettings />
+      ) : panel === "objections" ? (
+        <ObjectionsSettings />
       ) : (
         <SocialIntegrationsSettings />
       )}

@@ -650,6 +650,27 @@ export async function findCrmCustomerAccount(params: {
   };
 }
 
+export type CRMCustomerVisit = {
+  id: string;
+  store: string;
+  rep: string;
+  customer: string;
+  customerType: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  didPurchase: boolean | null;
+  purchaseAmount: number | null;
+};
+
+export async function fetchCustomerVisitsByName(name: string): Promise<{ visitCount: number; visits: CRMCustomerVisit[] }> {
+  const qs = new URLSearchParams({ name });
+  const json = await fetchJson(`/api/crm/customers/visits-by-name?${qs.toString()}`);
+  return {
+    visitCount: Number((json as any)?.visitCount ?? 0),
+    visits: Array.isArray((json as any)?.visits) ? (json as any).visits : [],
+  };
+}
+
 export async function upsertCrmCustomerAccount(payload: {
   name: string;
   phone?: string;

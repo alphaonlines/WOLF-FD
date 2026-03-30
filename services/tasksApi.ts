@@ -9,6 +9,8 @@ type ApiTaskRow = {
   priority: string;
   deadline: string | null;
   sort_index: number;
+  task_type?: string | null;
+  task_meta?: Record<string, any> | null;
   responded_at?: string | null;
   completed_at?: string | null;
   created_at?: string | null;
@@ -23,6 +25,8 @@ const mapRowToTask = (row: ApiTaskRow): Task => ({
   priority: row.priority as any,
   deadline: row.deadline ? String(row.deadline).slice(0, 10) : "",
   sortIndex: Number.isFinite(row.sort_index) ? row.sort_index : 0,
+  taskType: row.task_type ?? undefined,
+  taskMeta: row.task_meta ?? undefined,
   respondedAt: row.responded_at ? String(row.responded_at) : undefined,
   completedAt: row.completed_at ? String(row.completed_at) : undefined,
   createdAt: row.created_at ? String(row.created_at) : undefined,
@@ -64,6 +68,8 @@ export async function createTaskInApi(task: Omit<Task, "id">): Promise<string> {
       priority: task.priority,
       deadline: task.deadline ? task.deadline : null,
       sort_index: Number.isFinite(task.sortIndex) ? task.sortIndex : 0,
+      task_type: task.taskType ?? null,
+      task_meta: task.taskMeta ?? null,
     }),
   });
   const id = (json as any)?.row?.id;
@@ -79,6 +85,8 @@ export async function updateTaskInApi(id: string, patch: Partial<Task>): Promise
   if (patch.priority !== undefined) body.priority = patch.priority;
   if (patch.deadline !== undefined) body.deadline = patch.deadline ? patch.deadline : "";
   if (patch.sortIndex !== undefined) body.sort_index = patch.sortIndex;
+  if (patch.taskType !== undefined) body.task_type = patch.taskType ?? null;
+  if (patch.taskMeta !== undefined) body.task_meta = patch.taskMeta ?? null;
 
   await fetchJson(`/api/tasks/${encodeURIComponent(id)}`, {
     method: "PATCH",

@@ -6,7 +6,7 @@ import {
   MODULE_TO_DASHBOARD_CARD_KEYS,
 } from "../app/permissions";
 
-const ROLE_ORDER: UserRole[] = ["Owner", "Manager", "Sales", "Marketing"];
+const ROLE_ORDER: UserRole[] = ["Owner", "Manager", "Sales", "Marketing", "Support"];
 
 const AccessPermissions: React.FC = () => {
   const [catalog, setCatalog] = useState<PermissionCatalogEntry[]>([]);
@@ -188,12 +188,9 @@ const AccessPermissions: React.FC = () => {
     }
   };
 
-  const rolePill = (role: UserRole, active: boolean) => {
-    if (active) return "border-blue-200 bg-blue-50 text-blue-700";
-    if (role === "Owner") return "border-violet-200 bg-violet-50 text-violet-700";
-    if (role === "Manager") return "border-emerald-200 bg-emerald-50 text-emerald-700";
-    if (role === "Sales") return "border-amber-200 bg-amber-50 text-amber-700";
-    return "border-rose-200 bg-rose-50 text-rose-700";
+  const rolePill = (_role: UserRole, active: boolean) => {
+    if (active) return "border-slate-900 bg-slate-900 text-white";
+    return "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900";
   };
 
   const shortCardLabel = (label: string) =>

@@ -188,6 +188,7 @@ async function ensureDefaultRoles(pool: Pool) {
     { role_key: "Manager", label: "Manager" },
     { role_key: "Sales", label: "Sales" },
     { role_key: "Marketing", label: "Marketing" },
+    { role_key: "Support", label: "Support" },
   ];
   for (const role of roleRows) {
     await pool.query(

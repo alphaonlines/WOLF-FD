@@ -398,6 +398,8 @@ ALTER TABLE tasks ADD COLUMN IF NOT EXISTS status TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS deadline DATE;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS sort_index INT;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_type TEXT;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_meta JSONB;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS responded_at TIMESTAMPTZ;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
@@ -408,10 +410,33 @@ ALTER TABLE tasks ALTER COLUMN assignee SET DEFAULT 'Unassigned';
 ALTER TABLE tasks ALTER COLUMN status SET DEFAULT 'TODO';
 ALTER TABLE tasks ALTER COLUMN priority SET DEFAULT 'medium';
 ALTER TABLE tasks ALTER COLUMN sort_index SET DEFAULT 0;
+ALTER TABLE tasks ALTER COLUMN task_meta SET DEFAULT '{}';
 ALTER TABLE tasks ALTER COLUMN created_at SET DEFAULT now();
 ALTER TABLE tasks ALTER COLUMN updated_at SET DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_tasks_status_sort ON tasks(status, sort_index, id);
+
+-- Custom objections submitted by users (extends BASE_OBJECTIONS)
+CREATE TABLE IF NOT EXISTS custom_objections (
+  id BIGSERIAL PRIMARY KEY,
+  objection_id TEXT NOT NULL,
+  label TEXT NOT NULL,
+  rebuttals JSONB NOT NULL DEFAULT '[]',
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  source TEXT NOT NULL DEFAULT 'user',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE custom_objections ADD COLUMN IF NOT EXISTS objection_id TEXT;
+ALTER TABLE custom_objections ADD COLUMN IF NOT EXISTS label TEXT;
+ALTER TABLE custom_objections ADD COLUMN IF NOT EXISTS rebuttals JSONB;
+ALTER TABLE custom_objections ADD COLUMN IF NOT EXISTS sort_order INT;
+ALTER TABLE custom_objections ADD COLUMN IF NOT EXISTS is_active BOOLEAN;
+ALTER TABLE custom_objections ADD COLUMN IF NOT EXISTS source TEXT;
+ALTER TABLE custom_objections ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_custom_objections_active ON custom_objections(is_active, sort_order, id);
 
 -- Public web tracking for reusable page analytics across WOLF sites
 CREATE TABLE IF NOT EXISTS web_page_events (
