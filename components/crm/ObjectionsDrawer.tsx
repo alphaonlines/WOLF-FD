@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { X, ChevronRight, RefreshCw, Send, ThumbsUp, Plus, Check } from "lucide-react";
+import { X, ChevronRight, RefreshCw, Send, ThumbsUp, Plus, Check, Copy } from "lucide-react";
 import { createTaskInApi } from "../../services/tasksApi";
 import {
   fetchObjectionVotes,
@@ -197,6 +197,7 @@ const ObjectionsDrawer: React.FC<Props> = ({ isDarkMode }) => {
   const [userVotes, setUserVotes] = useState<UserVotes>({});
   const [votesLoaded, setVotesLoaded] = useState(false);
   const [votingId, setVotingId] = useState<string | null>(null);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
   // Initialize with random objection when drawer first opens
   const initializeObjection = useCallback(() => {
@@ -239,6 +240,16 @@ const ObjectionsDrawer: React.FC<Props> = ({ isDarkMode }) => {
 
   const handleTryAnother = () => {
     setCurrentObjection(pickRandom(OBJECTIONS, currentObjection!));
+  };
+
+  const handleUseRebuttal = async (rebuttal: string, idx: number) => {
+    try {
+      await navigator.clipboard.writeText(rebuttal);
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx(null), 2000);
+    } catch {
+      // Ignore clipboard errors
+    }
   };
 
   const handleVote = async (objectionId: string, rebuttalIndex: number) => {
@@ -338,26 +349,23 @@ const ObjectionsDrawer: React.FC<Props> = ({ isDarkMode }) => {
 
   return (
     <>
-      {/* Pull tab */}
+      {/* Pull tab - vertical, anchored to right edge */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`fixed top-1/2 right-0 z-40 -translate-y-1/2 flex items-center gap-1 rounded-l-xl border-y border-l px-2 py-5 shadow-lg transition-all ${
+        className={`fixed top-40 right-0 z-40 flex flex-col items-center gap-2 rounded-l-lg border-y border-l px-3 py-5 shadow-lg transition-all ${
           isDarkMode
             ? "border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800"
             : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
         }`}
         title="Objection Handlers"
       >
-        <span
-          className="text-[11px] font-bold uppercase tracking-[0.2em]"
-          style={{ writingMode: "vertical-rl", textOrientation: "mixed", transform: "rotate(180deg)" }}
-        >
+        <ChevronRight
+          size={18}
+          className="transition-transform rotate-180"
+        />
+        <span className="text-xs font-bold uppercase tracking-wider [writing-mode:vertical-rl]">
           Objections
         </span>
-        <ChevronRight
-          size={14}
-          className={`mt-1 transition-transform ${open ? "rotate-0" : "rotate-180"}`}
-        />
       </button>
 
       {/* Backdrop */}
@@ -368,9 +376,9 @@ const ObjectionsDrawer: React.FC<Props> = ({ isDarkMode }) => {
         />
       )}
 
-      {/* Drawer */}
+      {/* Drawer - from right */}
       <div
-        className={`fixed top-0 right-0 z-50 h-full w-full max-w-sm overflow-y-auto border-l shadow-2xl transition-transform duration-300 ${panelBg} ${
+        className={`fixed top-0 right-0 z-50 h-full w-full max-w-md overflow-y-auto border-l shadow-2xl transition-transform duration-300 ${panelBg} ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -441,7 +449,8 @@ const ObjectionsDrawer: React.FC<Props> = ({ isDarkMode }) => {
                   return (
                     <div
                       key={idx}
-                      className={`relative overflow-hidden rounded-2xl border px-3 py-3 transition ${
+                      onClick={() => handleUseRebuttal(rb, idx)}
+                      className={`relative overflow-hidden rounded-2xl border px-3 py-3 transition cursor-pointer hover:ring-2 hover:ring-amber-400/40 ${
                         isMyVote
                           ? isDarkMode
                             ? "border-sky-500/50 bg-sky-500/10"
@@ -482,17 +491,30 @@ const ObjectionsDrawer: React.FC<Props> = ({ isDarkMode }) => {
                           <div className={`text-sm leading-relaxed ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
                             {rb}
                           </div>
-                          {voteCount > 0 && (
-                            <div className={`mt-1.5 flex items-center gap-1.5 text-[11px] font-medium ${
-                              isMyVote
-                                ? isDarkMode ? "text-sky-400" : "text-sky-600"
-                                : isDarkMode ? "text-slate-500" : "text-slate-400"
-                            }`}>
-                              <ThumbsUp size={10} />
-                              {voteCount} vote{voteCount !== 1 ? "s" : ""}
-                              {total > 0 && <span className="opacity-60">· {pct}%</span>}
-                            </div>
-                          )}
+                          <div className="mt-2 flex items-center gap-2">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); void handleUseRebuttal(rb, idx); }}
+                              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition ${
+                                copiedIdx === idx
+                                  ? isDarkMode ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 text-emerald-700"
+                                  : isDarkMode ? "bg-slate-700 text-slate-300 hover:bg-slate-600" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              }`}
+                            >
+                              {copiedIdx === idx ? <Check size={12} /> : <Copy size={12} />}
+                              {copiedIdx === idx ? "Copied!" : "Copy"}
+                            </button>
+                            {voteCount > 0 && (
+                              <div className={`flex items-center gap-1 text-[11px] font-medium ${
+                                isMyVote
+                                  ? isDarkMode ? "text-sky-400" : "text-sky-600"
+                                  : isDarkMode ? "text-slate-500" : "text-slate-400"
+                              }`}>
+                                <ThumbsUp size={10} />
+                                {voteCount} vote{voteCount !== 1 ? "s" : ""}
+                                {total > 0 && <span className="opacity-60">· {pct}%</span>}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

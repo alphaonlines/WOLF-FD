@@ -1817,9 +1817,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
          
         >
           <div className="mb-6 flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">
+            <div 
+              onClick={() => toggleCard("best-sellers")}
+              className="cursor-pointer flex-1"
+            >
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 Best Sellers
+                <span className={`text-xs font-normal ${isCardCollapsed("best-sellers") ? "text-slate-400" : "hidden"}`}>(collapsed — click to expand)</span>
                 {renderHelp("Based on item report: totals by item description with qty and sales summed in the selected range.")}
               </h3>
               <p className="text-sm text-slate-500">
@@ -1885,9 +1889,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
          
         >
           <div className="mb-6 flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">
+            <div 
+              onClick={() => toggleCard("top-categories")}
+              className="cursor-pointer flex-1"
+            >
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 Top Categories
+                <span className={`text-xs font-normal ${isCardCollapsed("top-categories") ? "text-slate-400" : "hidden"}`}>(collapsed — click to expand)</span>
                 {renderHelp("Based on item report: category totals for qty and sales in the selected range.")}
               </h3>
               <p className="text-sm text-slate-500">
@@ -1993,9 +2001,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
          
         >
           <div className="mb-6 flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">
+            <div 
+              onClick={() => toggleCard("top-manufacturers")}
+              className="cursor-pointer flex-1"
+            >
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 Top Manufacturers
+                <span className={`text-xs font-normal ${isCardCollapsed("top-manufacturers") ? "text-slate-400" : "hidden"}`}>(collapsed — click to expand)</span>
                 {renderHelp("Based on item report: manufacturer totals for qty and sales in the selected range.")}
               </h3>
               <p className="text-sm text-slate-500">
@@ -2099,9 +2111,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
          
         >
           <div className="mb-6 flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">
+            <div 
+              onClick={() => toggleCard("pro1st-attach")}
+              className="cursor-pointer flex-1"
+            >
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 Pro1st Attach Rate
+                <span className={`text-xs font-normal ${isCardCollapsed("pro1st-attach") ? "text-slate-400" : "hidden"}`}>(collapsed — click to expand)</span>
                 {renderHelp("Based on item report: Pro1st item sales ÷ total item sales for the range.")}
               </h3>
               <p className="text-sm text-slate-500">Sales orders that include Pro1st</p>

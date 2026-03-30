@@ -202,10 +202,18 @@ export interface CRMCustomerAccount {
   notes: string;
 }
 
+export interface CRMLifetimeStats {
+  purchaseCount: number;
+  lifetimeDollars: number;
+  firstPurchaseDate: string | null;
+  lastPurchaseDate: string | null;
+}
+
 export interface CRMSearchResult {
   customers: CRMCustomerAccount[];
   leads: CRMLead[];
   orders: CRMCustomerOrder[];
+  lifetime?: CRMLifetimeStats;
 }
 
 export interface CRMOwnerOption {
@@ -261,6 +269,7 @@ export interface ManufacturerReferenceNote {
   noteType: string;
   title: string;
   content: string;
+  videoUrl: string;
   sourceSortOrder: number;
   createdAt?: string | null;
 }
@@ -297,6 +306,7 @@ export interface ManufacturerCatalogItem {
   cushionOptions: string[];
   featureTags: string[];
   searchKeywords: string[];
+  imageUrls: string[];
   sourceNote: string;
   sourceSortOrder: number;
 }

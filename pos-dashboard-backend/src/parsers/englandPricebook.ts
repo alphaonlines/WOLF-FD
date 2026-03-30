@@ -216,6 +216,7 @@ function parseRow(
     cushionOptions: [],
     featureTags,
     searchKeywords: tokenize([collection.code, collection.name, description, category, productType, section]),
+    imageUrls: [],
     sourceNote: sourceNoteParts.join(" | "),
     sourceSortOrder,
   };

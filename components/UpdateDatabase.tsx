@@ -1,8 +1,23 @@
 import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
-import { CheckCircle, AlertTriangle, UploadCloud, FileSpreadsheet } from "lucide-react";
+import { CheckCircle, AlertTriangle, UploadCloud, FileSpreadsheet, Building2 } from "lucide-react";
 import { fetchCoverageMonths, uploadPosExports } from "../services/posBackendApi";
 import ManufacturerPricelistPortal from "./ManufacturerPricelistPortal";
+
+const UPLOAD_MANUFACTURERS = [
+  "Vendor Price List",
+  "Ashley",
+  "Best",
+  "England",
+  "Jackson/Catnapper",
+  "Liberty",
+  "Vaughan-Bassett",
+  "AAmerica",
+  "Albany",
+  "Archbold",
+  "Innovations",
+  "Other",
+] as const;
 
 type FileCheckStatus = "ready" | "invalid" | "uploading" | "uploaded" | "error";
 
@@ -60,6 +75,7 @@ type UpdateDatabaseProps = {
 
 const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpenProductSearch }) => {
   const [view, setView] = useState<"default" | "manufacturer_pricelist">("default");
+  const [selectedManufacturer, setSelectedManufacturer] = useState<string>("");
   const [checks, setChecks] = useState<FileCheck[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
@@ -119,7 +135,7 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
   const uploadSingleCheck = async (check: FileCheck): Promise<boolean> => {
     setFileStatus(check.file.name, "uploading");
     try {
-      const result = await uploadPosExports([check.file]);
+      const result = await uploadPosExports([check.file], selectedManufacturer || undefined);
       if (!applyUploadResult(result)) {
         setFileStatus(check.file.name, "error");
         return false;
@@ -253,7 +269,7 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
 
     let bulkOk = false;
     try {
-      const result = await uploadPosExports(validChecks.map((c) => c.file));
+      const result = await uploadPosExports(validChecks.map((c) => c.file), selectedManufacturer || undefined);
       bulkOk = applyUploadResult(result);
       if (!bulkOk) {
         throw new Error("Bulk upload returned import errors");
@@ -312,8 +328,48 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
           </div>
         </div>
 
+        {/* Step 1: Manufacturer picker */}
+        <div className="mb-4 p-4 rounded-lg border border-slate-200 bg-slate-50">
+          <div className="flex items-center gap-2 mb-2">
+            <Building2 size={16} className="text-slate-600" />
+            <span className="text-sm font-semibold text-slate-700">
+              Step 1 — Select Manufacturer
+            </span>
+            {!selectedManufacturer && (
+              <span className="text-xs text-amber-600 font-medium">Required before upload</span>
+            )}
+            {selectedManufacturer && (
+              <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                <CheckCircle size={12} /> {selectedManufacturer}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {UPLOAD_MANUFACTURERS.map((mfr) => (
+              <button
+                key={mfr}
+                type="button"
+                onClick={() => setSelectedManufacturer(mfr === selectedManufacturer ? "" : mfr)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                  selectedManufacturer === mfr
+                    ? "bg-slate-900 text-white border-slate-900"
+                    : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+                }`}
+              >
+                {mfr}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex flex-col md:flex-row gap-3 md:items-center">
-          <label className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-base font-medium cursor-pointer hover:bg-slate-800">
+          <label
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-base font-medium ${
+              selectedManufacturer
+                ? "bg-slate-900 text-white cursor-pointer hover:bg-slate-800"
+                : "bg-slate-300 text-slate-500 cursor-not-allowed"
+            }`}
+          >
             <FileSpreadsheet size={16} />
             Choose Files
             <input
@@ -321,12 +377,13 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
               accept=".xls,.xlsx"
               multiple
               className="hidden"
+              disabled={!selectedManufacturer}
               onChange={onFileChange}
             />
           </label>
           <button
             onClick={handleUpload}
-            disabled={!validChecks.length || checks.some((c) => c.status === "uploading")}
+            disabled={!validChecks.length || checks.some((c) => c.status === "uploading") || !selectedManufacturer}
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-base font-medium disabled:opacity-50"
           >
             <UploadCloud size={16} />

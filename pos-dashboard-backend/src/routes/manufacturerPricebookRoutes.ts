@@ -423,6 +423,7 @@ function mapCatalogRow(row: any) {
     cushion_options: Array.isArray(row.cushion_options) ? row.cushion_options.map((value: any) => String(value)) : [],
     feature_tags: Array.isArray(row.feature_tags) ? row.feature_tags.map((value: any) => String(value)) : [],
     search_keywords: Array.isArray(row.search_keywords) ? row.search_keywords.map((value: any) => String(value)) : [],
+    image_urls: Array.isArray(row.image_urls) ? row.image_urls.map((value: any) => String(value)) : [],
     source_note: String(row.source_note ?? ""),
     source_sort_order: Number(row.source_sort_order ?? 0),
   };
@@ -578,6 +579,7 @@ function normalizeDraftRows(rows: any[], uploadRow: any): ParsedManufacturerCata
         cushionOptions: normalizeTextArray(row.cushion_options ?? row.cushionOptions),
         featureTags: normalizeTextArray(row.feature_tags ?? row.featureTags),
         searchKeywords: normalizeTextArray(row.search_keywords ?? row.searchKeywords),
+        imageUrls: normalizeTextArray(row.image_urls ?? row.imageUrls),
         sourceNote: normalizeText(row.source_note ?? row.sourceNote),
         sourceSortOrder: Number(row.source_sort_order ?? row.sourceSortOrder ?? index + 1),
       };
@@ -638,13 +640,14 @@ async function replaceCatalogForUpload(client: PoolClient, uploadRow: any, rows:
           search_keywords,
           search_text,
           source_note,
+          image_urls,
           created_at
         )
         VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
           $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
           $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-          $31, $32, $33, now()
+          $31, $32, $33, $34, now()
         )
       `,
       [
@@ -681,6 +684,7 @@ async function replaceCatalogForUpload(client: PoolClient, uploadRow: any, rows:
         row.searchKeywords,
         buildSearchText(row),
         row.sourceNote,
+        row.imageUrls ?? [],
       ]
     );
   }
@@ -970,10 +974,11 @@ export function registerManufacturerPricebookRoutes({
                 note_type,
                 title,
                 content,
+                video_url,
                 source_sort_order,
                 created_at
               )
-              VALUES ($1, $2, $3, $4, $5, $6, $7, now())
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
             `,
             [
               note.manufacturer,
@@ -982,6 +987,7 @@ export function registerManufacturerPricebookRoutes({
               note.noteType,
               note.title,
               note.content,
+              note.videoUrl ?? "",
               note.sourceSortOrder,
             ]
           );
@@ -1097,6 +1103,7 @@ export function registerManufacturerPricebookRoutes({
           cushion_options,
           feature_tags,
           search_keywords,
+          image_urls,
           source_note,
           source_sort_order
         FROM manufacturer_catalog_items
@@ -1132,6 +1139,7 @@ export function registerManufacturerPricebookRoutes({
           note_type,
           title,
           content,
+          video_url,
           source_sort_order,
           created_at
         FROM manufacturer_reference_notes
@@ -1150,6 +1158,7 @@ export function registerManufacturerPricebookRoutes({
         note_type: String(row.note_type ?? "reference"),
         title: String(row.title ?? ""),
         content: String(row.content ?? ""),
+        video_url: String(row.video_url ?? ""),
         source_sort_order: Number(row.source_sort_order ?? 0),
         created_at: row.created_at || null,
       })),

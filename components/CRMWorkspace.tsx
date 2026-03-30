@@ -329,6 +329,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
   const [openTicketsExpanded, setOpenTicketsExpanded] = useState(false);
   const [customerProfileVisits, setCustomerProfileVisits] = useState<{ visitCount: number; visits: CRMCustomerVisit[] } | null>(null);
   const [customerProfileOrders, setCustomerProfileOrders] = useState<CRMCustomerOrder[]>([]);
+  const [customerLifetimeStats, setCustomerLifetimeStats] = useState<{ purchaseCount: number; lifetimeDollars: number; firstPurchaseDate: string | null; lastPurchaseDate: string | null } | null>(null);
   const [loadingCustomerProfile, setLoadingCustomerProfile] = useState(false);
 
   const panelClassName = isDarkMode
@@ -504,6 +505,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
   const loadCustomerProfile = (name: string, phone?: string) => {
     setCustomerProfileVisits(null);
     setCustomerProfileOrders([]);
+    setCustomerLifetimeStats(null);
     if (!name.trim()) return;
     setLoadingCustomerProfile(true);
     const fetches: Promise<void>[] = [
@@ -514,7 +516,12 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
     if (phone && phone.trim()) {
       fetches.push(
         findCrmCustomerAccount({ phone })
-          .then(({ orders }) => setCustomerProfileOrders(orders))
+          .then(({ orders, lifetime }) => {
+            setCustomerProfileOrders(orders);
+            if (lifetime) {
+              setCustomerLifetimeStats(lifetime);
+            }
+          })
           .catch(() => {})
       );
     }
@@ -971,13 +978,13 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
     `https://www.gimmethebest.net/furnituredistributors/finance/deliverieddetail.asp?saleid=${saleId}`;
 
   return (
-    <div className="px-4 py-4 sm:px-6">
+    <div className="px-4 pt-2 sm:px-6">
       <ObjectionsDrawer isDarkMode={isDarkMode} />
       <div className="mx-auto flex max-w-7xl flex-col gap-4">
         <div className="flex items-center justify-between gap-3 px-1">
           <div>
-            <div className="text-sm font-semibold text-slate-900 dark:text-white">Alpha Pulse CRM</div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">Opportunity queue and customer follow-up workspace.</div>
+            <div className="text-sm font-semibold text-slate-900 dark:text-white">Opportunity Queue</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">Customer follow-up and showroom workflow.</div>
           </div>
           <div className="rounded-full border border-slate-200/80 bg-slate-50/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700/70 dark:bg-slate-900/76 dark:text-slate-300">
             v{APP_VERSION}
@@ -1014,19 +1021,17 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                 </div>
               </div>
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-                {!controlledStore && (
-                  <select
-                    value={selectedStore}
-                    onChange={(event) => setSelectedStore(event.target.value)}
-                    className={`w-full min-w-0 sm:w-auto ${subtleInputClassName}`}
-                  >
-                    {STORE_FILTER_OPTIONS.map((location) => (
-                      <option key={location} value={location}>
-                        {location === "ALL" ? "All Stores" : location}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <select
+                  value={selectedStore}
+                  onChange={(event) => setSelectedStore(event.target.value)}
+                  className={`w-full min-w-0 sm:w-auto ${subtleInputClassName}`}
+                >
+                  {STORE_FILTER_OPTIONS.map((location) => (
+                    <option key={location} value={location}>
+                      {location === "ALL" ? "All Stores" : location}
+                    </option>
+                  ))}
+                </select>
                 <select
                   value={selectedSalespersonName}
                   onChange={(event) => setSelectedSalespersonName(event.target.value)}
@@ -1452,14 +1457,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                                 <input value={draft.interest} onChange={(e) => updateDraftFromInput("interest", e.target.value)} placeholder="Interest" className={subtleInputClassName} />
                                 <textarea value={draft.wantsNeeds} onChange={(e) => updateDraft("wantsNeeds", e.target.value)} rows={2} placeholder="Wants / Needs" className={subtleInputClassName} />
                                 <textarea value={draft.objectionNote} onChange={(e) => updateDraft("objectionNote", e.target.value)} rows={2} placeholder="Objection note" className={subtleInputClassName} />
-                                <div className="grid gap-2 sm:grid-cols-[180px_1fr]">
-                                  <select value={draft.didPurchase === null ? "" : draft.didPurchase ? "yes" : "no"} onChange={(e) => { const v = e.target.value; updateDraft("didPurchase", v === "" ? null : v === "yes"); }} className={subtleInputClassName}>
-                                    <option value="">Did they purchase?</option>
-                                    <option value="yes">Yes</option>
-                                    <option value="no">No</option>
-                                  </select>
-                                  <input value={draft.purchaseAmount} onChange={(e) => updateDraft("purchaseAmount", e.target.value)} placeholder="Purchase amount" inputMode="decimal" className={subtleInputClassName} />
-                                </div>
                                 <button onClick={() => void handleSaveCustomer()} disabled={saving !== null} className={successButtonClassName}>
                                   {saving === "customer" ? "Saving..." : "Save Customer"}
                                 </button>
@@ -1657,11 +1654,38 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
               ) : null}
 
               <div className="mt-3 grid gap-2">
+                {/* Lifetime stats - always visible */}
+                {customerLifetimeStats && (customerLifetimeStats.purchaseCount > 0 || customerLifetimeStats.firstPurchaseDate) && (
+                  <div className={`rounded-2xl border px-3 py-3 ${isDarkMode ? "border-slate-800 bg-slate-900/80" : "border-slate-200 bg-white/90"}`}>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 mb-2">Lifetime Stats</div>
+                    <div className="flex flex-wrap gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-lg font-bold ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>{customerLifetimeStats.purchaseCount}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">purchases</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-lg font-bold ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>${customerLifetimeStats.lifetimeDollars.toLocaleString()}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">lifetime</span>
+                      </div>
+                      {customerLifetimeStats.firstPurchaseDate && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">Customer since</span>
+                          <span className={`text-sm font-semibold ${isDarkMode ? "text-sky-400" : "text-sky-600"}`}>{new Date(customerLifetimeStats.firstPurchaseDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</span>
+                        </div>
+                      )}
+                      {customerLifetimeStats.lastPurchaseDate && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">Last</span>
+                          <span className={`text-sm font-semibold ${isDarkMode ? "text-amber-400" : "text-amber-600"}`}>{new Date(customerLifetimeStats.lastPurchaseDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <input value={draft.firstName} onChange={(event) => updateDraftFromInput("firstName", event.target.value)} placeholder="First name" className={subtleInputClassName} />
                   <input value={draft.lastName} onChange={(event) => updateDraftFromInput("lastName", event.target.value)} placeholder="Last name" className={subtleInputClassName} />
                 </div>
-                <input value={draft.visualDescription} onChange={(event) => updateDraftFromInput("visualDescription", event.target.value)} placeholder="Visual description" className={subtleInputClassName} />
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <input value={draft.phone} onChange={(event) => updateDraftFromInput("phone", event.target.value)} placeholder="Phone" className={subtleInputClassName} />
                   <input value={draft.email} onChange={(event) => updateDraftFromInput("email", event.target.value)} placeholder="Email" className={subtleInputClassName} />
@@ -1738,27 +1762,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                 <input value={draft.city} onChange={(event) => updateDraft("city", event.target.value)} placeholder="City" className={subtleInputClassName} />
                 <input value={draft.interest} onChange={(event) => updateDraftFromInput("interest", event.target.value)} placeholder="Interest" className={subtleInputClassName} />
                 <textarea value={draft.wantsNeeds} onChange={(event) => updateDraft("wantsNeeds", event.target.value)} rows={3} placeholder="Wants / Needs" className={subtleInputClassName} />
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[180px_1fr]">
-                  <select
-                    value={draft.didPurchase === null ? "" : draft.didPurchase ? "yes" : "no"}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      updateDraft("didPurchase", value === "" ? null : value === "yes");
-                    }}
-                    className={subtleInputClassName}
-                  >
-                    <option value="">Did they purchase?</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                  <input
-                    value={draft.purchaseAmount}
-                    onChange={(event) => updateDraft("purchaseAmount", event.target.value)}
-                    placeholder="How much did they purchase?"
-                    inputMode="decimal"
-                    className={subtleInputClassName}
-                  />
-                </div>
                 <textarea value={draft.objectionNote} onChange={(event) => updateDraft("objectionNote", event.target.value)} rows={3} placeholder="Objection note" className={subtleInputClassName} />
                 <input value={draft.nextAction} onChange={(event) => updateDraftFromInput("nextAction", event.target.value)} placeholder="Next action" className={subtleInputClassName} />
                 <textarea value={draft.notes} onChange={(event) => updateDraftFromInput("notes", event.target.value)} rows={4} placeholder="Notes" className={subtleInputClassName} />

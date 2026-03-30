@@ -95,6 +95,7 @@ function buildBaseRow(overrides: Partial<ParsedManufacturerCatalogRow>): ParsedM
     cushionOptions: [],
     featureTags: [],
     searchKeywords: [],
+    imageUrls: [],
     sourceNote: "",
     sourceSortOrder: 0,
   };

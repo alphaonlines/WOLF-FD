@@ -67,6 +67,7 @@ const mapCatalogItem = (row: any): ManufacturerCatalogItem => ({
   featureTags: Array.isArray(row.feature_tags) ? row.feature_tags.map((value: any) => String(value)) : [],
   searchKeywords:
     Array.isArray(row.search_keywords) ? row.search_keywords.map((value: any) => String(value)) : [],
+  imageUrls: Array.isArray(row.image_urls) ? row.image_urls.map((value: any) => String(value)) : [],
   sourceNote: String(row.source_note ?? ""),
   sourceSortOrder: Number(row.source_sort_order ?? 0),
 });
@@ -79,6 +80,7 @@ const mapReferenceNote = (row: any): ManufacturerReferenceNote => ({
   noteType: String(row.note_type ?? "reference"),
   title: String(row.title ?? ""),
   content: String(row.content ?? ""),
+  videoUrl: String(row.video_url ?? ""),
   sourceSortOrder: Number(row.source_sort_order ?? 0),
   createdAt: row.created_at ? String(row.created_at) : null,
 });

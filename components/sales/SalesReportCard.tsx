@@ -182,8 +182,8 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
       {!collapsed &&
         (reportMode === "totals" ? (
           reportRowsWithPct.length > 0 ? (
-            <div className="rounded-xl border border-slate-200">
-              <table className="w-full table-fixed divide-y divide-slate-200">
+            <div className="rounded-xl border border-slate-200 overflow-x-auto">
+              <table className="w-full table-fixed divide-y divide-slate-200 min-w-[800px]">
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="w-[16%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Activity, Bot } from "lucide-react";
+import { Activity, Bot, Gamepad2 } from "lucide-react";
 import type { AuthUser } from "../types";
 import WorkAdvertising from "./WorkAdvertising";
 import WolfBot from "./WolfBot";
 
-export type AmpSubTab = "social" | "bot";
+export type AmpSubTab = "social" | "bot" | "tycoon";
 
 type AmpWorkspaceProps = {
   authUser: AuthUser;
@@ -12,6 +12,7 @@ type AmpWorkspaceProps = {
   requestedSubTab?: AmpSubTab;
   requestedSubTabToken?: number;
   onOpenSocialIntegrations: () => void;
+  hideTabBar?: boolean;
 };
 
 const AmpWorkspace: React.FC<AmpWorkspaceProps> = ({
@@ -20,6 +21,7 @@ const AmpWorkspace: React.FC<AmpWorkspaceProps> = ({
   requestedSubTab = "social",
   requestedSubTabToken,
   onOpenSocialIntegrations,
+  hideTabBar = false,
 }) => {
   const [subTab, setSubTab] = useState<AmpSubTab>(requestedSubTab);
 
@@ -45,6 +47,8 @@ const AmpWorkspace: React.FC<AmpWorkspaceProps> = ({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Sub-tab bar - hidden when shown in header */}
+      {!hideTabBar && (
       <div className={`flex items-center gap-2 px-6 py-3 ${divider} ${stickyBarClass} flex-wrap`}>
         <button className={tabBtn(subTab === "social")} onClick={() => setSubTab("social")}>
           <Activity size={15} /> Social Posts
@@ -52,14 +56,36 @@ const AmpWorkspace: React.FC<AmpWorkspaceProps> = ({
         <button className={tabBtn(subTab === "bot")} onClick={() => setSubTab("bot")}>
           <Bot size={15} /> AI Bot
         </button>
+        <button className={tabBtn(subTab === "tycoon")} onClick={() => setSubTab("tycoon")}>
+          <Gamepad2 size={15} /> Tycoon
+        </button>
       </div>
+      )}
 
       <div className="flex-1 overflow-hidden">
         {subTab === "social" ? (
           <WorkAdvertising authUser={authUser} onOpenSocialIntegrations={onOpenSocialIntegrations} />
-        ) : (
+        ) : subTab === "bot" ? (
           <div className="h-full overflow-auto p-5 lg:p-7">
             <WolfBot />
+          </div>
+        ) : (
+          <div className="h-full overflow-auto p-5 lg:p-7">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-200 rounded-2xl p-8 text-center">
+                <Gamepad2 className="mx-auto h-16 w-16 text-amber-600 mb-4" />
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Furniture Distributors Tycoon</h2>
+                <p className="text-slate-600 mb-6">Play the showroom delivery game!</p>
+                <a
+                  href="https://furnituredistributors.wolf.discount/tycoon/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition"
+                >
+                  Play Now
+                </a>
+              </div>
+            </div>
           </div>
         )}
       </div>

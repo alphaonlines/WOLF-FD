@@ -46,6 +46,8 @@ export function registerSystemRoutes({
       return;
     }
 
+    const manufacturer = typeof req.body?.manufacturer === "string" ? req.body.manufacturer.trim() : "";
+
     let importOutput = "";
     let importError = "";
     const tempDir = fs.mkdtempSync(path.join(uploadsDir, "upload-"));
@@ -59,9 +61,14 @@ export function registerSystemRoutes({
         }
       }
 
+      const importerArgs = [importerPath, "--incoming", tempDir, "--no-move"];
+      if (manufacturer) {
+        importerArgs.push("--manufacturer", manufacturer);
+      }
+
       const { stdout, stderr } = await execFileAsync(
         pythonBin,
-        [importerPath, "--incoming", tempDir, "--no-move"],
+        importerArgs,
         { timeout: 5 * 60 * 1000 }
       );
 

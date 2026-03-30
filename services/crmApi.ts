@@ -4,6 +4,7 @@ import type {
   CRMUpsHistoryEntry,
   CRMCustomerAccount,
   CRMCustomerOrder,
+  CRMLifetimeStats,
   CRMLead,
   CRMOwnerOption,
   CRMSalespersonOption,
@@ -637,16 +638,23 @@ const mapCustomerOrder = (row: any): CRMCustomerOrder => ({
 export async function findCrmCustomerAccount(params: {
   phone?: string;
   email?: string;
-}): Promise<{ customers: CRMCustomerAccount[]; orders: CRMCustomerOrder[] }> {
+}): Promise<{ customers: CRMCustomerAccount[]; orders: CRMCustomerOrder[]; lifetime?: CRMLifetimeStats }> {
   const qs = new URLSearchParams();
   if (params.phone && params.phone.trim()) qs.set("phone", params.phone.trim());
   if (params.email && params.email.trim()) qs.set("email", params.email.trim());
   const json = await fetchJson(`/api/crm/customers/find?${qs.toString()}`);
   const customers = Array.isArray((json as any)?.customers) ? (json as any).customers : [];
   const orders = Array.isArray((json as any)?.orders) ? (json as any).orders : [];
+  const lifetime = (json as any)?.lifetime;
   return {
     customers: customers.map(mapCustomerAccount),
     orders: orders.map(mapCustomerOrder),
+    lifetime: lifetime ? {
+      purchaseCount: lifetime.purchaseCount || 0,
+      lifetimeDollars: lifetime.lifetimeDollars || 0,
+      firstPurchaseDate: lifetime.firstPurchaseDate || null,
+      lastPurchaseDate: lifetime.lastPurchaseDate || null,
+    } : undefined,
   };
 }
 

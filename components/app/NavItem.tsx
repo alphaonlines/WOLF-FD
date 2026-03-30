@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef, Ref } from 'react';
 
 type NavItemProps = {
   icon: React.ReactNode;
@@ -21,7 +21,7 @@ type NavItemProps = {
     }
 );
 
-const NavItem: React.FC<NavItemProps> = (props) => {
+const NavItem = forwardRef<HTMLButtonElement | HTMLAnchorElement, NavItemProps>((props, ref) => {
   const { icon, label, isActive, isOpen, isDarkMode } = props;
   const className = `
     w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border transition-all duration-200
@@ -40,6 +40,7 @@ const NavItem: React.FC<NavItemProps> = (props) => {
   if ('href' in props) {
     return (
       <a
+        ref={ref as Ref<HTMLAnchorElement>}
         href={props.href}
         target={props.target}
         rel={props.rel}
@@ -54,6 +55,7 @@ const NavItem: React.FC<NavItemProps> = (props) => {
 
   return (
     <button
+      ref={ref as Ref<HTMLButtonElement>}
       onClick={props.onClick}
       className={className}
       title={!isOpen ? label : ''}
@@ -62,6 +64,6 @@ const NavItem: React.FC<NavItemProps> = (props) => {
       {isOpen && <span className="font-medium text-sm">{label}</span>}
     </button>
   );
-};
+});
 
 export default NavItem;

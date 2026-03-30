@@ -2035,12 +2035,35 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       [phoneNorm]
     );
 
+    // Get lifetime stats from pos_sales
+    const lifetimeRes = phoneNorm
+      ? await pool.query(
+          `SELECT
+            COUNT(*)::int AS purchase_count,
+            COALESCE(SUM(grand_total), 0)::numeric AS lifetime_dollars,
+            MIN(sale_date) AS first_purchase_date,
+            MAX(sale_date) AS last_purchase_date
+          FROM pos_sales
+          WHERE regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') LIKE ('%' || $1 || '%')
+            AND grand_total IS NOT NULL`,
+          [phoneNorm]
+        )
+      : { rows: [{ purchase_count: 0, lifetime_dollars: 0, first_purchase_date: null, last_purchase_date: null }] };
+
+    const lifetime = lifetimeRes.rows[0] || { purchase_count: 0, lifetime_dollars: 0, first_purchase_date: null, last_purchase_date: null };
+
     res.json({
       customers: customerRes.rows.map(mapCustomerRow),
       orders: salesRes.rows.map(mapCustomerOrderRow),
       matched_by: {
         phone: Boolean(phoneNorm),
         email: Boolean(emailRaw),
+      },
+      lifetime: {
+        purchaseCount: lifetime.purchase_count,
+        lifetimeDollars: Number(lifetime.lifetime_dollars) || 0,
+        firstPurchaseDate: lifetime.first_purchase_date ? String(lifetime.first_purchase_date).slice(0, 10) : null,
+        lastPurchaseDate: lifetime.last_purchase_date ? String(lifetime.last_purchase_date).slice(0, 10) : null,
       },
     });
   });

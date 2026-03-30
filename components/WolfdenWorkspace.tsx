@@ -13,6 +13,7 @@ type WolfdenWorkspaceProps = {
   isDarkMode: boolean;
   requestedSubTab?: WolfdenSubTab;
   requestedSubTabToken?: number;
+  hideTabBar?: boolean;
 };
 
 export type WolfdenSubTab = "ups" | "crm" | "board" | "meeting" | "tasks" | "quicklinks";
@@ -26,6 +27,7 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
   isDarkMode,
   requestedSubTab = "ups",
   requestedSubTabToken,
+  hideTabBar = false,
 }) => {
   const [subTab, setSubTab] = useState<WolfdenSubTab>(requestedSubTab);
   const [selectedStore, setSelectedStore] = useState("FD7");
@@ -71,7 +73,8 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Sub-tab bar */}
+      {/* Sub-tab bar - hidden when shown in header */}
+      {!hideTabBar && (
       <div className={`flex items-center gap-2 px-6 py-3 ${divider} ${stickyBarClass} flex-wrap`}>
         <button className={tabBtn(subTab === "ups")} onClick={() => setSubTab("ups")}>
           <UserCheck size={15} /> UPS List
@@ -111,6 +114,7 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
           </select>
         </div>
       </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">

@@ -4,10 +4,11 @@ import {
   ArrowLeft,
   CheckCircle2,
   FileSpreadsheet,
+  PlayCircle,
   Search,
   UploadCloud,
 } from "lucide-react";
-import { CANONICAL_PRODUCT_MANUFACTURERS } from "../constants/productCatalog";
+import { CANONICAL_PRODUCT_MANUFACTURERS, calcSuggestedRetail } from "../constants/productCatalog";
 import type {
   ManufacturerCatalogItem,
   ManufacturerPricebookUpload,
@@ -1211,6 +1212,17 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                         {note.content.slice(0, 280)}
                         {note.content.length > 280 ? "..." : ""}
                       </div>
+                      {note.videoUrl ? (
+                        <a
+                          href={note.videoUrl.includes("youtube.com") || note.videoUrl.includes("youtu.be") ? `https://www.youtube.com/watch?v=${note.videoUrl.includes("v=") ? note.videoUrl.split("v=")[1]?.split("&")[0] : note.videoUrl.split("/").pop()}` : note.videoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+                        >
+                          <PlayCircle size={13} />
+                          Watch Video Demo
+                        </a>
+                      ) : null}
                     </div>
                   ))
                 ) : (
@@ -1318,6 +1330,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                     <th className="px-4 py-3">Description</th>
                     <th className="px-4 py-3">Color / Finish</th>
                     <th className="px-4 py-3">Base Price</th>
+                    <th className="px-4 py-3">Retail (60%)</th>
                     <th className="px-4 py-3">Flags</th>
                     <th className="px-4 py-3">Source Notes</th>
                   </tr>
@@ -1376,6 +1389,21 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                             onChange={(event) => updateRow(row.id, "basePrice", event.target.value)}
                             className={cellClass("basePrice")}
                           />
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {(() => {
+                            const retail = calcSuggestedRetail(
+                              row.basePrice ? Number(row.basePrice) : null,
+                              row.manufacturerSlug || row.manufacturer.toLowerCase().replace(/\s+/g, "-")
+                            );
+                            return retail !== null ? (
+                              <span className="text-sm font-semibold text-emerald-700">
+                                ${retail.toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-slate-400">—</span>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3">
                           {missingFields.length ? (

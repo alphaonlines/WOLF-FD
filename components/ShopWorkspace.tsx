@@ -9,6 +9,7 @@ type ShopWorkspaceProps = {
   requestedSubTab?: ShopSubTab;
   requestedSubTabToken?: number;
   onOpenUploadArea: () => void;
+  hideTabBar?: boolean;
 };
 
 const ShopWorkspace: React.FC<ShopWorkspaceProps> = ({
@@ -16,6 +17,7 @@ const ShopWorkspace: React.FC<ShopWorkspaceProps> = ({
   requestedSubTab = "search",
   requestedSubTabToken,
   onOpenUploadArea,
+  hideTabBar = false,
 }) => {
   const [subTab, setSubTab] = useState<ShopSubTab>(requestedSubTab);
 
@@ -41,6 +43,8 @@ const ShopWorkspace: React.FC<ShopWorkspaceProps> = ({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Sub-tab bar - hidden when shown in header */}
+      {!hideTabBar && (
       <div className={`flex items-center gap-2 px-6 py-3 ${divider} ${stickyBarClass} flex-wrap`}>
         <button className={tabBtn(subTab === "search")} onClick={() => setSubTab("search")}>
           <Search size={15} /> Product Search
@@ -49,6 +53,7 @@ const ShopWorkspace: React.FC<ShopWorkspaceProps> = ({
           <Receipt size={15} /> POS
         </button>
       </div>
+      )}
 
       <div className="flex-1 overflow-hidden">
         {subTab === "search" ? (

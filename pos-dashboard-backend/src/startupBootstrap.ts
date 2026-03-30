@@ -1201,6 +1201,7 @@ async function ensureManufacturerPricebookSchema(pool: Pool) {
   await pool.query(`ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS search_keywords TEXT[];`);
   await pool.query(`ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS search_text TEXT;`);
   await pool.query(`ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS source_note TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS image_urls TEXT[] NOT NULL DEFAULT '{}';`);
   await pool.query(`ALTER TABLE manufacturer_catalog_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE manufacturer_catalog_items ALTER COLUMN category SET DEFAULT '';`);
   await pool.query(`ALTER TABLE manufacturer_catalog_items ALTER COLUMN product_type SET DEFAULT '';`);
@@ -1252,6 +1253,7 @@ async function ensureManufacturerPricebookSchema(pool: Pool) {
   await pool.query(`ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS title TEXT;`);
   await pool.query(`ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS content TEXT;`);
   await pool.query(`ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS source_sort_order INTEGER;`);
+  await pool.query(`ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS video_url TEXT NOT NULL DEFAULT '';`);
   await pool.query(`ALTER TABLE manufacturer_reference_notes ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE manufacturer_reference_notes ALTER COLUMN note_type SET DEFAULT 'reference';`);
   await pool.query(`ALTER TABLE manufacturer_reference_notes ALTER COLUMN title SET DEFAULT '';`);

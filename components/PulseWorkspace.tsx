@@ -10,6 +10,7 @@ type PulseWorkspaceProps = {
   onSubTabChange?: (subTab: PulseSubTab) => void;
   itemSortMetric: "sales" | "qty";
   showTooltips: boolean;
+  hideTabBar?: boolean;
 };
 
 export type PulseSubTab = "sales" | "alphaos" | "alphapulse" | "website" | "reviews";
@@ -58,7 +59,7 @@ class PulsePaneBoundary extends React.Component<PulsePaneBoundaryProps, PulsePan
           <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-500">Pulse</div>
           <h2 className="mt-2 text-2xl font-semibold">{this.props.label} hit a rendering error</h2>
           <p className={`mt-3 text-sm leading-6 ${this.props.isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-            This tab failed to render, but the rest of Pulse is still available. Use the button below to jump back to the AlphaPulse page instead of landing on a blank screen.
+            This tab failed to render, but the rest of Pulse is still available. Use the button below to jump back to the Sales page.
           </p>
           <button
             type="button"
@@ -69,7 +70,7 @@ class PulsePaneBoundary extends React.Component<PulsePaneBoundaryProps, PulsePan
                 : "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
             }`}
           >
-            Open AlphaPulse
+            Back to Sales
           </button>
         </div>
       </div>
@@ -84,6 +85,7 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
   onSubTabChange,
   itemSortMetric,
   showTooltips,
+  hideTabBar = false,
 }) => {
   const [subTab, setSubTab] = useState<PulseSubTab>(requestedSubTab);
 
@@ -113,7 +115,8 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Sub-tab bar */}
+      {/* Sub-tab bar - hidden when shown in header */}
+      {!hideTabBar && (
       <div className={`flex items-center gap-2 px-6 py-3 ${divider} ${stickyBarClass} flex-wrap`}>
         <button className={tabBtn(subTab === "sales")} onClick={() => setSubTab("sales")}>
           <BarChart2 size={15} /> Sales Analysis
@@ -130,7 +133,7 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
           rel="noreferrer"
           className={tabBtn(false)}
         >
-          <ExternalLink size={15} /> AlphaPulse
+          <ExternalLink size={15} /> Analytics
         </a>
         <a
           href={FD_REVIEWS_URL}
@@ -141,6 +144,7 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
           <ExternalLink size={15} /> FD Connect
         </a>
       </div>
+      )}
 
       {/* Content */}
       <PulsePaneBoundary isDarkMode={isDarkMode} label={subTab} onReset={() => setSubTab("sales")}>
@@ -169,7 +173,7 @@ const WebsitePage: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => (
         Website Analytics
       </p>
       <p className={`text-sm mt-1 max-w-xs ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-        Web traffic, conversions, and page performance will appear here once the AlphaPulse analytics integration is configured.
+        Web traffic, conversions, and page performance will appear here once the Analytics integration is configured.
       </p>
     </div>
     <a
@@ -182,7 +186,7 @@ const WebsitePage: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => (
           : "border-sky-200 bg-sky-50 text-sky-600 hover:bg-sky-100"
       }`}
     >
-      Open AlphaPulse →
+      Open Analytics →
     </a>
   </div>
 );

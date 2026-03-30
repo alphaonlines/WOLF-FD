@@ -495,6 +495,7 @@ function parseProductSheet(
         cushionOptions: featureTags.filter((tag) => tag.includes("memory foam")),
         featureTags,
         searchKeywords,
+        imageUrls: [],
         sourceNote: buildSourceNote({
           collectionName,
           category,

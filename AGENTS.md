@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `main`
-- Current display version in `package.json`: `0.3.28.15`
+- Current display version in `package.json`: `0.3.29.46`
 
 ## Project Structure
 
@@ -110,12 +110,12 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `0.3.29.24`
-- Current active sprint: Objections Drawer full rework + DB-backed objection list + TaskManager special cards + sticky-tabs-to-header UX
+- Current display version: `0.3.29.46`
+- Current active sprint: Tutorial fix + sidebar cleanup + module navigation polish
 - The backend route surface is now modularized under `pos-dashboard-backend/src/routes/`.
 - Older pre-cleanup AGENTS detail was condensed on `2026-03-28 23:14 EDT`; use `git log --follow -- AGENTS.md` if you need the full historical trail.
 
-### Key Recent Additions (2026-03-29 sprint)
+### Key Recent Additions (2026-03-30 cleanup)
 - `components/crm/ObjectionsDrawer.tsx` — 14 hardcoded furniture objections, voting system, submit-to-tasks. Needs UX rework (see TODO.md).
 - `services/objectionVotesApi.ts` — voting API client
 - `pos-dashboard-backend/src/routes/objectionVotesRoutes.ts` — objection vote CRUD (`GET/POST/DELETE /api/objection-votes`), auto-creates `objection_votes` table
@@ -228,3 +228,4 @@ Backend deploy flow for route/schema/runtime changes:
 - 2026-03-29 17:47 EDT — Restored direct Pulse landing on the real `Sales Analysis` tab now that the runtime `Search` crash is fixed. Files: `App.tsx`, `components/PulseWorkspace.tsx`, `AGENTS.md`; deployed asset: `/srv/www/wolf.discount/fd/assets/index-Di3cEoR2.js`. Changes: removed the temporary Pulse sales launcher card, passed the real sales props back into `PulseWorkspace`, and restored the embedded `SalesDashboard` as the default `Pulse > Sales Analysis` content while keeping the external `AlphaPulse` and `FD Connect` links at the end of the Pulse bar. Commands: frontend `npm run build`, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/`, `ls -lt /srv/www/wolf.discount/fd/assets | head -n 4`, `date`. Tests: frontend build PASS.
 - 2026-03-29 17:53 EDT — Simplified the login page to a single Google-only access card with the left pane removed. Files: `components/app/AuthScreen.tsx`, `AGENTS.md`; deployed asset: `/srv/www/wolf.discount/fd/assets/index-DVWKI-jH.js`. Changes: added a dedicated `sign_in` layout that removes the split-pane design, keeps only the requested `Furniture Distributors / WOLF FD Dashboard / Work Online | Live Free / Employee Access` text stack around the Google sign-in area, and leaves the separate request/pending states untouched. Commands: frontend `npm run build`, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/`, `ls -lt /srv/www/wolf.discount/fd/assets | head -n 4`, `date`. Tests: frontend build PASS.
 - 2026-03-29 17:57 EDT — Made module sub-navigation bars sticky under the main app header so Den, Pulse, A.I., Marketing, and Promotions, and Shop page tabs stay reachable while scrolling. Files: `components/WolfdenWorkspace.tsx`, `components/PulseWorkspace.tsx`, `components/AmpWorkspace.tsx`, `components/ShopWorkspace.tsx`, `AGENTS.md`; deployed asset: `/srv/www/wolf.discount/fd/assets/index-CWAspOM9.js`. Changes: changed each module tab bar to a blurred sticky header with `top-20` offset so the sub-pages "pop into the header" below the main app chrome instead of requiring a scroll back to the top. Commands: frontend `npm run build`, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/`, `ls -lt /srv/www/wolf.discount/fd/assets | head -n 4`, `date`. Tests: frontend build PASS.
+- 2026-03-30 15:15 EDT — Cleaned up WOLF-FD sidebar to match new module architecture and fixed missing tutorial handler. Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/package.json`. Changes: removed standalone CRM, Tasks, and Board NavItems from sidebar since these are now pages inside the Den module (accessible via Den > CRM, Den > Tasks, Den > Message Board); added missing `handleStartTutorialManually` handler that was referenced but undefined (was causing "Start Tutorial" button in Owner Settings to fail); bumped displayVersion to `0.3.29.46`. Commands: `npm run build` in `/home/alphahs/WOLF-FD`, `sudo cp -r dist/* /srv/www/wolf.discount/fd/`. Tests: frontend build PASS; live bundle deployed with version `0.3.29.46`.

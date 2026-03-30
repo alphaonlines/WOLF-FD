@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   LayoutDashboard,
   Sofa,
@@ -14,6 +14,20 @@ import {
   Settings,
   Inbox,
   Zap,
+  UserCheck,
+  Users,
+  MessageSquare,
+  Calendar,
+  Link2,
+  ShoppingCart,
+  Globe,
+  Tv,
+  Share2,
+  FolderSearch,
+  BarChart2, // Added
+  CheckSquare, // Added
+  BookOpen, // Added
+  Database // Added
 } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import WorkAdvertising from './components/WorkAdvertising';
@@ -28,8 +42,10 @@ import TaskManager from './components/TaskManager';
 import OwnerSettings from './components/OwnerSettings';
 import WolfdenWorkspace from './components/WolfdenWorkspace';
 import PulseWorkspace from './components/PulseWorkspace';
-import AmpWorkspace from './components/AmpWorkspace';
-import ShopWorkspace from './components/ShopWorkspace';
+import AmpWorkspace, { AmpSubTab } from './components/AmpWorkspace';
+import ShopWorkspace, { ShopSubTab } from './components/ShopWorkspace';
+import WolfdenWorkspace, { WolfdenSubTab } from './components/WolfdenWorkspace';
+import PulseWorkspace, { PulseSubTab } from './components/PulseWorkspace';
 import type { AccessRequestProfile, AuthConfig, AuthUser, UserRole } from './types';
 import { APP_VERSION } from './constants';
 import {
@@ -43,11 +59,120 @@ import {
 } from './services/authApi';
 import { getPosApiBaseUrl } from './services/posBackendApi';
 import AuthScreen from './components/app/AuthScreen';
+import TutorialOverlay from './components/app/TutorialOverlay';
 import LoadingOverlay from './components/app/LoadingOverlay';
-import NavItem from './components/app/NavItem';
+import TutorialPromptOverlay from './components/app/TutorialPromptOverlay';
+import NavItem from './components/app/NavItem'; // Added NavItem import
 import { APP_THEME_STYLES } from './components/app/themeStyles';
 import { canAccessTab, getTabTitle, Tab } from './components/app/tabs';
 import { DASHBOARD_CARD_PERMISSION_BY_ID, FEATURE_PERMISSION_KEYS, hasPermission } from './components/app/permissions';
+
+type Slide = {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  bullets: string[];
+  accent: string;
+  highlightId?: string; // Optional ID of element to highlight
+};
+
+const SLIDES: Slide[] = [
+  {
+    icon: <Zap size={36} />,
+    title: "Welcome to the FD Dashboard",
+    subtitle: "Your all-in-one tool for sales, customers, and the product catalog.",
+    bullets: [
+      "Everything is in the sidebar on the left — just click a module to open it.",
+      "Your permissions control which modules you can see.",
+      "Use this tour to get a quick feel for what each area does.",
+    ],
+    accent: "sky",
+    highlightId: "sidebar-dashboard-nav-item",
+  },
+  {
+    icon: <BarChart2 size={36} />,
+    title: "Sales Dashboard",
+    subtitle: "A live look at how the floor is performing.",
+    bullets: [
+      "See today's sales, weekly totals, and the leaderboard at a glance.",
+      "Sales Analysis breaks down performance by salesperson, location, and timeframe.",
+      "Pro1st tracking shows how add-on products are moving.",
+    ],
+    accent: "emerald",
+    highlightId: "dashboard-overview",
+  },
+  {
+    icon: <Users size={36} />,
+    title: "CRM",
+    subtitle: "Keep track of every customer, ticket, and follow-up.",
+    bullets: [
+      "The working queue shows all active customer interactions sorted by priority.",
+      "Expand any customer card to see visit history, notes, and quick actions.",
+      "The Objections drawer on the right gives you instant rebuttals for tough sales moments.",
+    ],
+    accent: "violet",
+    highlightId: "sidebar-crm-nav-item",
+  },
+  {
+    icon: <Search size={36} />,
+    title: "Product Search",
+    subtitle: "Browse the full manufacturer catalog and build customer quotes.",
+    bullets: [
+      "Search by description, item number, material, color, feature tag, or price range.",
+      "Click any product to open the detail drawer — pricing at 60% and 50% margin is shown automatically.",
+      "Add items to a cart to total up a customer order. You can run multiple carts at the same time for different customers.",
+    ],
+    accent: "sky",
+    highlightId: "sidebar-shop-nav-item",
+  },
+  {
+    icon: <Database size={36} />,
+    title: "Update Database",
+    subtitle: "Keep the sales data and product catalog current.",
+    bullets: [
+      "Upload POS export files here to refresh the sales and items database.",
+      "Select the manufacturer first, then choose your export files.",
+      "Use the Manufacturer Pricelist section to upload new vendor price books.",
+    ],
+    accent: "amber",
+    highlightId: "sidebar-update-db-panel",
+  },
+  {
+    icon: <CheckSquare size={36} />,
+    title: "Tasks",
+    subtitle: "Assign, track, and close out work items across the team.",
+    bullets: [
+      "Create tasks for yourself or assign them to others.",
+      "Tasks can be linked to customers or flagged by type.",
+      "Check the board regularly — items submitted from CRM and other modules land here.",
+    ],
+    accent: "rose",
+    highlightId: "sidebar-tasks-nav-item",
+  },
+  {
+    icon: <MessageSquare size={36} />,
+    title: "Message Board",
+    subtitle: "Team-wide announcements and notes in one place.",
+    bullets: [
+      "Post updates, reminders, or anything the whole floor needs to see.",
+      "Messages stay visible until removed — great for shift notes and specials.",
+    ],
+    accent: "teal",
+    highlightId: "sidebar-message-board-nav-item",
+  },
+  {
+    icon: <BookOpen size={36} />,
+    title: "You're all set.",
+    subtitle: "Dive in — and don't worry, you can always find help in the settings area.",
+    bullets: [
+      "Click any module in the left sidebar to get started.",
+      "Your role determines what you can see and do — ask the owner to adjust permissions if something is missing.",
+      "This tour won't show again, but you can reopen it from Settings any time.",
+    ],
+    accent: "sky",
+    highlightId: "sidebar-settings-nav-item",
+  },
+];
 
 const DASHBOARD_LOCKED = false;
 const DASHBOARD_NOTICE = 'System down until further notice.';
@@ -98,15 +223,106 @@ const App: React.FC = () => {
   const [requestedShopSubTab, setRequestedShopSubTab] = useState<'search' | 'pos'>('search');
   const [requestedShopSubTabToken, setRequestedShopSubTabToken] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
+  type ThemeMode = 'light' | 'live' | 'dark';
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     try {
-      const stored = localStorage.getItem('fd_theme_dark');
-      return stored ? stored === 'true' : true;
+      const stored = localStorage.getItem('fd_theme_mode');
+      if (stored === 'light' || stored === 'live' || stored === 'dark') return stored;
+      return 'dark';
     } catch {
-      return true;
+      return 'dark';
     }
   });
+  const [liveWeatherCondition, setLiveWeatherCondition] = useState<string | null>(null);
+  const parseWeather = (cond: string | null) => {
+    if (!cond) return { code: -1, isDay: true };
+    const parts = cond.split(':');
+    return { code: Number(parts[0]) || 0, isDay: parts[1] === '1' };
+  };
+  const { code: weatherCode, isDay: isWeatherDay } = parseWeather(liveWeatherCondition);
+  const isDarkMode = themeMode === 'dark' || (themeMode === 'live' && (!isWeatherDay || weatherCode > 3));
+  const weatherEffectClass = themeMode === 'live' && liveWeatherCondition !== null ? (
+    isWeatherDay ? (
+      weatherCode <= 1 ? 'weather-sunny' :
+      weatherCode <= 3 ? 'weather-partly-cloudy' :
+      weatherCode <= 48 ? 'weather-cloudy' :
+      weatherCode <= 67 ? 'weather-rainy' :
+      weatherCode <= 77 ? 'weather-snowy' :
+      'weather-stormy'
+    ) : (
+      weatherCode <= 1 ? 'weather-clear-night' :
+      weatherCode <= 3 ? 'weather-partly-cloudy-night' :
+      weatherCode <= 48 ? 'weather-cloudy' :
+      weatherCode <= 67 ? 'weather-rainy' :
+      weatherCode <= 77 ? 'weather-snowy' :
+      'weather-stormy'
+    )
+  ) : '';
+  const getWeatherLabel = (code: number, isDay: boolean) => {
+    if (code <= 1) return isDay ? 'Sunny' : 'Clear';
+    if (code <= 3) return isDay ? 'Partly Cloudy' : 'Partly Cloudy';
+    if (code <= 48) return 'Cloudy';
+    if (code <= 67) return 'Rain';
+    if (code <= 77) return 'Snow';
+    return 'Storm';
+  };
+  const weatherLabel = themeMode === 'live' && liveWeatherCondition !== null ? getWeatherLabel(weatherCode, isWeatherDay) : null;
   const [showLoading, setShowLoading] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [showTutorialPrompt, setShowTutorialPrompt] = useState(false);
+  const [highlightedElementRect, setHighlightedElementRect] = useState<DOMRect | null>(null);
+  const [tutorialStep, setTutorialStep] = useState(0); // New state for current tutorial step
+  const elementRefs = useRef<Map<string, HTMLElement | null>>(new Map());
+
+  const handleCloseTutorial = () => {
+    setShowTutorial(false);
+    try { localStorage.setItem('fd_tutorial_seen', '1'); } catch {}
+    setHighlightedElementRect(null); // Clear highlight when tutorial closes
+    setTutorialStep(0); // Reset tutorial step
+  };
+
+  const handleStartTutorial = () => {
+    setShowTutorialPrompt(false);
+    setShowLoading(false); // Make sure loading is dismissed
+    setShowTutorial(true);
+    setTutorialStep(0); // Start from the beginning
+  };
+
+  const handleSkipTutorial = () => {
+    setShowTutorialPrompt(false);
+    setShowLoading(false); // Make sure loading is dismissed
+    try { localStorage.setItem('fd_tutorial_seen', '1'); } catch {}
+    setHighlightedElementRect(null); // Clear highlight on skip
+    setTutorialStep(0); // Reset tutorial step
+  };
+
+  const handleStartTutorialManually = handleStartTutorial;
+
+  const handleTutorialPrev = () => {
+    setTutorialStep((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleTutorialNext = () => {
+    setTutorialStep((prev) => Math.min(SLIDES.length - 1, prev + 1));
+  };
+
+  const handleTutorialStepChange = (step: number) => {
+    setTutorialStep(step); // Update tutorialStep state directly
+    const currentSlide = SLIDES[step];
+    if (currentSlide?.highlightId) {
+      const element = elementRefs.current.get(currentSlide.highlightId);
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        setHighlightedElementRect(rect);
+        // Optional: Scroll to element if off-screen
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        setHighlightedElementRect(null);
+      }
+    } else {
+      setHighlightedElementRect(null);
+    }
+  };
   const [authReady, setAuthReady] = useState(false);
   const [authConfig, setAuthConfig] = useState<AuthConfig>({
     googleWorkspaceEnabled: false,
@@ -148,6 +364,26 @@ const App: React.FC = () => {
     }
   });
   const [requestedSettingsPanel, setRequestedSettingsPanel] = useState<'users' | 'employees' | 'permissions' | 'social' | null>(null);
+
+  useEffect(() => {
+    if (themeMode !== 'live') return;
+    let stopped = false;
+    const fetchWeather = async () => {
+      try {
+        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=34.72&longitude=-76.73&current=weather_code,is_day&timezone=auto');
+        if (stopped || !res.ok) return;
+        const data = await res.json();
+        if (stopped) return;
+        const code = data.current?.weather_code;
+        const isDay = data.current?.is_day;
+        const condition = code !== undefined && isDay !== undefined ? `${code}:${isDay}` : null;
+        setLiveWeatherCondition(condition);
+      } catch { }
+    };
+    fetchWeather();
+    const interval = setInterval(fetchWeather, 300000);
+    return () => { stopped = true; clearInterval(interval); };
+  }, [themeMode]);
 
   useEffect(() => {
     if (DASHBOARD_LOCKED) {
@@ -224,8 +460,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!showLoading) return;
-    const t = window.setTimeout(() => setShowLoading(false), 6500);
-    return () => window.clearTimeout(t);
+    // The loading overlay will be dismissed by handleSkipTutorial or handleStartTutorial
   }, [showLoading]);
 
   useEffect(() => {
@@ -329,7 +564,15 @@ const App: React.FC = () => {
       setRequestPhone('');
       setPendingGoogleCredential('');
       setLoginPassword('');
+      // Show loading for a bit, then prompt for tutorial if not seen
       setShowLoading(true);
+      window.setTimeout(() => {
+        if (!localStorage.getItem('fd_tutorial_seen')) {
+          setShowTutorialPrompt(true);
+        } else {
+          setShowLoading(false); // Only dismiss if no tutorial prompt
+        }
+      }, 500);
     } catch (error: any) {
       setLoginError(String(error?.message || error || 'Login failed. Check your credentials.'));
     } finally {
@@ -352,8 +595,15 @@ const App: React.FC = () => {
         setRequestProfile(null);
         setRequestPhone('');
         setPendingGoogleCredential('');
+        // Show loading for a bit, then prompt for tutorial if not seen
         setShowLoading(true);
-        return;
+        window.setTimeout(() => {
+          if (!localStorage.getItem('fd_tutorial_seen')) {
+            setShowTutorialPrompt(true);
+          } else {
+            setShowLoading(false); // Only dismiss if no tutorial prompt
+          }
+        }, 500);
       }
 
       setPendingGoogleCredential(credential);
@@ -392,8 +642,15 @@ const App: React.FC = () => {
         setRequestProfile(null);
         setRequestPhone('');
         setPendingGoogleCredential('');
+        // Show loading for a bit, then prompt for tutorial if not seen
         setShowLoading(true);
-        return;
+        window.setTimeout(() => {
+          if (!localStorage.getItem('fd_tutorial_seen')) {
+            setShowTutorialPrompt(true);
+          } else {
+            setShowLoading(false); // Only dismiss if no tutorial prompt
+          }
+        }, 500);
       }
       setRequestProfile(result.requestProfile);
       setRequestPhone(result.requestProfile?.phone || requestPhone.trim());
@@ -501,40 +758,42 @@ const App: React.FC = () => {
     switch (activeTab) {
       case Tab.DASHBOARD:
         return (
-          <DashboardOverview
-            isDarkMode={isDarkMode}
-            canViewCard={(cardId) => {
-              const permissionKey = DASHBOARD_CARD_PERMISSION_BY_ID[cardId];
-              if (!permissionKey) return true;
-              return canUsePermission(permissionKey);
-            }}
-            onNavigate={(tab) => {
-              if (tab === 'SALES' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('sales');
-              if (tab === 'TASKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.TASKS)) setActiveTab(Tab.TASKS);
-              if (tab === 'CRM' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.CRM)) setActiveTab(Tab.CRM);
-              if (tab === 'SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('social');
-              if (tab === 'KIOSKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('alphaos');
-              if (tab === 'PRODUCT_SEARCH' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('search');
-              if (tab === 'WOLFDEN_UPS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('ups');
-              if (tab === 'WOLFDEN_CRM' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('crm');
-              if (tab === 'WOLFDEN_BOARD' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('board');
-              if (tab === 'WOLFDEN_MEETING' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('meeting');
-              if (tab === 'WOLFDEN_TASKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('tasks');
-              if (tab === 'WOLFDEN_QUICKLINKS') window.open('https://sites.google.com/view/fdserver/home', '_blank', 'noopener,noreferrer');
-              if (tab === 'PULSE_SALES' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('sales');
-              if (tab === 'PULSE_ALPHAOS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('alphaos');
-              if (tab === 'PULSE_ALPHAPULSE') window.open('https://furnituredistributors.wolf.discount/alphapulse/', '_blank', 'noopener,noreferrer');
-              if (tab === 'PULSE_WEBSITE' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('website');
-              if (tab === 'PULSE_REVIEWS') window.open('https://www.furnituredistributors.net/content/connect', '_blank', 'noopener,noreferrer');
-              if (tab === 'AMP_SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('social');
-              if (tab === 'AMP_BOT' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('bot');
-              if (tab === 'SHOP_SEARCH' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('search');
-              if (tab === 'SHOP_POS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('pos');
-              if (tab === 'UPDATE' && canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL)) {
-                setUpdatePanelOpen(true);
-              }
-            }}
-          />
+          <div ref={(el) => elementRefs.current.set('dashboard-overview', el)} className="h-full">
+            <DashboardOverview
+              isDarkMode={isDarkMode}
+              canViewCard={(cardId) => {
+                const permissionKey = DASHBOARD_CARD_PERMISSION_BY_ID[cardId];
+                if (!permissionKey) return true;
+                return canUsePermission(permissionKey);
+              }}
+              onNavigate={(tab) => {
+                if (tab === 'SALES' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('sales');
+                if (tab === 'TASKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.TASKS)) setActiveTab(Tab.TASKS);
+                if (tab === 'CRM' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.CRM)) setActiveTab(Tab.CRM);
+                if (tab === 'SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('social');
+                if (tab === 'KIOSKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('alphaos');
+                if (tab === 'PRODUCT_SEARCH' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('search');
+                if (tab === 'WOLFDEN_UPS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('ups');
+                if (tab === 'WOLFDEN_CRM' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('crm');
+                if (tab === 'WOLFDEN_BOARD' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('board');
+                if (tab === 'WOLFDEN_MEETING' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('meeting');
+                if (tab === 'WOLFDEN_TASKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('tasks');
+                if (tab === 'WOLFDEN_QUICKLINKS') window.open('https://sites.google.com/view/fdserver/home', '_blank', 'noopener,noreferrer');
+                if (tab === 'PULSE_SALES' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('sales');
+                if (tab === 'PULSE_ALPHAOS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('alphaos');
+                if (tab === 'PULSE_ALPHAPULSE') window.open('https://furnituredistributors.wolf.discount/alphapulse/', '_blank', 'noopener,noreferrer');
+                if (tab === 'PULSE_WEBSITE' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('website');
+                if (tab === 'PULSE_REVIEWS') window.open('https://www.furnituredistributors.net/content/connect', '_blank', 'noopener,noreferrer');
+                if (tab === 'AMP_SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('social');
+                if (tab === 'AMP_BOT' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('bot');
+                if (tab === 'SHOP_SEARCH' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('search');
+                if (tab === 'SHOP_POS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('pos');
+                if (tab === 'UPDATE' && canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL)) {
+                  setUpdatePanelOpen(true);
+                }
+              }}
+            />
+          </div>
         );
       case Tab.SALES:
         return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
@@ -564,6 +823,7 @@ const App: React.FC = () => {
             onOpenChangePassword={openChangePasswordModal}
             requestedPanel={requestedSettingsPanel}
             onConsumeRequestedPanel={() => setRequestedSettingsPanel(null)}
+            onStartTutorial={handleStartTutorialManually} // Pass the function to start tutorial
           />
         );
       case Tab.WOLFDEN:
@@ -573,6 +833,7 @@ const App: React.FC = () => {
             isDarkMode={isDarkMode}
             requestedSubTab={requestedWolfdenSubTab}
             requestedSubTabToken={requestedWolfdenSubTabToken}
+            hideTabBar={true}
           />
         );
       case Tab.PULSE:
@@ -584,6 +845,7 @@ const App: React.FC = () => {
             onSubTabChange={setCurrentPulseSubTab}
             itemSortMetric={itemSortMetric}
             showTooltips={showTooltips}
+            hideTabBar={true}
           />
         );
       case Tab.AMP:
@@ -597,6 +859,7 @@ const App: React.FC = () => {
               setRequestedSettingsPanel('social');
               setActiveTab(Tab.ADMIN);
             }}
+            hideTabBar={true}
           />
         );
       case Tab.SHOP:
@@ -606,6 +869,7 @@ const App: React.FC = () => {
             requestedSubTab={requestedShopSubTab}
             requestedSubTabToken={requestedShopSubTabToken}
             onOpenUploadArea={() => setUpdatePanelOpen(true)}
+            hideTabBar={true}
           />
         );
       default:
@@ -675,13 +939,42 @@ const App: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen wolf-theme font-sans ${isDarkMode ? 'dark text-slate-100' : 'text-slate-800'} ${
-        isDarkMode
-          ? 'bg-[radial-gradient(circle_at_top,#24344a_0%,rgba(36,52,74,0)_28%),linear-gradient(160deg,#0f1722_0%,#162131_48%,#111a27_100%)]'
-          : 'bg-[linear-gradient(160deg,#e9f0f8_0%,#dde7f3_52%,#d2dfee_100%)]'
+      className={`min-h-screen wolf-theme font-sans ${isDarkMode ? 'dark text-slate-100' : 'text-slate-800'} ${weatherEffectClass} ${
+        themeMode === 'live' && liveWeatherCondition !== null
+          ? (isWeatherDay ? (
+              weatherCode <= 1 ? 'bg-[linear-gradient(160deg,#fef9e7_0%,#fdeaa8_50%,#f7e89e_100%)]' :
+              weatherCode <= 3 ? 'bg-[linear-gradient(160deg,#e8f4fc_0%,#c5dff0_50%,#a8d0ec_100%)]' :
+              weatherCode <= 48 ? 'bg-[linear-gradient(160deg,#d4dbe0_0%,#b8c0cc_50%,#aab8c4_100%)]' :
+              weatherCode <= 67 ? 'bg-[linear-gradient(160deg,#d3dce6_0%,#b5c5d4_50%,#9fb5c8_100%)]' :
+              weatherCode <= 77 ? 'bg-[linear-gradient(160deg,#e8ecf0_0%,#d0dae6_50%,#c0cfde_100%)]' :
+              'bg-[linear-gradient(160deg,#4a5568_0%,#2d3748_50%,#1a202c_100%)]'
+            ) : (
+              weatherCode <= 1 ? 'bg-[linear-gradient(160deg,#0f1722_0%,#1e293b_50%,#334155_100%)]' :
+              weatherCode <= 3 ? 'bg-[linear-gradient(160deg,#1e293b_0%,#334155_50%,#475569_100%)]' :
+              weatherCode <= 48 ? 'bg-[linear-gradient(160deg,#374151_0%,#4b5563_50%,#6b7280_100%)]' :
+              weatherCode <= 67 ? 'bg-[linear-gradient(160deg,#1f2937_0%,#374151_50%,#4b5563_100%)]' :
+              weatherCode <= 77 ? 'bg-[linear-gradient(160deg,#374151_0%,#4b5563_50%,#6b7280_100%)]' :
+              'bg-[linear-gradient(160deg,#0f1722_0%,#1e293b_50%,#0f1722_100%)]'
+            ))
+          : isDarkMode
+            ? 'bg-[radial-gradient(circle_at_top,#24344a_0%,rgba(36,52,74,0)_28%),linear-gradient(160deg,#0f1722_0%,#162131_48%,#111a27_100%)]'
+            : 'bg-[linear-gradient(160deg,#e9f0f8_0%,#dde7f3_52%,#d2dfee_100%)]'
       }`}
     >
-      <style>{APP_THEME_STYLES}</style>
+      <style>{APP_THEME_STYLES}
+        {themeMode === 'live' && liveWeatherCondition !== null && weatherCode >= 51 && weatherCode <= 67 ? `
+          .weather-rainy::before { content: ''; position: fixed; inset: 0; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='20' viewBox='0 0 4 20'%3E%3Cline x1='2' y1='0' x2='2' y2='20' stroke='%236b7280' stroke-width='2' opacity='0.3'/%3E%3C/svg%3E"); animation: rain 0.5s linear infinite; opacity: 0.4; }
+          @keyframes rain { from { background-position: 0 0; } to { background-position: 10px 20px; } }
+        ` : ''}
+        {themeMode === 'live' && liveWeatherCondition !== null && weatherCode >= 71 && weatherCode <= 77 ? `
+          .weather-snowy::before { content: ''; position: fixed; inset: 0; pointer-events: none; background-image: radial-gradient(2px 2px at 20px 30px, white, transparent), radial-gradient(2px 2px at 40px 70px, white, transparent), radial-gradient(2px 2px at 50px 160px, white, transparent), radial-gradient(2px 2px at 90px 40px, white, transparent), radial-gradient(2px 2px at 130px 80px, white, transparent); background-size: 200px 200px; animation: snow 3s linear infinite; opacity: 0.5; }
+          @keyframes snow { from { background-position: 0 0; } to { background-position: 200px 200px; } }
+        ` : ''}
+        {themeMode === 'live' && liveWeatherCondition !== null && !isWeatherDay ? `
+          .weather-clear-night::before, .weather-partly-cloudy-night::before { content: ''; position: fixed; inset: 0; pointer-events: none; background-image: radial-gradient(1px 1px at 10% 20%, white 100%, transparent), radial-gradient(1.5px 1.5px at 30% 10%, white 100%, transparent), radial-gradient(1px 1px at 50% 35%, white 100%, transparent), radial-gradient(1.5px 1.5px at 70% 15%, white 100%, transparent), radial-gradient(1px 1px at 90% 40%, white 100%, transparent), radial-gradient(1px 1px at 15% 55%, white 100%, transparent), radial-gradient(1.5px 1.5px at 35% 50%, white 100%, transparent), radial-gradient(1px 1px at 55% 70%, white 100%, transparent), radial-gradient(1px 1px at 75% 65%, white 100%, transparent), radial-gradient(1.5px 1.5px at 95% 80%, white 100%, transparent), radial-gradient(1px 1px at 20% 85%, white 100%, transparent), radial-gradient(1px 1px at 40% 90%, white 100%, transparent), radial-gradient(1px 1px at 60% 95%, white 100%, transparent), radial-gradient(1.5px 1.5px at 80% 75%, white 100%, transparent), radial-gradient(1px 1px at 25% 30%, white 100%, transparent), radial-gradient(1px 1px at 65% 25%, white 100%, transparent); background-size: 100% 100%; animation: twinkle 4s ease-in-out infinite; opacity: 0.7; }
+          @keyframes twinkle { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        ` : ''}
+      </style>
       {showLoading && <LoadingOverlay darkness={0.9} />}
       <div className={`flex ${showLoading ? 'blur-md' : ''} transition-[filter] duration-500`}>
         <aside
@@ -715,6 +1008,7 @@ const App: React.FC = () => {
           <nav className="flex-1 py-6 px-3 space-y-1.5">
             {canView(Tab.DASHBOARD) && (
               <NavItem
+                ref={(el) => elementRefs.current.set('sidebar-dashboard-nav-item', el)}
                 icon={<LayoutDashboard size={20} />}
                 label="Dashboard"
                 isActive={activeTab === Tab.DASHBOARD}
@@ -725,6 +1019,7 @@ const App: React.FC = () => {
             )}
             {canView(Tab.WOLFDEN) && (
               <NavItem
+                ref={(el) => elementRefs.current.set('sidebar-wolfden-nav-item', el)}
                 icon={<Inbox size={20} />}
                 label="Den"
                 isActive={activeTab === Tab.WOLFDEN}
@@ -755,6 +1050,7 @@ const App: React.FC = () => {
             )}
             {canView(Tab.SHOP) && (
               <NavItem
+                ref={(el) => elementRefs.current.set('sidebar-shop-nav-item', el)}
                 icon={<ClipboardList size={20} />}
                 label="Shop"
                 isActive={activeTab === Tab.SHOP}
@@ -765,22 +1061,42 @@ const App: React.FC = () => {
             )}
           </nav>
 
-          {canView(Tab.ADMIN) && (
-            <div className={`px-3 pb-1`}>
-              <NavItem
-                icon={<Settings size={20} />}
-                label="Settings"
-                isActive={activeTab === Tab.ADMIN}
-                onClick={() => setActiveTab(Tab.ADMIN)}
-                isOpen={sidebarOpen}
-                isDarkMode={isDarkMode}
-              />
-            </div>
-          )}
+          <div className="px-3 pb-1">
+            {canView(Tab.ADMIN) && (
+              <button
+                ref={(el) => elementRefs.current.set('sidebar-settings-nav-item', el)}
+                onClick={() => { setActiveTab(Tab.ADMIN); }}
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all ${
+                  activeTab === Tab.ADMIN
+                    ? isDarkMode
+                      ? 'bg-sky-400/12 border border-sky-300/28 text-slate-50 shadow-sm'
+                      : 'bg-sky-50 border border-sky-200 text-sky-700 shadow-sm'
+                    : isDarkMode
+                      ? 'border border-transparent text-slate-300 hover:bg-white/6 hover:border-white/8 hover:text-slate-50'
+                      : 'border border-transparent text-slate-600 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-900'
+                } ${!sidebarOpen ? 'justify-center' : ''}`}
+              >
+                <Settings size={20} />
+                {sidebarOpen && <span className="font-medium text-sm">Settings</span>}
+              </button>
+            )}
+            <button
+              onClick={() => { handleLogout(); }}
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all ${
+                isDarkMode
+                  ? 'border border-transparent text-slate-300 hover:bg-white/6 hover:border-white/8 hover:text-slate-50'
+                  : 'border border-transparent text-slate-600 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-900'
+              } ${!sidebarOpen ? 'justify-center' : ''}`}
+            >
+              <LogOut size={20} />
+              {sidebarOpen && <span className="font-medium text-sm">Sign out</span>}
+            </button>
+          </div>
 
           {canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL) && (
             <div className={`p-3 border-t ${isDarkMode ? 'border-white/6' : 'border-slate-200/80'}`}>
               <button
+                ref={(el) => elementRefs.current.set('sidebar-update-db-panel', el)}
                 onClick={() => {
                   if (updatePanelOpen) {
                     closeUpdatePanel();
@@ -825,30 +1141,87 @@ const App: React.FC = () => {
               <h1 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
                 <span>{getTabTitle(activeTab)}</span>
               </h1>
+              {authUser && (
+                <span className={`hidden md:inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${
+                  isDarkMode ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-600"
+                }`}>
+                  {(() => {
+                    const parts = authUser.name.trim().split(' ');
+                    const firstName = parts[0] || '';
+                    const lastInitial = parts.length > 1 ? parts[parts.length - 1].charAt(0).toUpperCase() : '';
+                    return lastInitial ? `${firstName} ${lastInitial}.` : firstName;
+                  })()}
+                </span>
+              )}
             </div>
 
+            {/* Sub-tabs for modules */}
+            {activeTab === Tab.WOLFDEN && (
+              <div className="hidden md:flex items-center gap-1 ml-6">
+                <button onClick={() => openWolfdenSubTab('ups')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedWolfdenSubTab === 'ups' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><UserCheck size={13} className="inline mr-1.5" />UPS</button>
+                <button onClick={() => openWolfdenSubTab('crm')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedWolfdenSubTab === 'crm' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Users size={13} className="inline mr-1.5" />CRM</button>
+                <button onClick={() => openWolfdenSubTab('board')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedWolfdenSubTab === 'board' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><MessageSquare size={13} className="inline mr-1.5" />Board</button>
+                <button onClick={() => openWolfdenSubTab('meeting')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedWolfdenSubTab === 'meeting' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Calendar size={13} className="inline mr-1.5" />Meeting</button>
+                <button onClick={() => openWolfdenSubTab('tasks')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedWolfdenSubTab === 'tasks' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><ClipboardList size={13} className="inline mr-1.5" />Tasks</button>
+                <button onClick={() => openWolfdenSubTab('quicklinks')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedWolfdenSubTab === 'quicklinks' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Link2 size={13} className="inline mr-1.5" />Links</button>
+              </div>
+            )}
+            {activeTab === Tab.PULSE && (
+              <div className="hidden md:flex items-center gap-1 ml-6">
+                <button onClick={() => openPulseSubTab('sales')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedPulseSubTab === 'sales' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Activity size={13} className="inline mr-1.5" />Sales</button>
+                <button onClick={() => openPulseSubTab('alphaos')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedPulseSubTab === 'alphaos' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Tv size={13} className="inline mr-1.5" />AlphaOS</button>
+                <button onClick={() => openPulseSubTab('alphapulse')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedPulseSubTab === 'alphapulse' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Share2 size={13} className="inline mr-1.5" />AlphaPulse</button>
+                <button onClick={() => openPulseSubTab('website')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedPulseSubTab === 'website' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Globe size={13} className="inline mr-1.5" />Website</button>
+                <button onClick={() => openPulseSubTab('reviews')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedPulseSubTab === 'reviews' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Star size={13} className="inline mr-1.5" />Reviews</button>
+              </div>
+            )}
+            {activeTab === Tab.AMP && (
+              <div className="hidden md:flex items-center gap-1 ml-6">
+                <button onClick={() => openAmpSubTab('social')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedAmpSubTab === 'social' ? (isDarkMode ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Share2 size={13} className="inline mr-1.5" />Social</button>
+                <button onClick={() => openAmpSubTab('bot')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedAmpSubTab === 'bot' ? (isDarkMode ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Bot size={13} className="inline mr-1.5" />AI Bot</button>
+                <button onClick={() => openAmpSubTab('tycoon')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedAmpSubTab === 'tycoon' ? (isDarkMode ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Sofa size={13} className="inline mr-1.5" />Tycoon</button>
+              </div>
+            )}
+            {activeTab === Tab.SHOP && (
+              <div className="hidden md:flex items-center gap-1 ml-6">
+                <button onClick={() => openShopSubTab('search')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedShopSubTab === 'search' ? (isDarkMode ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30' : 'bg-violet-50 text-violet-600 border border-violet-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><FolderSearch size={13} className="inline mr-1.5" />Search</button>
+                <button onClick={() => openShopSubTab('pos')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedShopSubTab === 'pos' ? (isDarkMode ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30' : 'bg-violet-50 text-violet-600 border border-violet-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><ShoppingCart size={13} className="inline mr-1.5" />POS</button>
+              </div>
+            )}
+
             <div className="flex items-center gap-4">
-              {isSalesHeaderView && (
-                <div className="relative hidden md:block">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                  <input
-                    type="text"
-                    placeholder="Search salesperson or store..."
-                    value={headerSearch}
-                    onChange={(e) => setHeaderSearch(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const query = headerSearch.trim();
-                        if (query) {
-                          window.dispatchEvent(new CustomEvent('fd-search', { detail: { query } }));
-                          setHeaderSearch('');
-                        }
-                      }
-                    }}
-                    className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 transition-all"
-                  />
-                </div>
-              )}
               {isSalesHeaderView && showRange && rangeLabel && (
                 <button
                   onClick={() => window.dispatchEvent(new Event('fd-open-range'))}
@@ -939,30 +1312,52 @@ const App: React.FC = () => {
                     Qty
                   </button>
                 </div>
+)}
+              {weatherLabel && (
+                <div className={`hidden md:flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
+                  isWeatherDay
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-indigo-100 text-indigo-700'
+                }`}>
+                  {isWeatherDay ? <Sun size={12} /> : <Moon size={12} />}
+                  {weatherLabel}
+                </div>
               )}
-              <button
-                onClick={() => setIsDarkMode((prev) => !prev)}
-                className={`p-2 rounded-full shadow-sm border transition-colors ${
-                  isDarkMode
-                    ? 'bg-slate-100 hover:bg-white border-slate-300 text-slate-950'
-                    : 'bg-white/70 hover:bg-white border-slate-200 text-slate-600'
-                }`}
-                title="Toggle night mode"
-              >
-                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-              <button
-                onClick={handleLogout}
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
-                  isDarkMode
-                    ? 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                }`}
-                title={`Signed in as ${authUser.email}`}
-              >
-                <LogOut size={14} />
-                <span className="hidden sm:inline">Sign out</span>
-              </button>
+              <div className="flex flex-col gap-0.5">
+                <button
+                  onClick={() => { setThemeMode('light'); localStorage.setItem('fd_theme_mode', 'light'); }}
+                  className={`p-1.5 rounded-full transition-all ${
+                    themeMode === 'light'
+                      ? 'bg-white text-slate-800 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                  title="Light"
+                >
+                  <Sun size={16} />
+                </button>
+                <button
+                  onClick={() => { setThemeMode('live'); localStorage.setItem('fd_theme_mode', 'live'); }}
+                  className={`p-1.5 rounded-full transition-all ${
+                    themeMode === 'live'
+                      ? 'bg-gradient-to-r from-blue-400 to-cyan-300 text-slate-900 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                  title="Live"
+                >
+                  <Activity size={16} />
+                </button>
+                <button
+                  onClick={() => { setThemeMode('dark'); localStorage.setItem('fd_theme_mode', 'dark'); }}
+                  className={`p-1.5 rounded-full transition-all ${
+                    themeMode === 'dark'
+                      ? 'bg-slate-700 text-slate-100 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                  title="Dark"
+                >
+                  <Moon size={16} />
+                </button>
+              </div>
             </div>
           </header>
 
@@ -1112,7 +1507,52 @@ const App: React.FC = () => {
             </div>
           </>
         )}
+
       </div>
+
+      {showLoading && <LoadingOverlay darkness={0.9} />}
+      {showTutorialPrompt && (
+        <TutorialPromptOverlay isDarkMode={isDarkMode} onStartTutorial={handleStartTutorial} onSkipTutorial={handleSkipTutorial} />
+      )}
+      {showTutorial && (
+        <>
+          {highlightedElementRect && (
+            <>
+              {/* Top overlay */}
+              <div
+                className="fixed inset-x-0 top-0 bg-black/60 backdrop-blur-sm z-[195]"
+                style={{ height: highlightedElementRect.top }}
+              />
+              {/* Bottom overlay */}
+              <div
+                className="fixed inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm z-[195]"
+                style={{ top: highlightedElementRect.bottom }}
+              />
+              {/* Left overlay */}
+              <div
+                className="fixed top-0 bottom-0 left-0 bg-black/60 backdrop-blur-sm z-[195]"
+                style={{ width: highlightedElementRect.left, top: highlightedElementRect.top, height: highlightedElementRect.height }}
+              />
+              {/* Right overlay */}
+              <div
+                className="fixed top-0 bottom-0 right-0 bg-black/60 backdrop-blur-sm z-[195]"
+                style={{ left: highlightedElementRect.right, top: highlightedElementRect.top, height: highlightedElementRect.height }}
+              />
+            </>
+          )}
+          <TutorialOverlay
+            isDarkMode={isDarkMode}
+            onClose={handleCloseTutorial}
+            highlightedElementRect={highlightedElementRect}
+            onStepChange={handleTutorialStepChange}
+            currentStep={tutorialStep}
+            totalSteps={SLIDES.length}
+            slide={SLIDES[tutorialStep]}
+            onPrev={handleTutorialPrev}
+            onNext={handleTutorialNext}
+          />
+        </>
+      )}
     </div>
   );
 };

@@ -34,6 +34,7 @@ export type ParsedManufacturerCatalogRow = {
   cushionOptions: string[];
   featureTags: string[];
   searchKeywords: string[];
+  imageUrls: string[];
   sourceNote: string;
   sourceSortOrder: number;
 };
@@ -44,6 +45,7 @@ export type ParsedManufacturerReferenceNote = {
   noteType: string;
   title: string;
   content: string;
+  videoUrl?: string;
   sourceSortOrder: number;
 };
 
@@ -432,6 +434,7 @@ export async function parseLibertyPricebookPdf(
           cushionOptions,
           featureTags,
           searchKeywords,
+          imageUrls: [],
           sourceNote: buildSourceNote([
             `Collection ${currentCollection.name}`,
             currentCollection.category,
@@ -507,6 +510,7 @@ export async function parseLibertyPricebookPdf(
           cushionOptions: [],
           featureTags,
           searchKeywords,
+          imageUrls: [],
           sourceNote: buildSourceNote([
             `Collection ${currentCollection.name}`,
             currentCollection.category,
