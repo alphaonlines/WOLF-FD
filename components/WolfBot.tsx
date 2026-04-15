@@ -1,9 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Bot,
   Calendar,
   ChevronRight,
   Globe,
+  Loader,
   MessageSquare,
   PhoneCall,
   Plus,
@@ -11,6 +12,8 @@ import {
   Settings,
   Wand2,
 } from "lucide-react";
+import type { BotBotRuntimeStatus, BotBotSettings } from "../services/botbotApi";
+import { fetchRuntimeStatus, fetchSettings, saveSettings } from "../services/botbotApi";
 
 type CallItem = {
   id: string;
@@ -34,6 +37,60 @@ type RouteItem = {
 };
 
 const WolfBot: React.FC = () => {
+  const [runtime, setRuntime] = useState<BotBotRuntimeStatus | null>(null);
+  const [settings, setSettings] = useState<BotBotSettings | null>(null);
+  const [runtimeLoading, setRuntimeLoading] = useState(true);
+  const [runtimeError, setRuntimeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadRuntime = async () => {
+      try {
+        const [runtimeStatus, savedSettings] = await Promise.all([
+          fetchRuntimeStatus(),
+          fetchSettings(),
+        ]);
+        setRuntime(runtimeStatus);
+        setSettings(savedSettings);
+      } catch (error: any) {
+        setRuntimeError(error?.message || "Failed to load thinker status");
+      } finally {
+        setRuntimeLoading(false);
+      }
+    };
+
+    void loadRuntime();
+  }, []);
+
+  const handleSelectNode = async (nodeKey: string) => {
+    const nextSettings: BotBotSettings = {
+      assistantName: settings?.assistantName ?? "BotBot",
+      assistantTheme: settings?.assistantTheme ?? "sky",
+      tutorialCompleted: settings?.tutorialCompleted ?? false,
+      preferredModelKey: settings?.preferredModelKey ?? "local",
+      preferredRuntimeNode: nodeKey,
+    };
+
+    setSettings(nextSettings);
+    setRuntime((current) =>
+      current
+        ? {
+            ...current,
+            preferredNodeKey: nodeKey,
+            nodes: current.nodes.map((node) => ({
+              ...node,
+              isSelected: node.key === nodeKey,
+            })),
+          }
+        : current
+    );
+
+    try {
+      await saveSettings({ preferredRuntimeNode: nodeKey });
+    } catch (error: any) {
+      setRuntimeError(error?.message || "Failed to save thinker preference");
+    }
+  };
+
   const calls = useMemo<CallItem[]>(
     () => [
       { id: "c1", caller: "+1 (336) 555-1021", intent: "Store hours", outcome: "Auto-resolved", time: "Today · 10:12 AM" },
@@ -69,8 +126,8 @@ const WolfBot: React.FC = () => {
             <div className="text-xs uppercase tracking-wide text-slate-500">Owner Console</div>
             <h2 className="text-2xl font-semibold text-slate-900">WOLFbot</h2>
             <p className="text-sm text-slate-500">
-              Multilingual AI assistant powered by Google Conversational Agents (Dialogflow). Manage greetings,
-              call routing, and conversational flows.
+              AMP A.I. command deck for choosing which machine does the thinking, managing local model routing,
+              and keeping the showroom assistant pointed at the right worker.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -100,6 +157,72 @@ const WolfBot: React.FC = () => {
             <div className="text-xs uppercase tracking-wide text-slate-500">Languages</div>
             <div className="mt-2 text-2xl font-semibold text-slate-900">4</div>
           </div>
+        </div>
+
+        <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-wide text-slate-500">Primary Thinker</div>
+              <div className="mt-1 text-lg font-semibold text-slate-900">
+                {runtime?.nodes.find((node) => node.key === runtime.preferredNodeKey)?.host ?? "Loading thinker..."}
+              </div>
+              <div className="text-sm text-slate-500">
+                {runtime?.primaryModel
+                  ? `Local AI chats route through ${runtime.primaryModel} on the selected machine.`
+                  : "Pick which machine should handle local AI requests in AMP."}
+              </div>
+            </div>
+            {runtimeLoading ? (
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-500">
+                <Loader size={14} className="animate-spin" /> Checking AI nodes
+              </div>
+            ) : runtimeError ? (
+              <div className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600">
+                {runtimeError}
+              </div>
+            ) : (
+              <div className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
+                {runtime?.enabled ? "AMP A.I. routing is enabled" : "AMP A.I. routing is disabled"}
+              </div>
+            )}
+          </div>
+
+          {runtime && (
+            <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
+              {runtime.nodes.map((node) => (
+                <button
+                  key={node.key}
+                  onClick={() => void handleSelectNode(node.key)}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    runtime.preferredNodeKey === node.key
+                      ? "border-cyan-300 bg-cyan-50 shadow-sm"
+                      : "border-slate-200 bg-white hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {node.label} · {node.host}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">{node.description}</div>
+                    </div>
+                    <span
+                      className={`mt-1 inline-flex h-2.5 w-2.5 rounded-full ${
+                        node.reachable ? "bg-emerald-500" : "bg-amber-500"
+                      }`}
+                    />
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                    <span>{node.baseUrl}</span>
+                    <span>{node.modelCount} models</span>
+                  </div>
+                  <div className="mt-2 text-[11px] text-slate-600">
+                    {node.models.length ? node.models.join(", ") : "No Ollama models detected yet"}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

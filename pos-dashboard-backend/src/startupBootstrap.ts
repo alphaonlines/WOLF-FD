@@ -1,5 +1,6 @@
 import type { Pool } from "pg";
 import { PERMISSION_CATALOG, getRoleDefaultPermissionKeys } from "./permissionCatalog";
+import { DEFAULT_OLLAMA_NODE_KEY, OLLAMA_PRIMARY_MODEL } from "./runtimeConfig";
 
 type RunStartupBootstrapDeps = {
   pool: Pool;
@@ -66,6 +67,24 @@ async function ensureAuthSchema(pool: Pool) {
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users ((lower(email)));`);
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub) WHERE google_sub IS NOT NULL;`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_access_status ON users(access_status);`);
+
+  // Tutorial completion tracking
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS tutorial_completed_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS login_count INTEGER NOT NULL DEFAULT 0;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;`);
+
+  // User login history table
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_logins (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      login_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      ip_address TEXT,
+      user_agent TEXT
+    );
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_logins_user_id ON user_logins(user_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_logins_login_at ON user_logins(login_at);`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS roles (
@@ -1265,6 +1284,181 @@ async function ensureManufacturerPricebookSchema(pool: Pool) {
   );
 }
 
+async function ensureBotBotSchema(pool: Pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS botbot_model_config (
+      model_key         TEXT PRIMARY KEY,
+      display_name      TEXT NOT NULL DEFAULT '',
+      provider          TEXT NOT NULL DEFAULT '',
+      ollama_model_name TEXT NOT NULL DEFAULT '',
+      free_token_quota  BIGINT NOT NULL DEFAULT 0,
+      enabled           BOOLEAN NOT NULL DEFAULT TRUE,
+      sort_order        INTEGER NOT NULL DEFAULT 0,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE botbot_model_config ADD COLUMN IF NOT EXISTS model_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_model_config ADD COLUMN IF NOT EXISTS display_name TEXT;`);
+  await pool.query(`ALTER TABLE botbot_model_config ADD COLUMN IF NOT EXISTS provider TEXT;`);
+  await pool.query(`ALTER TABLE botbot_model_config ADD COLUMN IF NOT EXISTS ollama_model_name TEXT;`);
+  await pool.query(`ALTER TABLE botbot_model_config ADD COLUMN IF NOT EXISTS free_token_quota BIGINT;`);
+  await pool.query(`ALTER TABLE botbot_model_config ADD COLUMN IF NOT EXISTS enabled BOOLEAN;`);
+  await pool.query(`ALTER TABLE botbot_model_config ADD COLUMN IF NOT EXISTS sort_order INTEGER;`);
+  await pool.query(`ALTER TABLE botbot_model_config ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_model_config ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_model_config ALTER COLUMN free_token_quota SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_model_config ALTER COLUMN enabled SET DEFAULT TRUE;`);
+  await pool.query(`ALTER TABLE botbot_model_config ALTER COLUMN sort_order SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_model_config ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE botbot_model_config ALTER COLUMN updated_at SET DEFAULT now();`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS botbot_conversations (
+      id           BIGSERIAL PRIMARY KEY,
+      user_id      BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title        TEXT NOT NULL DEFAULT 'New Chat',
+      model_key    TEXT NOT NULL DEFAULT 'local',
+      context_tag  TEXT NOT NULL DEFAULT '',
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE botbot_conversations ADD COLUMN IF NOT EXISTS id BIGSERIAL;`);
+  await pool.query(`ALTER TABLE botbot_conversations ADD COLUMN IF NOT EXISTS user_id BIGINT;`);
+  await pool.query(`ALTER TABLE botbot_conversations ADD COLUMN IF NOT EXISTS title TEXT;`);
+  await pool.query(`ALTER TABLE botbot_conversations ADD COLUMN IF NOT EXISTS model_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_conversations ADD COLUMN IF NOT EXISTS context_tag TEXT;`);
+  await pool.query(`ALTER TABLE botbot_conversations ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_conversations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_conversations ALTER COLUMN title SET DEFAULT 'New Chat';`);
+  await pool.query(`ALTER TABLE botbot_conversations ALTER COLUMN model_key SET DEFAULT 'local';`);
+  await pool.query(`ALTER TABLE botbot_conversations ALTER COLUMN context_tag SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE botbot_conversations ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE botbot_conversations ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_botbot_conv_user ON botbot_conversations(user_id, updated_at DESC);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS botbot_messages (
+      id              BIGSERIAL PRIMARY KEY,
+      conversation_id BIGINT NOT NULL REFERENCES botbot_conversations(id) ON DELETE CASCADE,
+      role            TEXT NOT NULL,
+      content         TEXT NOT NULL DEFAULT '',
+      model_key       TEXT NOT NULL DEFAULT '',
+      input_tokens    INTEGER NOT NULL DEFAULT 0,
+      output_tokens    INTEGER NOT NULL DEFAULT 0,
+      finish_reason   TEXT,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE botbot_messages ADD COLUMN IF NOT EXISTS id BIGSERIAL;`);
+  await pool.query(`ALTER TABLE botbot_messages ADD COLUMN IF NOT EXISTS conversation_id BIGINT;`);
+  await pool.query(`ALTER TABLE botbot_messages ADD COLUMN IF NOT EXISTS role TEXT;`);
+  await pool.query(`ALTER TABLE botbot_messages ADD COLUMN IF NOT EXISTS content TEXT;`);
+  await pool.query(`ALTER TABLE botbot_messages ADD COLUMN IF NOT EXISTS model_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_messages ADD COLUMN IF NOT EXISTS input_tokens INTEGER;`);
+  await pool.query(`ALTER TABLE botbot_messages ADD COLUMN IF NOT EXISTS output_tokens INTEGER;`);
+  await pool.query(`ALTER TABLE botbot_messages ADD COLUMN IF NOT EXISTS finish_reason TEXT;`);
+  await pool.query(`ALTER TABLE botbot_messages ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_messages ALTER COLUMN content SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE botbot_messages ALTER COLUMN model_key SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE botbot_messages ALTER COLUMN input_tokens SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_messages ALTER COLUMN output_tokens SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_messages ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_botbot_messages_conv ON botbot_messages(conversation_id, id ASC);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS botbot_token_ledger (
+      user_id           BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      model_key         TEXT NOT NULL,
+      tokens_used       BIGINT NOT NULL DEFAULT 0,
+      tokens_purchased  BIGINT NOT NULL DEFAULT 0,
+      last_reset_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (user_id, model_key)
+    );
+  `);
+  await pool.query(`ALTER TABLE botbot_token_ledger ADD COLUMN IF NOT EXISTS user_id BIGINT;`);
+  await pool.query(`ALTER TABLE botbot_token_ledger ADD COLUMN IF NOT EXISTS model_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_token_ledger ADD COLUMN IF NOT EXISTS tokens_used BIGINT;`);
+  await pool.query(`ALTER TABLE botbot_token_ledger ADD COLUMN IF NOT EXISTS tokens_purchased BIGINT;`);
+  await pool.query(`ALTER TABLE botbot_token_ledger ADD COLUMN IF NOT EXISTS last_reset_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_token_ledger ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_token_ledger ALTER COLUMN tokens_used SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_token_ledger ALTER COLUMN tokens_purchased SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_token_ledger ALTER COLUMN last_reset_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE botbot_token_ledger ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_botbot_ledger_user ON botbot_token_ledger(user_id);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS botbot_settings (
+      user_id              BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      assistant_name       TEXT NOT NULL DEFAULT 'BotBot',
+      assistant_theme     TEXT NOT NULL DEFAULT 'sky',
+      tutorial_completed  BOOLEAN NOT NULL DEFAULT FALSE,
+      preferred_model_key  TEXT NOT NULL DEFAULT 'local',
+      preferred_runtime_node TEXT NOT NULL DEFAULT '${DEFAULT_OLLAMA_NODE_KEY}',
+      created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE botbot_settings ADD COLUMN IF NOT EXISTS user_id BIGINT;`);
+  await pool.query(`ALTER TABLE botbot_settings ADD COLUMN IF NOT EXISTS assistant_name TEXT;`);
+  await pool.query(`ALTER TABLE botbot_settings ADD COLUMN IF NOT EXISTS assistant_theme TEXT;`);
+  await pool.query(`ALTER TABLE botbot_settings ADD COLUMN IF NOT EXISTS tutorial_completed BOOLEAN;`);
+  await pool.query(`ALTER TABLE botbot_settings ADD COLUMN IF NOT EXISTS preferred_model_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_settings ADD COLUMN IF NOT EXISTS preferred_runtime_node TEXT;`);
+  await pool.query(`ALTER TABLE botbot_settings ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_settings ALTER COLUMN assistant_name SET DEFAULT 'BotBot';`);
+  await pool.query(`ALTER TABLE botbot_settings ALTER COLUMN assistant_theme SET DEFAULT 'sky';`);
+  await pool.query(`ALTER TABLE botbot_settings ALTER COLUMN tutorial_completed SET DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE botbot_settings ALTER COLUMN preferred_model_key SET DEFAULT 'local';`);
+  await pool.query(`ALTER TABLE botbot_settings ALTER COLUMN preferred_runtime_node SET DEFAULT '${DEFAULT_OLLAMA_NODE_KEY}';`);
+  await pool.query(`ALTER TABLE botbot_settings ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE botbot_settings ALTER COLUMN updated_at SET DEFAULT now();`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS botbot_usage (
+      id                      BIGSERIAL PRIMARY KEY,
+      user_id                 BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      session_start           TIMESTAMPTZ NOT NULL DEFAULT now(),
+      session_minutes         INTEGER NOT NULL DEFAULT 0,
+      total_lifetime_minutes  INTEGER NOT NULL DEFAULT 0,
+      last_active             TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE botbot_usage ADD COLUMN IF NOT EXISTS id BIGSERIAL;`);
+  await pool.query(`ALTER TABLE botbot_usage ADD COLUMN IF NOT EXISTS user_id BIGINT;`);
+  await pool.query(`ALTER TABLE botbot_usage ADD COLUMN IF NOT EXISTS session_start TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_usage ADD COLUMN IF NOT EXISTS session_minutes INTEGER;`);
+  await pool.query(`ALTER TABLE botbot_usage ADD COLUMN IF NOT EXISTS total_lifetime_minutes INTEGER;`);
+  await pool.query(`ALTER TABLE botbot_usage ADD COLUMN IF NOT EXISTS last_active TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_usage ALTER COLUMN session_minutes SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_usage ALTER COLUMN total_lifetime_minutes SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_usage ALTER COLUMN session_start SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE botbot_usage ALTER COLUMN last_active SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_botbot_usage_user ON botbot_usage(user_id, session_start DESC);`);
+
+  await pool.query(`
+    INSERT INTO botbot_model_config (model_key, display_name, provider, ollama_model_name, free_token_quota, enabled, sort_order)
+    VALUES
+      ('local', 'Local AI (MSI Thinker)', 'ollama', '${OLLAMA_PRIMARY_MODEL}', 500000, TRUE, 1),
+      ('claude-haiku-4-5', 'Claude Haiku', 'anthropic', '', 50000, TRUE, 2),
+      ('claude-sonnet-4-5', 'Claude Sonnet', 'anthropic', '', 10000, TRUE, 3)
+    ON CONFLICT (model_key) DO UPDATE SET
+      display_name = EXCLUDED.display_name,
+      provider = EXCLUDED.provider,
+      ollama_model_name = CASE
+        WHEN botbot_model_config.model_key = 'local' THEN EXCLUDED.ollama_model_name
+        ELSE botbot_model_config.ollama_model_name
+      END,
+      enabled = EXCLUDED.enabled,
+      sort_order = EXCLUDED.sort_order,
+      updated_at = now();
+  `);
+}
+
 export async function runStartupBootstrap(deps: RunStartupBootstrapDeps) {
   await ensureAuthSchema(deps.pool);
   await ensureDefaultRoles(deps.pool);
@@ -1274,4 +1468,5 @@ export async function runStartupBootstrap(deps: RunStartupBootstrapDeps) {
   await ensureCrmSchema(deps.pool);
   await ensureSocialSchema(deps.pool);
   await ensureWebTrackingSchema(deps.pool);
+  await ensureBotBotSchema(deps.pool);
 }

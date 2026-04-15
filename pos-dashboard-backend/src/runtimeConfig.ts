@@ -40,3 +40,60 @@ export const SOCIAL_SCHEDULER_INTERVAL_MS = Math.max(
   Number(envString("SOCIAL_SCHEDULER_INTERVAL_MS", "60000")) || 60000,
   15000
 );
+
+export type OllamaNodeKey = "msi-5070ti" | "alphabs" | "alphabs1" | "alphahs";
+
+export type OllamaNodeConfig = {
+  key: OllamaNodeKey;
+  label: string;
+  host: string;
+  baseUrl: string;
+  description: string;
+};
+
+export const DEFAULT_OLLAMA_NODE_KEY =
+  (envString("DEFAULT_OLLAMA_NODE_KEY", "msi-5070ti") as OllamaNodeKey) ?? "msi-5070ti";
+
+export const OLLAMA_NODE_CONFIGS: OllamaNodeConfig[] = [
+  {
+    key: "msi-5070ti",
+    label: "5070 Ti",
+    host: "MSILaptop (.50)",
+    baseUrl: envString("OLLAMA_NODE_MSI_URL", "http://192.168.4.50:11434") ?? "http://192.168.4.50:11434",
+    description: "Primary GPU thinker with the RTX 5070 Ti laptop GPU.",
+  },
+  {
+    key: "alphabs",
+    label: "alphabs",
+    host: "alphabs (.187)",
+    baseUrl: envString("OLLAMA_NODE_ALPHABS_URL", "http://192.168.4.187:11434") ?? "http://192.168.4.187:11434",
+    description: "Secondary Linux worker for CPU-side model tasks.",
+  },
+  {
+    key: "alphabs1",
+    label: "alphabs1",
+    host: "alphabs1 (.174)",
+    baseUrl: envString("OLLAMA_NODE_ALPHABS1_URL", "http://192.168.4.174:11434") ?? "http://192.168.4.174:11434",
+    description: "Secondary Linux worker for CPU-side model tasks.",
+  },
+  {
+    key: "alphahs",
+    label: "alphahs",
+    host: "alphahs (local)",
+    baseUrl: envString("OLLAMA_NODE_ALPHAHS_URL", "http://127.0.0.1:11434") ?? "http://127.0.0.1:11434",
+    description: "Local dashboard host for orchestration or light model work.",
+  },
+];
+
+export const resolveOllamaNode = (nodeKey?: string): OllamaNodeConfig =>
+  OLLAMA_NODE_CONFIGS.find((node) => node.key === nodeKey) ??
+  OLLAMA_NODE_CONFIGS.find((node) => node.key === DEFAULT_OLLAMA_NODE_KEY) ??
+  OLLAMA_NODE_CONFIGS[0];
+
+export const OLLAMA_BASE_URL = resolveOllamaNode(DEFAULT_OLLAMA_NODE_KEY).baseUrl;
+export const OLLAMA_PRIMARY_NODE_LABEL =
+  `${resolveOllamaNode(DEFAULT_OLLAMA_NODE_KEY).host}`;
+export const OLLAMA_PRIMARY_MODEL =
+  envString("OLLAMA_PRIMARY_MODEL", "gemma4:e4b") ?? "gemma4:e4b";
+export const ANTHROPIC_API_KEY = envString("ANTHROPIC_API_KEY", "") ?? "";
+export const BOTBOT_ENABLED = envString("BOTBOT_ENABLED", "true") === "true";
