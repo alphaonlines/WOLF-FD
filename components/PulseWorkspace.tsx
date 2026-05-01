@@ -153,7 +153,7 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
         <div className="flex-1 overflow-hidden">
         {subTab === "sales" && (
           <div className="h-full overflow-auto p-5 lg:p-7">
-            <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />
+            <SalesDashboard isDarkMode={isDarkMode} itemSortMetric={itemSortMetric} showTooltips={showTooltips} />
           </div>
         )}
         {subTab === "alphaos" && <KiosksStatus />}

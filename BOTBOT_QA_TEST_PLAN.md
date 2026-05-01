@@ -12,19 +12,19 @@
 - [ ] Open frontend, you should see login page
 - [ ] Log in with test credentials
 - [ ] After login, you should see BotBot orb in bottom-right corner
-- [ ] First-time user should see tutorial prompt
-- [ ] Tutorial can be skipped or started
+- [ ] First-time user should see BotBot onboarding directly
+- [ ] No legacy dashboard tutorial prompt should appear
+- [ ] Tutorial can be skipped, completed, or restarted later
 
 ### 2. Tutorial Flow (First-Time Users)
-- [ ] Start tutorial
-- [ ] Spotlight moves to menu at top-left with username greeting
+- [ ] BotBot onboarding opens with one tutorial card and one persistent BotBot orb
+- [ ] Spotlight frames the real target area with a transparent focus window
+- [ ] Surrounding screen darkens and blurs without covering the target itself
 - [ ] Can click menu to expand navigation
-- [ ] Spotlight moves to left sidebar showing modules
-- [ ] Can click "Pulse" tab to navigate to that module
-- [ ] Spotlight highlights various page features as you navigate
-- [ ] Tutorial explains theme toggle and BotBot position
-- [ ] Final step shows pulsing BotBot icon
-- [ ] Clicking BotBot icon completes tutorial and removes dark blur
+- [ ] Action steps advance automatically after the expected click/state change
+- [ ] Manual steps wait for explicit `Next` or `Done`
+- [ ] Final step uses a blue `Done` action
+- [ ] Missing target fallback shows recovery actions instead of hanging
 
 ### 3. Settings Panel - User Personalization
 - [ ] Click BotBot orb in bottom-right → opens chat panel

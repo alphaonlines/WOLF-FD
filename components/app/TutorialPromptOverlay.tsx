@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 
+// Legacy prompt preserved for reference only. Active onboarding now runs through BotBotTutorial.
 type Props = {
   isDarkMode: boolean;
   onStartTutorial: () => void;

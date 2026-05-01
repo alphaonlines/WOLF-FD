@@ -77,7 +77,7 @@ import {
   type ReportSummaryRow,
   withReportPercentages,
 } from "./salesReportUtils";
-import ModuleTourOverlay, { type ModuleTourStep } from "./app/ModuleTourOverlay";
+import BotBotTutorial, { type BotBotTutorialStep } from "./botbot/BotBotTutorial";
 
 type SalespersonPoint = SalesData & {
   fullName: string;
@@ -101,40 +101,56 @@ type SalesDashboardProps = {
   itemSortMetric: "sales" | "qty";
   showTooltips?: boolean;
   tourStorageKey?: string;
+  enableTourAutoStart?: boolean;
+  isDarkMode?: boolean;
 };
 
 const DEFAULT_STAT_CARD_ORDER = ["range-selector", "sales-overview", "finance-overview"];
-const SALES_ANALYSIS_TOUR_STEPS: ModuleTourStep[] = [
+const SALES_ANALYSIS_TOUR_STEPS: BotBotTutorialStep[] = [
   {
-    targetId: "sales-date-range",
+    id: "sales-range",
+    highlightId: "sales-date-range",
     title: "Choose the report window",
-    body: "Pick a preset range or a custom start/end date. Use Compare when you want this period measured against another one.",
+    message: "Pick a preset range or a custom start and end date. Use Compare when you want this period measured against another one.",
+    advanceWhen: { type: "manual" },
   },
   {
-    targetId: "sales-overview",
+    id: "sales-overview",
+    highlightId: "sales-overview",
     title: "Read the floor at a glance",
-    body: "This card summarizes sales, ticket count, and average ticket for the selected delivered-date range.",
+    message: "This card summarizes sales, ticket count, and average ticket for the selected delivered-date range.",
+    advanceWhen: { type: "manual" },
   },
   {
-    targetId: "sales-report-card",
+    id: "sales-report",
+    highlightId: "sales-report-card",
     title: "Work the full report",
-    body: "This is the main investigation table for drilling into stores, salespeople, manufacturers, and categories.",
+    message: "This is the main investigation table for drilling into stores, salespeople, manufacturers, and categories.",
+    advanceWhen: { type: "manual" },
   },
   {
-    targetId: "sales-best-sellers",
+    id: "sales-best-sellers",
+    highlightId: "sales-best-sellers",
     title: "Find what is moving",
-    body: "Best sellers, categories, manufacturers, and Pro1st attach rate help you see what products are driving the numbers.",
+    message: "Best sellers, categories, manufacturers, and Pro1st attach rate help you see what products are driving the numbers.",
+    advanceWhen: { type: "manual" },
   },
   {
-    targetId: "sales-performance",
+    id: "sales-performance",
+    highlightId: "sales-performance",
     title: "Compare people and stores",
-    body: "Click a salesperson or store bar to filter the rest of the page to that person or location.",
+    message: "Click a salesperson or store bar to filter the rest of the page to that person or location.",
+    advanceWhen: { type: "manual" },
   },
   {
-    targetId: "botbot-entry",
+    id: "sales-botbot",
+    highlightId: "botbot-entry",
     title: "Ask BotBot what to look at",
-    body: "Open BotBot when you want help explaining a dip, finding standout reps, or deciding which section deserves attention next.",
-    placement: "top",
+    message: "Open BotBot when you want help explaining a dip, finding standout reps, or deciding which section deserves attention next.",
+    highlightOnAction: true,
+    advanceWhen: { type: "manual" },
+    primaryActionLabel: "Done",
+    isTerminal: true,
   },
 ];
 
@@ -180,7 +196,13 @@ const sortReportRows = (rows: ReportSummaryRow[], itemSortMetric: "sales" | "qty
     );
   });
 
-const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showTooltips = false, tourStorageKey = "fd-tour-sales-analysis" }) => {
+const SalesDashboard: React.FC<SalesDashboardProps> = ({
+  itemSortMetric,
+  showTooltips = false,
+  tourStorageKey = "fd-tour-sales-analysis",
+  enableTourAutoStart = true,
+  isDarkMode = true,
+}) => {
   const [salesData, setSalesData] = useState<SalespersonPoint[]>([]);
   const [storeData, setStoreData] = useState<StoreData[]>([]);
   const [trendData, setTrendData] = useState<Array<{ day: string; furnitureSales: number; mattressBoxSpringAdjustableSales: number }>>([]);
@@ -213,6 +235,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
   }, [statCardOrder]);
 
   useEffect(() => {
+    if (!enableTourAutoStart) {
+      return;
+    }
     try {
       if (!localStorage.getItem(tourStorageKey)) {
         const timer = window.setTimeout(() => setShowSalesTour(true), 900);
@@ -221,7 +246,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
     } catch {
       // Manual tour replay still works if localStorage is unavailable.
     }
-  }, [tourStorageKey]);
+  }, [tourStorageKey, enableTourAutoStart]);
 
   const completeSalesTour = () => {
     try {
@@ -2489,9 +2514,12 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         onPrint={runPrint}
       />
       {showSalesTour && (
-        <ModuleTourOverlay
+        <BotBotTutorial
+          isDarkMode={isDarkMode}
           steps={SALES_ANALYSIS_TOUR_STEPS}
-          onClose={completeSalesTour}
+          state={{}}
+          eyebrowLabel="Sales guide"
+          onSkip={completeSalesTour}
           onComplete={completeSalesTour}
         />
       )}

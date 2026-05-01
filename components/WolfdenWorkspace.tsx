@@ -3,7 +3,7 @@ import { CheckSquare, CalendarClock, Compass, Link2, MapPin, MessageSquare, User
 import type { AuthUser } from "../types";
 import { TaskStatus } from "../types";
 import { useBotBotContext } from "./botbot/BotBotContext";
-import ModuleTourOverlay, { ModuleTourStep } from "./app/ModuleTourOverlay";
+import BotBotTutorial, { BotBotTutorialStep } from "./botbot/BotBotTutorial";
 import CRMWorkspace from "./CRMWorkspace";
 import MessageBoard from "./MessageBoard";
 import TaskManager from "./TaskManager";
@@ -17,6 +17,7 @@ type WolfdenWorkspaceProps = {
   requestedSubTabToken?: number;
   hideTabBar?: boolean;
   tourStorageKey?: string;
+  enableTourAutoStart?: boolean;
 };
 
 export type WolfdenSubTab = "ups" | "crm" | "board" | "meeting" | "tasks";
@@ -25,48 +26,73 @@ const QUICKLINKS_URL = "https://sites.google.com/view/fdserver/home";
 
 const STORE_OPTIONS = ["ALL", "Camp", "Base", "G1", "FD7", "FD5"];
 
-const WOLFDEN_TOUR_STEPS: ModuleTourStep[] = [
+const WOLFDEN_TOUR_STEPS: BotBotTutorialStep[] = [
   {
-    targetId: "den-tab-ups",
+    id: "den-ups",
+    highlightId: "den-tab-ups",
     title: "Start with the UPS list",
-    body: "This is the daily floor queue. Use it to see who is up, who is waiting, and where the sales floor needs attention.",
-    placement: "bottom",
+    message: "This is the daily floor queue. Use it to see who is up, who is waiting, and where the sales floor needs attention.",
+    advanceWhen: {
+      type: "state",
+      check: (state) => state.subTab === "ups",
+    },
   },
   {
-    targetId: "den-tab-crm",
+    id: "den-crm",
+    highlightId: "den-tab-crm",
     title: "Open the customer workspace",
-    body: "CRM is where DEN turns conversations into customer records, notes, history, and follow-up work.",
-    placement: "bottom",
+    message: "CRM is where DEN turns conversations into customer records, notes, history, and follow-up work.",
+    advanceWhen: {
+      type: "state",
+      check: (state) => state.subTab === "crm",
+    },
   },
   {
-    targetId: "den-tab-board",
+    id: "den-board",
+    highlightId: "den-tab-board",
     title: "Keep the team in sync",
-    body: "The board is for quick store communication: updates, handoffs, questions, and messages that should not disappear in a side chat.",
-    placement: "bottom",
+    message: "The board is for quick store communication: updates, handoffs, questions, and messages that should not disappear in a side chat.",
+    advanceWhen: {
+      type: "state",
+      check: (state) => state.subTab === "board",
+    },
   },
   {
-    targetId: "den-tab-meeting",
+    id: "den-meeting",
+    highlightId: "den-tab-meeting",
     title: "Use the meeting room",
-    body: "Meeting Room gives the team a shared place for huddles, decisions, and notes that need to stay attached to the workflow.",
-    placement: "bottom",
+    message: "Meeting Room gives the team a shared place for huddles, decisions, and notes that need to stay attached to the workflow.",
+    advanceWhen: {
+      type: "state",
+      check: (state) => state.subTab === "meeting",
+    },
   },
   {
-    targetId: "den-tab-tasks",
+    id: "den-tasks",
+    highlightId: "den-tab-tasks",
     title: "Track the follow-through",
-    body: "Tasks are the accountability lane for DEN. If something needs to happen later, it belongs here instead of living in memory.",
-    placement: "bottom",
+    message: "Tasks are the accountability lane for DEN. If something needs to happen later, it belongs here instead of living in memory.",
+    advanceWhen: {
+      type: "state",
+      check: (state) => state.subTab === "tasks",
+    },
   },
   {
-    targetId: "den-quicklinks",
+    id: "den-quicklinks",
+    highlightId: "den-quicklinks",
     title: "Jump to QuickLinks",
-    body: "QuickLinks opens the existing FD resource hub when the team needs forms, references, or store links outside the dashboard.",
-    placement: "bottom",
+    message: "QuickLinks opens the existing FD resource hub when the team needs forms, references, or store links outside the dashboard.",
+    advanceWhen: { type: "manual" },
   },
   {
-    targetId: "botbot-entry",
+    id: "den-botbot",
+    highlightId: "botbot-entry",
     title: "Ask BotBot inside DEN",
-    body: "BotBot follows the page context, so this is the helper to use when someone needs guidance inside a DEN workflow.",
-    placement: "left",
+    message: "BotBot follows the page context, so this is the helper to use when someone needs guidance inside a DEN workflow.",
+    highlightOnAction: true,
+    advanceWhen: { type: "manual" },
+    primaryActionLabel: "Done",
+    isTerminal: true,
   },
 ];
 
@@ -77,6 +103,7 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
   requestedSubTabToken,
   hideTabBar = false,
   tourStorageKey = "fd-tour-den",
+  enableTourAutoStart = true,
 }) => {
   const [subTab, setSubTab] = useState<WolfdenSubTab>(requestedSubTab);
   const [selectedStore, setSelectedStore] = useState("FD7");
@@ -98,6 +125,9 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
   }, [setPageContext]);
 
   useEffect(() => {
+    if (!enableTourAutoStart) {
+      return;
+    }
     const timer = window.setTimeout(() => {
       try {
         if (!window.localStorage.getItem(tourStorageKey)) {
@@ -109,7 +139,7 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
     }, 900);
 
     return () => window.clearTimeout(timer);
-  }, [tourStorageKey]);
+  }, [enableTourAutoStart, tourStorageKey]);
 
   const completeDenTour = () => {
     try {
@@ -233,10 +263,12 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
       </div>
 
       {showDenTour && (
-        <ModuleTourOverlay
-          steps={WOLFDEN_TOUR_STEPS}
+        <BotBotTutorial
           isDarkMode={isDarkMode}
-          onClose={completeDenTour}
+          steps={WOLFDEN_TOUR_STEPS}
+          state={{ subTab }}
+          eyebrowLabel="Den guide"
+          onSkip={completeDenTour}
           onComplete={completeDenTour}
         />
       )}

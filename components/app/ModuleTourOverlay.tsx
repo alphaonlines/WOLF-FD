@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
+// Legacy module overlay retained for reference. Live tours now use the shared BotBotTutorial engine.
 export type ModuleTourStep = {
   target?: string;
   targetSelector?: string;
@@ -125,13 +126,13 @@ const ModuleTourOverlay: React.FC<ModuleTourOverlayProps> = ({ steps, isDarkMode
   if (!step) return null;
 
   return (
-    <motion.div
-      className="fixed inset-0 z-[240] pointer-events-none"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" />
+      <motion.div
+        className="fixed inset-0 z-[240] pointer-events-none"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+      <div className="fixed inset-0 bg-gradient-to-b from-slate-950/85 via-slate-950/92 to-slate-950/94 backdrop-blur-md" />
 
       {highlightRect && (
         <div
@@ -142,6 +143,29 @@ const ModuleTourOverlay: React.FC<ModuleTourOverlayProps> = ({ steps, isDarkMode
             width: highlightRect.right - highlightRect.left,
             height: highlightRect.bottom - highlightRect.top,
           }}
+        />
+      )}
+
+      {highlightRect && (
+        <motion.div
+          className="fixed rounded-3xl border border-sky-300/40"
+          style={{
+            left: Math.max(0, highlightRect.left - 12),
+            top: Math.max(0, highlightRect.top - 12),
+            width: highlightRect.width + 24,
+            height: highlightRect.height + 24,
+          }}
+          initial={{ opacity: 0.2, scale: 0.985, boxShadow: '0 0 0 0 rgba(56,189,248,0)' }}
+          animate={{
+            opacity: [0.2, 0.48, 0.2],
+            scale: [0.985, 1.02, 0.985],
+            boxShadow: [
+              '0 0 0 0 rgba(56,189,248,0.22)',
+              '0 0 0 20px rgba(56,189,248,0.12)',
+              '0 0 0 0 rgba(56,189,248,0)',
+            ],
+          }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
         />
       )}
 

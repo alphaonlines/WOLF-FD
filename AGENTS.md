@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `main`
-- Current display version in `package.json`: `0.5.1.1520`
+- Current display version in `package.json`: `0.5.1.1630`
 
 ## Project Structure
 
@@ -110,7 +110,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `0.5.1.1520`
+- Current display version: `0.5.1.1630`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -141,6 +141,10 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-01 17:11 EDT — Consolidated live WOLF-FD tutorials onto the shared BotBot tutorial engine and retired the old overlapping paths from active use. Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/botbot/BotBotTutorial.tsx`, `/home/alphahs/WOLF-FD/components/SalesDashboard.tsx`, `/home/alphahs/WOLF-FD/components/WolfdenWorkspace.tsx`, `/home/alphahs/WOLF-FD/components/PulseWorkspace.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialPromptOverlay.tsx`, `/home/alphahs/WOLF-FD/components/app/ModuleTourOverlay.tsx`, `/home/alphahs/WOLF-FD/BOTBOT_QA_TEST_PLAN.md`, `/home/alphahs/WOLF-FD/package.json`.
+  - Changes: kept BotBot onboarding as the primary tutorial system, moved Sales and Den tours onto the same `BotBotTutorial` engine, standardized the shared overlay around a transparent highlight window with darkened blur outside it, added eyebrow-label support so module tours keep distinct guide identity without separate renderers, marked the older dashboard prompt and module overlay as legacy reference paths, and bumped `displayVersion` to `0.5.1.1630`.
+  - Commands/tests: `npm run build` PASS, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/` PASS, deployed asset `assets/index-D3J29rXK.js`, `curl -sS http://127.0.0.1:5057/health` PASS (`{"ok":true,"db":1}`).
 
 - 2026-05-01 14:56 EDT — Polished BotBot first-run onboarding:
   - Files: `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/components/botbot/BotBotTutorial.tsx`, `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/package.json`
@@ -296,3 +300,4 @@ Backend deploy flow for route/schema/runtime changes:
 - 2026-05-01 15:08 EDT — Replaced BotBot onboarding step copy and anchors to improve perceived guidance, then rebuilt and redeployed for immediate user-facing effect. Files: `App.tsx`, `components/botbot/BotBotTutorial.tsx`, `components/app/TutorialOverlay.tsx`, `package.json`, `AGENTS.md`. Changes: adjusted launch/tutorial positioning so step 6 more accurately highlights the main content region, made step 8 the final “Done” action with blue styling text, bumped `displayVersion` from `0.5.1.1520` to `0.5.1.1521`, and redeployed `/srv/www/wolf.discount/fd/` from fresh build output. Commands: `npm run build`, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/`, `date`. Tests: frontend build PASS; redeploy PASS.
 - 2026-05-01 15:14 EDT — Removed duplicate bottom-right BotBot tutorial bubbles and darkened the tutorial background for clearer focus. Files: `components/botbot/BotBotTutorial.tsx`, `components/app/TutorialOverlay.tsx`, `package.json`, `AGENTS.md`. Changes: removed the extra tutorial-only floating orb from the first-run BotBot tutorial so only the persistent BotBot orb remains, added a dark blurred overlay behind the tutorial card for contrast, and bumped `displayVersion` from `0.5.1.1521` to `0.5.1.1522`; redeployed from fresh build output. Commands: `npm run build`, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/`, `date`. Tests: frontend build PASS; redeploy PASS.
 - 2026-05-01 15:21 EDT — Improved BotBot onboarding interactions with target pulse indicators and action-friendly primary behavior. Files: `components/app/TutorialOverlay.tsx`, `components/botbot/BotBotTutorial.tsx`, `package.json`. Changes: added pulsing highlight treatment for clickable tutorial targets, enabled auto-advance after action conditions resolve, and made the primary button try the highlighted action when clicked before auto-complete; kept terminal Done action style and updated `displayVersion` to `0.5.1.1530`.
+- 2026-05-01 16:26 EDT — Finalized BotBot launch tutorial interaction polish and finished the requested pass. Files: `App.tsx`, `components/botbot/BotBotTutorial.tsx`, `components/app/TutorialOverlay.tsx`, `components/SalesDashboard.tsx`, `components/WolfdenWorkspace.tsx`, `package.json`, `WOLF-FD/AGENTS.md`. Changes: tightened the main-content spotlight target by moving `botbot-main-content` to the workspace content wrapper, kept WolfDen module tour auto-start disabled while BotBot onboarding runs, made interactive primary actions continue to trigger and advance after state updates, preserved one visible BotBot orb with dark blurred focus background, and kept final step as explicit blue `Done`. Version changed to `0.5.1.1626`.

@@ -26,6 +26,7 @@ interface TutorialOverlayProps {
   slide: TutorialSlide;
   actions: TutorialAction[];
   isAwaitingAction?: boolean;
+  eyebrowLabel?: string;
 }
 
 const CARD_WIDTH = 390;
@@ -42,6 +43,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   slide,
   actions,
   isAwaitingAction = false,
+  eyebrowLabel = 'BotBot guide',
 }) => {
   const cardPosition = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -96,6 +98,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   const description = slide.description || slide.body || 'Follow the highlighted area and BotBot will walk you through this step.';
   const actionCount = actions.length;
   const shouldShowTargetPulse = Boolean(highlightedElementRect);
+  const shouldPulseTarget = isAwaitingAction && shouldShowTargetPulse;
 
   return (
     <motion.div
@@ -104,12 +107,41 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
+      {highlightedElementRect ? (
+        <>
+          <div
+            className="fixed inset-x-0 top-0 bg-slate-950/90 backdrop-blur-md"
+            style={{ height: Math.max(0, highlightedElementRect.top - 18) }}
+          />
+          <div
+            className="fixed left-0 bg-slate-950/90 backdrop-blur-md"
+            style={{
+              top: Math.max(0, highlightedElementRect.top - 18),
+              width: Math.max(0, highlightedElementRect.left - 18),
+              height: (highlightedElementRect.height || 0) + 36,
+            }}
+          />
+          <div
+            className="fixed right-0 bg-slate-950/90 backdrop-blur-md"
+            style={{
+              top: Math.max(0, highlightedElementRect.top - 18),
+              width: Math.max(0, window.innerWidth - highlightedElementRect.right - 18),
+              height: (highlightedElementRect.height || 0) + 36,
+            }}
+          />
+          <div
+            className="fixed inset-x-0 bottom-0 bg-slate-950/95 backdrop-blur-md"
+            style={{ top: highlightedElementRect.bottom + 18 }}
+          />
+        </>
+      ) : (
+        <div className="fixed inset-0 bg-gradient-to-b from-slate-950/90 via-slate-950/95 to-slate-950/98 backdrop-blur-lg" />
+      )}
 
       {shouldShowTargetPulse && (
         <motion.div
           key={`botbot-tutorial-target-${Math.round(highlightedElementRect?.top || 0)}-${Math.round(highlightedElementRect?.left || 0)}`}
-          className="fixed rounded-2xl border border-sky-400/95 bg-sky-500/15 pointer-events-none z-[211]"
+          className="fixed rounded-2xl border-2 border-sky-300/95 bg-sky-500/20 pointer-events-none z-[211]"
           style={{
             left: (highlightedElementRect?.left || 0) - 8,
             top: (highlightedElementRect?.top || 0) - 8,
@@ -117,22 +149,22 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             height: (highlightedElementRect?.height || 0) + 16,
           }}
           initial={{ opacity: 0.35, scale: 0.985, boxShadow: '0 0 0 0 rgba(56,189,248,0)' }}
-          animate={isAwaitingAction
-            ? {
-                opacity: [0.38, 0.8, 0.38],
-                scale: [0.985, 1.02, 0.985],
+        animate={shouldPulseTarget
+          ? {
+                opacity: [0.4, 0.82, 0.4],
+                scale: [0.985, 1.025, 0.985],
                 boxShadow: [
                   '0 0 0 0 rgba(56,189,248,0.4)',
                   '0 0 0 18px rgba(56,189,248,0.15)',
                   '0 0 0 0 rgba(56,189,248,0)',
                 ],
-              }
-            : {
-                opacity: 0.45,
+            }
+          : {
+                opacity: 0.52,
                 scale: 1,
                 boxShadow: '0 0 0 0 rgba(56,189,248,0.3)',
               }}
-          transition={isAwaitingAction ? { duration: 1.8, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+          transition={shouldPulseTarget ? { duration: 1.8, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
         />
       )}
 
@@ -153,7 +185,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
               </div>
               <div className="min-w-0 flex-1">
                 <div className={`text-xs font-semibold uppercase tracking-[0.24em] ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
-                  BotBot guide
+                  {eyebrowLabel}
                 </div>
                 <h3 className="mt-1 text-lg font-bold leading-tight">
                   {slide.title || `Step ${currentStep + 1}`}

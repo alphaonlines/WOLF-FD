@@ -201,8 +201,8 @@ const buildBotBotTutorialSteps = ({
 
   steps.push({
     id: 'botbot-main-content',
-    title: 'This is where your main content lives',
-    message: 'This is where your main content lives. I’ll wait while you explore this workspace.',
+    title: 'Your main workspace',
+    message: 'This is where your main content lives. I’ll wait while you explore this dashboard.',
     highlightId: 'botbot-main-content',
     scope: 'launch',
     requiredModules: [],
@@ -681,6 +681,8 @@ const App: React.FC = () => {
     [sidebarOpen, activeTab, requestedPulseSubTab, currentPulseSubTab, requestedWolfdenSubTab]
   );
 
+  const isBotBotTutorialBlockingTours = Boolean(authUser && (pendingBotBotTutorial || showBotBotTutorial));
+
   useEffect(() => {
     if (!authUser) return;
     if (availableTabs.includes(activeTab)) return;
@@ -906,7 +908,15 @@ const App: React.FC = () => {
           </div>
         );
       case Tab.SALES:
-        return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} tourStorageKey={getModuleTourStorageKey('sales-analysis', authUser)} />;
+        return (
+          <SalesDashboard
+            isDarkMode={isDarkMode}
+            itemSortMetric={itemSortMetric}
+            showTooltips={showTooltips}
+            tourStorageKey={getModuleTourStorageKey('sales-analysis', authUser)}
+            enableTourAutoStart={!isBotBotTutorialBlockingTours}
+          />
+        );
       case Tab.PRODUCT_SEARCH:
         return <ProductSearchWorkspace isDarkMode={isDarkMode} onOpenUploadArea={() => setUpdatePanelOpen(true)} />;
       case Tab.CRM:
@@ -945,6 +955,7 @@ const App: React.FC = () => {
             requestedSubTabToken={requestedWolfdenSubTabToken}
             hideTabBar={true}
             tourStorageKey={getModuleTourStorageKey('den', authUser)}
+            enableTourAutoStart={!isBotBotTutorialBlockingTours}
           />
         );
       case Tab.PULSE:
@@ -984,7 +995,7 @@ const App: React.FC = () => {
           />
         );
       default:
-        return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} tourStorageKey={getModuleTourStorageKey('sales-analysis', authUser)} />;
+        return <SalesDashboard isDarkMode={isDarkMode} itemSortMetric={itemSortMetric} showTooltips={showTooltips} tourStorageKey={getModuleTourStorageKey('sales-analysis', authUser)} />;
     }
   };
 
@@ -1250,10 +1261,8 @@ const App: React.FC = () => {
           </div>
         </aside>
 
-        <main
-          className={`flex-1 transition-[margin] duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}
-        >
-          <header className={`h-20 backdrop-blur-xl sticky top-0 z-10 px-6 lg:px-8 flex items-center justify-between shadow-sm border-b ${
+      <main className={`flex-1 transition-[margin] duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
+        <header className={`h-20 backdrop-blur-xl sticky top-0 z-10 px-6 lg:px-8 flex items-center justify-between shadow-sm border-b ${
             isDarkMode
               ? 'bg-[#121b27]/78 border-slate-700/60'
               : 'bg-white/70 border-slate-200/60'
@@ -1495,11 +1504,10 @@ const App: React.FC = () => {
             </div>
           </header>
 
-          <div
-            data-tour-id="botbot-main-content"
-            className="p-5 lg:p-7"
-          >
+          <div className="p-5 lg:p-7">
+            <div data-tour-id="botbot-main-content">
             {renderContent()}
+            </div>
           </div>
         </main>
 
