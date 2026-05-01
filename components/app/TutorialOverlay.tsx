@@ -27,6 +27,8 @@ interface TutorialOverlayProps {
   actions: TutorialAction[];
   isAwaitingAction?: boolean;
   eyebrowLabel?: string;
+  suppressWaitingCopy?: boolean;
+  onHighlightedAreaClick?: () => void;
 }
 
 const CARD_WIDTH = 390;
@@ -44,6 +46,8 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   actions,
   isAwaitingAction = false,
   eyebrowLabel = 'Tutorial',
+  suppressWaitingCopy = false,
+  onHighlightedAreaClick,
 }) => {
   const cardPosition = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -168,6 +172,21 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
         />
       )}
 
+      {highlightedElementRect && onHighlightedAreaClick && (
+        <button
+          type="button"
+          aria-label="Continue tutorial from highlighted area"
+          onClick={onHighlightedAreaClick}
+          className="fixed z-[212] cursor-pointer rounded-2xl bg-transparent pointer-events-auto"
+          style={{
+            left: (highlightedElementRect.left || 0) - 8,
+            top: (highlightedElementRect.top || 0) - 8,
+            width: (highlightedElementRect.width || 0) + 16,
+            height: (highlightedElementRect.height || 0) + 16,
+          }}
+        />
+      )}
+
       <motion.div
         key={currentStep}
         initial={{ opacity: 0, y: 18, scale: 0.98 }}
@@ -202,7 +221,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             </div>
 
             <p className={`mt-4 text-sm font-medium leading-relaxed ${isDarkMode ? 'text-slate-100' : 'text-slate-700'}`}>
-              {isAwaitingAction ? `${description} I’m waiting for you.` : description}
+              {isAwaitingAction && !suppressWaitingCopy ? `${description} I’m waiting for you.` : description}
             </p>
 
             {Array.isArray(slide.tips) && slide.tips.length > 0 && (

@@ -90,6 +90,8 @@ const buildBotBotTutorialSteps = ({
       title: 'Open the navigation',
       message: 'Open the sidebar to see every module I can help you with.',
       highlightId: 'sidebar-toggle',
+      advanceOnHighlightClick: true,
+      suppressWaitingCopy: true,
       scope: 'launch',
       requiredModules: [],
       advanceWhen: {

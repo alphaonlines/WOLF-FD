@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `main`
-- Current display version in `package.json`: `0.5.1.1717`
+- Current display version in `package.json`: `0.5.1.1721`
 
 ## Project Structure
 
@@ -110,7 +110,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `0.5.1.1717`
+- Current display version: `0.5.1.1721`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -141,6 +141,10 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-01 17:21 EDT — Improved launch tutorial step controls so guided clicks feel more natural. Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/botbot/BotBotTutorial.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`.
+  - Changes: launch step 2 now suppresses the extra “I’m waiting for you” line, clicking the highlighted top-left tutorial area now triggers the intended sidebar action and advances the tutorial, a reusable `Back` button now appears alongside the tutorial actions, and `displayVersion` moved to `0.5.1.1721`.
+  - Commands/tests: `npm run build` PASS, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/` PASS, deployed asset `assets/index-CVY-HCZz.js`, `curl -sS http://127.0.0.1:5057/health` PASS (`{"ok":true,"db":1}`).
 
 - 2026-05-01 17:17 EDT — Refined BotBot tutorial and chat copy for a warmer first impression. Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/components/botbot/BotBotChatPanel.tsx`, `/home/alphahs/WOLF-FD/package.json`.
   - Changes: first onboarding card now welcomes users to `WOLF FD Dashboard`, tutorial eyebrow text now reads `Tutorial` instead of `BotBot guide`, BotBot chat now introduces itself as the user’s personal AI agent, and `displayVersion` moved to `0.5.1.1717`.

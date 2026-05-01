@@ -24,6 +24,8 @@ export type BotBotTutorialStep = {
   message: string;
   highlightId?: string;
   highlightOnAction?: boolean;
+  advanceOnHighlightClick?: boolean;
+  suppressWaitingCopy?: boolean;
   scope?: 'launch' | 'module';
   requiredModules?: string[];
   advanceWhen: AdvanceRule;
@@ -279,6 +281,10 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
     setActiveStepIndex((current) => Math.min(current + 1, filteredSteps.length - 1));
   }, [activeStep, isLastStep, onSkip, filteredSteps.length]);
 
+  const goBackStep = useCallback(() => {
+    setActiveStepIndex((current) => Math.max(current - 1, 0));
+  }, []);
+
   const handlePrimaryAction = useCallback(() => {
     if (!activeStep) {
       onSkip();
@@ -359,6 +365,7 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
   const isPrimaryEnabled = isTerminalStep || activeStep?.advanceWhen.type === 'manual' || Boolean(activeStep?.highlightId);
   const primaryLabel =
     isTerminalStep ? 'Done' : activeStep?.primaryActionLabel || (isLastStep ? 'Done' : 'Next');
+  const showBackAction = activeStepIndex > 0;
 
   const actions = useMemo(() => {
     if (!activeStep) {
@@ -366,7 +373,7 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
     }
 
     if (!activeStep || isTerminalStep || !showRecoveryActions) {
-      return [
+      const baseActions = [
         {
           id: 'primary',
           label: primaryLabel,
@@ -375,9 +382,28 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
           onClick: handlePrimaryAction,
         },
       ];
+
+      if (showBackAction) {
+        baseActions.unshift({
+          id: 'back',
+          label: 'Back',
+          variant: 'secondary' as const,
+          onClick: goBackStep,
+        });
+      }
+
+      return baseActions;
     }
 
     const recoveryActions = [
+      ...(showBackAction
+        ? [{
+            id: 'back',
+            label: 'Back',
+            variant: 'secondary' as const,
+            onClick: goBackStep,
+          }]
+        : []),
       {
         id: 'retry',
         label: 'Try again',
@@ -417,7 +443,7 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
     }
 
     return recoveryActions;
-  }, [activeStep, handlePrimaryAction, isPrimaryEnabled, isTerminalStep, onHelp, onRestart, onSkip, primaryLabel, retryTargetLookup, showEscalatedRecovery, showRecoveryActions, skipCurrentStep]);
+  }, [activeStep, goBackStep, handlePrimaryAction, isPrimaryEnabled, isTerminalStep, onHelp, onRestart, onSkip, primaryLabel, retryTargetLookup, showBackAction, showEscalatedRecovery, showRecoveryActions, skipCurrentStep]);
 
   const slideMessage = useMemo(() => {
     if (!activeStep) return '';
@@ -454,6 +480,8 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
       actions={actions}
       isAwaitingAction={isWaitingForAction}
       eyebrowLabel={eyebrowLabel}
+      suppressWaitingCopy={Boolean(activeStep?.suppressWaitingCopy)}
+      onHighlightedAreaClick={activeStep?.advanceOnHighlightClick ? handlePrimaryAction : undefined}
     />
   );
 };
