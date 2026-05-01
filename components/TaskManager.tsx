@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, Circle, Clock, Plus, User, Send, Check } from "lucide-react";
+import { useBotBotContext } from "./botbot/BotBotContext";
 import { INITIAL_TASKS } from "../constants";
 import { Task, TaskStatus } from "../types";
 import { createTask, getNextSortIndex, seedLocalTasksIfEmpty, subscribeTasks, updateTask } from "../services/tasksService";
@@ -170,6 +171,7 @@ const formatDuration = (ms: number) => {
 };
 
 const TaskManager: React.FC = () => {
+  const { setPageContext } = useBotBotContext();
   const [tasks, setTasks] = useState<Task[]>([]);
 
   const [isAdding, setIsAdding] = useState(false);
@@ -190,6 +192,16 @@ const TaskManager: React.FC = () => {
 
   const [syncMode, setSyncMode] = useState("Checking local DB…");
   const [completedOpen, setCompletedOpen] = useState(true);
+
+  useEffect(() => {
+    setPageContext({
+      pageName: "Task Manager",
+      module: "tasks",
+      userRole: "Employee",
+      keyMetricsVisible: [],
+      suggestedActions: [],
+    });
+  }, [setPageContext]);
 
   useEffect(() => {
     seedLocalTasksIfEmpty(INITIAL_TASKS);

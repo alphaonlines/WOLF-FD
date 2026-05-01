@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowUpRight,
   ChevronDown,
@@ -14,6 +14,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
+import { useBotBotContext } from "./botbot/BotBotContext";
 
 type SystemStatus = "Online" | "Offline";
 type DeviceType = "Desktop" | "Tablet" | "Mini" | "Kiosk";
@@ -342,8 +343,19 @@ const getCardClasses = (status: SystemStatus, isExpanded: boolean) => {
 };
 
 const KiosksStatus: React.FC = () => {
+  const { setPageContext } = useBotBotContext();
   const [expandedSystemId, setExpandedSystemId] = useState<string>(alphaSystems[0].id);
   const [actionMessage, setActionMessage] = useState<string>("Remote support, reboot, updates, and backups are now staged per system from this screen.");
+
+  useEffect(() => {
+    setPageContext({
+      pageName: "Kiosks Status",
+      module: "kiosks",
+      userRole: "Employee",
+      keyMetricsVisible: [],
+      suggestedActions: [],
+    });
+  }, [setPageContext]);
 
   const groupedSystems = useMemo(() => {
     const groups = new Map<string, AlphaSystem[]>();

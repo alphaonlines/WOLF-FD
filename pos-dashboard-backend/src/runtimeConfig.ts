@@ -58,8 +58,8 @@ export const OLLAMA_NODE_CONFIGS: OllamaNodeConfig[] = [
   {
     key: "msi-5070ti",
     label: "5070 Ti",
-    host: "MSILaptop (.50)",
-    baseUrl: envString("OLLAMA_NODE_MSI_URL", "http://192.168.4.50:11434") ?? "http://192.168.4.50:11434",
+    host: "MSILaptop (.80)",
+    baseUrl: envString("OLLAMA_NODE_MSI_URL", "http://192.168.4.80:11434") ?? "http://192.168.4.80:11434",
     description: "Primary GPU thinker with the RTX 5070 Ti laptop GPU.",
   },
   {

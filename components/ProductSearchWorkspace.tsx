@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, PlayCircle, Plus, RefreshCw, Search, ShoppingCart, Trash2, UploadCloud, X } from "lucide-react";
+import { useBotBotContext } from "./botbot/BotBotContext";
 import type { ManufacturerCatalogItem, ManufacturerReferenceNote } from "../types";
 import { CANONICAL_PRODUCT_MANUFACTURERS, calcSuggestedRetail, calcFloorRetail } from "../constants/productCatalog";
 import { fetchManufacturerCatalog, fetchManufacturerReferenceNotes } from "../services/manufacturerPricelistApi";
@@ -54,12 +55,23 @@ const buildExternalItemSearchUrl = (sku: string) => {
 };
 
 const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkMode, onOpenUploadArea }) => {
+  const { setPageContext } = useBotBotContext();
   const CATALOG_FETCH_LIMIT = 5000;
 
   // Splash screen
   const [splashVisible, setSplashVisible] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
   const splashJoke = useRef(SPLASH_JOKES[Math.floor(Math.random() * SPLASH_JOKES.length)]);
+
+  useEffect(() => {
+    setPageContext({
+      pageName: "Product Search",
+      module: "product_search",
+      userRole: "Employee",
+      keyMetricsVisible: [],
+      suggestedActions: [],
+    });
+  }, [setPageContext]);
 
   useEffect(() => {
     const fadeTimer = window.setTimeout(() => setSplashFading(true), 2400);

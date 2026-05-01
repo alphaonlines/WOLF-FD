@@ -155,8 +155,19 @@ export async function sendMessage(
 export const fetchTokenUsage = (): Promise<TokenUsageRow[]> =>
   fetchJson('/api/botbot/token-usage').then(r => r.usage);
 
+const mapSettings = (raw: any): BotBotSettings | null => {
+  if (!raw) return null;
+  return {
+    assistantName: String(raw.assistantName ?? raw.assistant_name ?? 'BotBot'),
+    assistantTheme: String(raw.assistantTheme ?? raw.assistant_theme ?? 'sky'),
+    tutorialCompleted: Boolean(raw.tutorialCompleted ?? raw.tutorial_completed),
+    preferredModelKey: String(raw.preferredModelKey ?? raw.preferred_model_key ?? 'local'),
+    preferredRuntimeNode: String(raw.preferredRuntimeNode ?? raw.preferred_runtime_node ?? 'msi'),
+  };
+};
+
 export const fetchSettings = (): Promise<BotBotSettings | null> =>
-  fetchJson('/api/botbot/settings').then(r => r.settings);
+  fetchJson('/api/botbot/settings').then(r => mapSettings(r.settings));
 
 export const fetchRuntimeStatus = (): Promise<BotBotRuntimeStatus> =>
   fetchJson('/api/botbot/runtime').then(r => r.runtime);

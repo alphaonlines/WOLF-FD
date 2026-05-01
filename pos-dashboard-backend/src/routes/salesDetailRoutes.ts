@@ -229,6 +229,7 @@ export function registerSalesDetailRoutes({
     JOIN pos_sales s ON s.sale_id = pos_sales_people.sale_id
     WHERE ${prefixedDateField("s")} >= $1
       AND ${prefixedDateField("s")} < $2
+      AND pos_sales_people.salesperson <> 'Sales, Store'
       AND ($3::text IS NULL OR pos_sales_people.salesperson ILIKE ('%' || $3 || '%'))
       AND ($4::text IS NULL OR pos_sales_people.location ILIKE ('%' || $4 || '%'));
   `;

@@ -55,7 +55,12 @@ const PctTable: React.FC<{ label: "Store" | "Salesperson"; rows: ReturnType<type
     if (!Number.isFinite(pro1stSales) || !Number.isFinite(totalRetail) || totalRetail <= 0) {
       return "0.0%";
     }
-    return `${((pro1stSales / totalRetail) * 100).toFixed(1)}%`;
+    // Pro1st % should exclude Pro1st amount from denominator
+    const retailExcludingPro1st = totalRetail - pro1stSales;
+    if (retailExcludingPro1st <= 0) {
+      return "0.0%";
+    }
+    return `${((pro1stSales / retailExcludingPro1st) * 100).toFixed(1)}%`;
   };
 
   return (

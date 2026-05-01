@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Printer, Search, Users } from "lucide-react";
+import { useBotBotContext } from "./botbot/BotBotContext";
 import type {
   AuthUser,
   CRMCustomerAccount,
@@ -297,6 +298,7 @@ const namesLikelyMatch = (left: string, right: string) => {
 };
 
 const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view = "all", selectedStore: controlledStore, onStoreChange }) => {
+  const { setPageContext } = useBotBotContext();
   const isManager = authUser.roles.includes("Owner") || authUser.roles.includes("Manager");
   const [syncMode, setSyncMode] = useState<SyncMode>("OFFLINE");
   const [internalStore, setInternalStore] = useState("FD7");
@@ -412,6 +414,16 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       if (pollId !== null) window.clearInterval(pollId);
     };
   }, [selectedStore]);
+
+  useEffect(() => {
+    setPageContext({
+      pageName: "CRM",
+      module: "crm",
+      userRole: "Employee",
+      keyMetricsVisible: [],
+      suggestedActions: [],
+    });
+  }, [setPageContext]);
 
   const myQueueItem = useMemo(
     () =>

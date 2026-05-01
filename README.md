@@ -15,7 +15,7 @@ Furniture Distributors dashboard (Vite + React) with a local POS backend API and
 - **API URL:** `https://furnituredistributors.wolf.discount/fd/api/`
 - **Backend Port:** `5057`
 - **Database Port (Host):** `5433`
-- **Display Versioning:** UI shows `displayVersion` from `package.json` (for example `0.3.28.4`) while package semver remains valid.
+- **Display Versioning:** UI labels read one source: `displayVersion` from `package.json`, exported as `APP_VERSION` from `constants.ts`. Keep package `version` semver-valid for npm metadata.
 
 ### Nginx Routing
 Nginx acts as a reverse proxy, mapping `/fd/api/` to the internal Swarm service. Note that the path mapping includes a redundant `/api` in the frontend code to correctly trigger the backend's relative routing logic.

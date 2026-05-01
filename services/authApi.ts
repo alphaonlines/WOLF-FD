@@ -10,6 +10,7 @@ type AuthResponse = {
     roles?: string[];
     permissions?: string[];
     permissionMode?: string;
+    tutorialCompletedAt?: string | null;
   } | null;
 };
 
@@ -60,6 +61,7 @@ const mapUser = (raw: AuthResponse["user"]): AuthUser | null => {
     roles: (Array.isArray(raw.roles) ? raw.roles.map((r) => String(r)) : []) as UserRole[],
     permissions: Array.isArray(raw.permissions) ? raw.permissions.map((permission) => String(permission)) : [],
     permissionMode: raw.permissionMode === "explicit" ? ("explicit" as PermissionMode) : ("role" as PermissionMode),
+    tutorialCompletedAt: typeof raw.tutorialCompletedAt === "string" ? raw.tutorialCompletedAt : null,
   };
 };
 
@@ -248,4 +250,16 @@ export async function changeCurrentPassword(currentPassword: string, newPassword
   if (!res.ok) {
     throw new Error(await readApiError(res, `Password change failed (${res.status})`));
   }
+}
+
+export async function markTutorialComplete(): Promise<AuthUser | null> {
+  const res = await authFetch("/api/auth/tutorial-complete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, `Tutorial update failed (${res.status})`));
+  }
+  const json = (await res.json()) as AuthResponse;
+  return mapUser(json.user ?? null);
 }

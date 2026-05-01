@@ -23,6 +23,25 @@ export function registerInsightsRoutes({
   safeFinanceBalance,
   safeFinanceFee,
 }: RegisterInsightsRoutesDeps) {
+  const ensureImportCoverageSql = `
+    CREATE TABLE IF NOT EXISTS pos_import_coverage (
+      id BIGSERIAL PRIMARY KEY,
+      report_type TEXT NOT NULL,
+      import_batch_id BIGINT,
+      source_file TEXT,
+      date_field TEXT NOT NULL,
+      range_start DATE NOT NULL,
+      range_end DATE NOT NULL,
+      row_count INTEGER NOT NULL DEFAULT 0,
+      imported_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_pos_import_coverage_unique
+      ON pos_import_coverage(report_type, import_batch_id, source_file, date_field);
+    CREATE INDEX IF NOT EXISTS idx_pos_import_coverage_lookup
+      ON pos_import_coverage(report_type, date_field, range_start, range_end);
+  `;
+
   // Available years present in data (for UI pickers)
   app.get("/api/available-years", async (_req, res) => {
     const sql = `
@@ -117,53 +136,86 @@ export function registerInsightsRoutes({
     res.json({ start, end, limit, threshold_high: thresholdHigh, total_count: totalCount, rows });
   });
 
-  // Coverage check: missing months for sales vs items (sale months)
+  // Coverage check: missing delivery-date days for sales vs item exports.
   app.get("/api/import/coverage-months", async (_req, res) => {
     const startFloor = "2024-06-01";
+    await pool.query(ensureImportCoverageSql);
     const sql = `
     WITH bounds AS (
       SELECT $1::date AS start_date, CURRENT_DATE::date AS end_date
     ),
-    sales AS (
-      SELECT sale_id, sale_date AS dt
+    persisted_sales_ranges AS (
+      SELECT range_start, range_end
+      FROM pos_import_coverage
+      WHERE report_type = 'sales'
+        AND date_field = 'delivery_confirmed_date'
+        AND range_end >= $1
+    ),
+    persisted_item_ranges AS (
+      SELECT range_start, range_end
+      FROM pos_import_coverage
+      WHERE report_type = 'items'
+        AND date_field = 'delivery_confirmed_date'
+        AND range_end >= $1
+    ),
+    derived_sales_ranges AS (
+      SELECT
+        MIN(delivery_confirmed_date)::date AS range_start,
+        MAX(delivery_confirmed_date)::date AS range_end
       FROM pos_sales
       WHERE sale_id IS NOT NULL
         AND sale_id <> ''
-        AND sale_date IS NOT NULL
-        AND sale_date >= $1
+        AND delivery_confirmed_date IS NOT NULL
+        AND delivery_confirmed_date >= $1
+      GROUP BY last_import_batch_id, raw_source_file
     ),
-    items AS (
-      SELECT sale_id, sale_date AS dt
+    derived_item_ranges AS (
+      SELECT
+        MIN(delivery_confirmed_date)::date AS range_start,
+        MAX(delivery_confirmed_date)::date AS range_end
       FROM pos_sale_items
       WHERE sale_id IS NOT NULL
         AND sale_id <> ''
-        AND sale_date IS NOT NULL
-        AND sale_date >= $1
+        AND delivery_confirmed_date IS NOT NULL
+        AND delivery_confirmed_date >= $1
+      GROUP BY import_batch_id, raw_source_file
+    ),
+    sales_ranges AS (
+      SELECT range_start, range_end FROM persisted_sales_ranges
+      UNION
+      SELECT range_start, range_end FROM derived_sales_ranges
+    ),
+    item_ranges AS (
+      SELECT range_start, range_end FROM persisted_item_ranges
+      UNION
+      SELECT range_start, range_end FROM derived_item_ranges
     ),
     sales_days AS (
-      SELECT DISTINCT date_trunc('day', dt)::date AS day
-      FROM sales
-      WHERE dt IS NOT NULL
+      SELECT DISTINCT generate_series(
+        GREATEST(range_start, (SELECT start_date FROM bounds)),
+        LEAST(range_end, (SELECT end_date FROM bounds)),
+        interval '1 day'
+      )::date AS day
+      FROM sales_ranges
+      WHERE range_start IS NOT NULL
+        AND range_end IS NOT NULL
+        AND range_start <= range_end
+        AND GREATEST(range_start, (SELECT start_date FROM bounds)) <= LEAST(range_end, (SELECT end_date FROM bounds))
     ),
     items_days AS (
-      SELECT DISTINCT date_trunc('day', dt)::date AS day
-      FROM items
-      WHERE dt IS NOT NULL
+      SELECT DISTINCT generate_series(
+        GREATEST(range_start, (SELECT start_date FROM bounds)),
+        LEAST(range_end, (SELECT end_date FROM bounds)),
+        interval '1 day'
+      )::date AS day
+      FROM item_ranges
+      WHERE range_start IS NOT NULL
+        AND range_end IS NOT NULL
+        AND range_start <= range_end
+        AND GREATEST(range_start, (SELECT start_date FROM bounds)) <= LEAST(range_end, (SELECT end_date FROM bounds))
     ),
     days AS (
       SELECT generate_series((SELECT start_date FROM bounds), (SELECT end_date FROM bounds), interval '1 day')::date AS day
-    ),
-    sales_only AS (
-      SELECT s.sale_id, s.dt
-      FROM sales s
-      LEFT JOIN items i ON i.sale_id = s.sale_id
-      WHERE i.sale_id IS NULL AND s.dt IS NOT NULL
-    ),
-    items_only AS (
-      SELECT i.sale_id, i.dt
-      FROM items i
-      LEFT JOIN sales s ON s.sale_id = i.sale_id
-      WHERE s.sale_id IS NULL AND i.dt IS NOT NULL
     ),
     missing_sales_days AS (
       SELECT d.day
@@ -176,18 +228,40 @@ export function registerInsightsRoutes({
       FROM days d
       LEFT JOIN items_days i ON i.day = d.day
       WHERE i.day IS NULL
+    ),
+    missing_sales_months AS (
+      SELECT
+        to_char(date_trunc('month', day), 'YYYY-MM') AS month,
+        COUNT(*)::int AS missing_days
+      FROM missing_sales_days
+      GROUP BY 1
+    ),
+    missing_item_months AS (
+      SELECT
+        to_char(date_trunc('month', day), 'YYYY-MM') AS month,
+        COUNT(*)::int AS missing_days
+      FROM missing_item_days
+      GROUP BY 1
     )
     SELECT
       ARRAY(
-        SELECT DISTINCT to_char(date_trunc('month', dt), 'YYYY-MM')
-        FROM sales_only
-        ORDER BY 1
+        SELECT month
+        FROM missing_item_months
+        ORDER BY month DESC
       ) AS missing_items_months,
       ARRAY(
-        SELECT DISTINCT to_char(date_trunc('month', dt), 'YYYY-MM')
-        FROM items_only
-        ORDER BY 1
+        SELECT month
+        FROM missing_sales_months
+        ORDER BY month DESC
       ) AS missing_sales_months,
+      COALESCE((
+        SELECT json_agg(json_build_object('month', month, 'missingDays', missing_days) ORDER BY month DESC)
+        FROM missing_sales_months
+      ), '[]'::json) AS missing_sales_month_details,
+      COALESCE((
+        SELECT json_agg(json_build_object('month', month, 'missingDays', missing_days) ORDER BY month DESC)
+        FROM missing_item_months
+      ), '[]'::json) AS missing_item_month_details,
       (SELECT COUNT(*)::int FROM missing_sales_days) AS missing_sales_days_count,
       (SELECT COUNT(*)::int FROM missing_item_days) AS missing_item_days_count,
       ARRAY(
@@ -214,6 +288,8 @@ export function registerInsightsRoutes({
       endDate: row.end_date,
       missingSalesMonths: Array.isArray(row.missing_sales_months) ? row.missing_sales_months : [],
       missingItemMonths: Array.isArray(row.missing_items_months) ? row.missing_items_months : [],
+      missingSalesMonthDetails: Array.isArray(row.missing_sales_month_details) ? row.missing_sales_month_details : [],
+      missingItemMonthDetails: Array.isArray(row.missing_item_month_details) ? row.missing_item_month_details : [],
       missingSalesDays: Array.isArray(row.missing_sales_days) ? row.missing_sales_days : [],
       missingItemDays: Array.isArray(row.missing_item_days) ? row.missing_item_days : [],
       missingSalesDaysCount: Number(row.missing_sales_days_count ?? 0),

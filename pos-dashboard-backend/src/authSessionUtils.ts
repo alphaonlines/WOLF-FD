@@ -7,6 +7,7 @@ export type AuthUserView = {
   roles: (typeof VALID_USER_ROLES)[number][];
   permissions: string[];
   permissionMode: "role" | "explicit";
+  tutorialCompletedAt: string | null;
 };
 
 export function normalizeRoleList(raw: any): (typeof VALID_USER_ROLES)[number][] {
@@ -46,6 +47,7 @@ export function buildAuthUser(row: any): AuthUserView {
     roles: normalizeRoleList(row.roles),
     permissions,
     permissionMode: row?.permission_mode === "explicit" ? "explicit" : "role",
+    tutorialCompletedAt: row?.tutorial_completed_at ? new Date(row.tutorial_completed_at).toISOString() : null,
   };
 }
 

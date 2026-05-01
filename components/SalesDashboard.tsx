@@ -27,7 +27,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Database, Loader2, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
+import { Compass, Database, Loader2, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
+import { useBotBotContext } from "./botbot/BotBotContext";
 import {
   getPosApiBaseUrl,
   fetchAvailableYears,
@@ -76,6 +77,7 @@ import {
   type ReportSummaryRow,
   withReportPercentages,
 } from "./salesReportUtils";
+import ModuleTourOverlay, { type ModuleTourStep } from "./app/ModuleTourOverlay";
 
 type SalespersonPoint = SalesData & {
   fullName: string;
@@ -98,9 +100,43 @@ type RangeMode = "preset" | "custom";
 type SalesDashboardProps = {
   itemSortMetric: "sales" | "qty";
   showTooltips?: boolean;
+  tourStorageKey?: string;
 };
 
 const DEFAULT_STAT_CARD_ORDER = ["range-selector", "sales-overview", "finance-overview"];
+const SALES_ANALYSIS_TOUR_STEPS: ModuleTourStep[] = [
+  {
+    targetId: "sales-date-range",
+    title: "Choose the report window",
+    body: "Pick a preset range or a custom start/end date. Use Compare when you want this period measured against another one.",
+  },
+  {
+    targetId: "sales-overview",
+    title: "Read the floor at a glance",
+    body: "This card summarizes sales, ticket count, and average ticket for the selected delivered-date range.",
+  },
+  {
+    targetId: "sales-report-card",
+    title: "Work the full report",
+    body: "This is the main investigation table for drilling into stores, salespeople, manufacturers, and categories.",
+  },
+  {
+    targetId: "sales-best-sellers",
+    title: "Find what is moving",
+    body: "Best sellers, categories, manufacturers, and Pro1st attach rate help you see what products are driving the numbers.",
+  },
+  {
+    targetId: "sales-performance",
+    title: "Compare people and stores",
+    body: "Click a salesperson or store bar to filter the rest of the page to that person or location.",
+  },
+  {
+    targetId: "botbot-entry",
+    title: "Ask BotBot what to look at",
+    body: "Open BotBot when you want help explaining a dip, finding standout reps, or deciding which section deserves attention next.",
+    placement: "top",
+  },
+];
 
 const normalizeStatCardOrder = (value: unknown): string[] => {
   const allowed = new Set(["range-selector", "sales-overview", "finance-overview"]);
@@ -144,10 +180,10 @@ const sortReportRows = (rows: ReportSummaryRow[], itemSortMetric: "sales" | "qty
     );
   });
 
-const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showTooltips = false }) => {
+const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showTooltips = false, tourStorageKey = "fd-tour-sales-analysis" }) => {
   const [salesData, setSalesData] = useState<SalespersonPoint[]>([]);
   const [storeData, setStoreData] = useState<StoreData[]>([]);
-  const [trendData, setTrendData] = useState<Array<{ day: string; sales: number; pro1stSales: number; pro1stPct: number }>>([]);
+  const [trendData, setTrendData] = useState<Array<{ day: string; furnitureSales: number; mattressBoxSpringAdjustableSales: number }>>([]);
   const [trendFocusDay, setTrendFocusDay] = useState<string | null>(null);
   const trendPrevRangeRef = useRef<{ year: number; month: string; day: string } | null>(null);
   const [summary, setSummary] = useState<Summary>({ sales: 0, lines: 0 });
@@ -170,10 +206,29 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
     }
     return DEFAULT_STAT_CARD_ORDER;
   });
+  const [showSalesTour, setShowSalesTour] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("fd-stat-card-order", JSON.stringify(statCardOrder));
   }, [statCardOrder]);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        const timer = window.setTimeout(() => setShowSalesTour(true), 900);
+        return () => window.clearTimeout(timer);
+      }
+    } catch {
+      // Manual tour replay still works if localStorage is unavailable.
+    }
+  }, [tourStorageKey]);
+
+  const completeSalesTour = () => {
+    try {
+      localStorage.setItem(tourStorageKey, "1");
+    } catch {}
+    setShowSalesTour(false);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -1116,43 +1171,15 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
     if (!range) return;
     const { start, endExclusive } = range;
 
-    Promise.all([
-      fetchSalesDaily({ start, end: endExclusive, salesperson, location }),
-      fetchPro1stTrend({ start, end: endExclusive, salesperson, location }),
-    ])
-      .then(([dailyRows, proRows]) => {
-        const map = new Map<string, { day: string; sales: number; pro1stSales: number; pro1stPct: number }>();
-        dailyRows
+    fetchPro1stTrend({ start, end: endExclusive, salesperson, location })
+      .then((proRows) => {
+        const rows = proRows
           .filter((r) => r.day)
-          .forEach((r) => {
-            const day = String(r.day).includes("T") ? String(r.day).slice(0, 10) : String(r.day);
-            map.set(day, {
-              day,
-              sales: Number.isFinite(r.sales) ? r.sales : 0,
-              pro1stSales: 0,
-              pro1stPct: 0,
-            });
-          });
-        proRows
-          .filter((r) => r.day)
-          .forEach((r) => {
-            const day = String(r.day).includes("T") ? String(r.day).slice(0, 10) : String(r.day);
-            const existing = map.get(day);
-            if (existing) {
-              existing.pro1stSales = Number.isFinite(r.sales) ? r.sales : 0;
-            } else {
-              map.set(day, {
-                day,
-                sales: 0,
-                pro1stSales: Number.isFinite(r.sales) ? r.sales : 0,
-                pro1stPct: 0,
-              });
-            }
-          });
-        const rows = Array.from(map.values()).map((row) => ({
-          ...row,
-          pro1stPct: row.sales > 0 ? (row.pro1stSales / row.sales) * 100 : 0,
-        }));
+          .map((r) => ({
+            day: String(r.day).includes("T") ? String(r.day).slice(0, 10) : String(r.day),
+            furnitureSales: Number.isFinite(r.furnitureSales) ? r.furnitureSales : 0,
+            mattressBoxSpringAdjustableSales: Number.isFinite(r.mattressBoxSpringAdjustableSales) ? r.mattressBoxSpringAdjustableSales : 0,
+          }));
         setTrendData(rows.sort((a, b) => a.day.localeCompare(b.day)));
       })
       .catch((e) => {
@@ -1407,6 +1434,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
           <div
             className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center space-y-4 relative fd-print-card h-full"
             data-print-id="range-selector"
+            data-tour-id="sales-date-range"
            
            
             onPointerDown={(e) => e.stopPropagation()}
@@ -1582,6 +1610,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
           <div
             className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative fd-print-card h-full"
             data-print-id="sales-overview"
+            data-tour-id="sales-overview"
           >
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-slate-500">
@@ -1721,6 +1750,14 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-3 text-blue-800 fd-print-hide">
           <Database size={18} className="text-blue-500" />
           <span className="text-sm font-medium">All figures are based on delivered date.</span>
+          <button
+            type="button"
+            onClick={() => setShowSalesTour(true)}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100"
+          >
+            <Compass size={14} />
+            Tour
+          </button>
         </div>
       {(selectedSalesperson || selectedStore || searchHint) && (
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center fd-print-hide">
@@ -1781,35 +1818,37 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         </DndContext>
       </div>
 
-      <SalesReportCard
-        collapsed={isCardCollapsed("sales-report")}
-        renderHelp={renderHelp}
-        cardToggle={renderCardToggle("sales-report")}
-        itemSortMetric={itemSortMetric}
-        reportMode={reportMode}
-        setReportMode={setReportMode}
-        reportDimension={reportDimension}
-        setReportDimension={setReportDimension}
-        reportCategory={reportCategory}
-        setReportCategory={setReportCategory}
-        reportManufacturer={reportManufacturer}
-        setReportManufacturer={setReportManufacturer}
-        reportCategoryOptions={reportCategoryOptions}
-        reportManufacturerOptions={reportManufacturerOptions}
-        reportRowsWithPct={reportRowsWithPct}
-        reportTotals={reportTotals}
-        reportOverallTotals={reportOverallTotals}
-        formatMarginPct={formatMarginPct}
-        lowMarginRows={printData?.lowMarginRows ?? sortedLowMarginData}
-        lowMarginSort={lowMarginSort}
-        setLowMarginSort={setLowMarginSort}
-        saleLink={saleLink}
-        saleLabel={saleLabel}
-        selectedSalesperson={selectedSalesperson}
-        onSelectSalesperson={openSalespersonDetail}
-      />
+      <div data-tour-id="sales-report-card">
+        <SalesReportCard
+          collapsed={isCardCollapsed("sales-report")}
+          renderHelp={renderHelp}
+          cardToggle={renderCardToggle("sales-report")}
+          itemSortMetric={itemSortMetric}
+          reportMode={reportMode}
+          setReportMode={setReportMode}
+          reportDimension={reportDimension}
+          setReportDimension={setReportDimension}
+          reportCategory={reportCategory}
+          setReportCategory={setReportCategory}
+          reportManufacturer={reportManufacturer}
+          setReportManufacturer={setReportManufacturer}
+          reportCategoryOptions={reportCategoryOptions}
+          reportManufacturerOptions={reportManufacturerOptions}
+          reportRowsWithPct={reportRowsWithPct}
+          reportTotals={reportTotals}
+          reportOverallTotals={reportOverallTotals}
+          formatMarginPct={formatMarginPct}
+          lowMarginRows={printData?.lowMarginRows ?? sortedLowMarginData}
+          lowMarginSort={lowMarginSort}
+          setLowMarginSort={setLowMarginSort}
+          saleLink={saleLink}
+          saleLabel={saleLabel}
+          selectedSalesperson={selectedSalesperson}
+          onSelectSalesperson={openSalespersonDetail}
+        />
+      </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6" data-tour-id="sales-best-sellers">
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="best-sellers"
@@ -2180,7 +2219,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
       </div>
 
       {/* Main Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour-id="sales-performance">
         {/* Salesperson Performance */}
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
@@ -2386,12 +2425,6 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
                 window.dispatchEvent(new Event("fd-open-range"));
               }}
             >
-              <defs>
-                <linearGradient id="pro1stFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
-                </linearGradient>
-              </defs>
               <CartesianGrid stroke="#f1f5f9" vertical={false} />
               <XAxis
                 dataKey="day"
@@ -2408,15 +2441,6 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
                 tick={{ fill: "#64748b" }}
                 tickFormatter={(v: number) => `$${Number(v).toLocaleString()}`}
               />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#f59e0b" }}
-                domain={[0, 10]}
-                tickFormatter={(v: number) => `${Number(v).toFixed(0)}%`}
-              />
               <Tooltip
                 contentStyle={{
                   borderRadius: "8px",
@@ -2426,18 +2450,11 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
                 labelFormatter={(label: string) =>
                   formatShortDate(String(label).includes("T") ? String(label).slice(0, 10) : String(label))
                 }
-                formatter={(value: number, name: string, payload: any) => {
-                  if (String(name).toLowerCase().includes("pro1st")) {
-                    const dollars = Number(payload?.payload?.pro1stSales ?? 0);
-                    const amount = `$${dollars.toLocaleString()}`;
-                    return [`${Number(value).toFixed(1)}% (${amount})`, "Pro1st %"];
-                  }
-                  return [`$${Number(value).toLocaleString()}`, "Sales"];
-                }}
+                formatter={(value: number, name: string) => [`$${Number(value).toLocaleString()}`, name]}
               />
               <Legend iconType="circle" />
-              <Area type="monotone" dataKey="pro1stPct" name="Pro1st %" yAxisId="right" stroke="#f59e0b" fill="url(#pro1stFill)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="sales" name="Sales" yAxisId="left" stroke="#3b82f6" strokeWidth={3} dot={false} />
+              <Line type="monotone" dataKey="furnitureSales" name="Furniture Sales" yAxisId="left" stroke="#3b82f6" strokeWidth={3} dot={false} />
+              <Line type="monotone" dataKey="mattressBoxSpringAdjustableSales" name="Mattress/Box Spring/Adjustable" yAxisId="left" stroke="#10b981" strokeWidth={3} dot={false} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -2471,6 +2488,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ itemSortMetric, showToo
         onClose={() => setPrintDialogOpen(false)}
         onPrint={runPrint}
       />
+      {showSalesTour && (
+        <ModuleTourOverlay
+          steps={SALES_ANALYSIS_TOUR_STEPS}
+          onClose={completeSalesTour}
+          onComplete={completeSalesTour}
+        />
+      )}
       </div>
     </div>
   );

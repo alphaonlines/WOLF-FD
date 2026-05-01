@@ -321,6 +321,7 @@ export interface AuthUser {
   roles: UserRole[];
   permissions: string[];
   permissionMode: PermissionMode;
+  tutorialCompletedAt: string | null;
 }
 
 export interface AuthConfig {

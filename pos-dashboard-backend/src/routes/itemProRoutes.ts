@@ -601,7 +601,7 @@ export function registerItemProRoutes({
     });
   });
 
-  // Pro1st daily sales trend (sum of Pro1st item sales)
+  // Furniture sales vs Mattress/BoxSpring/Adjustable Base sales trend (excluding Pro1st from both)
   app.get("/api/pro1st/trend", async (req, res) => {
     const start = parseDateParam(req.query.start, "1900-01-01");
     const end = parseDateParam(req.query.end, "2100-01-01");
@@ -616,16 +616,54 @@ export function registerItemProRoutes({
       SELECT DISTINCT sale_id
       FROM pos_sales_people
       WHERE salesperson ILIKE ('%' || $4 || '%')
+    ),
+    is_mattress_boxspring_adjustable AS (
+      SELECT DISTINCT sale_id
+      FROM pos_sale_items i
+      WHERE (
+        COALESCE(i.item_description, '') ILIKE '%mattress%'
+        OR COALESCE(i.category, '') ILIKE '%mattress%'
+        OR COALESCE(i.item_description, '') ILIKE '%box spring%'
+        OR COALESCE(i.item_description, '') ILIKE '%boxspring%'
+        OR COALESCE(i.category, '') ILIKE '%box spring%'
+        OR COALESCE(i.item_description, '') ILIKE '%adjustable base%'
+        OR COALESCE(i.category, '') ILIKE '%adjustable base%'
+      )
     )
     SELECT
       date_trunc('day', ${prefixedDateField("s")})::date AS day,
       ROUND(SUM(
         CASE
           WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0
-          WHEN $4::text IS NULL THEN i.total_sale_price
-          ELSE i.total_sale_price / NULLIF(pc.cnt, 0)
+          WHEN NOT (
+            COALESCE(i.item_description, '') ILIKE '%mattress%'
+            OR COALESCE(i.category, '') ILIKE '%mattress%'
+            OR COALESCE(i.item_description, '') ILIKE '%box spring%'
+            OR COALESCE(i.item_description, '') ILIKE '%boxspring%'
+            OR COALESCE(i.category, '') ILIKE '%box spring%'
+            OR COALESCE(i.item_description, '') ILIKE '%adjustable base%'
+            OR COALESCE(i.category, '') ILIKE '%adjustable base%'
+          ) THEN
+            CASE WHEN $4::text IS NULL THEN i.total_sale_price ELSE i.total_sale_price / NULLIF(pc.cnt, 0) END
+          ELSE 0
         END
-      )::numeric, 2) AS sales
+      )::numeric, 2) AS furniture_sales,
+      ROUND(SUM(
+        CASE
+          WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0
+          WHEN (
+            COALESCE(i.item_description, '') ILIKE '%mattress%'
+            OR COALESCE(i.category, '') ILIKE '%mattress%'
+            OR COALESCE(i.item_description, '') ILIKE '%box spring%'
+            OR COALESCE(i.item_description, '') ILIKE '%boxspring%'
+            OR COALESCE(i.category, '') ILIKE '%box spring%'
+            OR COALESCE(i.item_description, '') ILIKE '%adjustable base%'
+            OR COALESCE(i.category, '') ILIKE '%adjustable base%'
+          ) THEN
+            CASE WHEN $4::text IS NULL THEN i.total_sale_price ELSE i.total_sale_price / NULLIF(pc.cnt, 0) END
+          ELSE 0
+        END
+      )::numeric, 2) AS mattress_boxspring_adjustable_sales
     FROM pos_sale_items i
     JOIN pos_sales s ON s.sale_id = i.sale_id
     LEFT JOIN people_counts pc ON pc.sale_id = i.sale_id
@@ -633,7 +671,7 @@ export function registerItemProRoutes({
       AND ${prefixedDateField("s")} < $2
       AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
       AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM salesperson_sales))
-      AND ${aliasedPro1stItemSql}
+      AND NOT (${buildQualifiedPro1stSql("i.")})
     GROUP BY day
     ORDER BY day;
   `;
@@ -644,7 +682,8 @@ export function registerItemProRoutes({
       end,
       rows: r.rows.map((x: any) => ({
         day: x.day,
-        sales: Number(x.sales ?? 0),
+        furnitureSales: Number(x.furniture_sales ?? 0),
+        mattressBoxSpringAdjustableSales: Number(x.mattress_boxspring_adjustable_sales ?? 0),
       })),
     });
   });

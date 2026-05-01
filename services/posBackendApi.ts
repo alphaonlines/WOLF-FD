@@ -65,14 +65,11 @@ export async function fetchAvailableYears(): Promise<number[]> {
   return years.map((y: any) => Number(y)).filter((y: number) => Number.isFinite(y)).sort((a, b) => a - b);
 }
 
-export async function uploadPosExports(files: File[], manufacturer?: string): Promise<{ import?: { ok?: boolean; stdout?: string; stderr?: string } }> {
+export async function uploadPosExports(files: File[]): Promise<{ import?: { ok?: boolean; stdout?: string; stderr?: string } }> {
   if (!files.length) return {};
   const baseUrl = getPosApiBaseUrl();
   const form = new FormData();
   files.forEach((file) => form.append("files", file, file.name));
-  if (manufacturer && manufacturer.trim()) {
-    form.append("manufacturer", manufacturer.trim());
-  }
   const res = await fetch(`${baseUrl}/api/import/upload`, {
     method: "POST",
     credentials: "include",
@@ -87,6 +84,8 @@ export async function uploadPosExports(files: File[], manufacturer?: string): Pr
 export async function fetchCoverageMonths(): Promise<{
   missingSalesMonths: string[];
   missingItemMonths: string[];
+  missingSalesMonthDetails: Array<{ month: string; missingDays: number }>;
+  missingItemMonthDetails: Array<{ month: string; missingDays: number }>;
   missingSalesDays: string[];
   missingItemDays: string[];
   missingSalesDaysCount: number;
@@ -100,6 +99,18 @@ export async function fetchCoverageMonths(): Promise<{
     endDate: typeof (json as any)?.endDate === "string" ? (json as any).endDate : undefined,
     missingSalesMonths: Array.isArray((json as any)?.missingSalesMonths) ? (json as any).missingSalesMonths : [],
     missingItemMonths: Array.isArray((json as any)?.missingItemMonths) ? (json as any).missingItemMonths : [],
+    missingSalesMonthDetails: Array.isArray((json as any)?.missingSalesMonthDetails)
+      ? (json as any).missingSalesMonthDetails.map((row: any) => ({
+          month: String(row?.month ?? ""),
+          missingDays: Number(row?.missingDays ?? 0),
+        })).filter((row: { month: string; missingDays: number }) => row.month)
+      : [],
+    missingItemMonthDetails: Array.isArray((json as any)?.missingItemMonthDetails)
+      ? (json as any).missingItemMonthDetails.map((row: any) => ({
+          month: String(row?.month ?? ""),
+          missingDays: Number(row?.missingDays ?? 0),
+        })).filter((row: { month: string; missingDays: number }) => row.month)
+      : [],
     missingSalesDays: Array.isArray((json as any)?.missingSalesDays) ? (json as any).missingSalesDays : [],
     missingItemDays: Array.isArray((json as any)?.missingItemDays) ? (json as any).missingItemDays : [],
     missingSalesDaysCount: Number((json as any)?.missingSalesDaysCount ?? 0),
@@ -492,7 +503,8 @@ export async function fetchPro1stTrend(params: {
 }): Promise<
   Array<{
     day: string;
-    sales: number;
+    furnitureSales: number;
+    mattressBoxSpringAdjustableSales: number;
   }>
 > {
   const qs = new URLSearchParams({
@@ -508,7 +520,8 @@ export async function fetchPro1stTrend(params: {
 
   return rows.map((r: any) => ({
     day: String(r.day ?? ""),
-    sales: Number(r.sales ?? 0),
+    furnitureSales: Number(r.furnitureSales ?? 0),
+    mattressBoxSpringAdjustableSales: Number(r.mattressBoxSpringAdjustableSales ?? 0),
   }));
 }
 

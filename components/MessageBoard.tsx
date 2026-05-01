@@ -11,6 +11,7 @@ import {
   Forward,
   X,
 } from "lucide-react";
+import { useBotBotContext } from "./botbot/BotBotContext";
 import type { AuthUser, BoardMessage, BoardUpload, BoardUser } from "../types";
 import { checkPosBackendHealthy } from "../services/posBackendApi";
 import {
@@ -252,6 +253,7 @@ const renderMessageBody = (body: string) => {
 };
 
 const MessageBoard: React.FC<MessageBoardProps> = ({ authUser, onMessageSent }) => {
+  const { setPageContext } = useBotBotContext();
   const isLeadershipUser = authUser.roles.includes("Owner") || authUser.roles.includes("Manager");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const messageListRef = useRef<HTMLDivElement | null>(null);
@@ -285,6 +287,16 @@ const MessageBoard: React.FC<MessageBoardProps> = ({ authUser, onMessageSent }) 
   const messages = messagesByView[conversationKey] || [];
   const activeChannel = channels.find((channel) => channel.id === activeTargetId) || null;
   const activeUser = users.find((user) => user.id === activeTargetId) || null;
+
+  useEffect(() => {
+    setPageContext({
+      pageName: "Message Board",
+      module: "board",
+      userRole: "Employee",
+      keyMetricsVisible: [],
+      suggestedActions: [],
+    });
+  }, [setPageContext]);
 
   useEffect(() => {
     if (!channels.some((channel) => channel.id === activeTargetId) && viewMode === "channel") {

@@ -35,6 +35,8 @@ const ACCENT_CLASSES: Record<string, { icon: string; dot: string; dotActive: str
   teal:    { icon: "text-teal-400",    dot: "bg-slate-600",     dotActive: "bg-teal-400",    btn: "bg-teal-600 hover:bg-teal-500 text-white" },
 };
 
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
 const TutorialOverlay: React.FC<Props> = ({
   isDarkMode,
   onClose,
@@ -48,47 +50,46 @@ const TutorialOverlay: React.FC<Props> = ({
 }) => {
   useEffect(() => {
     onStepChange(currentStep);
-  }, [currentStep, onStepChange]);
+    // Only react to actual step changes. Including onStepChange here makes the
+    // overlay re-scroll every render because the parent callback is recreated.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
 
   const accent = ACCENT_CLASSES[slide.accent] ?? ACCENT_CLASSES.sky;
   const isLast = currentStep === totalSteps - 1;
 
-  // Calculate dynamic position for the tutorial card
+  // Keep the card in the viewport even when the highlighted area is near the
+  // bottom of a long dashboard page.
+  const cardWidth = Math.min(520, Math.max(320, window.innerWidth - 32));
+  const estimatedCardHeight = Math.min(560, window.innerHeight - 32);
   const cardStyle: React.CSSProperties = {
-    position: 'absolute',
-    left: '50%',
-    top: '50%',
-    transform: 'translate(-50%, -50%)',
+    position: 'fixed',
+    width: `${cardWidth}px`,
+    maxHeight: 'calc(100vh - 32px)',
+    overflowY: 'auto',
+    left: `${Math.max(16, (window.innerWidth - cardWidth) / 2)}px`,
+    top: `${Math.max(16, (window.innerHeight - estimatedCardHeight) / 2)}px`,
     zIndex: 201, // Ensure the card is above the dimming overlays
   };
 
   if (highlightedElementRect) {
-    // Basic logic to position the card below or above the highlighted element
-    // Adjust as needed for more sophisticated placement
-    if (highlightedElementRect.top > window.innerHeight / 2) {
-      // If element is in the bottom half, place card above it
-      cardStyle.bottom = `${window.innerHeight - highlightedElementRect.top + 20}px`;
-      cardStyle.top = 'auto';
-      cardStyle.left = `${highlightedElementRect.left + highlightedElementRect.width / 2}px`;
-      cardStyle.transform = 'translateX(-50%)';
-    } else {
-      // If element is in the top half, place card below it
-      cardStyle.top = `${highlightedElementRect.bottom + 20}px`;
-      cardStyle.left = `${highlightedElementRect.left + highlightedElementRect.width / 2}px`;
-      cardStyle.transform = 'translateX(-50%)';
-      cardStyle.bottom = 'auto';
-    }
-    // Prevent card from going off screen horizontally
-    if (highlightedElementRect.left + highlightedElementRect.width / 2 < window.innerWidth / 4) {
-      cardStyle.left = '25%';
-    } else if (highlightedElementRect.left + highlightedElementRect.width / 2 > window.innerWidth * 3 / 4) {
-      cardStyle.left = '75%';
-    }
+    const gap = 20;
+    const preferredLeft = highlightedElementRect.left + highlightedElementRect.width / 2 - cardWidth / 2;
+    const fitsBelow = highlightedElementRect.bottom + gap + estimatedCardHeight <= window.innerHeight;
+    const fitsAbove = highlightedElementRect.top - gap - estimatedCardHeight >= 0;
+    const preferredTop = fitsBelow
+      ? highlightedElementRect.bottom + gap
+      : fitsAbove
+        ? highlightedElementRect.top - gap - estimatedCardHeight
+        : (window.innerHeight - estimatedCardHeight) / 2;
+
+    cardStyle.left = `${clamp(preferredLeft, 16, window.innerWidth - cardWidth - 16)}px`;
+    cardStyle.top = `${clamp(preferredTop, 16, window.innerHeight - estimatedCardHeight - 16)}px`;
   }
 
 
   return (
-    <div className={`relative w-full max-w-lg rounded-3xl border shadow-2xl ${isDarkMode ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"}`}
+    <div className={`rounded-3xl border shadow-2xl ${isDarkMode ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"}`}
       style={cardStyle}>
       {/* Skip / close */}
       <button
@@ -100,7 +101,7 @@ const TutorialOverlay: React.FC<Props> = ({
         <X size={16} />
       </button>
 
-      <div className="px-8 py-8">
+      <div className="px-8 py-7">
         {/* Icon */}
         <div className={`mb-5 ${accent.icon}`}>{slide.icon}</div>
 

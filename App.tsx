@@ -37,15 +37,15 @@ import DashboardOverview from './components/DashboardOverview';
 import CRMWorkspace from './components/CRMWorkspace';
 import ProductSearchWorkspace from './components/ProductSearchWorkspace';
 import MessageBoard from './components/MessageBoard';
-import WolfBot from './components/WolfBot';
 import TaskManager from './components/TaskManager';
 import OwnerSettings from './components/OwnerSettings';
-import WolfdenWorkspace from './components/WolfdenWorkspace';
 import PulseWorkspace from './components/PulseWorkspace';
 import AmpWorkspace, { AmpSubTab } from './components/AmpWorkspace';
 import ShopWorkspace, { ShopSubTab } from './components/ShopWorkspace';
 import WolfdenWorkspace, { WolfdenSubTab } from './components/WolfdenWorkspace';
-import PulseWorkspace, { PulseSubTab } from './components/PulseWorkspace';
+import { PulseSubTab } from './components/PulseWorkspace';
+import { BotBotOrb, BotBotChatPanel, BotBotContextProvider, useBotBotContext } from './components/botbot';
+import BotBotTutorial from './components/botbot/BotBotTutorial';
 import type { AccessRequestProfile, AuthConfig, AuthUser, UserRole } from './types';
 import { APP_VERSION } from './constants';
 import {
@@ -54,6 +54,7 @@ import {
   fetchCurrentUser,
   loginWithPassword,
   logoutCurrentUser,
+  markTutorialComplete,
   startGoogleSignIn,
   submitGoogleAccessRequest,
 } from './services/authApi';
@@ -111,7 +112,7 @@ const SLIDES: Slide[] = [
       "The Objections drawer on the right gives you instant rebuttals for tough sales moments.",
     ],
     accent: "violet",
-    highlightId: "sidebar-crm-nav-item",
+    highlightId: "sidebar-wolfden-nav-item",
   },
   {
     icon: <Search size={36} />,
@@ -211,14 +212,32 @@ const getMaintenanceTrackingUrl = () => {
   return `${getPosApiBaseUrl()}/public/tracking/event`;
 };
 
+const EXPERIENCE_RESET_ID_BY_EMAIL: Record<string, string> = {
+  "anthony@furnituredistributors.net": "reset-20260428-1505",
+};
+
+const getExperienceResetId = (user?: AuthUser | null) =>
+  user?.email ? EXPERIENCE_RESET_ID_BY_EMAIL[user.email.toLowerCase()] || null : null;
+
+const getExperienceResetStorageKey = (user?: AuthUser | null) => {
+  const resetId = getExperienceResetId(user);
+  return resetId ? `fd-experience-reset:${user?.id || 'local'}:${resetId}` : null;
+};
+
+const getModuleTourStorageKey = (module: string, user?: AuthUser | null) => {
+  const baseKey = `fd-tour-${module}:${user?.id || 'local'}`;
+  const resetId = getExperienceResetId(user);
+  return resetId ? `${baseKey}:${resetId}` : baseKey;
+};
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
-  const [requestedWolfdenSubTab, setRequestedWolfdenSubTab] = useState<'ups' | 'crm' | 'board' | 'meeting' | 'tasks' | 'quicklinks'>('ups');
+  const [requestedWolfdenSubTab, setRequestedWolfdenSubTab] = useState<WolfdenSubTab>('ups');
   const [requestedWolfdenSubTabToken, setRequestedWolfdenSubTabToken] = useState(0);
   const [requestedPulseSubTab, setRequestedPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('sales');
   const [requestedPulseSubTabToken, setRequestedPulseSubTabToken] = useState(0);
   const [currentPulseSubTab, setCurrentPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('sales');
-  const [requestedAmpSubTab, setRequestedAmpSubTab] = useState<'social' | 'bot'>('social');
+  const [requestedAmpSubTab, setRequestedAmpSubTab] = useState<AmpSubTab>('social');
   const [requestedAmpSubTabToken, setRequestedAmpSubTabToken] = useState(0);
   const [requestedShopSubTab, setRequestedShopSubTab] = useState<'search' | 'pos'>('search');
   const [requestedShopSubTabToken, setRequestedShopSubTabToken] = useState(0);
@@ -273,10 +292,10 @@ const App: React.FC = () => {
   const [highlightedElementRect, setHighlightedElementRect] = useState<DOMRect | null>(null);
   const [tutorialStep, setTutorialStep] = useState(0); // New state for current tutorial step
   const elementRefs = useRef<Map<string, HTMLElement | null>>(new Map());
-
   const handleCloseTutorial = () => {
     setShowTutorial(false);
     try { localStorage.setItem('fd_tutorial_seen', '1'); } catch {}
+    void markTutorialComplete().catch((err) => console.error('Failed to save tutorial completion:', err));
     setHighlightedElementRect(null); // Clear highlight when tutorial closes
     setTutorialStep(0); // Reset tutorial step
   };
@@ -292,6 +311,7 @@ const App: React.FC = () => {
     setShowTutorialPrompt(false);
     setShowLoading(false); // Make sure loading is dismissed
     try { localStorage.setItem('fd_tutorial_seen', '1'); } catch {}
+    void markTutorialComplete().catch((err) => console.error('Failed to save tutorial completion:', err));
     setHighlightedElementRect(null); // Clear highlight on skip
     setTutorialStep(0); // Reset tutorial step
   };
@@ -312,10 +332,16 @@ const App: React.FC = () => {
     if (currentSlide?.highlightId) {
       const element = elementRefs.current.get(currentSlide.highlightId);
       if (element) {
+        const updateRect = () => setHighlightedElementRect(element.getBoundingClientRect());
         const rect = element.getBoundingClientRect();
-        setHighlightedElementRect(rect);
-        // Optional: Scroll to element if off-screen
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const isMostlyVisible = rect.top >= 80 && rect.bottom <= window.innerHeight - 40;
+
+        if (!isMostlyVisible) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          window.setTimeout(updateRect, 260);
+        } else {
+          updateRect();
+        }
       } else {
         setHighlightedElementRect(null);
       }
@@ -354,7 +380,22 @@ const App: React.FC = () => {
   const [missingItemData, setMissingItemData] = useState(false);
   const [missingSalesData, setMissingSalesData] = useState(false);
   const [activeFilterLabel, setActiveFilterLabel] = useState<string | null>(null);
-  const [wolfbotOpen, setWolfbotOpen] = useState(false);
+  const [botbotOpen, setBotbotOpen] = useState(false);
+  const [botbotAssistantName, setBotbotAssistantName] = useState('BotBot');
+  const [botbotTheme, setBotbotTheme] = useState('sky');
+  const [showBotBotTutorial, setShowBotBotTutorial] = useState(false);
+  const [pendingBotBotTutorial, setPendingBotBotTutorial] = useState(false);
+
+  const completeBotBotTutorial = async () => {
+    setShowBotBotTutorial(false);
+    setPendingBotBotTutorial(false);
+    try {
+      const { saveSettings } = await import('./services/botbotApi');
+      await saveSettings({ tutorialCompleted: true });
+    } catch (err) {
+      console.error('Failed to save BotBot tutorial completion:', err);
+    }
+  };
   const [showTooltips, setShowTooltips] = useState(() => {
     try {
       const v = localStorage.getItem('fd_tooltips_enabled');
@@ -413,6 +454,65 @@ const App: React.FC = () => {
       stopped = true;
     };
   }, []);
+
+  // Load BotBot settings and check if tutorial should show
+  useEffect(() => {
+    if (!authUser) return;
+
+    const loadBotBotSettings = async () => {
+      try {
+        const { fetchSettings } = await import('./services/botbotApi');
+        const settings = await fetchSettings();
+
+        if (settings) {
+          setBotbotAssistantName(settings.assistantName);
+          setBotbotTheme(settings.assistantTheme);
+          // Show tutorial only if not completed
+          if (!settings.tutorialCompleted) {
+            setPendingBotBotTutorial(true);
+          }
+        } else {
+          // First time user - show tutorial
+          setPendingBotBotTutorial(true);
+        }
+      } catch (err) {
+        console.error('Failed to load BotBot settings:', err);
+      }
+    };
+
+    loadBotBotSettings();
+  }, [authUser]);
+
+  useEffect(() => {
+    if (!pendingBotBotTutorial || showLoading || showTutorialPrompt || showTutorial) return;
+    setShowBotBotTutorial(true);
+    setPendingBotBotTutorial(false);
+  }, [pendingBotBotTutorial, showLoading, showTutorialPrompt, showTutorial]);
+
+  useEffect(() => {
+    if (!authUser || showTutorial || showTutorialPrompt) return;
+
+    const resetStorageKey = getExperienceResetStorageKey(authUser);
+    const shouldRunReset = Boolean(resetStorageKey && !localStorage.getItem(resetStorageKey));
+    const shouldRunUnseenTutorial = !authUser.tutorialCompletedAt && !localStorage.getItem('fd_tutorial_seen');
+
+    if (!shouldRunReset && !shouldRunUnseenTutorial) return;
+
+    setShowLoading(true);
+    const timer = window.setTimeout(() => {
+      setShowTutorialPrompt(true);
+      setShowLoading(false);
+      if (resetStorageKey) {
+        try {
+          localStorage.setItem(resetStorageKey, new Date().toISOString());
+        } catch {
+          // If storage is blocked, the tutorial still opens for this session.
+        }
+      }
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [authUser, showTutorial, showTutorialPrompt]);
 
   useEffect(() => {
     if (!DASHBOARD_LOCKED || typeof window === 'undefined') return;
@@ -564,15 +664,6 @@ const App: React.FC = () => {
       setRequestPhone('');
       setPendingGoogleCredential('');
       setLoginPassword('');
-      // Show loading for a bit, then prompt for tutorial if not seen
-      setShowLoading(true);
-      window.setTimeout(() => {
-        if (!localStorage.getItem('fd_tutorial_seen')) {
-          setShowTutorialPrompt(true);
-        } else {
-          setShowLoading(false); // Only dismiss if no tutorial prompt
-        }
-      }, 500);
     } catch (error: any) {
       setLoginError(String(error?.message || error || 'Login failed. Check your credentials.'));
     } finally {
@@ -595,15 +686,6 @@ const App: React.FC = () => {
         setRequestProfile(null);
         setRequestPhone('');
         setPendingGoogleCredential('');
-        // Show loading for a bit, then prompt for tutorial if not seen
-        setShowLoading(true);
-        window.setTimeout(() => {
-          if (!localStorage.getItem('fd_tutorial_seen')) {
-            setShowTutorialPrompt(true);
-          } else {
-            setShowLoading(false); // Only dismiss if no tutorial prompt
-          }
-        }, 500);
       }
 
       setPendingGoogleCredential(credential);
@@ -642,15 +724,6 @@ const App: React.FC = () => {
         setRequestProfile(null);
         setRequestPhone('');
         setPendingGoogleCredential('');
-        // Show loading for a bit, then prompt for tutorial if not seen
-        setShowLoading(true);
-        window.setTimeout(() => {
-          if (!localStorage.getItem('fd_tutorial_seen')) {
-            setShowTutorialPrompt(true);
-          } else {
-            setShowLoading(false); // Only dismiss if no tutorial prompt
-          }
-        }, 500);
       }
       setRequestProfile(result.requestProfile);
       setRequestPhone(result.requestProfile?.phone || requestPhone.trim());
@@ -682,7 +755,6 @@ const App: React.FC = () => {
     setConfirmPasswordInput('');
     setPasswordMessage(null);
     setPasswordError(null);
-    setWolfbotOpen(false);
     setUpdatePanelOpen(false);
   };
 
@@ -730,7 +802,7 @@ const App: React.FC = () => {
     }, 220);
   };
 
-  const openWolfdenSubTab = (subTab: 'ups' | 'crm' | 'board' | 'meeting' | 'tasks' | 'quicklinks') => {
+  const openWolfdenSubTab = (subTab: WolfdenSubTab) => {
     setRequestedWolfdenSubTab(subTab);
     setRequestedWolfdenSubTabToken((current) => current + 1);
     setActiveTab(Tab.WOLFDEN);
@@ -742,7 +814,7 @@ const App: React.FC = () => {
     setActiveTab(Tab.PULSE);
   };
 
-  const openAmpSubTab = (subTab: 'social' | 'bot') => {
+  const openAmpSubTab = (subTab: AmpSubTab) => {
     setRequestedAmpSubTab(subTab);
     setRequestedAmpSubTabToken((current) => current + 1);
     setActiveTab(Tab.AMP);
@@ -796,7 +868,7 @@ const App: React.FC = () => {
           </div>
         );
       case Tab.SALES:
-        return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
+        return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} tourStorageKey={getModuleTourStorageKey('sales-analysis', authUser)} />;
       case Tab.PRODUCT_SEARCH:
         return <ProductSearchWorkspace isDarkMode={isDarkMode} onOpenUploadArea={() => setUpdatePanelOpen(true)} />;
       case Tab.CRM:
@@ -834,6 +906,7 @@ const App: React.FC = () => {
             requestedSubTab={requestedWolfdenSubTab}
             requestedSubTabToken={requestedWolfdenSubTabToken}
             hideTabBar={true}
+            tourStorageKey={getModuleTourStorageKey('den', authUser)}
           />
         );
       case Tab.PULSE:
@@ -873,7 +946,7 @@ const App: React.FC = () => {
           />
         );
       default:
-        return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} />;
+        return <SalesDashboard itemSortMetric={itemSortMetric} showTooltips={showTooltips} tourStorageKey={getModuleTourStorageKey('sales-analysis', authUser)} />;
     }
   };
 
@@ -936,6 +1009,15 @@ const App: React.FC = () => {
   }
 
   const canView = (tab: Tab) => canAccessTab(userRoles, userPermissions, permissionMode, tab);
+  const tutorialHighlightPadding = 10;
+  const tutorialHighlightRect = highlightedElementRect
+    ? {
+        left: Math.max(0, highlightedElementRect.left - tutorialHighlightPadding),
+        top: Math.max(0, highlightedElementRect.top - tutorialHighlightPadding),
+        right: Math.min(window.innerWidth, highlightedElementRect.right + tutorialHighlightPadding),
+        bottom: Math.min(window.innerHeight, highlightedElementRect.bottom + tutorialHighlightPadding),
+      }
+    : null;
 
   return (
     <div
@@ -986,7 +1068,7 @@ const App: React.FC = () => {
         >
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={`h-20 w-full flex items-center justify-center border-b transition-colors ${
+            className={`h-24 w-full flex items-center justify-center border-b transition-colors ${
               isDarkMode ? 'border-white/6 hover:bg-white/5' : 'border-slate-200/80 hover:bg-slate-50/90'
             }`}
             aria-label="Toggle sidebar"
@@ -995,13 +1077,13 @@ const App: React.FC = () => {
               <div className="flex items-center gap-3">
                 <Sofa className="text-blue-400" />
                 <div className="leading-tight text-left">
-                  <div className={`font-bold text-xl tracking-tight ${isDarkMode ? 'text-slate-50' : 'text-slate-900'}`}>WOLF FD</div>
-                  <div className={`text-[11px] uppercase tracking-[0.2em] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Furniture Distributors</div>
+                  <div className={`font-bold text-2xl tracking-tight ${isDarkMode ? 'text-slate-50' : 'text-slate-900'}`}>WOLF FD</div>
+                  <div className={`text-sm uppercase tracking-[0.2em] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Furniture Distributors</div>
                   <div className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Work Online · Live Free</div>
                 </div>
               </div>
             ) : (
-              <Sofa className="text-blue-400" size={28} />
+              <Sofa className="text-blue-400" size={32} />
             )}
           </button>
 
@@ -1009,7 +1091,7 @@ const App: React.FC = () => {
             {canView(Tab.DASHBOARD) && (
               <NavItem
                 ref={(el) => elementRefs.current.set('sidebar-dashboard-nav-item', el)}
-                icon={<LayoutDashboard size={20} />}
+                icon={<LayoutDashboard size={24} />}
                 label="Dashboard"
                 isActive={activeTab === Tab.DASHBOARD}
                 onClick={() => setActiveTab(Tab.DASHBOARD)}
@@ -1020,7 +1102,7 @@ const App: React.FC = () => {
             {canView(Tab.WOLFDEN) && (
               <NavItem
                 ref={(el) => elementRefs.current.set('sidebar-wolfden-nav-item', el)}
-                icon={<Inbox size={20} />}
+                icon={<Inbox size={24} />}
                 label="Den"
                 isActive={activeTab === Tab.WOLFDEN}
                 onClick={() => setActiveTab(Tab.WOLFDEN)}
@@ -1030,7 +1112,7 @@ const App: React.FC = () => {
             )}
             {canView(Tab.PULSE) && (
               <NavItem
-                icon={<Zap size={20} />}
+                icon={<Zap size={24} />}
                 label="Pulse"
                 isActive={activeTab === Tab.PULSE}
                 onClick={() => setActiveTab(Tab.PULSE)}
@@ -1040,7 +1122,7 @@ const App: React.FC = () => {
             )}
             {canView(Tab.AMP) && (
               <NavItem
-                icon={<Bot size={20} />}
+                icon={<Bot size={24} />}
                 label="AMP"
                 isActive={activeTab === Tab.AMP}
                 onClick={() => setActiveTab(Tab.AMP)}
@@ -1051,7 +1133,7 @@ const App: React.FC = () => {
             {canView(Tab.SHOP) && (
               <NavItem
                 ref={(el) => elementRefs.current.set('sidebar-shop-nav-item', el)}
-                icon={<ClipboardList size={20} />}
+                icon={<ClipboardList size={24} />}
                 label="Shop"
                 isActive={activeTab === Tab.SHOP}
                 onClick={() => setActiveTab(Tab.SHOP)}
@@ -1066,7 +1148,7 @@ const App: React.FC = () => {
               <button
                 ref={(el) => elementRefs.current.set('sidebar-settings-nav-item', el)}
                 onClick={() => { setActiveTab(Tab.ADMIN); }}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all ${
+                className={`w-full flex items-center gap-3 px-3 py-4 h-14 rounded-2xl cursor-pointer transition-all ${
                   activeTab === Tab.ADMIN
                     ? isDarkMode
                       ? 'bg-sky-400/12 border border-sky-300/28 text-slate-50 shadow-sm'
@@ -1076,20 +1158,20 @@ const App: React.FC = () => {
                       : 'border border-transparent text-slate-600 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-900'
                 } ${!sidebarOpen ? 'justify-center' : ''}`}
               >
-                <Settings size={20} />
-                {sidebarOpen && <span className="font-medium text-sm">Settings</span>}
+                <Settings size={24} />
+                {sidebarOpen && <span className="font-medium text-base">Settings</span>}
               </button>
             )}
             <button
               onClick={() => { handleLogout(); }}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-4 h-14 rounded-2xl cursor-pointer transition-all ${
                 isDarkMode
                   ? 'border border-transparent text-slate-300 hover:bg-white/6 hover:border-white/8 hover:text-slate-50'
                   : 'border border-transparent text-slate-600 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-900'
               } ${!sidebarOpen ? 'justify-center' : ''}`}
             >
-              <LogOut size={20} />
-              {sidebarOpen && <span className="font-medium text-sm">Sign out</span>}
+              <LogOut size={24} />
+              {sidebarOpen && <span className="font-medium text-base">Sign out</span>}
             </button>
           </div>
 
@@ -1104,7 +1186,7 @@ const App: React.FC = () => {
                     setUpdatePanelOpen(true);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                className={`w-full flex items-center gap-3 px-3 py-4 h-14 rounded-2xl transition-all ${
                   updatePanelOpen
                     ? isDarkMode
                       ? 'bg-sky-400/12 border border-sky-300/28 text-slate-50 shadow-sm'
@@ -1115,8 +1197,8 @@ const App: React.FC = () => {
                 } ${!sidebarOpen ? 'justify-center' : ''}`}
                 title="Update database"
               >
-                <UploadCloud size={20} />
-                {sidebarOpen && <div className="text-sm font-medium">Update DB</div>}
+                <UploadCloud size={24} />
+                {sidebarOpen && <div className="text-base font-medium">Update DB</div>}
               </button>
             </div>
           )}
@@ -1158,24 +1240,22 @@ const App: React.FC = () => {
             {/* Sub-tabs for modules */}
             {activeTab === Tab.WOLFDEN && (
               <div className="hidden md:flex items-center gap-1 ml-6">
-                <button onClick={() => openWolfdenSubTab('ups')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button data-tour-id="den-tab-ups" onClick={() => openWolfdenSubTab('ups')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedWolfdenSubTab === 'ups' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><UserCheck size={13} className="inline mr-1.5" />UPS</button>
-                <button onClick={() => openWolfdenSubTab('crm')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button data-tour-id="den-tab-crm" onClick={() => openWolfdenSubTab('crm')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedWolfdenSubTab === 'crm' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Users size={13} className="inline mr-1.5" />CRM</button>
-                <button onClick={() => openWolfdenSubTab('board')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button data-tour-id="den-tab-board" onClick={() => openWolfdenSubTab('board')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedWolfdenSubTab === 'board' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><MessageSquare size={13} className="inline mr-1.5" />Board</button>
-                <button onClick={() => openWolfdenSubTab('meeting')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button data-tour-id="den-tab-meeting" onClick={() => openWolfdenSubTab('meeting')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedWolfdenSubTab === 'meeting' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Calendar size={13} className="inline mr-1.5" />Meeting</button>
-                <button onClick={() => openWolfdenSubTab('tasks')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button data-tour-id="den-tab-tasks" onClick={() => openWolfdenSubTab('tasks')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedWolfdenSubTab === 'tasks' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><ClipboardList size={13} className="inline mr-1.5" />Tasks</button>
-                <button onClick={() => openWolfdenSubTab('quicklinks')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  requestedWolfdenSubTab === 'quicklinks' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
-                }`}><Link2 size={13} className="inline mr-1.5" />Links</button>
+                <a data-tour-id="den-quicklinks" href="https://sites.google.com/view/fdserver/home" target="_blank" rel="noreferrer" className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}><Link2 size={13} className="inline mr-1.5" />QuickLinks</a>
               </div>
             )}
             {activeTab === Tab.PULSE && (
@@ -1366,42 +1446,6 @@ const App: React.FC = () => {
 
         {!showLoading && (
           <>
-            <button
-              type="button"
-              onClick={() => setWolfbotOpen((open) => !open)}
-              className="fixed bottom-6 right-6 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-slate-900 text-white shadow-xl transition-colors hover:bg-slate-800"
-              title="Open WOLFbot assistant"
-            >
-              <Bot size={20} />
-            </button>
-
-            {wolfbotOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40 bg-slate-900/35 backdrop-blur-[2px]"
-                  onClick={() => setWolfbotOpen(false)}
-                />
-                <div className="fixed bottom-24 right-6 z-50 h-[80vh] w-[min(980px,calc(100vw-3rem))] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
-                  <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
-                    <div>
-                      <div className="text-xs uppercase tracking-wide text-slate-500">Assistant</div>
-                      <div className="text-sm font-semibold text-slate-900">WOLFbot</div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setWolfbotOpen(false)}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                      title="Close WOLFbot"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div className="h-[calc(80vh-57px)] overflow-y-auto p-4">
-                    <WolfBot />
-                  </div>
-                </div>
-              </>
-            )}
           </>
         )}
 
@@ -1514,29 +1558,73 @@ const App: React.FC = () => {
       {showTutorialPrompt && (
         <TutorialPromptOverlay isDarkMode={isDarkMode} onStartTutorial={handleStartTutorial} onSkipTutorial={handleSkipTutorial} />
       )}
+
+      {authUser && (
+        <BotBotContextProvider userRole={userRoles[0] || 'Employee'}>
+          {botbotOpen && (
+            <BotBotChatPanel
+              authUser={authUser}
+              isDarkMode={isDarkMode}
+              onClose={() => setBotbotOpen(false)}
+            />
+          )}
+          <BotBotOrb
+            isExpanded={botbotOpen}
+            isThinking={false}
+            hasNotification={false}
+            assistantName="BotBot"
+            theme="sky"
+            isDarkMode={isDarkMode}
+            onToggle={() => setBotbotOpen(!botbotOpen)}
+          />
+        </BotBotContextProvider>
+      )}
+
+      {/* BotBot Tutorial - spotlight intro on first login */}
+      {authUser && showBotBotTutorial && (
+        <BotBotTutorial
+          isDarkMode={isDarkMode}
+          userName={authUser.name || 'Friend'}
+          onComplete={completeBotBotTutorial}
+          onSkip={completeBotBotTutorial}
+        />
+      )}
+
       {showTutorial && (
         <>
-          {highlightedElementRect && (
+          {tutorialHighlightRect && (
             <>
+              <style>
+                {`@keyframes fdTutorialDimIn { from { opacity: 0; } to { opacity: 1; } }`}
+              </style>
               {/* Top overlay */}
               <div
-                className="fixed inset-x-0 top-0 bg-black/60 backdrop-blur-sm z-[195]"
-                style={{ height: highlightedElementRect.top }}
+                className="fixed inset-x-0 top-0 bg-black/85 backdrop-blur-sm z-[195]"
+                style={{ height: tutorialHighlightRect.top, animation: "fdTutorialDimIn 220ms ease-out both" }}
               />
               {/* Bottom overlay */}
               <div
-                className="fixed inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm z-[195]"
-                style={{ top: highlightedElementRect.bottom }}
+                className="fixed inset-x-0 bottom-0 bg-black/85 backdrop-blur-sm z-[195]"
+                style={{ top: tutorialHighlightRect.bottom, animation: "fdTutorialDimIn 220ms ease-out both" }}
               />
               {/* Left overlay */}
               <div
-                className="fixed top-0 bottom-0 left-0 bg-black/60 backdrop-blur-sm z-[195]"
-                style={{ width: highlightedElementRect.left, top: highlightedElementRect.top, height: highlightedElementRect.height }}
+                className="fixed top-0 bottom-0 left-0 bg-black/85 backdrop-blur-sm z-[195]"
+                style={{ width: tutorialHighlightRect.left, top: tutorialHighlightRect.top, height: tutorialHighlightRect.bottom - tutorialHighlightRect.top, animation: "fdTutorialDimIn 220ms ease-out both" }}
               />
               {/* Right overlay */}
               <div
-                className="fixed top-0 bottom-0 right-0 bg-black/60 backdrop-blur-sm z-[195]"
-                style={{ left: highlightedElementRect.right, top: highlightedElementRect.top, height: highlightedElementRect.height }}
+                className="fixed top-0 bottom-0 right-0 bg-black/85 backdrop-blur-sm z-[195]"
+                style={{ left: tutorialHighlightRect.right, top: tutorialHighlightRect.top, height: tutorialHighlightRect.bottom - tutorialHighlightRect.top, animation: "fdTutorialDimIn 220ms ease-out both" }}
+              />
+              <div
+                className="pointer-events-none fixed rounded-2xl border-2 border-sky-300 shadow-[0_0_32px_rgba(56,189,248,0.55)] z-[196]"
+                style={{
+                  left: tutorialHighlightRect.left,
+                  top: tutorialHighlightRect.top,
+                  width: tutorialHighlightRect.right - tutorialHighlightRect.left,
+                  height: tutorialHighlightRect.bottom - tutorialHighlightRect.top,
+                }}
               />
             </>
           )}

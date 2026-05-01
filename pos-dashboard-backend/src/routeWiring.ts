@@ -24,6 +24,7 @@ import { registerPublicSocialRoutes, registerSocialRoutes } from "./routes/socia
 import { registerManufacturerPricebookRoutes } from "./routes/manufacturerPricebookRoutes";
 import { registerObjectionVotesRoutes } from "./routes/objectionVotesRoutes";
 import { registerCustomObjectionsRoutes } from "./routes/customObjectionsRoutes";
+import { registerBotBotRoutes } from "./routes/botbotRoutes";
 import {
   type AuthUserView,
   buildAuthUser,
@@ -77,6 +78,7 @@ const toRouteAuthUser = (user: AuthUserView | null | undefined) => {
     roles: (user.roles || []).map((role) => String(role)),
     permissions: (user.permissions || []).map((permission) => String(permission)),
     permissionMode: user.permissionMode === "explicit" ? ("explicit" as const) : ("role" as const),
+    tutorialCompletedAt: user.tutorialCompletedAt,
   };
 };
 
@@ -193,6 +195,7 @@ export function registerAllRoutes({
     safeFinanceFee: SAFE_FINANCE_FEE,
   });
   registerTrackingRoutes({ app, pool });
+  registerBotBotRoutes({ app, pool, requireOwner });
   registerSystemRoutes({
     app,
     pool,

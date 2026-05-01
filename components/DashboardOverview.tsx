@@ -36,6 +36,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useBotBotContext } from "./botbot/BotBotContext";
 
 const ORDER_STORAGE_KEY = "fd_dashboard_card_order";
 const VISIBLE_STORAGE_KEY = "fd_dashboard_visible_cards";
@@ -101,6 +102,17 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
   });
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const { setPageContext } = useBotBotContext();
+
+  useEffect(() => {
+    setPageContext({
+      pageName: "Dashboard",
+      module: "",
+      userRole: "Employee", // Default, will be overridden by provider if needed
+      keyMetricsVisible: ["Quick Links", "UPS Status", "CRM Activity"],
+      suggestedActions: ["Check UPS List", "Open CRM", "View Analytics"],
+    });
+  }, [setPageContext]);
 
   const cards = useMemo<SnapshotCard[]>(() => {
     const openExternal = (url: string) => {

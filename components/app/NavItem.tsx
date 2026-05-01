@@ -24,7 +24,7 @@ type NavItemProps = {
 const NavItem = forwardRef<HTMLButtonElement | HTMLAnchorElement, NavItemProps>((props, ref) => {
   const { icon, label, isActive, isOpen, isDarkMode } = props;
   const className = `
-    w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border transition-all duration-200
+    w-full flex items-center gap-3 px-3 py-4 h-14 rounded-2xl border transition-all duration-200
     ${
       isActive
         ? isDarkMode
@@ -48,7 +48,7 @@ const NavItem = forwardRef<HTMLButtonElement | HTMLAnchorElement, NavItemProps>(
         title={!isOpen ? label : ''}
       >
         {icon}
-        {isOpen && <span className="font-medium text-sm">{label}</span>}
+        {isOpen && <span className="font-medium text-base">{label}</span>}
       </a>
     );
   }
@@ -61,7 +61,7 @@ const NavItem = forwardRef<HTMLButtonElement | HTMLAnchorElement, NavItemProps>(
       title={!isOpen ? label : ''}
     >
       {icon}
-      {isOpen && <span className="font-medium text-sm">{label}</span>}
+      {isOpen && <span className="font-medium text-base">{label}</span>}
     </button>
   );
 });

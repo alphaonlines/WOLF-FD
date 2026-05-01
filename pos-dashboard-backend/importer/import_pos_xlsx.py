@@ -369,6 +369,37 @@ ON CONFLICT (row_hash) DO UPDATE SET
   import_batch_id = EXCLUDED.import_batch_id;
 """
 
+ENSURE_IMPORT_COVERAGE = """
+CREATE TABLE IF NOT EXISTS pos_import_coverage (
+  id BIGSERIAL PRIMARY KEY,
+  report_type TEXT NOT NULL,
+  import_batch_id BIGINT,
+  source_file TEXT,
+  date_field TEXT NOT NULL,
+  range_start DATE NOT NULL,
+  range_end DATE NOT NULL,
+  row_count INTEGER NOT NULL DEFAULT 0,
+  imported_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pos_import_coverage_unique
+  ON pos_import_coverage(report_type, import_batch_id, source_file, date_field);
+CREATE INDEX IF NOT EXISTS idx_pos_import_coverage_lookup
+  ON pos_import_coverage(report_type, date_field, range_start, range_end);
+"""
+
+UPSERT_IMPORT_COVERAGE = """
+INSERT INTO pos_import_coverage (
+  report_type, import_batch_id, source_file, date_field, range_start, range_end, row_count, updated_at
+)
+VALUES (%s, %s, %s, %s, %s, %s, %s, now())
+ON CONFLICT (report_type, import_batch_id, source_file, date_field) DO UPDATE SET
+  range_start = EXCLUDED.range_start,
+  range_end = EXCLUDED.range_end,
+  row_count = EXCLUDED.row_count,
+  updated_at = now();
+"""
+
 def to_date(s):
     # pandas handles most date formats; coerce invalid to NaT -> None
     if s is None:
@@ -486,6 +517,18 @@ def clean_row(df: pd.DataFrame, source_file: str) -> pd.DataFrame:
         df[c] = df[c].apply(to_num)
 
     return df
+
+def compute_date_range(df: pd.DataFrame, preferred_field: str, fallback_field: str | None = None) -> tuple[str, object | None, object | None]:
+    fields = [preferred_field]
+    if fallback_field and fallback_field != preferred_field:
+        fields.append(fallback_field)
+    for field in fields:
+        if field not in df.columns:
+            continue
+        dates = df[field].dropna().tolist()
+        if dates:
+            return (field, min(dates), max(dates))
+    return (preferred_field, None, None)
 
 def compute_sales_date_range(df: pd.DataFrame) -> tuple[str, str, str]:
     sale_dates = df["sale_date"].dropna().tolist()
@@ -639,6 +682,7 @@ def main():
     conn = psycopg2.connect(**PG)
     try:
         with conn, conn.cursor() as cur:
+            cur.execute(ENSURE_IMPORT_COVERAGE)
             batches = {}
             for path in files:
                 source = os.path.basename(path)
@@ -766,6 +810,13 @@ def main():
                         execute_values(cur, UPSERT_RAW, raw_rows, page_size=2000)
                         execute_values(cur, UPSERT_CLEAN, clean_rows, page_size=2000)
 
+                        coverage_field, coverage_start, coverage_end = compute_date_range(df2, "delivery_confirmed_date", "sale_date")
+                        if coverage_start and coverage_end and coverage_start <= coverage_end:
+                            cur.execute(
+                                UPSERT_IMPORT_COVERAGE,
+                                ("sales", batch_id, source, coverage_field, coverage_start, coverage_end, len(clean_rows)),
+                            )
+
                         print(f"Upserted: {len(clean_rows)} rows (clean) + {len(raw_rows)} rows (raw)")
                     elif entry_type == "items":
                         df2 = entry_info["df2"]
@@ -809,6 +860,13 @@ def main():
 
                         execute_values(cur, UPSERT_ITEMS_RAW, raw_rows, page_size=2000)
                         execute_values(cur, UPSERT_ITEMS, clean_rows, page_size=2000)
+
+                        coverage_field, coverage_start, coverage_end = compute_date_range(df2, "delivery_confirmed_date", "sale_date")
+                        if coverage_start and coverage_end and coverage_start <= coverage_end:
+                            cur.execute(
+                                UPSERT_IMPORT_COVERAGE,
+                                ("items", batch_id, source, coverage_field, coverage_start, coverage_end, len(clean_rows)),
+                            )
 
                         print(f"Upserted: {len(clean_rows)} item rows")
                     else:

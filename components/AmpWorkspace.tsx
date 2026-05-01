@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Activity, Bot, Gamepad2 } from "lucide-react";
 import type { AuthUser } from "../types";
+import { useBotBotContext } from "./botbot/BotBotContext";
 import WorkAdvertising from "./WorkAdvertising";
 import WolfBot from "./WolfBot";
 
@@ -24,10 +25,21 @@ const AmpWorkspace: React.FC<AmpWorkspaceProps> = ({
   hideTabBar = false,
 }) => {
   const [subTab, setSubTab] = useState<AmpSubTab>(requestedSubTab);
+  const { setPageContext } = useBotBotContext();
 
   useEffect(() => {
     setSubTab(requestedSubTab);
   }, [requestedSubTab, requestedSubTabToken]);
+
+  useEffect(() => {
+    setPageContext({
+      pageName: "AI Bot",
+      module: "amp.bot",
+      userRole: "Employee",
+      keyMetricsVisible: [],
+      suggestedActions: [],
+    });
+  }, [setPageContext]);
 
   const divider = isDarkMode ? "border-slate-800" : "border-slate-200";
   const stickyBarClass = isDarkMode

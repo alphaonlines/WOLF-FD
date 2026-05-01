@@ -11,6 +11,7 @@ type AuthUserLike = {
   roles: string[];
   permissions: string[];
   permissionMode: "role" | "explicit";
+  tutorialCompletedAt: string | null;
 };
 
 type RegisterAuthRoutesDeps = {
@@ -184,7 +185,7 @@ export function registerAuthRoutes({
     if (!email || !password) return res.status(400).json({ ok: false, error: "email and password are required" });
 
     const userSql = `
-      SELECT id, name, email, password_hash, active, access_status
+      SELECT id, name, email, password_hash, active, access_status, tutorial_completed_at
       FROM users
       WHERE lower(email) = lower($1)
       LIMIT 1;
@@ -441,6 +442,24 @@ export function registerAuthRoutes({
     const user = await currentAuthUserFromReq(req);
     if (!user) return res.status(401).json({ ok: false, user: null });
     res.json({ ok: true, user });
+  });
+
+  app.post("/api/auth/tutorial-complete", async (req, res) => {
+    const user = await currentAuthUserFromReq(req);
+    if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
+
+    await pool.query(
+      `
+        UPDATE users
+        SET tutorial_completed_at = COALESCE(tutorial_completed_at, now()),
+            updated_at = now()
+        WHERE id = $1
+      `,
+      [Number(user.id)]
+    );
+
+    const refreshed = await loadAuthUserById(Number(user.id));
+    res.json({ ok: true, user: refreshed || user });
   });
 
   app.use("/api", async (req, res, next) => {

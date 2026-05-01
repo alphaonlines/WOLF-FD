@@ -1,25 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
-import { CheckCircle, AlertTriangle, UploadCloud, FileSpreadsheet, Building2 } from "lucide-react";
+import { CheckCircle, AlertTriangle, UploadCloud, FileSpreadsheet, Tag, Database } from "lucide-react";
 import { fetchCoverageMonths, uploadPosExports } from "../services/posBackendApi";
 import ManufacturerPricelistPortal from "./ManufacturerPricelistPortal";
 
-const UPLOAD_MANUFACTURERS = [
-  "Vendor Price List",
-  "Ashley",
-  "Best",
-  "England",
-  "Jackson/Catnapper",
-  "Liberty",
-  "Vaughan-Bassett",
-  "AAmerica",
-  "Albany",
-  "Archbold",
-  "Innovations",
-  "Other",
-] as const;
-
 type FileCheckStatus = "ready" | "invalid" | "uploading" | "uploaded" | "error";
+type UpdateSection = "pos_reports" | "manager_specials" | "manufacturer_pricelist";
 
 type FileCheck = {
   file: File;
@@ -73,9 +59,13 @@ type UpdateDatabaseProps = {
   onOpenProductSearch?: () => void;
 };
 
+type CoverageMonthGap = {
+  month: string;
+  missingDays: number;
+};
+
 const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpenProductSearch }) => {
-  const [view, setView] = useState<"default" | "manufacturer_pricelist">("default");
-  const [selectedManufacturer, setSelectedManufacturer] = useState<string>("");
+  const [activeSection, setActiveSection] = useState<UpdateSection>("pos_reports");
   const [checks, setChecks] = useState<FileCheck[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
@@ -83,6 +73,8 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
   const [uploadLog, setUploadLog] = useState<string | null>(null);
   const [missingSalesMonths, setMissingSalesMonths] = useState<string[]>([]);
   const [missingItemMonths, setMissingItemMonths] = useState<string[]>([]);
+  const [missingSalesMonthDetails, setMissingSalesMonthDetails] = useState<CoverageMonthGap[]>([]);
+  const [missingItemMonthDetails, setMissingItemMonthDetails] = useState<CoverageMonthGap[]>([]);
   const [missingSalesDays, setMissingSalesDays] = useState<string[]>([]);
   const [missingItemDays, setMissingItemDays] = useState<string[]>([]);
   const [missingSalesDaysCount, setMissingSalesDaysCount] = useState<number>(0);
@@ -93,8 +85,14 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
 
   const validChecks = useMemo(() => checks.filter((c) => c.status === "ready"), [checks]);
   const hasErrors = checks.some((c) => c.status === "invalid" || c.status === "error");
-  const salesGapList = coverageView === "days" ? missingSalesDays : missingSalesMonths;
-  const itemGapList = coverageView === "days" ? missingItemDays : missingItemMonths;
+  const salesMonthGaps = missingSalesMonthDetails.length
+    ? missingSalesMonthDetails
+    : missingSalesMonths.map((month) => ({ month, missingDays: 0 }));
+  const itemMonthGaps = missingItemMonthDetails.length
+    ? missingItemMonthDetails
+    : missingItemMonths.map((month) => ({ month, missingDays: 0 }));
+  const salesGapCount = coverageView === "days" ? missingSalesDaysCount : salesMonthGaps.length;
+  const itemGapCount = coverageView === "days" ? missingItemDaysCount : itemMonthGaps.length;
 
   const isFilenameWarning = (msg: string) =>
     msg.includes("Unrecognized filename") ||
@@ -135,7 +133,7 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
   const uploadSingleCheck = async (check: FileCheck): Promise<boolean> => {
     setFileStatus(check.file.name, "uploading");
     try {
-      const result = await uploadPosExports([check.file], selectedManufacturer || undefined);
+      const result = await uploadPosExports([check.file]);
       if (!applyUploadResult(result)) {
         setFileStatus(check.file.name, "error");
         return false;
@@ -205,6 +203,8 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
       .then((data) => {
         setMissingSalesMonths(data.missingSalesMonths || []);
         setMissingItemMonths(data.missingItemMonths || []);
+        setMissingSalesMonthDetails(data.missingSalesMonthDetails || []);
+        setMissingItemMonthDetails(data.missingItemMonthDetails || []);
         setMissingSalesDays(data.missingSalesDays || []);
         setMissingItemDays(data.missingItemDays || []);
         setMissingSalesDaysCount(Number(data.missingSalesDaysCount || 0));
@@ -215,6 +215,8 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
       .catch(() => {
         setMissingSalesMonths([]);
         setMissingItemMonths([]);
+        setMissingSalesMonthDetails([]);
+        setMissingItemMonthDetails([]);
         setMissingSalesDays([]);
         setMissingItemDays([]);
         setMissingSalesDaysCount(0);
@@ -222,6 +224,34 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
         setCoverageStart(null);
         setCoverageEnd(null);
       });
+  };
+
+  const renderGapList = (kind: "sales" | "items") => {
+    const dayGaps = kind === "sales" ? missingSalesDays : missingItemDays;
+    const monthGaps = kind === "sales" ? salesMonthGaps : itemMonthGaps;
+
+    if (coverageView === "days") {
+      return dayGaps.length ? (
+        dayGaps.map((day) => <div key={day}>{day}</div>)
+      ) : (
+        <div className="text-emerald-600">No gaps detected.</div>
+      );
+    }
+
+    return monthGaps.length ? (
+      monthGaps.map((gap) => (
+        <div key={gap.month} className="flex items-center justify-between gap-3">
+          <span>{gap.month}</span>
+          {gap.missingDays > 0 && (
+            <span className="text-xs font-medium text-slate-500">
+              {gap.missingDays} missing day{gap.missingDays === 1 ? "" : "s"}
+            </span>
+          )}
+        </div>
+      ))
+    ) : (
+      <div className="text-emerald-600">No gaps detected.</div>
+    );
   };
 
   useEffect(() => {
@@ -269,7 +299,7 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
 
     let bulkOk = false;
     try {
-      const result = await uploadPosExports(validChecks.map((c) => c.file), selectedManufacturer || undefined);
+      const result = await uploadPosExports(validChecks.map((c) => c.file));
       bulkOk = applyUploadResult(result);
       if (!bulkOk) {
         throw new Error("Bulk upload returned import errors");
@@ -309,9 +339,31 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
     }
   };
 
-  if (view === "manufacturer_pricelist") {
-    return <ManufacturerPricelistPortal onBack={() => setView("default")} onOpenProductSearch={onOpenProductSearch} />;
-  }
+  const updateSections: Array<{
+    key: UpdateSection;
+    title: string;
+    subtitle: string;
+    icon: React.ReactNode;
+  }> = [
+    {
+      key: "pos_reports",
+      title: "Sales + Item Reports",
+      subtitle: "Paired POS exports for a date range",
+      icon: <Database size={18} />,
+    },
+    {
+      key: "manager_specials",
+      title: "Manager Specials",
+      subtitle: "Specials upload page",
+      icon: <Tag size={18} />,
+    },
+    {
+      key: "manufacturer_pricelist",
+      title: "Manufacturer Price Lists",
+      subtitle: "Vendor catalog and price books",
+      icon: <FileSpreadsheet size={18} />,
+    },
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -321,54 +373,80 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
           <div>
             <h2 className="text-lg font-semibold text-slate-800">Update Database</h2>
             <p className="text-base text-slate-500">
-              Upload monthly or weekly exports here. Use matching file pairs like{" "}
-              <span className="font-semibold">sales_report#.xls</span> +{" "}
-              <span className="font-semibold">topitems_report#.xls</span>.
+              Choose the database area first so POS reports, specials, and manufacturer catalogs stay separated.
             </p>
           </div>
         </div>
 
-        {/* Step 1: Manufacturer picker */}
-        <div className="mb-4 p-4 rounded-lg border border-slate-200 bg-slate-50">
-          <div className="flex items-center gap-2 mb-2">
-            <Building2 size={16} className="text-slate-600" />
-            <span className="text-sm font-semibold text-slate-700">
-              Step 1 — Select Manufacturer
-            </span>
-            {!selectedManufacturer && (
-              <span className="text-xs text-amber-600 font-medium">Required before upload</span>
-            )}
-            {selectedManufacturer && (
-              <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
-                <CheckCircle size={12} /> {selectedManufacturer}
-              </span>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {UPLOAD_MANUFACTURERS.map((mfr) => (
-              <button
-                key={mfr}
-                type="button"
-                onClick={() => setSelectedManufacturer(mfr === selectedManufacturer ? "" : mfr)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                  selectedManufacturer === mfr
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+        <div className="mb-5 grid grid-cols-1 gap-2 md:grid-cols-3">
+          {updateSections.map((section) => (
+            <button
+              key={section.key}
+              type="button"
+              onClick={() => {
+                setActiveSection(section.key);
+                resetUploadState();
+              }}
+              className={`flex min-h-[88px] items-start gap-3 rounded-lg border px-4 py-3 text-left transition ${
+                activeSection === section.key
+                  ? "border-slate-900 bg-slate-900 text-white"
+                  : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white"
+              }`}
+            >
+              <span
+                className={`mt-0.5 rounded-lg p-2 ${
+                  activeSection === section.key ? "bg-white/12 text-white" : "bg-white text-slate-500"
                 }`}
               >
-                {mfr}
-              </button>
-            ))}
-          </div>
+                {section.icon}
+              </span>
+              <span>
+                <span className="block text-sm font-bold">{section.title}</span>
+                <span className={`mt-1 block text-xs ${activeSection === section.key ? "text-slate-200" : "text-slate-500"}`}>
+                  {section.subtitle}
+                </span>
+              </span>
+            </button>
+          ))}
         </div>
+
+        {activeSection === "manufacturer_pricelist" && (
+          <ManufacturerPricelistPortal onBack={() => setActiveSection("pos_reports")} onOpenProductSearch={onOpenProductSearch} />
+        )}
+
+        {activeSection === "manager_specials" && (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="font-semibold text-slate-800">Manager Specials</div>
+            <p className="mt-1 text-sm text-slate-600">
+              Use this for manager-special pricing sheets only. This does not update POS sales history, item sales history,
+              or manufacturer catalog price books.
+            </p>
+            <a
+              href="https://furnituredistributors.wolf.discount/fd/manager-specials-upload.html"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-base font-medium text-slate-700 hover:bg-slate-50"
+            >
+              <UploadCloud size={16} />
+              Open Manager Specials Upload
+            </a>
+          </div>
+        )}
+
+        {activeSection === "pos_reports" && (
+          <>
+            <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-950">
+              <div className="font-semibold">Sales + Item Reports</div>
+              <div className="mt-1">
+                Upload the matching POS export pair for the same date range:{" "}
+                <span className="font-semibold">sales_report#.xls</span> and{" "}
+                <span className="font-semibold">topitems_report#.xls</span>. Manufacturer selection is not used here.
+              </div>
+            </div>
 
         <div className="flex flex-col md:flex-row gap-3 md:items-center">
           <label
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-base font-medium ${
-              selectedManufacturer
-                ? "bg-slate-900 text-white cursor-pointer hover:bg-slate-800"
-                : "bg-slate-300 text-slate-500 cursor-not-allowed"
-            }`}
+            className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-base font-medium text-white hover:bg-slate-800"
           >
             <FileSpreadsheet size={16} />
             Choose Files
@@ -377,34 +455,16 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
               accept=".xls,.xlsx"
               multiple
               className="hidden"
-              disabled={!selectedManufacturer}
               onChange={onFileChange}
             />
           </label>
           <button
             onClick={handleUpload}
-            disabled={!validChecks.length || checks.some((c) => c.status === "uploading") || !selectedManufacturer}
+            disabled={!validChecks.length || checks.some((c) => c.status === "uploading")}
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-base font-medium disabled:opacity-50"
           >
             <UploadCloud size={16} />
             Upload to Backend
-          </button>
-          <a
-            href="https://furnituredistributors.wolf.discount/fd/manager-specials-upload.html"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 bg-white text-slate-700 rounded-lg text-base font-medium hover:bg-slate-50"
-          >
-            <UploadCloud size={16} />
-            Manager Specials Upload
-          </a>
-          <button
-            type="button"
-            onClick={() => setView("manufacturer_pricelist")}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-base font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <FileSpreadsheet size={16} />
-            Update Manufacturer Pricelist
           </button>
           {uploadSuccess && (
             <span className="text-sm text-green-600 font-medium flex items-center gap-1">
@@ -486,16 +546,20 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
             <div>Let the report fully load before exporting.</div>
           </div>
         </div>
+          </>
+        )}
       </div>
 
+      {activeSection === "pos_reports" && (
       <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-base">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <div>
             <h3 className="text-lg font-semibold text-slate-800">Coverage Gaps (Delivery Date)</h3>
             <p className="text-sm text-slate-500">
               {coverageStart && coverageEnd
-                ? `Tracking ${coverageStart} to ${coverageEnd}.`
-                : "Tracking mid-2024 to today."}
+                ? `Tracking delivery-confirmed dates from ${coverageStart} to ${coverageEnd}.`
+                : "Tracking delivery-confirmed dates from mid-2024 to today."}
+              {" "}Uploaded date ranges count as covered, even when a day had zero rows.
             </p>
           </div>
           <div className="inline-flex rounded-full bg-slate-100 p-1 text-sm">
@@ -518,50 +582,35 @@ const UpdateDatabase: React.FC<UpdateDatabaseProps> = ({ onUploadComplete, onOpe
           <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold text-slate-800">Sales Data</div>
-              {coverageView === "days" ? (
-                <div className="text-xs text-slate-500">
-                  {missingSalesDaysCount} missing days
-                </div>
-              ) : (
-                <div className="text-xs text-slate-500">
-                  {missingSalesMonths.length} missing months
-                </div>
-              )}
+              <div className="text-xs text-slate-500">
+                {salesGapCount} missing {coverageView === "days" ? "days" : "months"}
+              </div>
             </div>
-            <div className="text-xs text-slate-600">Most recent gaps shown</div>
+            <div className="text-xs text-slate-600">
+              {coverageView === "days" ? "Most recent missing delivery dates shown" : "Months with at least one missing delivery date"}
+            </div>
             <div className="mt-2 max-h-40 overflow-auto text-sm text-slate-700 space-y-1">
-              {salesGapList.length ? (
-                salesGapList.map((d) => <div key={d}>{d}</div>)
-              ) : (
-                <div className="text-emerald-600">No gaps detected.</div>
-              )}
+              {renderGapList("sales")}
             </div>
           </div>
 
           <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold text-slate-800">Item List</div>
-              {coverageView === "days" ? (
-                <div className="text-xs text-slate-500">
-                  {missingItemDaysCount} missing days
-                </div>
-              ) : (
-                <div className="text-xs text-slate-500">
-                  {missingItemMonths.length} missing months
-                </div>
-              )}
+              <div className="text-xs text-slate-500">
+                {itemGapCount} missing {coverageView === "days" ? "days" : "months"}
+              </div>
             </div>
-            <div className="text-xs text-slate-600">Most recent gaps shown</div>
+            <div className="text-xs text-slate-600">
+              {coverageView === "days" ? "Most recent missing delivery dates shown" : "Months with at least one missing delivery date"}
+            </div>
             <div className="mt-2 max-h-40 overflow-auto text-sm text-slate-700 space-y-1">
-              {itemGapList.length ? (
-                itemGapList.map((d) => <div key={d}>{d}</div>)
-              ) : (
-                <div className="text-emerald-600">No gaps detected.</div>
-              )}
+              {renderGapList("items")}
             </div>
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 };

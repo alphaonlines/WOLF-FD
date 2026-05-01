@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Receipt, Search } from "lucide-react";
+import { useBotBotContext } from "./botbot/BotBotContext";
 import ProductSearchWorkspace from "./ProductSearchWorkspace";
 
 export type ShopSubTab = "search" | "pos";
@@ -20,10 +21,21 @@ const ShopWorkspace: React.FC<ShopWorkspaceProps> = ({
   hideTabBar = false,
 }) => {
   const [subTab, setSubTab] = useState<ShopSubTab>(requestedSubTab);
+  const { setPageContext } = useBotBotContext();
 
   useEffect(() => {
     setSubTab(requestedSubTab);
   }, [requestedSubTab, requestedSubTabToken]);
+
+  useEffect(() => {
+    setPageContext({
+      pageName: "Shop",
+      module: "shop",
+      userRole: "Employee",
+      keyMetricsVisible: [],
+      suggestedActions: [],
+    });
+  }, [setPageContext]);
 
   const divider = isDarkMode ? "border-slate-800" : "border-slate-200";
   const stickyBarClass = isDarkMode

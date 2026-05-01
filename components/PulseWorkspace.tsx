@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { BarChart2, ExternalLink, Globe, Monitor, Star } from "lucide-react";
+import { useBotBotContext } from "./botbot/BotBotContext";
 import SalesDashboard from "./SalesDashboard";
 import KiosksStatus from "./KiosksStatus";
 
@@ -88,6 +89,7 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
   hideTabBar = false,
 }) => {
   const [subTab, setSubTab] = useState<PulseSubTab>(requestedSubTab);
+  const { setPageContext } = useBotBotContext();
 
   useEffect(() => {
     setSubTab(requestedSubTab);
@@ -96,6 +98,16 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
   useEffect(() => {
     onSubTabChange?.(subTab);
   }, [onSubTabChange, subTab]);
+
+  useEffect(() => {
+    setPageContext({
+      pageName: "Pulse",
+      module: "pulse",
+      userRole: "Employee",
+      keyMetricsVisible: [],
+      suggestedActions: [],
+    });
+  }, [setPageContext]);
 
   const divider = isDarkMode ? "border-slate-800" : "border-slate-200";
   const stickyBarClass = isDarkMode
@@ -127,22 +139,12 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
         <button className={tabBtn(subTab === "website")} onClick={() => setSubTab("website")}>
           <Globe size={15} /> Website
         </button>
-        <a
-          href={ALPHAPULSE_URL}
-          target="_blank"
-          rel="noreferrer"
-          className={tabBtn(false)}
-        >
-          <ExternalLink size={15} /> Analytics
-        </a>
-        <a
-          href={FD_REVIEWS_URL}
-          target="_blank"
-          rel="noreferrer"
-          className={tabBtn(false)}
-        >
-          <ExternalLink size={15} /> FD Connect
-        </a>
+        <button className={tabBtn(subTab === "alphapulse")} onClick={() => setSubTab("alphapulse")}>
+          <BarChart2 size={15} /> Analytics
+        </button>
+        <button className={tabBtn(subTab === "reviews")} onClick={() => setSubTab("reviews")}>
+          <Star size={15} /> FD Connect
+        </button>
       </div>
       )}
 
@@ -156,6 +158,26 @@ const PulseWorkspace: React.FC<PulseWorkspaceProps> = ({
         )}
         {subTab === "alphaos" && <KiosksStatus />}
         {subTab === "website" && <WebsitePage isDarkMode={isDarkMode} />}
+        {subTab === "alphapulse" && (
+          <div className="h-full w-full overflow-hidden">
+            <iframe
+              src={ALPHAPULSE_URL}
+              title="AlphaPulse Analytics"
+              className="w-full h-full border-none"
+              style={{ height: "100vh" }}
+            />
+          </div>
+        )}
+        {subTab === "reviews" && (
+          <div className="h-full w-full overflow-hidden">
+            <iframe
+              src={FD_REVIEWS_URL}
+              title="FD Connect Reviews"
+              className="w-full h-full border-none"
+              style={{ height: "100vh" }}
+            />
+          </div>
+        )}
         </div>
       </PulsePaneBoundary>
     </div>

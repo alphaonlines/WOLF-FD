@@ -1,6 +1,7 @@
 import "dotenv/config";
 import dotenv from "dotenv";
 dotenv.config({ path: "/home/alphahs/WOLF-CENTRAL.env" });
+import http from "http";
 import express from "express";
 import cors from "cors";
 import fs from "fs";
@@ -9,6 +10,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { runStartupBootstrap } from "./startupBootstrap";
 import { createUpload } from "./uploadSetup";
+import { attachMeetingSignaling } from "./meetingSignaling";
 import { createSessionToken, hashPassword, sha256Hex, verifyPassword } from "./authCrypto";
 import {
   envString,
@@ -127,7 +129,9 @@ async function startServer() {
     }, 5000);
   }
 
-  app.listen(port, () => {
+  const httpServer = http.createServer(app);
+  attachMeetingSignaling(httpServer);
+  httpServer.listen(port, () => {
     console.log(`API listening on http://127.0.0.1:${port}`);
   });
 }

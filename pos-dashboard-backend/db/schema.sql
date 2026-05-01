@@ -111,6 +111,25 @@ CREATE INDEX IF NOT EXISTS idx_pos_sale_items_batch ON pos_sale_items(import_bat
 CREATE INDEX IF NOT EXISTS idx_pos_sale_items_pro1st ON pos_sale_items(is_pro1st);
 CREATE INDEX IF NOT EXISTS idx_pos_sales_batch ON pos_sales(last_import_batch_id);
 
+-- Upload coverage ranges. These mark date ranges that were uploaded even when a
+-- specific day inside the range had zero rows.
+CREATE TABLE IF NOT EXISTS pos_import_coverage (
+  id              BIGSERIAL PRIMARY KEY,
+  report_type     TEXT NOT NULL,
+  import_batch_id BIGINT,
+  source_file     TEXT,
+  date_field      TEXT NOT NULL,
+  range_start     DATE NOT NULL,
+  range_end       DATE NOT NULL,
+  row_count       INTEGER NOT NULL DEFAULT 0,
+  imported_at     TIMESTAMPTZ DEFAULT now(),
+  updated_at      TIMESTAMPTZ DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pos_import_coverage_unique
+  ON pos_import_coverage(report_type, import_batch_id, source_file, date_field);
+CREATE INDEX IF NOT EXISTS idx_pos_import_coverage_lookup
+  ON pos_import_coverage(report_type, date_field, range_start, range_end);
+
 -- Ensure columns exist for older DB volumes (safe no-ops when already present)
 ALTER TABLE pos_sales ADD COLUMN IF NOT EXISTS adjustments NUMERIC;
 ALTER TABLE pos_sales ADD COLUMN IF NOT EXISTS additional_fees NUMERIC;
