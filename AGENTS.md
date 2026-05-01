@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `main`
-- Current display version in `package.json`: `0.4.30.2241`
+- Current display version in `package.json`: `0.5.1.1520`
 
 ## Project Structure
 
@@ -110,7 +110,12 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `0.4.30.2241`
+- Current display version: `0.5.1.1520`
+- 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
+  - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
+  - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
+  - Commands/tests: files changed; build/deploy not run in this pass.
+
 - Current active sprint: Tutorial fix + sidebar cleanup + module navigation polish
 - The backend route surface is now modularized under `pos-dashboard-backend/src/routes/`.
 - Older pre-cleanup AGENTS detail was condensed on `2026-03-28 23:14 EDT`; use `git log --follow -- AGENTS.md` if you need the full historical trail.
@@ -136,6 +141,37 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-01 14:56 EDT — Polished BotBot first-run onboarding:
+  - Files: `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/components/botbot/BotBotTutorial.tsx`, `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/package.json`
+  - Changes: improved main-content step card anchoring using the visible target area for better alignment on large canvases, kept final onboarding action as an always-blue **Done** control on the last step, and updated `displayVersion` to `0.5.1.1456`.
+  - Commands/tests: files changed; build/deploy not run in this pass.
+
+- 2026-05-01 14:55 EDT — Tuned BotBot first-run onboarding for main-content alignment and explicit completion behavior.
+  - Files: `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/components/botbot/BotBotTutorial.tsx`, `/home/alphahs/WOLF-FD/package.json`
+  - Changes: improved tutorial card anchoring for large main-content targets so the step 6 spotlight remains on the workspace region, made terminal action behavior explicit so final onboarding steps always use the blue `Done` path, and bumped visible version to `0.5.1.1455`.
+  - Commands/tests: files changed; build/deploy not run in this pass.
+
+- 2026-05-01 14:59 EDT — Tightened BotBot first-run onboarding follow-through.
+  - Files: `App.tsx`, `components/botbot/BotBotTutorial.tsx`, `package.json`
+  - Changes: improved BotBot intro-step targeting by moving the main-content tutorial anchor to `<main>`, made the final BotBot step terminal even when metadata changes by treating the last step as terminal in `BotBotTutorial`, and removed missing-target highlighting on final settings-help step for users without Settings access.
+  - Commands/tests: files changed; build/deploy not run in this pass (implementation-only).
+
+- 2026-05-01 14:54 EDT — Finalized intro-step polish for first-run BotBot tutorial:
+  - Files: `components/app/TutorialOverlay.tsx`, `App.tsx`, `package.json`
+  - Changes: improved the step card anchoring logic for tall/large targets so the “This is where your main content lives” step points to the actual workspace area, moved the anchor to the content wrapper under the header, and kept the final onboarding action as terminal **Done**.
+  - Version: `0.5.1.1454` in `package.json`.
+  - Commands/tests: files changed; build/deploy not run in this pass.
+
+- 2026-05-01 14:51 EDT — Tuned the first-launch BotBot introduction to keep the main-content pointer consistent and polish the closing action.
+  - Files: `App.tsx`, `components/botbot/BotBotTutorial.tsx`, `package.json`, `AGENTS.md`
+  - Changes: added explicit "This is where your main content lives" step with `data-tour-id="botbot-main-content"` in the onboarding sequence, kept final BotBot step terminal with explicit blue `Done`, preserved non-terminal recovery behavior for missing targets, and bumped `displayVersion` to `0.5.1.1451` (package `version` now `0.3.31`).
+  - Commands/tests: files changed; build/deploy not run in this pass (implementation-only).
+
+- 2026-05-01 14:46 EDT — Tuned first-launch BotBot onboarding guidance so the main-content anchor is stable and terminal actions are explicit.
+  - Files: `App.tsx`, `components/botbot/BotBotTutorial.tsx`, `package.json`, `package-lock.json`, `AGENTS.md`
+  - Changes: added `data-tour-id="botbot-main-content"` for reliable main-content step targeting, made final BotBot step terminal with guaranteed blue `Done`, kept fallback recovery for non-terminal missing targets only, and bumped `displayVersion` to `0.5.1.1446` (package `version` now `0.3.31`).
+  - Commands/tests: files changed; build/deploy not run in this pass (per your instruction).
 
 - 2026-03-28 17:58 EDT — Added the new manufacturer price-book portal entry inside `Update Database` and shipped the first large frontend portal pass for upload, validation, correction, and search. Files: `App.tsx`, `components/UpdateDatabase.tsx`, `components/ManufacturerPricelistPortal.tsx`, `MANUFACTURER_PRICELIST_TODO.md`, `package.json`. Commands: frontend `npm run build`, deploy copy to `/srv/www/wolf.discount/fd/`, live bundle string checks. Tests: frontend build PASS; live bundle sync PASS.
 - 2026-03-28 18:11 EDT — Added the real holding-upload flow for manufacturer files, owner-only upload/list APIs, upload metadata storage, and the frontend `Upload to Holding Folder` path. Files: `.gitignore`, `components/ManufacturerPricelistPortal.tsx`, `services/manufacturerPricelistApi.ts`, `types.ts`, `pos-dashboard-backend/db/schema.sql`, `pos-dashboard-backend/src/routes/manufacturerPricebookRoutes.ts`, `pos-dashboard-backend/src/startupBootstrap.ts`, `package.json`. Commands: frontend/backend `npm run build`, `pm2 restart pos-api`, deploy copy, authenticated API checks. Tests: frontend build PASS; backend build PASS; backend route verification PASS.
@@ -257,3 +293,4 @@ Backend deploy flow for route/schema/runtime changes:
 - 2026-05-01 00:44 EDT — Bumped WOLF-FD visible dashboard version for the launch build and redeployed. Files: `package.json`, `AGENTS.md`; deployed asset: `/srv/www/wolf.discount/fd/assets/index-CY0GXDJ_.js`. Changes: updated `displayVersion` from `0.4.30.2241` to `0.5.1.0043` while keeping package semver at `0.3.30`; rebuilt and redeployed the frontend bundle. Commands: frontend `npm run build`, backend `npm run build`, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/`, `curl -sS http://127.0.0.1:5057/health`, deployed bundle version grep, frontend `npm test`, backend `npm test`, `date`. Tests: frontend build PASS; backend build PASS; FD health PASS (`{"ok":true,"db":1}`); deployed version verification PASS; frontend tests PASS (2 files/6 tests); backend tests PASS (1 file/3 tests).
 - 2026-05-01 00:48 EDT — Removed the temporary code-level launch allowlist so admin-assigned module permissions are the source of truth again. Files: `App.tsx`, `components/WolfdenWorkspace.tsx`, `components/PulseWorkspace.tsx`, `AGENTS.md`; deployed asset: `/srv/www/wolf.discount/fd/assets/index-4BfQiv-t.js`. Changes: sidebar and dashboard cards now show based on role/employee permissions without the `LAUNCH_VISIBLE_TABS`/launch-card filter; Den full-access subtabs restored (UPS, CRM, Board, Meeting, Tasks, QuickLinks); Pulse no longer forces all requests back to Sales and can show AlphaOS/other allowed Pulse surfaces. Commands: frontend `npm run build`, backend `npm run build`, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/`, `curl -sS http://127.0.0.1:5057/health`, frontend `npm test`, backend `npm test`, `date`. Tests: frontend build PASS; backend build PASS; FD health PASS (`{"ok":true,"db":1}`); frontend tests PASS (2 files/6 tests); backend tests PASS (1 file/3 tests).
 - 2026-05-01 01:36 EDT — Added owner/admin per-user tutorial restart control. Files: `components/AdminUsers.tsx`, `services/adminUsersApi.ts`, `types.ts`, `App.tsx`, `pos-dashboard-backend/src/startupBootstrap.ts`, `pos-dashboard-backend/src/authSessionUtils.ts`, `pos-dashboard-backend/src/authDb.ts`, `pos-dashboard-backend/src/routes/authRoutes.ts`, `pos-dashboard-backend/src/routes/adminRoutes.ts`, `AGENTS.md`; deployed asset: `/srv/www/wolf.discount/fd/assets/index-DFJhwlfV.js`. Changes: added `tutorial_reset_at` auth token support, added `POST /api/admin/users/:id/tutorials/reset`, reset dashboard tutorial completion, reset `botbot_settings.tutorial_completed=false`, clear the target user's sessions, and added a `Restart Tutorials` button to User Management that causes BotBot and module tours to replay on next sign-in. Commands: frontend `npm run build`, backend `npm run build`, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/`, `pm2 restart pos-api`, frontend `npm test`, backend `npm test`, `curl -sS http://127.0.0.1:5057/health`, `date`. Tests: frontend build PASS; backend build PASS; `pos-api` restart PASS; frontend tests PASS (2 files/6 tests); backend tests PASS (1 file/3 tests); FD health PASS (`{"ok":true,"db":1}`).
+- 2026-05-01 15:08 EDT — Replaced BotBot onboarding step copy and anchors to improve perceived guidance, then rebuilt and redeployed for immediate user-facing effect. Files: `App.tsx`, `components/botbot/BotBotTutorial.tsx`, `components/app/TutorialOverlay.tsx`, `package.json`, `AGENTS.md`. Changes: adjusted launch/tutorial positioning so step 6 more accurately highlights the main content region, made step 8 the final “Done” action with blue styling text, bumped `displayVersion` from `0.5.1.1520` to `0.5.1.1521`, and redeployed `/srv/www/wolf.discount/fd/` from fresh build output. Commands: `npm run build`, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/`, `date`. Tests: frontend build PASS; redeploy PASS.

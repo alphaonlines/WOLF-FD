@@ -6,6 +6,7 @@ type NavItemProps = {
   isActive: boolean;
   isOpen: boolean;
   isDarkMode: boolean;
+  tourId?: string;
 } & (
   | {
       onClick: () => void;
@@ -45,6 +46,7 @@ const NavItem = forwardRef<HTMLButtonElement | HTMLAnchorElement, NavItemProps>(
         target={props.target}
         rel={props.rel}
         className={className}
+        data-tour-id={props.tourId}
         title={!isOpen ? label : ''}
       >
         {icon}
@@ -54,12 +56,13 @@ const NavItem = forwardRef<HTMLButtonElement | HTMLAnchorElement, NavItemProps>(
   }
 
   return (
-    <button
-      ref={ref as Ref<HTMLButtonElement>}
-      onClick={props.onClick}
-      className={className}
-      title={!isOpen ? label : ''}
-    >
+      <button
+        ref={ref as Ref<HTMLButtonElement>}
+        onClick={props.onClick}
+        className={className}
+        data-tour-id={props.tourId}
+        title={!isOpen ? label : ''}
+      >
       {icon}
       {isOpen && <span className="font-medium text-base">{label}</span>}
     </button>

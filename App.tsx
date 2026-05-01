@@ -1,9 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   LayoutDashboard,
   Sofa,
   Activity,
-  Search,
   Star,
   Moon,
   Sun,
@@ -24,10 +23,6 @@ import {
   Tv,
   Share2,
   FolderSearch,
-  BarChart2, // Added
-  CheckSquare, // Added
-  BookOpen, // Added
-  Database // Added
 } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import WorkAdvertising from './components/WorkAdvertising';
@@ -44,8 +39,8 @@ import AmpWorkspace, { AmpSubTab } from './components/AmpWorkspace';
 import ShopWorkspace, { ShopSubTab } from './components/ShopWorkspace';
 import WolfdenWorkspace, { WolfdenSubTab } from './components/WolfdenWorkspace';
 import { PulseSubTab } from './components/PulseWorkspace';
-import { BotBotOrb, BotBotChatPanel, BotBotContextProvider, useBotBotContext } from './components/botbot';
-import BotBotTutorial from './components/botbot/BotBotTutorial';
+import { BotBotOrb, BotBotChatPanel, BotBotContextProvider } from './components/botbot';
+import BotBotTutorial, { BotBotTutorialStep } from './components/botbot/BotBotTutorial';
 import type { AccessRequestProfile, AuthConfig, AuthUser, UserRole } from './types';
 import { APP_VERSION } from './constants';
 import {
@@ -54,126 +49,192 @@ import {
   fetchCurrentUser,
   loginWithPassword,
   logoutCurrentUser,
-  markTutorialComplete,
   startGoogleSignIn,
   submitGoogleAccessRequest,
 } from './services/authApi';
 import { getPosApiBaseUrl } from './services/posBackendApi';
 import AuthScreen from './components/app/AuthScreen';
-import TutorialOverlay from './components/app/TutorialOverlay';
 import LoadingOverlay from './components/app/LoadingOverlay';
-import TutorialPromptOverlay from './components/app/TutorialPromptOverlay';
 import NavItem from './components/app/NavItem'; // Added NavItem import
 import { APP_THEME_STYLES } from './components/app/themeStyles';
 import { canAccessTab, getTabTitle, Tab } from './components/app/tabs';
-import { DASHBOARD_CARD_PERMISSION_BY_ID, FEATURE_PERMISSION_KEYS, hasPermission } from './components/app/permissions';
+import { DASHBOARD_CARD_PERMISSION_BY_ID, FEATURE_PERMISSION_KEYS, MODULE_PERMISSION_KEYS, hasPermission } from './components/app/permissions';
 
-type Slide = {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  bullets: string[];
-  accent: string;
-  highlightId?: string; // Optional ID of element to highlight
+const buildBotBotTutorialSteps = ({
+  canOpenPulse,
+  canOpenDen,
+  canOpenSales,
+  canOpenShop,
+  canOpenProductSearch,
+  canOpenCrm,
+  hasSettingsPanel,
+}: {
+  canOpenPulse: boolean;
+  canOpenDen: boolean;
+  canOpenSales: boolean;
+  canOpenShop: boolean;
+  canOpenProductSearch: boolean;
+  canOpenCrm: boolean;
+  hasSettingsPanel: boolean;
+}): BotBotTutorialStep[] => {
+  const steps: BotBotTutorialStep[] = [
+    {
+      id: 'botbot-intro',
+      title: 'Welcome to BotBot',
+      message: 'Hi, I’m your guide for getting started. I’ll wait and only move when you are ready.',
+      advanceWhen: { type: 'manual' },
+      primaryActionLabel: 'Let’s go',
+    },
+    {
+      id: 'botbot-open-sidebar',
+      title: 'Open the navigation',
+      message: 'Open the sidebar to see every module I can help you with.',
+      highlightId: 'sidebar-toggle',
+      scope: 'launch',
+      requiredModules: [],
+      advanceWhen: {
+        type: 'state',
+        check: (state) => state.sidebarOpen,
+      },
+      primaryActionLabel: 'Next',
+    },
+  ];
+
+  if (canOpenPulse) {
+    steps.push({
+      id: 'botbot-open-pulse',
+      title: 'Open Pulse',
+      message: 'Use Pulse to get a fast sales view. Start in Sales first.',
+      highlightId: 'sidebar-pulse-nav-item',
+      scope: 'module',
+      requiredModules: [MODULE_PERMISSION_KEYS.PULSE],
+      advanceWhen: {
+        type: 'state',
+        check: (state) => state.activeTab === Tab.PULSE,
+      },
+      primaryActionLabel: 'Next',
+    });
+  } else if (canOpenDen) {
+    steps.push({
+      id: 'botbot-open-den-ups',
+      title: 'Open Den',
+      message: 'Go to Den, then open UPS first.',
+      highlightId: 'sidebar-wolfden-nav-item',
+      scope: 'module',
+      requiredModules: [MODULE_PERMISSION_KEYS.WOLFDEN],
+      advanceWhen: {
+        type: 'state',
+        check: (state) => state.activeTab === Tab.WOLFDEN,
+      },
+      primaryActionLabel: 'Next',
+    });
+    steps.push({
+      id: 'botbot-open-den-ups-final',
+      title: 'Open UPS',
+      message: 'Inside Den, open UPS so your help starts from the floor queue.',
+      highlightId: 'den-tab-ups',
+      scope: 'module',
+      requiredModules: [MODULE_PERMISSION_KEYS.WOLFDEN],
+      advanceWhen: {
+        type: 'state',
+        check: (state) => state.activeTab === Tab.WOLFDEN && state.requestedWolfdenSubTab === 'ups',
+      },
+      primaryActionLabel: 'Next',
+    });
+  } else if (canOpenSales) {
+    steps.push({
+      id: 'botbot-open-sales',
+      title: 'Open Sales',
+      message: 'Open Sales to see your daily and weekly performance.',
+      highlightId: 'sidebar-dashboard-nav-item',
+      scope: 'module',
+      requiredModules: [MODULE_PERMISSION_KEYS.SALES],
+      advanceWhen: {
+        type: 'state',
+        check: (state) => state.activeTab === Tab.SALES,
+      },
+      primaryActionLabel: 'Next',
+    });
+  } else if (canOpenCrm) {
+    steps.push({
+      id: 'botbot-open-crm',
+      title: 'Open CRM',
+      message: 'Open CRM to manage customers and work your queue.',
+      highlightId: 'sidebar-wolfden-nav-item',
+      scope: 'module',
+      requiredModules: [MODULE_PERMISSION_KEYS.CRM],
+      advanceWhen: {
+        type: 'state',
+        check: (state) => state.activeTab === Tab.CRM,
+      },
+      primaryActionLabel: 'Next',
+    });
+  } else if (canOpenProductSearch) {
+    steps.push({
+      id: 'botbot-open-product-search',
+      title: 'Open Product Search',
+      message: 'Use Product Search for catalog lookups while helping customers.',
+      highlightId: 'sidebar-shop-nav-item',
+      scope: 'module',
+      requiredModules: [MODULE_PERMISSION_KEYS.PRODUCT_SEARCH],
+      advanceWhen: {
+        type: 'state',
+        check: (state) => state.activeTab === Tab.PRODUCT_SEARCH,
+      },
+      primaryActionLabel: 'Next',
+    });
+  } else if (canOpenShop) {
+    steps.push({
+      id: 'botbot-open-shop',
+      title: 'Open Shop',
+      message: 'Go to Shop for product workflows and POS tools.',
+      highlightId: 'sidebar-shop-nav-item',
+      scope: 'module',
+      requiredModules: [MODULE_PERMISSION_KEYS.SHOP],
+      advanceWhen: {
+        type: 'state',
+        check: (state) => state.activeTab === Tab.SHOP,
+      },
+      primaryActionLabel: 'Next',
+    });
+  }
+
+  steps.push({
+    id: 'botbot-main-content',
+    title: 'This is where your main content lives',
+    message: 'This is where your main content lives. I’ll wait while you explore this workspace.',
+    highlightId: 'botbot-main-content',
+    scope: 'launch',
+    requiredModules: [],
+    advanceWhen: {
+      type: 'manual',
+    },
+    primaryActionLabel: 'Next',
+  });
+
+  steps.push({
+    id: 'botbot-find-help',
+    title: 'BotBot settings and help',
+    message: hasSettingsPanel
+      ? 'Open Settings when you need walkthroughs, resets, or BotBot preferences.'
+      : 'Ask an owner or manager to open Settings for BotBot control options.',
+    highlightId: hasSettingsPanel ? 'sidebar-settings-nav-item' : undefined,
+    scope: 'launch',
+    requiredModules: hasSettingsPanel ? [MODULE_PERMISSION_KEYS.SETTINGS] : [],
+    advanceWhen: hasSettingsPanel
+      ? {
+          type: 'state',
+          check: (state) => state.activeTab === Tab.ADMIN,
+        }
+      : {
+          type: 'manual',
+        },
+    primaryActionLabel: 'Done',
+    isTerminal: true,
+  });
+
+  return steps;
 };
-
-const SLIDES: Slide[] = [
-  {
-    icon: <Zap size={36} />,
-    title: "Welcome to the FD Dashboard",
-    subtitle: "Your all-in-one tool for sales, customers, and the product catalog.",
-    bullets: [
-      "Everything is in the sidebar on the left — just click a module to open it.",
-      "Your permissions control which modules you can see.",
-      "Use this tour to get a quick feel for what each area does.",
-    ],
-    accent: "sky",
-    highlightId: "sidebar-dashboard-nav-item",
-  },
-  {
-    icon: <BarChart2 size={36} />,
-    title: "Sales Dashboard",
-    subtitle: "A live look at how the floor is performing.",
-    bullets: [
-      "See today's sales, weekly totals, and the leaderboard at a glance.",
-      "Sales Analysis breaks down performance by salesperson, location, and timeframe.",
-      "Pro1st tracking shows how add-on products are moving.",
-    ],
-    accent: "emerald",
-    highlightId: "dashboard-overview",
-  },
-  {
-    icon: <Users size={36} />,
-    title: "CRM",
-    subtitle: "Keep track of every customer, ticket, and follow-up.",
-    bullets: [
-      "The working queue shows all active customer interactions sorted by priority.",
-      "Expand any customer card to see visit history, notes, and quick actions.",
-      "The Objections drawer on the right gives you instant rebuttals for tough sales moments.",
-    ],
-    accent: "violet",
-    highlightId: "sidebar-wolfden-nav-item",
-  },
-  {
-    icon: <Search size={36} />,
-    title: "Product Search",
-    subtitle: "Browse the full manufacturer catalog and build customer quotes.",
-    bullets: [
-      "Search by description, item number, material, color, feature tag, or price range.",
-      "Click any product to open the detail drawer — pricing at 60% and 50% margin is shown automatically.",
-      "Add items to a cart to total up a customer order. You can run multiple carts at the same time for different customers.",
-    ],
-    accent: "sky",
-    highlightId: "sidebar-shop-nav-item",
-  },
-  {
-    icon: <Database size={36} />,
-    title: "Update Database",
-    subtitle: "Keep the sales data and product catalog current.",
-    bullets: [
-      "Upload POS export files here to refresh the sales and items database.",
-      "Select the manufacturer first, then choose your export files.",
-      "Use the Manufacturer Pricelist section to upload new vendor price books.",
-    ],
-    accent: "amber",
-    highlightId: "sidebar-update-db-panel",
-  },
-  {
-    icon: <CheckSquare size={36} />,
-    title: "Tasks",
-    subtitle: "Assign, track, and close out work items across the team.",
-    bullets: [
-      "Create tasks for yourself or assign them to others.",
-      "Tasks can be linked to customers or flagged by type.",
-      "Check the board regularly — items submitted from CRM and other modules land here.",
-    ],
-    accent: "rose",
-    highlightId: "sidebar-tasks-nav-item",
-  },
-  {
-    icon: <MessageSquare size={36} />,
-    title: "Message Board",
-    subtitle: "Team-wide announcements and notes in one place.",
-    bullets: [
-      "Post updates, reminders, or anything the whole floor needs to see.",
-      "Messages stay visible until removed — great for shift notes and specials.",
-    ],
-    accent: "teal",
-    highlightId: "sidebar-message-board-nav-item",
-  },
-  {
-    icon: <BookOpen size={36} />,
-    title: "You're all set.",
-    subtitle: "Dive in — and don't worry, you can always find help in the settings area.",
-    bullets: [
-      "Click any module in the left sidebar to get started.",
-      "Your role determines what you can see and do — ask the owner to adjust permissions if something is missing.",
-      "This tour won't show again, but you can reopen it from Settings any time.",
-    ],
-    accent: "sky",
-    highlightId: "sidebar-settings-nav-item",
-  },
-];
 
 const DASHBOARD_LOCKED = false;
 const DASHBOARD_NOTICE = 'System down until further notice.';
@@ -288,69 +349,8 @@ const App: React.FC = () => {
     return 'Storm';
   };
   const weatherLabel = themeMode === 'live' && liveWeatherCondition !== null ? getWeatherLabel(weatherCode, isWeatherDay) : null;
-  const [showLoading, setShowLoading] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(false);
-  const [showTutorialPrompt, setShowTutorialPrompt] = useState(false);
-  const [highlightedElementRect, setHighlightedElementRect] = useState<DOMRect | null>(null);
-  const [tutorialStep, setTutorialStep] = useState(0); // New state for current tutorial step
   const elementRefs = useRef<Map<string, HTMLElement | null>>(new Map());
-  const handleCloseTutorial = () => {
-    setShowTutorial(false);
-    try { localStorage.setItem('fd_tutorial_seen', '1'); } catch {}
-    void markTutorialComplete().catch((err) => console.error('Failed to save tutorial completion:', err));
-    setHighlightedElementRect(null); // Clear highlight when tutorial closes
-    setTutorialStep(0); // Reset tutorial step
-  };
 
-  const handleStartTutorial = () => {
-    setShowTutorialPrompt(false);
-    setShowLoading(false); // Make sure loading is dismissed
-    setShowTutorial(true);
-    setTutorialStep(0); // Start from the beginning
-  };
-
-  const handleSkipTutorial = () => {
-    setShowTutorialPrompt(false);
-    setShowLoading(false); // Make sure loading is dismissed
-    try { localStorage.setItem('fd_tutorial_seen', '1'); } catch {}
-    void markTutorialComplete().catch((err) => console.error('Failed to save tutorial completion:', err));
-    setHighlightedElementRect(null); // Clear highlight on skip
-    setTutorialStep(0); // Reset tutorial step
-  };
-
-  const handleStartTutorialManually = handleStartTutorial;
-
-  const handleTutorialPrev = () => {
-    setTutorialStep((prev) => Math.max(0, prev - 1));
-  };
-
-  const handleTutorialNext = () => {
-    setTutorialStep((prev) => Math.min(SLIDES.length - 1, prev + 1));
-  };
-
-  const handleTutorialStepChange = (step: number) => {
-    setTutorialStep(step); // Update tutorialStep state directly
-    const currentSlide = SLIDES[step];
-    if (currentSlide?.highlightId) {
-      const element = elementRefs.current.get(currentSlide.highlightId);
-      if (element) {
-        const updateRect = () => setHighlightedElementRect(element.getBoundingClientRect());
-        const rect = element.getBoundingClientRect();
-        const isMostlyVisible = rect.top >= 80 && rect.bottom <= window.innerHeight - 40;
-
-        if (!isMostlyVisible) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          window.setTimeout(updateRect, 260);
-        } else {
-          updateRect();
-        }
-      } else {
-        setHighlightedElementRect(null);
-      }
-    } else {
-      setHighlightedElementRect(null);
-    }
-  };
   const [authReady, setAuthReady] = useState(false);
   const [authConfig, setAuthConfig] = useState<AuthConfig>({
     googleWorkspaceEnabled: false,
@@ -387,6 +387,7 @@ const App: React.FC = () => {
   const [botbotTheme, setBotbotTheme] = useState('sky');
   const [showBotBotTutorial, setShowBotBotTutorial] = useState(false);
   const [pendingBotBotTutorial, setPendingBotBotTutorial] = useState(false);
+  const [botBotTutorialRunKey, setBotBotTutorialRunKey] = useState(0);
 
   const completeBotBotTutorial = async () => {
     setShowBotBotTutorial(false);
@@ -397,6 +398,26 @@ const App: React.FC = () => {
     } catch (err) {
       console.error('Failed to save BotBot tutorial completion:', err);
     }
+  };
+  const skipBotBotTutorial = async () => {
+    await completeBotBotTutorial();
+  };
+  const handleStartBotBotTutorial = () => {
+    setBotBotTutorialRunKey((value) => value + 1);
+    setShowBotBotTutorial(true);
+    setPendingBotBotTutorial(false);
+  };
+  const handleRestartBotBotTutorial = () => {
+    setBotBotTutorialRunKey((value) => value + 1);
+    setShowBotBotTutorial(true);
+    setPendingBotBotTutorial(false);
+  };
+  const handleBotBotTutorialHelp = () => {
+    setShowBotBotTutorial(false);
+    setActiveTab(Tab.ADMIN);
+    setRequestedSettingsPanel('permissions');
+    setBotbotOpen(true);
+    setBotBotTutorialRunKey((value) => value + 1);
   };
   const [showTooltips, setShowTooltips] = useState(() => {
     try {
@@ -457,65 +478,6 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Load BotBot settings and check if tutorial should show
-  useEffect(() => {
-    if (!authUser) return;
-
-    const loadBotBotSettings = async () => {
-      try {
-        const { fetchSettings } = await import('./services/botbotApi');
-        const settings = await fetchSettings();
-
-        if (settings) {
-          setBotbotAssistantName(settings.assistantName);
-          setBotbotTheme(settings.assistantTheme);
-          // Show tutorial only if not completed
-          if (!settings.tutorialCompleted) {
-            setPendingBotBotTutorial(true);
-          }
-        } else {
-          // First time user - show tutorial
-          setPendingBotBotTutorial(true);
-        }
-      } catch (err) {
-        console.error('Failed to load BotBot settings:', err);
-      }
-    };
-
-    loadBotBotSettings();
-  }, [authUser]);
-
-  useEffect(() => {
-    if (!pendingBotBotTutorial || showLoading || showTutorialPrompt || showTutorial) return;
-    setShowBotBotTutorial(true);
-    setPendingBotBotTutorial(false);
-  }, [pendingBotBotTutorial, showLoading, showTutorialPrompt, showTutorial]);
-
-  useEffect(() => {
-    if (!authUser || showTutorial || showTutorialPrompt) return;
-
-    const resetStorageKey = getExperienceResetStorageKey(authUser);
-    const shouldRunReset = Boolean(resetStorageKey && !localStorage.getItem(resetStorageKey));
-    const shouldRunUnseenTutorial = !authUser.tutorialCompletedAt && !localStorage.getItem('fd_tutorial_seen');
-
-    if (!shouldRunReset && !shouldRunUnseenTutorial) return;
-
-    setShowLoading(true);
-    const timer = window.setTimeout(() => {
-      setShowTutorialPrompt(true);
-      setShowLoading(false);
-      if (resetStorageKey) {
-        try {
-          localStorage.setItem(resetStorageKey, new Date().toISOString());
-        } catch {
-          // If storage is blocked, the tutorial still opens for this session.
-        }
-      }
-    }, 500);
-
-    return () => window.clearTimeout(timer);
-  }, [authUser, showTutorial, showTutorialPrompt]);
-
   useEffect(() => {
     if (!DASHBOARD_LOCKED || typeof window === 'undefined') return;
 
@@ -560,10 +522,50 @@ const App: React.FC = () => {
     });
   }, []);
 
+  // Load BotBot settings and check if tutorial should show
   useEffect(() => {
-    if (!showLoading) return;
-    // The loading overlay will be dismissed by handleSkipTutorial or handleStartTutorial
-  }, [showLoading]);
+    if (!authUser) return;
+
+    const loadBotBotSettings = async () => {
+      const resetStorageKey = getExperienceResetStorageKey(authUser);
+      const shouldRunReset = Boolean(resetStorageKey && !localStorage.getItem(resetStorageKey));
+      try {
+        const { fetchSettings } = await import('./services/botbotApi');
+        const settings = await fetchSettings();
+        const needsTutorial = !settings || !settings.tutorialCompleted || shouldRunReset;
+
+        if (settings) {
+          setBotbotAssistantName(settings.assistantName);
+          setBotbotTheme(settings.assistantTheme);
+        }
+
+        setPendingBotBotTutorial(needsTutorial);
+        if (!needsTutorial) {
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to load BotBot settings:', err);
+        setPendingBotBotTutorial(true);
+      }
+    };
+
+    loadBotBotSettings();
+  }, [authUser]);
+
+  useEffect(() => {
+    if (!pendingBotBotTutorial || !authUser) return;
+    const resetStorageKey = getExperienceResetStorageKey(authUser);
+    if (resetStorageKey) {
+      try {
+        localStorage.setItem(resetStorageKey, new Date().toISOString());
+      } catch {
+        // If storage is blocked, the tutorial still opens for this session.
+      }
+    }
+    setBotBotTutorialRunKey((value) => value + 1);
+    setShowBotBotTutorial(true);
+    setPendingBotBotTutorial(false);
+  }, [authUser, pendingBotBotTutorial]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -644,6 +646,40 @@ const App: React.FC = () => {
     canAccessTab(userRoles, userPermissions, permissionMode, tab)
   );
   const isSalesHeaderView = activeTab === Tab.SALES || (activeTab === Tab.PULSE && currentPulseSubTab === 'sales');
+  const botBotTutorialSteps = useMemo(
+    () =>
+      buildBotBotTutorialSteps({
+        canOpenPulse: canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE),
+        canOpenDen: canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN),
+        canOpenSales: canAccessTab(userRoles, userPermissions, permissionMode, Tab.SALES),
+        canOpenShop: canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP),
+        canOpenProductSearch: canAccessTab(userRoles, userPermissions, permissionMode, Tab.PRODUCT_SEARCH),
+        canOpenCrm: canAccessTab(userRoles, userPermissions, permissionMode, Tab.CRM),
+        hasSettingsPanel: canAccessTab(userRoles, userPermissions, permissionMode, Tab.ADMIN),
+      }),
+    [userRoles, userPermissions, permissionMode]
+  );
+  const botBotTutorialActiveSteps = useMemo(
+    () =>
+      botBotTutorialSteps.filter(
+        (step) =>
+          !step.requiredModules ||
+          step.requiredModules.length === 0 ||
+          step.requiredModules.every((permissionKey) => canUsePermission(permissionKey))
+      ),
+    [botBotTutorialSteps, canUsePermission, userRoles, userPermissions, permissionMode]
+  );
+
+  const botBotTutorialState = useMemo(
+    () => ({
+      sidebarOpen,
+      activeTab,
+      requestedPulseSubTab,
+      currentPulseSubTab,
+      requestedWolfdenSubTab,
+    }),
+    [sidebarOpen, activeTab, requestedPulseSubTab, currentPulseSubTab, requestedWolfdenSubTab]
+  );
 
   useEffect(() => {
     if (!authUser) return;
@@ -893,11 +929,11 @@ const App: React.FC = () => {
         return <TaskManager />;
       case Tab.ADMIN:
         return (
-          <OwnerSettings
+      <OwnerSettings
             onOpenChangePassword={openChangePasswordModal}
             requestedPanel={requestedSettingsPanel}
             onConsumeRequestedPanel={() => setRequestedSettingsPanel(null)}
-            onStartTutorial={handleStartTutorialManually} // Pass the function to start tutorial
+            onStartTutorial={handleStartBotBotTutorial} // Pass the function to start tutorial
           />
         );
       case Tab.WOLFDEN:
@@ -1011,15 +1047,6 @@ const App: React.FC = () => {
   }
 
   const canView = (tab: Tab) => canAccessTab(userRoles, userPermissions, permissionMode, tab);
-  const tutorialHighlightPadding = 10;
-  const tutorialHighlightRect = highlightedElementRect
-    ? {
-        left: Math.max(0, highlightedElementRect.left - tutorialHighlightPadding),
-        top: Math.max(0, highlightedElementRect.top - tutorialHighlightPadding),
-        right: Math.min(window.innerWidth, highlightedElementRect.right + tutorialHighlightPadding),
-        bottom: Math.min(window.innerHeight, highlightedElementRect.bottom + tutorialHighlightPadding),
-      }
-    : null;
 
   return (
     <div
@@ -1059,8 +1086,7 @@ const App: React.FC = () => {
           @keyframes twinkle { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
         ` : ''}
       </style>
-      {showLoading && <LoadingOverlay darkness={0.9} />}
-      <div className={`flex ${showLoading ? 'blur-md' : ''} transition-[filter] duration-500`}>
+      <div className="flex transition-[filter] duration-500">
         <aside
           className={`${sidebarOpen ? 'w-64' : 'w-20'} fixed h-screen border-r text-white backdrop-blur-xl transition-all duration-300 ease-in-out z-20 flex flex-col ${
             isDarkMode
@@ -1069,6 +1095,7 @@ const App: React.FC = () => {
           }`}
         >
           <button
+            data-tour-id="sidebar-toggle"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className={`h-24 w-full flex items-center justify-center border-b transition-colors ${
               isDarkMode ? 'border-white/6 hover:bg-white/5' : 'border-slate-200/80 hover:bg-slate-50/90'
@@ -1093,10 +1120,13 @@ const App: React.FC = () => {
             {canView(Tab.DASHBOARD) && (
               <NavItem
                 ref={(el) => elementRefs.current.set('sidebar-dashboard-nav-item', el)}
+                tourId="sidebar-dashboard-nav-item"
                 icon={<LayoutDashboard size={24} />}
                 label="Dashboard"
                 isActive={activeTab === Tab.DASHBOARD}
-                onClick={() => setActiveTab(Tab.DASHBOARD)}
+                onClick={() => {
+                  setActiveTab(Tab.DASHBOARD);
+                }}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
@@ -1104,26 +1134,29 @@ const App: React.FC = () => {
             {canView(Tab.WOLFDEN) && (
               <NavItem
                 ref={(el) => elementRefs.current.set('sidebar-wolfden-nav-item', el)}
+                tourId="sidebar-wolfden-nav-item"
                 icon={<Inbox size={24} />}
                 label="Den"
                 isActive={activeTab === Tab.WOLFDEN}
-                onClick={() => setActiveTab(Tab.WOLFDEN)}
+                onClick={() => openWolfdenSubTab('ups')}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
             )}
             {canView(Tab.PULSE) && (
               <NavItem
+                tourId="sidebar-pulse-nav-item"
                 icon={<Zap size={24} />}
                 label="Pulse"
                 isActive={activeTab === Tab.PULSE}
-                onClick={() => setActiveTab(Tab.PULSE)}
+                onClick={() => openPulseSubTab('sales')}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
             )}
             {canView(Tab.AMP) && (
               <NavItem
+                tourId="sidebar-amp-nav-item"
                 icon={<Bot size={24} />}
                 label="AMP"
                 isActive={activeTab === Tab.AMP}
@@ -1135,6 +1168,7 @@ const App: React.FC = () => {
             {canView(Tab.SHOP) && (
               <NavItem
                 ref={(el) => elementRefs.current.set('sidebar-shop-nav-item', el)}
+                tourId="sidebar-shop-nav-item"
                 icon={<ClipboardList size={24} />}
                 label="Shop"
                 isActive={activeTab === Tab.SHOP}
@@ -1146,9 +1180,10 @@ const App: React.FC = () => {
           </nav>
 
           <div className="px-3 pb-1">
-            {canView(Tab.ADMIN) && (
+              {canView(Tab.ADMIN) && (
               <button
                 ref={(el) => elementRefs.current.set('sidebar-settings-nav-item', el)}
+                data-tour-id="sidebar-settings-nav-item"
                 onClick={() => { setActiveTab(Tab.ADMIN); }}
                 className={`w-full flex items-center gap-3 px-3 py-4 h-14 rounded-2xl cursor-pointer transition-all ${
                   activeTab === Tab.ADMIN
@@ -1215,7 +1250,9 @@ const App: React.FC = () => {
           </div>
         </aside>
 
-        <main className={`flex-1 transition-[margin] duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
+        <main
+          className={`flex-1 transition-[margin] duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}
+        >
           <header className={`h-20 backdrop-blur-xl sticky top-0 z-10 px-6 lg:px-8 flex items-center justify-between shadow-sm border-b ${
             isDarkMode
               ? 'bg-[#121b27]/78 border-slate-700/60'
@@ -1242,19 +1279,34 @@ const App: React.FC = () => {
             {/* Sub-tabs for modules */}
             {activeTab === Tab.WOLFDEN && (
               <div className="hidden md:flex items-center gap-1 ml-6">
-                <button data-tour-id="den-tab-ups" onClick={() => openWolfdenSubTab('ups')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button
+                  data-tour-id="den-tab-ups"
+                  onClick={() => openWolfdenSubTab('ups')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedWolfdenSubTab === 'ups' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><UserCheck size={13} className="inline mr-1.5" />UPS</button>
-                <button data-tour-id="den-tab-crm" onClick={() => openWolfdenSubTab('crm')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button
+                  data-tour-id="den-tab-crm"
+                  onClick={() => openWolfdenSubTab('crm')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedWolfdenSubTab === 'crm' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Users size={13} className="inline mr-1.5" />CRM</button>
-                <button data-tour-id="den-tab-board" onClick={() => openWolfdenSubTab('board')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button
+                  data-tour-id="den-tab-board"
+                  onClick={() => openWolfdenSubTab('board')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedWolfdenSubTab === 'board' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><MessageSquare size={13} className="inline mr-1.5" />Board</button>
-                <button data-tour-id="den-tab-meeting" onClick={() => openWolfdenSubTab('meeting')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button
+                  data-tour-id="den-tab-meeting"
+                  onClick={() => openWolfdenSubTab('meeting')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedWolfdenSubTab === 'meeting' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Calendar size={13} className="inline mr-1.5" />Meeting</button>
-                <button data-tour-id="den-tab-tasks" onClick={() => openWolfdenSubTab('tasks')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button
+                  data-tour-id="den-tab-tasks"
+                  onClick={() => openWolfdenSubTab('tasks')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedWolfdenSubTab === 'tasks' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><ClipboardList size={13} className="inline mr-1.5" />Tasks</button>
                 <a data-tour-id="den-quicklinks" href="https://sites.google.com/view/fdserver/home" target="_blank" rel="noreferrer" className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}><Link2 size={13} className="inline mr-1.5" />QuickLinks</a>
@@ -1262,19 +1314,19 @@ const App: React.FC = () => {
             )}
             {activeTab === Tab.PULSE && (
               <div className="hidden md:flex items-center gap-1 ml-6">
-                <button onClick={() => openPulseSubTab('sales')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button data-tour-id="pulse-tab-sales" onClick={() => openPulseSubTab('sales')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedPulseSubTab === 'sales' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Activity size={13} className="inline mr-1.5" />Sales</button>
-                <button onClick={() => openPulseSubTab('alphaos')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button data-tour-id="pulse-tab-alphaos" onClick={() => openPulseSubTab('alphaos')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedPulseSubTab === 'alphaos' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Tv size={13} className="inline mr-1.5" />AlphaOS</button>
-                <button onClick={() => openPulseSubTab('alphapulse')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button data-tour-id="pulse-tab-alphapulse" onClick={() => openPulseSubTab('alphapulse')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedPulseSubTab === 'alphapulse' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Share2 size={13} className="inline mr-1.5" />AlphaPulse</button>
-                <button onClick={() => openPulseSubTab('website')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button data-tour-id="pulse-tab-website" onClick={() => openPulseSubTab('website')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedPulseSubTab === 'website' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Globe size={13} className="inline mr-1.5" />Website</button>
-                <button onClick={() => openPulseSubTab('reviews')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                <button data-tour-id="pulse-tab-reviews" onClick={() => openPulseSubTab('reviews')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedPulseSubTab === 'reviews' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Star size={13} className="inline mr-1.5" />Reviews</button>
               </div>
@@ -1443,13 +1495,13 @@ const App: React.FC = () => {
             </div>
           </header>
 
-          <div className="p-5 lg:p-7">{renderContent()}</div>
+          <div
+            data-tour-id="botbot-main-content"
+            className="p-5 lg:p-7"
+          >
+            {renderContent()}
+          </div>
         </main>
-
-        {!showLoading && (
-          <>
-          </>
-        )}
 
         {isSalesHeaderView && (
           <button
@@ -1556,11 +1608,6 @@ const App: React.FC = () => {
 
       </div>
 
-      {showLoading && <LoadingOverlay darkness={0.9} />}
-      {showTutorialPrompt && (
-        <TutorialPromptOverlay isDarkMode={isDarkMode} onStartTutorial={handleStartTutorial} onSkipTutorial={handleSkipTutorial} />
-      )}
-
       {authUser && (
         <BotBotContextProvider userRole={userRoles[0] || 'Employee'}>
           {botbotOpen && (
@@ -1585,63 +1632,16 @@ const App: React.FC = () => {
       {/* BotBot Tutorial - spotlight intro on first login */}
       {authUser && showBotBotTutorial && (
         <BotBotTutorial
+          key={`botbot-tutorial-${botBotTutorialRunKey}`}
           isDarkMode={isDarkMode}
+          steps={botBotTutorialActiveSteps}
+          state={botBotTutorialState}
           userName={authUser.name || 'Friend'}
           onComplete={completeBotBotTutorial}
-          onSkip={completeBotBotTutorial}
+          onSkip={skipBotBotTutorial}
+          onRestart={handleRestartBotBotTutorial}
+          onHelp={handleBotBotTutorialHelp}
         />
-      )}
-
-      {showTutorial && (
-        <>
-          {tutorialHighlightRect && (
-            <>
-              <style>
-                {`@keyframes fdTutorialDimIn { from { opacity: 0; } to { opacity: 1; } }`}
-              </style>
-              {/* Top overlay */}
-              <div
-                className="fixed inset-x-0 top-0 bg-black/85 backdrop-blur-sm z-[195]"
-                style={{ height: tutorialHighlightRect.top, animation: "fdTutorialDimIn 220ms ease-out both" }}
-              />
-              {/* Bottom overlay */}
-              <div
-                className="fixed inset-x-0 bottom-0 bg-black/85 backdrop-blur-sm z-[195]"
-                style={{ top: tutorialHighlightRect.bottom, animation: "fdTutorialDimIn 220ms ease-out both" }}
-              />
-              {/* Left overlay */}
-              <div
-                className="fixed top-0 bottom-0 left-0 bg-black/85 backdrop-blur-sm z-[195]"
-                style={{ width: tutorialHighlightRect.left, top: tutorialHighlightRect.top, height: tutorialHighlightRect.bottom - tutorialHighlightRect.top, animation: "fdTutorialDimIn 220ms ease-out both" }}
-              />
-              {/* Right overlay */}
-              <div
-                className="fixed top-0 bottom-0 right-0 bg-black/85 backdrop-blur-sm z-[195]"
-                style={{ left: tutorialHighlightRect.right, top: tutorialHighlightRect.top, height: tutorialHighlightRect.bottom - tutorialHighlightRect.top, animation: "fdTutorialDimIn 220ms ease-out both" }}
-              />
-              <div
-                className="pointer-events-none fixed rounded-2xl border-2 border-sky-300 shadow-[0_0_32px_rgba(56,189,248,0.55)] z-[196]"
-                style={{
-                  left: tutorialHighlightRect.left,
-                  top: tutorialHighlightRect.top,
-                  width: tutorialHighlightRect.right - tutorialHighlightRect.left,
-                  height: tutorialHighlightRect.bottom - tutorialHighlightRect.top,
-                }}
-              />
-            </>
-          )}
-          <TutorialOverlay
-            isDarkMode={isDarkMode}
-            onClose={handleCloseTutorial}
-            highlightedElementRect={highlightedElementRect}
-            onStepChange={handleTutorialStepChange}
-            currentStep={tutorialStep}
-            totalSteps={SLIDES.length}
-            slide={SLIDES[tutorialStep]}
-            onPrev={handleTutorialPrev}
-            onNext={handleTutorialNext}
-          />
-        </>
       )}
     </div>
   );

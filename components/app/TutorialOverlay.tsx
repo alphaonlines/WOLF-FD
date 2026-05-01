@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Bot, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Bot, ChevronRight, X } from 'lucide-react';
 
 type TutorialSlide = {
   title?: string;
@@ -9,16 +9,23 @@ type TutorialSlide = {
   tips?: string[];
 };
 
+export type TutorialAction = {
+  id: string;
+  label: string;
+  disabled?: boolean;
+  variant?: 'primary' | 'secondary' | 'danger';
+  onClick: () => void;
+};
+
 interface TutorialOverlayProps {
   isDarkMode: boolean;
   onClose: () => void;
   highlightedElementRect: DOMRect | null;
-  onStepChange?: (step: number) => void;
   currentStep: number;
   totalSteps: number;
   slide: TutorialSlide;
-  onPrev: () => void;
-  onNext: () => void;
+  actions: TutorialAction[];
+  isAwaitingAction?: boolean;
 }
 
 const CARD_WIDTH = 390;
@@ -33,8 +40,8 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   currentStep,
   totalSteps,
   slide,
-  onPrev,
-  onNext,
+  actions,
+  isAwaitingAction = false,
 }) => {
   const cardPosition = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -50,14 +57,35 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
 
     const preferRight = highlightedElementRect.right + CARD_WIDTH + CARD_MARGIN < window.innerWidth;
     const preferLeft = highlightedElementRect.left - CARD_WIDTH - CARD_MARGIN > CARD_MARGIN;
+    const centerX = highlightedElementRect.left + highlightedElementRect.width / 2;
     const left = preferRight
       ? highlightedElementRect.right + CARD_MARGIN
       : preferLeft
         ? highlightedElementRect.left - CARD_WIDTH - CARD_MARGIN
-        : clamp(highlightedElementRect.left, CARD_MARGIN, window.innerWidth - CARD_WIDTH - CARD_MARGIN);
+        : clamp(
+            centerX - CARD_WIDTH / 2,
+            CARD_MARGIN,
+            window.innerWidth - CARD_WIDTH - CARD_MARGIN,
+          );
+
+    const visibleTop = Math.max(highlightedElementRect.top, CARD_MARGIN);
+    const visibleBottom = Math.min(highlightedElementRect.bottom, window.innerHeight - CARD_MARGIN);
+    const visibleHeight = Math.max(visibleBottom - visibleTop, 0);
+    const anchorY = visibleHeight > 0
+      ? visibleTop + visibleHeight / 2
+      : highlightedElementRect.top + highlightedElementRect.height / 2;
+
+    const isLargeTarget = highlightedElementRect.height > window.innerHeight * 0.75;
+    const visibleTopClamp = Math.max(highlightedElementRect.top, CARD_MARGIN);
+    const topAlignedAnchor = isLargeTarget
+      ? visibleTopClamp + Math.min(visibleHeight * 0.18, 140)
+      : anchorY;
+    const adjustedAnchorY = isLargeTarget
+      ? clamp(topAlignedAnchor, CARD_MARGIN + 40, window.innerHeight - 220)
+      : anchorY;
 
     const top = clamp(
-      highlightedElementRect.top + highlightedElementRect.height / 2 - 130,
+      adjustedAnchorY - 130,
       CARD_MARGIN,
       Math.max(CARD_MARGIN, window.innerHeight - 320),
     );
@@ -65,8 +93,8 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
     return { left, top };
   }, [highlightedElementRect]);
 
-  const isFinalStep = currentStep >= totalSteps - 1;
   const description = slide.description || slide.body || 'Follow the highlighted area and BotBot will walk you through this step.';
+  const actionCount = actions.length;
 
   return (
     <motion.div
@@ -109,7 +137,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             </div>
 
             <p className={`mt-4 text-sm font-medium leading-relaxed ${isDarkMode ? 'text-slate-100' : 'text-slate-700'}`}>
-              {description}
+              {isAwaitingAction ? `${description} I’m waiting for you.` : description}
             </p>
 
             {Array.isArray(slide.tips) && slide.tips.length > 0 && (
@@ -133,24 +161,39 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
-                {currentStep > 0 && (
+                {actions.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    disabled={action.disabled}
+                    onClick={action.onClick}
+                    className={`inline-flex items-center gap-1 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+                      action.variant === 'danger'
+                        ? isDarkMode
+                          ? 'bg-rose-600 hover:bg-rose-500 text-white disabled:opacity-50'
+                          : 'bg-rose-500 hover:bg-rose-600 text-white disabled:opacity-50'
+                        : action.variant === 'secondary'
+                          ? isDarkMode
+                            ? 'border border-slate-700 bg-slate-900/80 text-slate-200 hover:bg-slate-800'
+                            : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                          : isDarkMode
+                            ? 'bg-sky-500 hover:bg-sky-400 text-white disabled:opacity-50'
+                            : 'bg-sky-600 hover:bg-sky-500 text-white disabled:opacity-50'
+                    }`}
+                  >
+                    {action.label}
+                    {!action.disabled && action.variant === 'primary' && <ChevronRight size={14} />}
+                  </button>
+                ))}
+                {actionCount === 0 && (
                   <button
                     type="button"
-                    onClick={onPrev}
-                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${isDarkMode ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}
+                    onClick={onClose}
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-700 px-4 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800"
                   >
-                    <ChevronLeft size={14} />
-                    Back
+                    Close
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={onNext}
-                  className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-600"
-                >
-                  {isFinalStep ? 'Finish' : 'Next'}
-                  <ChevronRight size={14} />
-                </button>
               </div>
             </div>
 
@@ -171,8 +214,8 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
 
           <motion.div
             className="absolute -right-7 -bottom-20 z-10"
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            animate={isAwaitingAction ? { y: [0, -4, 0] } : { y: 0 }}
+            transition={isAwaitingAction ? { duration: 2.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
           >
             <div className="rounded-full border-4 border-sky-400 bg-sky-500 p-4 text-white shadow-xl shadow-sky-500/30">
               <Bot size={38} />
