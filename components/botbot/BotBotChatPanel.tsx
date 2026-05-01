@@ -417,7 +417,7 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({ authUser, isDarkMode,
               <div className={`flex h-full flex-col items-center justify-center text-center px-6 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                 <Bot size={40} className="mb-3 opacity-20" />
                 <p className="text-sm font-medium">Hello {authUser?.name?.split(' ')[0]}!</p>
-                <p className="text-xs mt-1">I'm {assistantName}. How can I help you in the {pageContext.pageName} today?</p>
+                <p className="text-xs mt-1">I&apos;m {assistantName}, your personal AI agent. How can I help you in the {pageContext.pageName} today?</p>
               </div>
             )}
 

@@ -43,7 +43,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   slide,
   actions,
   isAwaitingAction = false,
-  eyebrowLabel = 'BotBot guide',
+  eyebrowLabel = 'Tutorial',
 }) => {
   const cardPosition = useMemo(() => {
     if (typeof window === 'undefined') {

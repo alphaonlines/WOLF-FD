@@ -80,8 +80,8 @@ const buildBotBotTutorialSteps = ({
   const steps: BotBotTutorialStep[] = [
     {
       id: 'botbot-intro',
-      title: 'Welcome to BotBot',
-      message: 'Hi, I’m your guide for getting started. I’ll wait and only move when you are ready.',
+      title: 'Welcome to WOLF FD Dashboard',
+      message: 'Welcome in. I’ll guide you through the WOLF FD Dashboard and wait for you at each step so this feels easy to follow.',
       advanceWhen: { type: 'manual' },
       primaryActionLabel: 'Let’s go',
     },

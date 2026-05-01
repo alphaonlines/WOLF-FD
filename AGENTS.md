@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `main`
-- Current display version in `package.json`: `0.5.1.1630`
+- Current display version in `package.json`: `0.5.1.1717`
 
 ## Project Structure
 
@@ -110,7 +110,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `0.5.1.1630`
+- Current display version: `0.5.1.1717`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -141,6 +141,10 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-01 17:17 EDT — Refined BotBot tutorial and chat copy for a warmer first impression. Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/components/botbot/BotBotChatPanel.tsx`, `/home/alphahs/WOLF-FD/package.json`.
+  - Changes: first onboarding card now welcomes users to `WOLF FD Dashboard`, tutorial eyebrow text now reads `Tutorial` instead of `BotBot guide`, BotBot chat now introduces itself as the user’s personal AI agent, and `displayVersion` moved to `0.5.1.1717`.
+  - Commands/tests: `npm run build` PASS, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/` PASS, deployed asset `assets/index-CNECt-R5.js`, `curl -sS http://127.0.0.1:5057/health` PASS (`{"ok":true,"db":1}`).
 
 - 2026-05-01 17:11 EDT — Consolidated live WOLF-FD tutorials onto the shared BotBot tutorial engine and retired the old overlapping paths from active use. Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/botbot/BotBotTutorial.tsx`, `/home/alphahs/WOLF-FD/components/SalesDashboard.tsx`, `/home/alphahs/WOLF-FD/components/WolfdenWorkspace.tsx`, `/home/alphahs/WOLF-FD/components/PulseWorkspace.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialPromptOverlay.tsx`, `/home/alphahs/WOLF-FD/components/app/ModuleTourOverlay.tsx`, `/home/alphahs/WOLF-FD/BOTBOT_QA_TEST_PLAN.md`, `/home/alphahs/WOLF-FD/package.json`.
   - Changes: kept BotBot onboarding as the primary tutorial system, moved Sales and Den tours onto the same `BotBotTutorial` engine, standardized the shared overlay around a transparent highlight window with darkened blur outside it, added eyebrow-label support so module tours keep distinct guide identity without separate renderers, marked the older dashboard prompt and module overlay as legacy reference paths, and bumped `displayVersion` to `0.5.1.1630`.
