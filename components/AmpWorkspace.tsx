@@ -3,7 +3,6 @@ import { Activity, Bot, Gamepad2 } from "lucide-react";
 import type { AuthUser } from "../types";
 import { useBotBotContext } from "./botbot/BotBotContext";
 import WorkAdvertising from "./WorkAdvertising";
-import WolfBot from "./WolfBot";
 
 export type AmpSubTab = "social" | "bot" | "tycoon";
 
@@ -12,6 +11,7 @@ type AmpWorkspaceProps = {
   isDarkMode: boolean;
   requestedSubTab?: AmpSubTab;
   requestedSubTabToken?: number;
+  onOpenBotBot: () => void;
   onOpenSocialIntegrations: () => void;
   hideTabBar?: boolean;
 };
@@ -19,8 +19,9 @@ type AmpWorkspaceProps = {
 const AmpWorkspace: React.FC<AmpWorkspaceProps> = ({
   authUser,
   isDarkMode,
-  requestedSubTab = "social",
+  requestedSubTab = "bot",
   requestedSubTabToken,
+  onOpenBotBot,
   onOpenSocialIntegrations,
   hideTabBar = false,
 }) => {
@@ -32,14 +33,36 @@ const AmpWorkspace: React.FC<AmpWorkspaceProps> = ({
   }, [requestedSubTab, requestedSubTabToken]);
 
   useEffect(() => {
+    if (subTab === "social") {
+      setPageContext({
+        pageName: "AMP Market",
+        module: "amp.market",
+        userRole: "Employee",
+        keyMetricsVisible: ["Social scheduler", "Scheduled posts", "Connected accounts"],
+        suggestedActions: ["Draft a social post", "Review scheduled posts", "Check social integrations"],
+      });
+      return;
+    }
+
+    if (subTab === "tycoon") {
+      setPageContext({
+        pageName: "AMP Tycoon",
+        module: "amp.tycoon",
+        userRole: "Employee",
+        keyMetricsVisible: ["Training game", "Showroom simulation"],
+        suggestedActions: ["Open Tycoon", "Use BotBot for training help"],
+      });
+      return;
+    }
+
     setPageContext({
-      pageName: "AI Bot",
+      pageName: "AMP AI",
       module: "amp.bot",
       userRole: "Employee",
-      keyMetricsVisible: [],
-      suggestedActions: [],
+      keyMetricsVisible: ["BotBot assistant", "Connected page context", "Shared AI settings"],
+      suggestedActions: ["Open BotBot", "Ask about the current dashboard", "Tune BotBot settings"],
     });
-  }, [setPageContext]);
+  }, [setPageContext, subTab]);
 
   const divider = isDarkMode ? "border-slate-800" : "border-slate-200";
   const stickyBarClass = isDarkMode
@@ -62,11 +85,11 @@ const AmpWorkspace: React.FC<AmpWorkspaceProps> = ({
       {/* Sub-tab bar - hidden when shown in header */}
       {!hideTabBar && (
       <div className={`flex items-center gap-2 px-6 py-3 ${divider} ${stickyBarClass} flex-wrap`}>
-        <button className={tabBtn(subTab === "social")} onClick={() => setSubTab("social")}>
-          <Activity size={15} /> Social Posts
-        </button>
         <button className={tabBtn(subTab === "bot")} onClick={() => setSubTab("bot")}>
           <Bot size={15} /> AI Bot
+        </button>
+        <button className={tabBtn(subTab === "social")} onClick={() => setSubTab("social")}>
+          <Activity size={15} /> Market
         </button>
         <button className={tabBtn(subTab === "tycoon")} onClick={() => setSubTab("tycoon")}>
           <Gamepad2 size={15} /> Tycoon
@@ -79,7 +102,38 @@ const AmpWorkspace: React.FC<AmpWorkspaceProps> = ({
           <WorkAdvertising authUser={authUser} onOpenSocialIntegrations={onOpenSocialIntegrations} />
         ) : subTab === "bot" ? (
           <div className="h-full overflow-auto p-5 lg:p-7">
-            <WolfBot />
+            <div className={`mx-auto max-w-4xl rounded-3xl border p-8 shadow-sm ${
+              isDarkMode
+                ? "border-slate-700 bg-slate-900/80 text-slate-100"
+                : "border-slate-200 bg-white text-slate-900"
+            }`}>
+              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className={`text-xs font-semibold uppercase tracking-[0.24em] ${isDarkMode ? "text-cyan-300" : "text-cyan-600"}`}>
+                    Connected AI
+                  </div>
+                  <h2 className="mt-2 text-3xl font-bold">BotBot AI</h2>
+                  <p className={`mt-3 max-w-2xl text-sm leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                    This page uses the same BotBot assistant as the bottom-right orb. BotBot shares dashboard context,
+                    settings, model routing, and conversations so the AI experience stays connected across the app.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onOpenBotBot}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-400"
+                >
+                  <Bot size={18} /> Open BotBot
+                </button>
+              </div>
+              <div className={`mt-6 rounded-2xl border px-5 py-4 text-sm ${
+                isDarkMode
+                  ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-100"
+                  : "border-cyan-100 bg-cyan-50 text-cyan-800"
+              }`}>
+                Use the BotBot orb from anywhere, or start here when you want the AMP AI workspace.
+              </div>
+            </div>
           </div>
         ) : (
           <div className="h-full overflow-auto p-5 lg:p-7">

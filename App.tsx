@@ -337,7 +337,7 @@ const App: React.FC = () => {
   const [requestedPulseSubTab, setRequestedPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('sales');
   const [requestedPulseSubTabToken, setRequestedPulseSubTabToken] = useState(0);
   const [currentPulseSubTab, setCurrentPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('sales');
-  const [requestedAmpSubTab, setRequestedAmpSubTab] = useState<AmpSubTab>('social');
+  const [requestedAmpSubTab, setRequestedAmpSubTab] = useState<AmpSubTab>('bot');
   const [requestedAmpSubTabToken, setRequestedAmpSubTabToken] = useState(0);
   const [requestedShopSubTab, setRequestedShopSubTab] = useState<'search' | 'pos'>('search');
   const [requestedShopSubTabToken, setRequestedShopSubTabToken] = useState(0);
@@ -1015,6 +1015,7 @@ const App: React.FC = () => {
             isDarkMode={isDarkMode}
             requestedSubTab={requestedAmpSubTab}
             requestedSubTabToken={requestedAmpSubTabToken}
+            onOpenBotBot={() => setBotbotOpen(true)}
             onOpenSocialIntegrations={() => {
               setRequestedSettingsPanel('social');
               setActiveTab(Tab.ADMIN);
@@ -1098,6 +1099,7 @@ const App: React.FC = () => {
   const canView = (tab: Tab) => canAccessTab(userRoles, userPermissions, permissionMode, tab);
 
   return (
+    <BotBotContextProvider userRole={userRoles[0] || 'Employee'}>
     <div
       className={`min-h-screen wolf-theme font-sans ${isDarkMode ? 'dark text-slate-100' : 'text-slate-800'} ${weatherEffectClass} ${
         themeMode === 'live' && liveWeatherCondition !== null
@@ -1209,7 +1211,7 @@ const App: React.FC = () => {
                 icon={<Bot size={24} />}
                 label="AMP"
                 isActive={activeTab === Tab.AMP}
-                onClick={() => setActiveTab(Tab.AMP)}
+                onClick={() => openAmpSubTab('bot')}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
@@ -1380,12 +1382,12 @@ const App: React.FC = () => {
             )}
             {activeTab === Tab.AMP && (
               <div className="hidden md:flex items-center gap-1 ml-6">
-                <button onClick={() => openAmpSubTab('social')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  requestedAmpSubTab === 'social' ? (isDarkMode ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
-                }`}><Share2 size={13} className="inline mr-1.5" />Social</button>
                 <button onClick={() => openAmpSubTab('bot')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedAmpSubTab === 'bot' ? (isDarkMode ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Bot size={13} className="inline mr-1.5" />AI Bot</button>
+                <button onClick={() => openAmpSubTab('social')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedAmpSubTab === 'social' ? (isDarkMode ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Share2 size={13} className="inline mr-1.5" />Market</button>
                 <button onClick={() => openAmpSubTab('tycoon')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedAmpSubTab === 'tycoon' ? (isDarkMode ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Sofa size={13} className="inline mr-1.5" />Tycoon</button>
@@ -1656,26 +1658,22 @@ const App: React.FC = () => {
 
       </div>
 
-      {authUser && (
-        <BotBotContextProvider userRole={userRoles[0] || 'Employee'}>
-          {botbotOpen && (
-            <BotBotChatPanel
-              authUser={authUser}
-              isDarkMode={isDarkMode}
-              onClose={() => setBotbotOpen(false)}
-            />
-          )}
-          <BotBotOrb
-            isExpanded={botbotOpen}
-            isThinking={false}
-            hasNotification={false}
-            assistantName="BotBot"
-            theme="sky"
-            isDarkMode={isDarkMode}
-            onToggle={() => setBotbotOpen(!botbotOpen)}
-          />
-        </BotBotContextProvider>
+      {botbotOpen && (
+        <BotBotChatPanel
+          authUser={authUser}
+          isDarkMode={isDarkMode}
+          onClose={() => setBotbotOpen(false)}
+        />
       )}
+      <BotBotOrb
+        isExpanded={botbotOpen}
+        isThinking={false}
+        hasNotification={false}
+        assistantName="BotBot"
+        theme="sky"
+        isDarkMode={isDarkMode}
+        onToggle={() => setBotbotOpen(!botbotOpen)}
+      />
 
       {/* BotBot Tutorial - spotlight intro on first login */}
       {authUser && showBotBotTutorial && (
@@ -1692,6 +1690,7 @@ const App: React.FC = () => {
         />
       )}
     </div>
+    </BotBotContextProvider>
   );
 };
 
