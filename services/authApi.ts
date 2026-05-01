@@ -11,6 +11,7 @@ type AuthResponse = {
     permissions?: string[];
     permissionMode?: string;
     tutorialCompletedAt?: string | null;
+    tutorialResetAt?: string | null;
   } | null;
 };
 
@@ -62,6 +63,7 @@ const mapUser = (raw: AuthResponse["user"]): AuthUser | null => {
     permissions: Array.isArray(raw.permissions) ? raw.permissions.map((permission) => String(permission)) : [],
     permissionMode: raw.permissionMode === "explicit" ? ("explicit" as PermissionMode) : ("role" as PermissionMode),
     tutorialCompletedAt: typeof raw.tutorialCompletedAt === "string" ? raw.tutorialCompletedAt : null,
+    tutorialResetAt: typeof raw.tutorialResetAt === "string" ? raw.tutorialResetAt : null,
   };
 };
 

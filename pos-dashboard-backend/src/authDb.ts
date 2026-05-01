@@ -27,6 +27,7 @@ export function createAuthDbHelpers({
         u.name,
         u.email,
         u.tutorial_completed_at,
+        u.tutorial_reset_at,
         COALESCE(role_rows.roles, ARRAY[]::text[]) AS roles,
         CASE
           WHEN COALESCE(explicit_rows.permission_entry_count, 0) > 0
@@ -125,6 +126,7 @@ export function createAuthDbHelpers({
         u.name,
         u.email,
         u.tutorial_completed_at,
+        u.tutorial_reset_at,
         COALESCE(role_rows.roles, ARRAY[]::text[]) AS roles,
         CASE
           WHEN COALESCE(explicit_rows.permission_entry_count, 0) > 0

@@ -185,7 +185,7 @@ export function registerAuthRoutes({
     if (!email || !password) return res.status(400).json({ ok: false, error: "email and password are required" });
 
     const userSql = `
-      SELECT id, name, email, password_hash, active, access_status, tutorial_completed_at
+      SELECT id, name, email, salesperson_name, password_hash, active, access_status, tutorial_completed_at, tutorial_reset_at
       FROM users
       WHERE lower(email) = lower($1)
       LIMIT 1;

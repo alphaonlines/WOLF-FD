@@ -554,4 +554,39 @@ export function registerAdminRoutes({
     });
     res.json({ ok: true });
   });
+
+  app.post("/api/admin/users/:id/tutorials/reset", requireOwner, async (req, res) => {
+    const id = parseTaskIdParam(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, error: "invalid id" });
+
+    const userRow = await pool.query("SELECT id FROM users WHERE id = $1 LIMIT 1", [id]);
+    if (!userRow.rows.length) return res.status(404).json({ ok: false, error: "not found" });
+
+    await pool.query(
+      `
+        UPDATE users
+        SET tutorial_completed_at = NULL,
+            tutorial_reset_at = now(),
+            updated_at = now()
+        WHERE id = $1
+      `,
+      [id]
+    );
+
+    await pool.query(
+      `
+        INSERT INTO botbot_settings (user_id, tutorial_completed, created_at, updated_at)
+        VALUES ($1, false, now(), now())
+        ON CONFLICT (user_id)
+        DO UPDATE SET tutorial_completed = false, updated_at = now()
+      `,
+      [id]
+    );
+
+    await pool.query("DELETE FROM auth_sessions WHERE user_id = $1", [id]).catch(() => {
+      // The next login should pick up the reset token, but don't fail the reset if cleanup has an issue.
+    });
+
+    res.json({ ok: true });
+  });
 }

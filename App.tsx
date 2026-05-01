@@ -216,8 +216,10 @@ const EXPERIENCE_RESET_ID_BY_EMAIL: Record<string, string> = {
   "anthony@furnituredistributors.net": "reset-20260428-1505",
 };
 
-const getExperienceResetId = (user?: AuthUser | null) =>
-  user?.email ? EXPERIENCE_RESET_ID_BY_EMAIL[user.email.toLowerCase()] || null : null;
+const getExperienceResetId = (user?: AuthUser | null) => {
+  if (user?.tutorialResetAt) return `reset-${user.tutorialResetAt.replace(/[^0-9A-Za-z_-]/g, '')}`;
+  return user?.email ? EXPERIENCE_RESET_ID_BY_EMAIL[user.email.toLowerCase()] || null : null;
+};
 
 const getExperienceResetStorageKey = (user?: AuthUser | null) => {
   const resetId = getExperienceResetId(user);

@@ -322,6 +322,7 @@ export interface AuthUser {
   permissions: string[];
   permissionMode: PermissionMode;
   tutorialCompletedAt: string | null;
+  tutorialResetAt?: string | null;
 }
 
 export interface AuthConfig {

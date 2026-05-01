@@ -145,3 +145,9 @@ export async function resetAdminUserPassword(userId: string, password: string): 
     body: JSON.stringify({ password }),
   });
 }
+
+export async function resetAdminUserTutorials(userId: string): Promise<void> {
+  await fetchJson(`/api/admin/users/${encodeURIComponent(userId)}/tutorials/reset`, {
+    method: "POST",
+  });
+}

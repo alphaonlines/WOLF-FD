@@ -6,6 +6,7 @@ import {
   fetchAdminRoles,
   fetchAdminUsers,
   resetAdminUserPassword,
+  resetAdminUserTutorials,
   setAdminUserAccessStatus,
   setAdminUserActive,
   setAdminUserSalespersonName,
@@ -218,6 +219,24 @@ const AdminUsers: React.FC = () => {
       setMessage(`Password reset for ${user.email}.`);
     } catch (err: any) {
       setError(String(err?.message || err || "Failed to reset password"));
+    } finally {
+      setBusyUserId(null);
+    }
+  };
+
+  const restartTutorials = async (user: ManagedUser) => {
+    const confirmed = window.confirm(`Restart tutorials for ${user.email}? They will need to sign in again to see the reset.`);
+    if (!confirmed) return;
+
+    setBusyUserId(user.id);
+    setMessage(null);
+    setError(null);
+    try {
+      await resetAdminUserTutorials(user.id);
+      setMessage(`Tutorials reset for ${user.email}. Ask them to sign back in.`);
+      await load();
+    } catch (err: any) {
+      setError(String(err?.message || err || "Failed to reset tutorials"));
     } finally {
       setBusyUserId(null);
     }
@@ -462,6 +481,19 @@ const AdminUsers: React.FC = () => {
                     >
                       Reset Password
                     </button>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-3">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void restartTutorials(user)}
+                      className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 disabled:opacity-60"
+                    >
+                      Restart Tutorials
+                    </button>
+                    <span className="text-xs text-slate-500">
+                      Replays BotBot and module tours on that user's next sign-in.
+                    </span>
                   </div>
                 </div>
               );
