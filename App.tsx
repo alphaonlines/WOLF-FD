@@ -108,9 +108,9 @@ const buildBotBotTutorialSteps = ({
   if (canOpenDen) {
     steps.push({
       id: 'botbot-open-den-ups',
-      title: 'Open Den',
-      message: 'Open Den first. This is the team space for customers, UPS, tasks, meetings, and messages.',
-      highlightId: 'sidebar-wolfden-nav-item',
+      title: 'Your module menu',
+      message: 'This left menu shows the modules available to you. Click here to open Den first, where we will start with the team workspace.',
+      highlightId: 'sidebar-module-menu',
       advanceOnHighlightClick: true,
       suppressWaitingCopy: true,
       scope: 'module',
@@ -1145,7 +1145,7 @@ const App: React.FC = () => {
             )}
           </button>
 
-          <nav className="flex-1 py-6 px-3 space-y-1.5">
+          <nav data-tour-id="sidebar-module-menu" className="flex-1 py-6 px-3 space-y-1.5">
             {canView(Tab.DASHBOARD) && (
               <NavItem
                 ref={(el) => elementRefs.current.set('sidebar-dashboard-nav-item', el)}
