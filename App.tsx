@@ -81,7 +81,10 @@ const buildBotBotTutorialSteps = ({
     {
       id: 'botbot-intro',
       title: 'Welcome to WOLF FD Dashboard',
-      message: 'Welcome in. I’ll guide you through the WOLF FD Dashboard and wait for you at each step so this feels easy to follow.',
+      message: 'I’m BotBot, your personal AI trainer for the dashboard. You can rename me later and shape my personality so I feel like your helper, not just another button.',
+      highlightId: 'botbot-entry',
+      pulseHighlight: true,
+      suppressWaitingCopy: true,
       advanceWhen: { type: 'manual' },
       primaryActionLabel: 'Let’s go',
     },
@@ -102,27 +105,11 @@ const buildBotBotTutorialSteps = ({
     },
   ];
 
-  if (canOpenPulse) {
-    steps.push({
-      id: 'botbot-open-pulse',
-      title: 'Open Pulse',
-      message: 'Use Pulse to get a fast sales view. Start in Sales first.',
-      highlightId: 'sidebar-pulse-nav-item',
-      advanceOnHighlightClick: true,
-      suppressWaitingCopy: true,
-      scope: 'module',
-      requiredModules: [MODULE_PERMISSION_KEYS.PULSE],
-      advanceWhen: {
-        type: 'state',
-        check: (state) => state.activeTab === Tab.PULSE,
-      },
-      primaryActionLabel: 'Next',
-    });
-  } else if (canOpenDen) {
+  if (canOpenDen) {
     steps.push({
       id: 'botbot-open-den-ups',
       title: 'Open Den',
-      message: 'Go to Den, then open UPS first.',
+      message: 'Open Den first. This is the team space for customers, UPS, tasks, meetings, and messages.',
       highlightId: 'sidebar-wolfden-nav-item',
       advanceOnHighlightClick: true,
       suppressWaitingCopy: true,
@@ -135,17 +122,31 @@ const buildBotBotTutorialSteps = ({
       primaryActionLabel: 'Next',
     });
     steps.push({
-      id: 'botbot-open-den-ups-final',
-      title: 'Open UPS',
-      message: 'Inside Den, open UPS so your help starts from the floor queue.',
-      highlightId: 'den-tab-ups',
-      advanceOnHighlightClick: true,
+      id: 'botbot-den-pages',
+      title: 'Pages inside each module',
+      message: 'Each module has its own pages across the top. In Den, these pages help you track UPS, customers, tasks, meetings, message board updates, and direct messages.',
+      highlightId: 'den-top-pages',
       suppressWaitingCopy: true,
       scope: 'module',
       requiredModules: [MODULE_PERMISSION_KEYS.WOLFDEN],
       advanceWhen: {
+        type: 'manual',
+      },
+      primaryActionLabel: 'Next',
+    });
+  } else if (canOpenPulse) {
+    steps.push({
+      id: 'botbot-open-pulse',
+      title: 'Open Pulse',
+      message: 'Use Pulse to get a fast sales view. Start in Sales first.',
+      highlightId: 'sidebar-pulse-nav-item',
+      advanceOnHighlightClick: true,
+      suppressWaitingCopy: true,
+      scope: 'module',
+      requiredModules: [MODULE_PERMISSION_KEYS.PULSE],
+      advanceWhen: {
         type: 'state',
-        check: (state) => state.activeTab === Tab.WOLFDEN && state.requestedWolfdenSubTab === 'ups',
+        check: (state) => state.activeTab === Tab.PULSE,
       },
       primaryActionLabel: 'Next',
     });
@@ -229,20 +230,19 @@ const buildBotBotTutorialSteps = ({
   });
 
   steps.push({
-    id: 'botbot-find-help',
-    title: 'BotBot settings and help',
+    id: 'botbot-personality',
+    title: 'Make BotBot yours',
     message: hasSettingsPanel
-      ? 'Open Settings when you need walkthroughs, resets, or BotBot preferences.'
-      : 'Ask an owner or manager to open Settings for BotBot control options.',
-    highlightId: hasSettingsPanel ? 'sidebar-settings-nav-item' : undefined,
-    advanceOnHighlightClick: hasSettingsPanel,
-    suppressWaitingCopy: hasSettingsPanel,
+      ? 'Later, open BotBot settings to rename me, tune my personality, restart tutorials, or ask for help when you get stuck.'
+      : 'Later, ask an owner or manager if you want BotBot renamed, reset, or tuned to feel more like your personal trainer.',
+    highlightId: 'botbot-entry',
+    pulseHighlight: true,
+    suppressWaitingCopy: true,
     scope: 'launch',
     requiredModules: hasSettingsPanel ? [MODULE_PERMISSION_KEYS.SETTINGS] : [],
     advanceWhen: hasSettingsPanel
       ? {
-          type: 'state',
-          check: (state) => state.activeTab === Tab.ADMIN,
+          type: 'manual',
         }
       : {
           type: 'manual',
@@ -1305,7 +1305,7 @@ const App: React.FC = () => {
 
             {/* Sub-tabs for modules */}
             {activeTab === Tab.WOLFDEN && (
-              <div className="hidden md:flex items-center gap-1 ml-6">
+              <div data-tour-id="den-top-pages" className="hidden md:flex items-center gap-1 ml-6">
                 <button
                   data-tour-id="den-tab-ups"
                   onClick={() => openWolfdenSubTab('ups')}

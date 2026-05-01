@@ -28,6 +28,7 @@ interface TutorialOverlayProps {
   isAwaitingAction?: boolean;
   eyebrowLabel?: string;
   suppressWaitingCopy?: boolean;
+  forceTargetPulse?: boolean;
   onHighlightedAreaClick?: () => void;
 }
 
@@ -47,6 +48,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   isAwaitingAction = false,
   eyebrowLabel = 'Tutorial',
   suppressWaitingCopy = false,
+  forceTargetPulse = false,
   onHighlightedAreaClick,
 }) => {
   const cardPosition = useMemo(() => {
@@ -102,7 +104,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   const description = slide.description || slide.body || 'Follow the highlighted area and BotBot will walk you through this step.';
   const actionCount = actions.length;
   const shouldShowTargetPulse = Boolean(highlightedElementRect);
-  const shouldPulseTarget = isAwaitingAction && shouldShowTargetPulse;
+  const shouldPulseTarget = (isAwaitingAction || forceTargetPulse) && shouldShowTargetPulse;
 
   return (
     <motion.div

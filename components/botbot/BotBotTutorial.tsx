@@ -24,6 +24,7 @@ export type BotBotTutorialStep = {
   message: string;
   highlightId?: string;
   highlightOnAction?: boolean;
+  pulseHighlight?: boolean;
   advanceOnHighlightClick?: boolean;
   suppressWaitingCopy?: boolean;
   scope?: 'launch' | 'module';
@@ -488,6 +489,7 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
       isAwaitingAction={isWaitingForAction}
       eyebrowLabel={eyebrowLabel}
       suppressWaitingCopy={Boolean(activeStep?.suppressWaitingCopy)}
+      forceTargetPulse={Boolean(activeStep?.pulseHighlight)}
       onHighlightedAreaClick={activeStep?.advanceOnHighlightClick ? handlePrimaryAction : undefined}
     />
   );
