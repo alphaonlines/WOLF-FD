@@ -1,164 +1,246 @@
-import React, { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import React, { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Bot, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 export type ModuleTourStep = {
-  targetId: string;
-  title: string;
-  body: string;
-  placement?: "top" | "bottom" | "left" | "right";
+  target?: string;
+  targetSelector?: string;
+  selector?: string;
+  title?: string;
+  description?: string;
+  body?: string;
+  placement?: 'top' | 'right' | 'bottom' | 'left' | 'center';
 };
 
-type Props = {
+interface ModuleTourOverlayProps {
   steps: ModuleTourStep[];
-  isDarkMode?: boolean;
+  isDarkMode: boolean;
   onClose: () => void;
   onComplete: () => void;
-};
+}
 
-const getTargetRect = (targetId: string) => {
-  if (typeof document === "undefined") return null;
-  const element = document.querySelector(`[data-tour-id="${targetId}"]`);
-  return element?.getBoundingClientRect() ?? null;
-};
+const CARD_WIDTH = 390;
+const CARD_MARGIN = 24;
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-const ModuleTourOverlay: React.FC<Props> = ({ steps, isDarkMode = false, onClose, onComplete }) => {
-  const [stepIndex, setStepIndex] = useState(0);
+const getStepTarget = (step: ModuleTourStep) => step.targetSelector || step.selector || step.target || '';
+
+const ModuleTourOverlay: React.FC<ModuleTourOverlayProps> = ({ steps, isDarkMode, onClose, onComplete }) => {
+  const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const step = steps[stepIndex];
-  const isLast = stepIndex === steps.length - 1;
+
+  const step = steps[currentStep] || steps[0];
+  const totalSteps = Math.max(steps.length, 1);
+  const isFinalStep = currentStep >= totalSteps - 1;
 
   useEffect(() => {
-    if (!step) return;
-    const updateTarget = () => {
-      const element = document.querySelector(`[data-tour-id="${step.targetId}"]`);
-      element?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
-      window.setTimeout(() => setTargetRect(getTargetRect(step.targetId)), 220);
-    };
+    if (!step || typeof window === 'undefined') {
+      setTargetRect(null);
+      return;
+    }
 
-    updateTarget();
-    window.addEventListener("resize", updateTarget);
-    window.addEventListener("scroll", updateTarget, true);
+    const selector = getStepTarget(step);
+    const target = selector ? document.querySelector(selector) : null;
+
+    if (!target) {
+      setTargetRect(null);
+      return;
+    }
+
+    const updateRect = () => setTargetRect(target.getBoundingClientRect());
+    updateRect();
+    target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+
+    window.addEventListener('resize', updateRect);
+    window.addEventListener('scroll', updateRect, true);
+
     return () => {
-      window.removeEventListener("resize", updateTarget);
-      window.removeEventListener("scroll", updateTarget, true);
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('scroll', updateRect, true);
     };
-  }, [stepIndex, step]);
+  }, [step]);
+
+  const highlightRect = useMemo(() => {
+    if (!targetRect) return null;
+    const padding = 10;
+    return {
+      top: Math.max(0, targetRect.top - padding),
+      left: Math.max(0, targetRect.left - padding),
+      right: Math.min(window.innerWidth, targetRect.right + padding),
+      bottom: Math.min(window.innerHeight, targetRect.bottom + padding),
+    };
+  }, [targetRect]);
+
+  const cardPosition = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return { left: CARD_MARGIN, top: CARD_MARGIN };
+    }
+
+    if (!targetRect || step?.placement === 'center') {
+      return {
+        left: clamp((window.innerWidth - CARD_WIDTH) / 2, CARD_MARGIN, window.innerWidth - CARD_WIDTH - CARD_MARGIN),
+        top: clamp(window.innerHeight * 0.5 - 160, CARD_MARGIN, window.innerHeight - 340),
+      };
+    }
+
+    const placement = step?.placement;
+    const canRight = targetRect.right + CARD_WIDTH + CARD_MARGIN < window.innerWidth;
+    const canLeft = targetRect.left - CARD_WIDTH - CARD_MARGIN > CARD_MARGIN;
+    const canBottom = targetRect.bottom + 300 < window.innerHeight;
+
+    if (placement === 'left' && canLeft) {
+      return { left: targetRect.left - CARD_WIDTH - CARD_MARGIN, top: clamp(targetRect.top, CARD_MARGIN, window.innerHeight - 340) };
+    }
+
+    if (placement === 'bottom' && canBottom) {
+      return { left: clamp(targetRect.left, CARD_MARGIN, window.innerWidth - CARD_WIDTH - CARD_MARGIN), top: targetRect.bottom + CARD_MARGIN };
+    }
+
+    if ((placement === 'right' || !placement) && canRight) {
+      return { left: targetRect.right + CARD_MARGIN, top: clamp(targetRect.top, CARD_MARGIN, window.innerHeight - 340) };
+    }
+
+    if (canLeft) {
+      return { left: targetRect.left - CARD_WIDTH - CARD_MARGIN, top: clamp(targetRect.top, CARD_MARGIN, window.innerHeight - 340) };
+    }
+
+    return {
+      left: clamp(targetRect.left, CARD_MARGIN, window.innerWidth - CARD_WIDTH - CARD_MARGIN),
+      top: canBottom ? targetRect.bottom + CARD_MARGIN : clamp(targetRect.top - 300, CARD_MARGIN, window.innerHeight - 340),
+    };
+  }, [targetRect, step]);
+
+  const handleNext = () => {
+    if (isFinalStep) {
+      onComplete();
+      return;
+    }
+    setCurrentStep((value) => Math.min(value + 1, totalSteps - 1));
+  };
+
+  const handlePrev = () => setCurrentStep((value) => Math.max(value - 1, 0));
+  const description = step?.description || step?.body || 'BotBot will walk you through this part of the workspace.';
 
   if (!step) return null;
 
-  const fallbackRect = {
-    left: window.innerWidth / 2 - 120,
-    top: window.innerHeight / 2 - 80,
-    right: window.innerWidth / 2 + 120,
-    bottom: window.innerHeight / 2 + 80,
-    width: 240,
-    height: 160,
-  } as DOMRect;
-  const rect = targetRect ?? fallbackRect;
-  const gap = 18;
-  const highlightPadding = 10;
-  const highlightLeft = Math.max(0, rect.left - highlightPadding);
-  const highlightTop = Math.max(0, rect.top - highlightPadding);
-  const highlightRight = Math.min(window.innerWidth, rect.right + highlightPadding);
-  const highlightBottom = Math.min(window.innerHeight, rect.bottom + highlightPadding);
-  const highlightWidth = Math.max(0, highlightRight - highlightLeft);
-  const highlightHeight = Math.max(0, highlightBottom - highlightTop);
-  const viewportMargin = 16;
-  const cardWidth = Math.min(360, window.innerWidth - viewportMargin * 2);
-  const estimatedCardHeight = Math.min(280, window.innerHeight - viewportMargin * 2);
-  const cardLeft = clamp(
-    rect.left + rect.width / 2 - cardWidth / 2,
-    viewportMargin,
-    window.innerWidth - cardWidth - viewportMargin,
-  );
-  const spaceBelow = window.innerHeight - rect.bottom - gap - viewportMargin;
-  const spaceAbove = rect.top - gap - viewportMargin;
-  const verticalTop = rect.top + rect.height / 2 - estimatedCardHeight / 2;
-  const preferredTop =
-    step.placement === "top" ? rect.top - estimatedCardHeight - gap :
-    step.placement === "bottom" ? rect.bottom + gap :
-    step.placement === "left" || step.placement === "right" ? verticalTop :
-    spaceBelow >= estimatedCardHeight || spaceBelow >= spaceAbove ? rect.bottom + gap :
-    rect.top - estimatedCardHeight - gap;
-  const cardTop = clamp(preferredTop, viewportMargin, window.innerHeight - estimatedCardHeight - viewportMargin);
-
-  const finish = () => {
-    onComplete();
-  };
-  const dimPanelAnimation = "fdTutorialDimIn 220ms ease-out both";
-
   return (
-    <div className="fixed inset-0 z-[950]">
-      <style>
-        {`@keyframes fdTutorialDimIn { from { opacity: 0; } to { opacity: 1; } }`}
-      </style>
-      <div className="absolute inset-x-0 top-0 bg-black/85 backdrop-blur-[2px]" style={{ height: highlightTop, animation: dimPanelAnimation }} />
-      <div className="absolute inset-x-0 bottom-0 bg-black/85 backdrop-blur-[2px]" style={{ top: highlightBottom, animation: dimPanelAnimation }} />
-      <div
-        className="absolute left-0 bg-black/85 backdrop-blur-[2px]"
-        style={{ top: highlightTop, width: highlightLeft, height: highlightHeight, animation: dimPanelAnimation }}
-      />
-      <div
-        className="absolute right-0 bg-black/85 backdrop-blur-[2px]"
-        style={{ top: highlightTop, left: highlightRight, height: highlightHeight, animation: dimPanelAnimation }}
-      />
-      <div
-        className="pointer-events-none absolute rounded-2xl border-2 border-sky-300 bg-transparent shadow-[0_0_32px_rgba(56,189,248,0.55)] transition-all"
-        style={{
-          left: highlightLeft,
-          top: highlightTop,
-          width: highlightWidth,
-          height: highlightHeight,
-        }}
-      />
-      <div
-        className={`absolute flex max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-2xl border p-5 shadow-2xl ${
-          isDarkMode ? "border-slate-700 bg-slate-900 text-slate-100" : "border-slate-200 bg-white text-slate-900"
-        }`}
-        style={{ left: cardLeft, top: cardTop, width: cardWidth }}
+    <motion.div
+      className="fixed inset-0 z-[240] pointer-events-none"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" />
+
+      {highlightRect && (
+        <div
+          className="fixed rounded-3xl border-2 border-sky-300 shadow-[0_0_34px_rgba(56,189,248,0.65)]"
+          style={{
+            left: highlightRect.left,
+            top: highlightRect.top,
+            width: highlightRect.right - highlightRect.left,
+            height: highlightRect.bottom - highlightRect.top,
+          }}
+        />
+      )}
+
+      <motion.div
+        key={currentStep}
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -12, scale: 0.98 }}
+        transition={{ duration: 0.28, ease: 'easeOut' }}
+        className="fixed pointer-events-auto max-w-[calc(100vw-32px)]"
+        style={{ left: cardPosition.left, top: cardPosition.top, width: CARD_WIDTH }}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          className={`absolute right-3 top-3 rounded-full p-1.5 ${
-            isDarkMode ? "text-slate-400 hover:bg-slate-800" : "text-slate-500 hover:bg-slate-100"
-          }`}
-          aria-label="Close tour"
-        >
-          <X size={16} />
-        </button>
-        <div className="min-h-0 overflow-y-auto pr-8">
-          <div className="text-xs font-bold uppercase tracking-[0.18em] text-sky-500">
-            Step {stepIndex + 1} of {steps.length}
+        <div className="relative">
+          <div className={`rounded-3xl px-6 py-5 shadow-2xl ${isDarkMode ? 'bg-slate-950/95 border border-slate-700 text-white' : 'bg-white/95 border border-slate-200 text-slate-950'}`}>
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 rounded-2xl bg-sky-500 p-2.5 text-white shadow-lg shadow-sky-500/30">
+                <Bot size={24} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className={`text-xs font-semibold uppercase tracking-[0.24em] ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
+                  BotBot module guide
+                </div>
+                <h3 className="mt-1 text-lg font-bold leading-tight">
+                  {step.title || `Step ${currentStep + 1}`}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className={`rounded-full p-2 transition ${isDarkMode ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
+                aria-label="Close module tour"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className={`mt-4 text-sm font-medium leading-relaxed ${isDarkMode ? 'text-slate-100' : 'text-slate-700'}`}>
+              {description}
+            </p>
+
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5">
+                {steps.map((_, index) => (
+                  <span
+                    key={index}
+                    className={`h-1.5 rounded-full transition-all ${index === currentStep ? 'w-6 bg-sky-500' : isDarkMode ? 'w-1.5 bg-slate-700' : 'w-1.5 bg-slate-300'}`}
+                  />
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {currentStep > 0 && (
+                  <button
+                    type="button"
+                    onClick={handlePrev}
+                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${isDarkMode ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}
+                  >
+                    <ChevronLeft size={14} />
+                    Back
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-600"
+                >
+                  {isFinalStep ? 'Finish' : 'Next'}
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div className={`mt-3 text-right text-[11px] ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+              Step {currentStep + 1} of {totalSteps}
+            </div>
+
+            <div
+              className="absolute -bottom-3 right-12 h-0 w-0"
+              style={{
+                borderLeft: '12px solid transparent',
+                borderRight: '12px solid transparent',
+                borderTop: `12px solid ${isDarkMode ? '#020617' : '#ffffff'}`,
+                filter: isDarkMode ? '' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+              }}
+            />
           </div>
-          <h3 className="mt-2 text-lg font-bold">{step.title}</h3>
-          <p className={`mt-2 text-sm leading-6 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-            {step.body}
-          </p>
-        </div>
-        <div className="mt-5 flex shrink-0 items-center justify-between gap-3">
-          <button
-            type="button"
-            disabled={stepIndex === 0}
-            onClick={() => setStepIndex((current) => Math.max(0, current - 1))}
-            className={`inline-flex items-center gap-1 rounded-full border px-3 py-2 text-xs font-semibold disabled:opacity-35 ${
-              isDarkMode ? "border-slate-700 text-slate-200" : "border-slate-200 text-slate-700"
-            }`}
+
+          <motion.div
+            className="absolute -right-7 -bottom-20 z-10"
+            animate={{ y: [0, -4, 0] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ChevronLeft size={14} /> Back
-          </button>
-          <button
-            type="button"
-            onClick={() => (isLast ? finish() : setStepIndex((current) => current + 1))}
-            className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-4 py-2 text-xs font-bold text-white hover:bg-sky-600"
-          >
-            {isLast ? "Finish" : "Next"} {!isLast && <ChevronRight size={14} />}
-          </button>
+            <div className="rounded-full border-4 border-sky-400 bg-sky-500 p-4 text-white shadow-xl shadow-sky-500/30">
+              <Bot size={38} />
+            </div>
+          </motion.div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
