@@ -15,6 +15,7 @@ export type BotBotTutorialState = {
   requestedPulseSubTab?: BotBotPulseSubTab;
   currentPulseSubTab?: BotBotPulseSubTab;
   requestedWolfdenSubTab?: BotBotWolfdenSubTab;
+  themeMode?: 'light' | 'dark' | 'live';
   [key: string]: unknown;
 };
 

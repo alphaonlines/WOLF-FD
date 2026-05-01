@@ -105,7 +105,53 @@ const buildBotBotTutorialSteps = ({
     },
   ];
 
-  if (canOpenDen) {
+  if (canOpenPulse) {
+    steps.push({
+      id: 'botbot-open-pulse-sales',
+      title: 'Your module menu',
+      message: 'This left menu shows the modules available to you. Click Pulse first so we can start with Sales.',
+      highlightId: 'sidebar-module-menu',
+      actionTargetId: 'sidebar-pulse-nav-item',
+      advanceOnHighlightClick: true,
+      suppressWaitingCopy: true,
+      scope: 'module',
+      requiredModules: [MODULE_PERMISSION_KEYS.PULSE],
+      advanceWhen: {
+        type: 'state',
+        check: (state) => state.activeTab === Tab.PULSE && state.currentPulseSubTab === 'sales',
+      },
+      primaryActionLabel: 'Next',
+    });
+    steps.push({
+      id: 'botbot-pulse-pages',
+      title: 'Pages inside each module',
+      message: 'Each module has its own pages across the top. In Pulse, these pages help you review Sales, AlphaOS, AlphaPulse, Website, and Reviews.',
+      highlightId: 'pulse-top-pages',
+      suppressWaitingCopy: true,
+      scope: 'module',
+      requiredModules: [MODULE_PERMISSION_KEYS.PULSE],
+      advanceWhen: {
+        type: 'manual',
+      },
+      primaryActionLabel: 'Next',
+    });
+    steps.push({
+      id: 'botbot-top-right-options',
+      title: 'Top-right options',
+      message: 'Some pages have extra tools over here, like Print Report on Sales. Click Live to continue.',
+      highlightId: 'top-right-controls',
+      actionTargetId: 'theme-live-button',
+      advanceOnHighlightClick: true,
+      suppressWaitingCopy: true,
+      scope: 'module',
+      requiredModules: [MODULE_PERMISSION_KEYS.PULSE],
+      advanceWhen: {
+        type: 'state',
+        check: (state) => state.themeMode === 'live',
+      },
+      primaryActionLabel: 'Next',
+    });
+  } else if (canOpenDen) {
     steps.push({
       id: 'botbot-open-den-ups',
       title: 'Your module menu',
@@ -132,22 +178,6 @@ const buildBotBotTutorialSteps = ({
       requiredModules: [MODULE_PERMISSION_KEYS.WOLFDEN],
       advanceWhen: {
         type: 'manual',
-      },
-      primaryActionLabel: 'Next',
-    });
-  } else if (canOpenPulse) {
-    steps.push({
-      id: 'botbot-open-pulse',
-      title: 'Open Pulse',
-      message: 'Use Pulse to get a fast sales view. Start in Sales first.',
-      highlightId: 'sidebar-pulse-nav-item',
-      advanceOnHighlightClick: true,
-      suppressWaitingCopy: true,
-      scope: 'module',
-      requiredModules: [MODULE_PERMISSION_KEYS.PULSE],
-      advanceWhen: {
-        type: 'state',
-        check: (state) => state.activeTab === Tab.PULSE,
       },
       primaryActionLabel: 'Next',
     });
@@ -696,8 +726,9 @@ const App: React.FC = () => {
       requestedPulseSubTab,
       currentPulseSubTab,
       requestedWolfdenSubTab,
+      themeMode,
     }),
-    [sidebarOpen, activeTab, requestedPulseSubTab, currentPulseSubTab, requestedWolfdenSubTab]
+    [sidebarOpen, activeTab, requestedPulseSubTab, currentPulseSubTab, requestedWolfdenSubTab, themeMode]
   );
 
   const isBotBotTutorialBlockingTours = Boolean(authUser && (pendingBotBotTutorial || showBotBotTutorial));
@@ -1341,7 +1372,7 @@ const App: React.FC = () => {
               </div>
             )}
             {activeTab === Tab.PULSE && (
-              <div className="hidden md:flex items-center gap-1 ml-6">
+              <div data-tour-id="pulse-top-pages" className="hidden md:flex items-center gap-1 ml-6">
                 <button data-tour-id="pulse-tab-sales" onClick={() => openPulseSubTab('sales')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedPulseSubTab === 'sales' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Activity size={13} className="inline mr-1.5" />Sales</button>
@@ -1383,7 +1414,7 @@ const App: React.FC = () => {
               </div>
             )}
 
-            <div className="flex items-center gap-4">
+            <div data-tour-id="top-right-controls" className="flex items-center gap-4">
               {isSalesHeaderView && showRange && rangeLabel && (
                 <button
                   onClick={() => window.dispatchEvent(new Event('fd-open-range'))}
@@ -1430,6 +1461,7 @@ const App: React.FC = () => {
               )}
               {isSalesHeaderView && (
                 <button
+                  data-tour-id="sales-print-report-button"
                   onClick={() => window.dispatchEvent(new Event('fd-print-request'))}
                   className={`hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-full border transition-colors ${
                     isDarkMode
@@ -1498,6 +1530,7 @@ const App: React.FC = () => {
                   <Sun size={16} />
                 </button>
                 <button
+                  data-tour-id="theme-live-button"
                   onClick={() => { setThemeMode('live'); localStorage.setItem('fd_theme_mode', 'live'); }}
                   className={`p-1.5 rounded-full transition-all ${
                     themeMode === 'live'
