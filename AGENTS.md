@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `main`
-- Current display version in `package.json`: `0.5.1.1723`
+- Current display version in `package.json`: `0.5.1.1729`
 
 ## Project Structure
 
@@ -110,7 +110,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `0.5.1.1723`
+- Current display version: `0.5.1.1729`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -141,6 +141,10 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-01 17:29 EDT — Refined BotBot launch step 4 copy and fixed Back navigation auto-advance. Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/botbot/BotBotTutorial.tsx`, `/home/alphahs/WOLF-FD/package.json`.
+  - Changes: step 4 now says the center of the screen shows the main content and omits the old “I’ll wait while you explore this dashboard” line; Back navigation now pauses auto-advance on the returned-to step so users can actually restart the previous step instead of bouncing forward; BotBot tutorial eyebrow default now matches `Tutorial`; `displayVersion` moved to `0.5.1.1729`.
+  - Commands/tests: `npm run build` PASS, `sudo cp -r /home/alphahs/WOLF-FD/dist/. /srv/www/wolf.discount/fd/` PASS, deployed asset `assets/index-BMgun4Fp.js`, `curl -sS http://127.0.0.1:5057/health` PASS (`{"ok":true,"db":1}`).
 
 - 2026-05-01 17:24 EDT — Standardized remaining BotBot launch action steps to match the smoother step-2 behavior. Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/package.json`.
   - Changes: all remaining interactive launch steps now suppress the extra waiting-copy treatment and use the same highlighted click-through behavior pattern as step 2, so future onboarding steps advance from the directed UI area instead of falling back to the older wording/flow; `displayVersion` moved to `0.5.1.1723`.

@@ -218,7 +218,7 @@ const buildBotBotTutorialSteps = ({
   steps.push({
     id: 'botbot-main-content',
     title: 'Your main workspace',
-    message: 'This is where your main content lives. I’ll wait while you explore this dashboard.',
+    message: 'The center of the screen shows the main content for the part of the dashboard you are using.',
     highlightId: 'botbot-main-content',
     scope: 'launch',
     requiredModules: [],

@@ -105,12 +105,13 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
   onSkip,
   onRestart,
   onHelp,
-  eyebrowLabel = 'BotBot guide',
+  eyebrowLabel = 'Tutorial',
 }) => {
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [attemptedFallbacks, setAttemptedFallbacks] = useState<Record<string, number>>({});
   const latestStateRef = useRef(state);
+  const suppressAutoAdvanceStepIdRef = useRef<string | null>(null);
 
   const filteredSteps = useMemo(() => steps.filter(Boolean), [steps]);
 
@@ -282,14 +283,19 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
   }, [activeStep, isLastStep, onSkip, filteredSteps.length]);
 
   const goBackStep = useCallback(() => {
-    setActiveStepIndex((current) => Math.max(current - 1, 0));
-  }, []);
+    setActiveStepIndex((current) => {
+      const nextIndex = Math.max(current - 1, 0);
+      suppressAutoAdvanceStepIdRef.current = filteredSteps[nextIndex]?.id || null;
+      return nextIndex;
+    });
+  }, [filteredSteps]);
 
   const handlePrimaryAction = useCallback(() => {
     if (!activeStep) {
       onSkip();
       return;
     }
+    suppressAutoAdvanceStepIdRef.current = null;
 
     if (isTerminalStep) {
       onComplete();
@@ -354,6 +360,7 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
     if (!activeStep) return;
     if (isTerminalStep || activeStep.advanceWhen.type === 'manual') return;
     if (!isStepSatisfied) return;
+    if (suppressAutoAdvanceStepIdRef.current === activeStep.id) return;
 
     const timer = window.setTimeout(() => {
       advanceStep();
