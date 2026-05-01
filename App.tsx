@@ -108,6 +108,8 @@ const buildBotBotTutorialSteps = ({
       title: 'Open Pulse',
       message: 'Use Pulse to get a fast sales view. Start in Sales first.',
       highlightId: 'sidebar-pulse-nav-item',
+      advanceOnHighlightClick: true,
+      suppressWaitingCopy: true,
       scope: 'module',
       requiredModules: [MODULE_PERMISSION_KEYS.PULSE],
       advanceWhen: {
@@ -122,6 +124,8 @@ const buildBotBotTutorialSteps = ({
       title: 'Open Den',
       message: 'Go to Den, then open UPS first.',
       highlightId: 'sidebar-wolfden-nav-item',
+      advanceOnHighlightClick: true,
+      suppressWaitingCopy: true,
       scope: 'module',
       requiredModules: [MODULE_PERMISSION_KEYS.WOLFDEN],
       advanceWhen: {
@@ -135,6 +139,8 @@ const buildBotBotTutorialSteps = ({
       title: 'Open UPS',
       message: 'Inside Den, open UPS so your help starts from the floor queue.',
       highlightId: 'den-tab-ups',
+      advanceOnHighlightClick: true,
+      suppressWaitingCopy: true,
       scope: 'module',
       requiredModules: [MODULE_PERMISSION_KEYS.WOLFDEN],
       advanceWhen: {
@@ -149,6 +155,8 @@ const buildBotBotTutorialSteps = ({
       title: 'Open Sales',
       message: 'Open Sales to see your daily and weekly performance.',
       highlightId: 'sidebar-dashboard-nav-item',
+      advanceOnHighlightClick: true,
+      suppressWaitingCopy: true,
       scope: 'module',
       requiredModules: [MODULE_PERMISSION_KEYS.SALES],
       advanceWhen: {
@@ -163,6 +171,8 @@ const buildBotBotTutorialSteps = ({
       title: 'Open CRM',
       message: 'Open CRM to manage customers and work your queue.',
       highlightId: 'sidebar-wolfden-nav-item',
+      advanceOnHighlightClick: true,
+      suppressWaitingCopy: true,
       scope: 'module',
       requiredModules: [MODULE_PERMISSION_KEYS.CRM],
       advanceWhen: {
@@ -177,6 +187,8 @@ const buildBotBotTutorialSteps = ({
       title: 'Open Product Search',
       message: 'Use Product Search for catalog lookups while helping customers.',
       highlightId: 'sidebar-shop-nav-item',
+      advanceOnHighlightClick: true,
+      suppressWaitingCopy: true,
       scope: 'module',
       requiredModules: [MODULE_PERMISSION_KEYS.PRODUCT_SEARCH],
       advanceWhen: {
@@ -191,6 +203,8 @@ const buildBotBotTutorialSteps = ({
       title: 'Open Shop',
       message: 'Go to Shop for product workflows and POS tools.',
       highlightId: 'sidebar-shop-nav-item',
+      advanceOnHighlightClick: true,
+      suppressWaitingCopy: true,
       scope: 'module',
       requiredModules: [MODULE_PERMISSION_KEYS.SHOP],
       advanceWhen: {
@@ -221,6 +235,8 @@ const buildBotBotTutorialSteps = ({
       ? 'Open Settings when you need walkthroughs, resets, or BotBot preferences.'
       : 'Ask an owner or manager to open Settings for BotBot control options.',
     highlightId: hasSettingsPanel ? 'sidebar-settings-nav-item' : undefined,
+    advanceOnHighlightClick: hasSettingsPanel,
+    suppressWaitingCopy: hasSettingsPanel,
     scope: 'launch',
     requiredModules: hasSettingsPanel ? [MODULE_PERMISSION_KEYS.SETTINGS] : [],
     advanceWhen: hasSettingsPanel
