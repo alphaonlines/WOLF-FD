@@ -249,19 +249,6 @@ const buildBotBotTutorialSteps = ({
   }
 
   steps.push({
-    id: 'botbot-main-content',
-    title: 'Your main workspace',
-    message: 'The center of the screen shows the main content for the part of the dashboard you are using.',
-    highlightId: 'botbot-main-content',
-    scope: 'launch',
-    requiredModules: [],
-    advanceWhen: {
-      type: 'manual',
-    },
-    primaryActionLabel: 'Next',
-  });
-
-  steps.push({
     id: 'botbot-personality',
     title: 'Make BotBot yours',
     message: hasSettingsPanel
