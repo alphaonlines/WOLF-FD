@@ -115,6 +115,7 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
   const [attemptedFallbacks, setAttemptedFallbacks] = useState<Record<string, number>>({});
   const latestStateRef = useRef(state);
   const suppressAutoAdvanceStepIdRef = useRef<string | null>(null);
+  const lastScrolledStepIdRef = useRef<string | null>(null);
 
   const filteredSteps = useMemo(() => steps.filter(Boolean), [steps]);
 
@@ -171,6 +172,28 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
 
     setTargetRect(buildTargetRect(target.getBoundingClientRect(), activeStep?.highlightId));
   }, [activeStep]);
+
+  useEffect(() => {
+    if (!activeStep?.highlightId || !activeStepId) return;
+    if (lastScrolledStepIdRef.current === activeStepId) return;
+
+    const target = getTargetElement(activeStep.highlightId);
+    if (!target) return;
+
+    lastScrolledStepIdRef.current = activeStepId;
+    target.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'nearest',
+    });
+
+    const earlyRefresh = window.setTimeout(markTargetAndState, 260);
+    const finalRefresh = window.setTimeout(markTargetAndState, 720);
+    return () => {
+      window.clearTimeout(earlyRefresh);
+      window.clearTimeout(finalRefresh);
+    };
+  }, [activeStep?.highlightId, activeStepId, markTargetAndState]);
 
   useEffect(() => {
     markTargetAndState();
