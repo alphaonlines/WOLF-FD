@@ -1,6 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Bot } from 'lucide-react';
 import TutorialOverlay from '../app/TutorialOverlay';
 import type { Tab } from '../app/tabs';
 
@@ -290,36 +288,16 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
   if (!activeStep) return null;
 
   return (
-    <>
-      <TutorialOverlay
-        isDarkMode={isDarkMode}
-        onClose={onSkip}
-        highlightedElementRect={targetRect}
-        currentStep={activeStepIndex}
-        totalSteps={Math.max(filteredSteps.length, 1)}
-        slide={currentSlide}
-        actions={actions}
-        isAwaitingAction={isWaitingForAction}
-      />
-
-      <AnimatePresence>
-        <motion.div
-          className="fixed bottom-8 right-8 z-[1001]"
-          initial={{ scale: 0 }}
-          animate={{
-            scale: 1,
-            boxShadow: isWaitingForAction
-              ? ['0 0 0 0 rgba(56,189,248,0.35)', '0 0 0 16px rgba(56,189,248,0)']
-              : ['0 0 0 0 rgba(56,189,248,0)', '0 0 0 0 rgba(56,189,248,0)'],
-          }}
-          transition={{ duration: isWaitingForAction ? 1.8 : 0.2, repeat: isWaitingForAction ? Infinity : 0, ease: 'easeOut' }}
-        >
-          <div className="rounded-full border-4 border-sky-400 bg-sky-500 p-5 text-white shadow-xl shadow-sky-500/30">
-            <Bot size={28} />
-          </div>
-        </motion.div>
-      </AnimatePresence>
-    </>
+    <TutorialOverlay
+      isDarkMode={isDarkMode}
+      onClose={onSkip}
+      highlightedElementRect={targetRect}
+      currentStep={activeStepIndex}
+      totalSteps={Math.max(filteredSteps.length, 1)}
+      slide={currentSlide}
+      actions={actions}
+      isAwaitingAction={isWaitingForAction}
+    />
   );
 };
 

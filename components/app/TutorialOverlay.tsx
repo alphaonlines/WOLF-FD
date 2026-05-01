@@ -103,6 +103,8 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
+
       <motion.div
         key={currentStep}
         initial={{ opacity: 0, y: 18, scale: 0.98 }}
@@ -212,15 +214,6 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             />
           </div>
 
-          <motion.div
-            className="absolute -right-7 -bottom-20 z-10"
-            animate={isAwaitingAction ? { y: [0, -4, 0] } : { y: 0 }}
-            transition={isAwaitingAction ? { duration: 2.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
-          >
-            <div className="rounded-full border-4 border-sky-400 bg-sky-500 p-4 text-white shadow-xl shadow-sky-500/30">
-              <Bot size={38} />
-            </div>
-          </motion.div>
         </div>
       </motion.div>
     </motion.div>
