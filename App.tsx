@@ -142,13 +142,13 @@ const buildBotBotTutorialSteps = ({
       message: 'Some pages have extra tools over here, like Print Report on Sales. Click Live to continue.',
       highlightId: 'top-right-controls',
       actionTargetId: 'theme-live-button',
+      highlightOnAction: true,
       advanceOnHighlightClick: true,
       suppressWaitingCopy: true,
       scope: 'module',
       requiredModules: [MODULE_PERMISSION_KEYS.PULSE],
       advanceWhen: {
-        type: 'state',
-        check: (state) => state.themeMode === 'live',
+        type: 'manual',
       },
       primaryActionLabel: 'Next',
     });
