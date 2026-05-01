@@ -81,7 +81,7 @@ const buildBotBotTutorialSteps = ({
     {
       id: 'botbot-intro',
       title: 'Welcome to WOLF FD Dashboard',
-      message: 'I’m BotBot, your personal AI trainer for the dashboard. You can rename me later and shape my personality so I feel like your helper, not just another button.',
+      message: 'I’m BotBot, your personal AI trainer. I’m contextually aware of this dashboard, so I’ll only show a few key things to get you started today.',
       highlightId: 'botbot-entry',
       pulseHighlight: true,
       suppressWaitingCopy: true,
