@@ -223,7 +223,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             </div>
 
             <p className={`mt-4 text-sm font-medium leading-relaxed ${isDarkMode ? 'text-slate-100' : 'text-slate-700'}`}>
-              {isAwaitingAction && !suppressWaitingCopy ? `${description} I’m waiting for you.` : description}
+              {description}
             </p>
 
             {Array.isArray(slide.tips) && slide.tips.length > 0 && (
