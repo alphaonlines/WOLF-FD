@@ -127,6 +127,7 @@ const buildBotBotTutorialSteps = ({
       title: 'Pages inside each module',
       message: 'Each module has its own pages across the top. In Pulse, these pages help you review Sales, AlphaOS, AlphaPulse, Website, and Reviews.',
       highlightId: 'pulse-top-pages',
+      advanceOnHighlightClick: true,
       suppressWaitingCopy: true,
       scope: 'module',
       requiredModules: [MODULE_PERMISSION_KEYS.PULSE],
