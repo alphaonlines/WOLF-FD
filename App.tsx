@@ -109,8 +109,9 @@ const buildBotBotTutorialSteps = ({
     steps.push({
       id: 'botbot-open-den-ups',
       title: 'Your module menu',
-      message: 'This left menu shows the modules available to you. Click here to open Den first, where we will start with the team workspace.',
+      message: 'This left menu shows the modules available to you. Click Den first, where we will start with the team workspace.',
       highlightId: 'sidebar-module-menu',
+      actionTargetId: 'sidebar-wolfden-nav-item',
       advanceOnHighlightClick: true,
       suppressWaitingCopy: true,
       scope: 'module',

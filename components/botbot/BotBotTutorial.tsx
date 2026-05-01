@@ -23,6 +23,7 @@ export type BotBotTutorialStep = {
   title: string;
   message: string;
   highlightId?: string;
+  actionTargetId?: string;
   highlightOnAction?: boolean;
   pulseHighlight?: boolean;
   advanceOnHighlightClick?: boolean;
@@ -196,11 +197,12 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
   const isTargetMissing = Boolean(activeStep?.highlightId) && targetRect === null;
 
   const runTargetAction = useCallback(() => {
-    if (!activeStep?.highlightId) {
+    const targetId = activeStep?.actionTargetId || activeStep?.highlightId;
+    if (!activeStep || !targetId) {
       return false;
     }
 
-    const target = getTargetElement(activeStep.highlightId);
+    const target = getTargetElement(targetId);
     if (!target) {
       setAttemptedFallbacks((prev) => ({
         ...prev,
@@ -336,11 +338,12 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
   ]);
 
   useEffect(() => {
-    if (!activeStep?.highlightOnAction || !activeStep.highlightId || activeStep.advanceWhen.type !== 'manual') {
+    const targetId = activeStep?.actionTargetId || activeStep?.highlightId;
+    if (!activeStep?.highlightOnAction || !targetId || activeStep.advanceWhen.type !== 'manual') {
       return;
     }
 
-    const target = getTargetElement(activeStep.highlightId);
+    const target = getTargetElement(targetId);
     if (!target) {
       return;
     }
@@ -370,7 +373,7 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
     return () => window.clearTimeout(timer);
   }, [activeStep, isStepSatisfied, isTerminalStep, advanceStep]);
 
-  const isPrimaryEnabled = isTerminalStep || activeStep?.advanceWhen.type === 'manual' || Boolean(activeStep?.highlightId);
+  const isPrimaryEnabled = isTerminalStep || activeStep?.advanceWhen.type === 'manual' || Boolean(activeStep?.highlightId || activeStep?.actionTargetId);
   const primaryLabel =
     isTerminalStep ? 'Done' : activeStep?.primaryActionLabel || (isLastStep ? 'Done' : 'Next');
   const showBackAction = activeStepIndex > 0;
