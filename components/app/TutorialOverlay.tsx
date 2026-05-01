@@ -95,6 +95,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
 
   const description = slide.description || slide.body || 'Follow the highlighted area and BotBot will walk you through this step.';
   const actionCount = actions.length;
+  const shouldShowTargetPulse = Boolean(highlightedElementRect);
 
   return (
     <motion.div
@@ -104,6 +105,36 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
       exit={{ opacity: 0 }}
     >
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
+
+      {shouldShowTargetPulse && (
+        <motion.div
+          key={`botbot-tutorial-target-${Math.round(highlightedElementRect?.top || 0)}-${Math.round(highlightedElementRect?.left || 0)}`}
+          className="fixed rounded-2xl border border-sky-400/95 bg-sky-500/15 pointer-events-none z-[211]"
+          style={{
+            left: (highlightedElementRect?.left || 0) - 8,
+            top: (highlightedElementRect?.top || 0) - 8,
+            width: (highlightedElementRect?.width || 0) + 16,
+            height: (highlightedElementRect?.height || 0) + 16,
+          }}
+          initial={{ opacity: 0.35, scale: 0.985, boxShadow: '0 0 0 0 rgba(56,189,248,0)' }}
+          animate={isAwaitingAction
+            ? {
+                opacity: [0.38, 0.8, 0.38],
+                scale: [0.985, 1.02, 0.985],
+                boxShadow: [
+                  '0 0 0 0 rgba(56,189,248,0.4)',
+                  '0 0 0 18px rgba(56,189,248,0.15)',
+                  '0 0 0 0 rgba(56,189,248,0)',
+                ],
+              }
+            : {
+                opacity: 0.45,
+                scale: 1,
+                boxShadow: '0 0 0 0 rgba(56,189,248,0.3)',
+              }}
+          transition={isAwaitingAction ? { duration: 1.8, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+        />
+      )}
 
       <motion.div
         key={currentStep}

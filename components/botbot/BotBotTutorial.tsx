@@ -200,7 +200,57 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
     setActiveStepIndex((current) => Math.min(current + 1, filteredSteps.length - 1));
   }, [activeStep, isLastStep, onSkip, filteredSteps.length]);
 
-  const isPrimaryEnabled = isTerminalStep ? true : isWaitingForAction ? isStepSatisfied : true;
+  const handlePrimaryAction = useCallback(() => {
+    if (!activeStep) {
+      onSkip();
+      return;
+    }
+
+    if (isWaitingForAction && activeStep.highlightId) {
+      const target = getTargetElement(activeStep.highlightId);
+      if (!target) {
+        setAttemptedFallbacks((prev) => ({
+          ...prev,
+          [activeStep.id]: (prev[activeStep.id] || 0) + 1,
+        }));
+        setTargetRect(null);
+        return;
+      }
+
+      try {
+        target.click();
+      } catch {
+        // Best-effort click to keep the primary button useful.
+      }
+
+      if (isStepSatisfied) {
+        window.setTimeout(() => {
+          advanceStep();
+        }, 140);
+      }
+      return;
+    }
+
+    if (isWaitingForAction) {
+      return;
+    }
+
+    advanceStep();
+  }, [activeStep, advanceStep, isStepSatisfied, isWaitingForAction, onSkip]);
+
+  useEffect(() => {
+    if (!activeStep) return;
+    if (isTerminalStep || activeStep.advanceWhen.type === 'manual') return;
+    if (!isStepSatisfied) return;
+
+    const timer = window.setTimeout(() => {
+      advanceStep();
+    }, 280);
+
+    return () => window.clearTimeout(timer);
+  }, [activeStep, isStepSatisfied, isTerminalStep, advanceStep]);
+
+  const isPrimaryEnabled = isTerminalStep || activeStep?.advanceWhen.type === 'manual' || Boolean(activeStep?.highlightId);
   const primaryLabel =
     isTerminalStep ? 'Done' : activeStep?.primaryActionLabel || (isLastStep ? 'Done' : 'Next');
 
@@ -216,7 +266,7 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
           label: primaryLabel,
           disabled: !isPrimaryEnabled,
           variant: 'primary' as const,
-          onClick: advanceStep,
+          onClick: handlePrimaryAction,
         },
       ];
     }
@@ -261,7 +311,7 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
     }
 
     return recoveryActions;
-  }, [activeStep, advanceStep, isPrimaryEnabled, isTerminalStep, onHelp, onRestart, onSkip, primaryLabel, retryTargetLookup, showEscalatedRecovery, showRecoveryActions, skipCurrentStep]);
+  }, [activeStep, handlePrimaryAction, isPrimaryEnabled, isTerminalStep, onHelp, onRestart, onSkip, primaryLabel, retryTargetLookup, showEscalatedRecovery, showRecoveryActions, skipCurrentStep]);
 
   const slideMessage = useMemo(() => {
     if (!activeStep) return '';
