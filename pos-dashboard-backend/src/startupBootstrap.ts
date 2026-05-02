@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import { BOTBOT_SKILL_CATALOG } from "./botbotAccess";
 import { PERMISSION_CATALOG, getRoleDefaultPermissionKeys } from "./permissionCatalog";
 import {
   DEFAULT_OLLAMA_NODE_KEY,
@@ -1395,6 +1396,137 @@ async function ensureBotBotSchema(pool: Pool) {
   await pool.query(`ALTER TABLE botbot_token_ledger ALTER COLUMN last_reset_at SET DEFAULT now();`);
   await pool.query(`ALTER TABLE botbot_token_ledger ALTER COLUMN updated_at SET DEFAULT now();`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_botbot_ledger_user ON botbot_token_ledger(user_id);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS botbot_usage_events (
+      id                 BIGSERIAL PRIMARY KEY,
+      user_id            BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      conversation_id    BIGINT,
+      message_id         BIGINT,
+      model_key          TEXT NOT NULL DEFAULT '',
+      provider           TEXT NOT NULL DEFAULT '',
+      skill_key          TEXT NOT NULL DEFAULT 'dashboard_help',
+      task_key           TEXT NOT NULL DEFAULT '',
+      input_tokens       INTEGER NOT NULL DEFAULT 0,
+      output_tokens      INTEGER NOT NULL DEFAULT 0,
+      total_tokens       INTEGER NOT NULL DEFAULT 0,
+      estimated_cost_usd NUMERIC(12, 6) NOT NULL DEFAULT 0,
+      status             TEXT NOT NULL DEFAULT 'success',
+      error_code         TEXT,
+      response_ms        INTEGER NOT NULL DEFAULT 0,
+      created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS id BIGSERIAL;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS user_id BIGINT;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS conversation_id BIGINT;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS message_id BIGINT;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS model_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS provider TEXT;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS skill_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS task_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS input_tokens INTEGER;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS output_tokens INTEGER;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS total_tokens INTEGER;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS estimated_cost_usd NUMERIC(12, 6);`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS status TEXT;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS error_code TEXT;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS response_ms INTEGER;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ALTER COLUMN model_key SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE botbot_usage_events ALTER COLUMN provider SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE botbot_usage_events ALTER COLUMN skill_key SET DEFAULT 'dashboard_help';`);
+  await pool.query(`ALTER TABLE botbot_usage_events ALTER COLUMN task_key SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE botbot_usage_events ALTER COLUMN input_tokens SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ALTER COLUMN output_tokens SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ALTER COLUMN total_tokens SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ALTER COLUMN estimated_cost_usd SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ALTER COLUMN status SET DEFAULT 'success';`);
+  await pool.query(`ALTER TABLE botbot_usage_events ALTER COLUMN response_ms SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE botbot_usage_events ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_botbot_usage_events_time ON botbot_usage_events(created_at DESC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_botbot_usage_events_user ON botbot_usage_events(user_id, created_at DESC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_botbot_usage_events_skill ON botbot_usage_events(skill_key, created_at DESC);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS botbot_model_access (
+      subject_type TEXT NOT NULL,
+      subject_key  TEXT NOT NULL,
+      model_key    TEXT NOT NULL,
+      allowed      BOOLEAN NOT NULL DEFAULT FALSE,
+      token_quota  BIGINT,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (subject_type, subject_key, model_key)
+    );
+  `);
+  await pool.query(`ALTER TABLE botbot_model_access ADD COLUMN IF NOT EXISTS subject_type TEXT;`);
+  await pool.query(`ALTER TABLE botbot_model_access ADD COLUMN IF NOT EXISTS subject_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_model_access ADD COLUMN IF NOT EXISTS model_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_model_access ADD COLUMN IF NOT EXISTS allowed BOOLEAN;`);
+  await pool.query(`ALTER TABLE botbot_model_access ADD COLUMN IF NOT EXISTS token_quota BIGINT;`);
+  await pool.query(`ALTER TABLE botbot_model_access ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_model_access ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_model_access ALTER COLUMN allowed SET DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE botbot_model_access ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE botbot_model_access ALTER COLUMN updated_at SET DEFAULT now();`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS botbot_skill_catalog (
+      skill_key       TEXT PRIMARY KEY,
+      label           TEXT NOT NULL,
+      description     TEXT NOT NULL DEFAULT '',
+      default_allowed BOOLEAN NOT NULL DEFAULT TRUE,
+      admin_only      BOOLEAN NOT NULL DEFAULT FALSE,
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE botbot_skill_catalog ADD COLUMN IF NOT EXISTS skill_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_skill_catalog ADD COLUMN IF NOT EXISTS label TEXT;`);
+  await pool.query(`ALTER TABLE botbot_skill_catalog ADD COLUMN IF NOT EXISTS description TEXT;`);
+  await pool.query(`ALTER TABLE botbot_skill_catalog ADD COLUMN IF NOT EXISTS default_allowed BOOLEAN;`);
+  await pool.query(`ALTER TABLE botbot_skill_catalog ADD COLUMN IF NOT EXISTS admin_only BOOLEAN;`);
+  await pool.query(`ALTER TABLE botbot_skill_catalog ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_skill_catalog ALTER COLUMN description SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE botbot_skill_catalog ALTER COLUMN default_allowed SET DEFAULT TRUE;`);
+  await pool.query(`ALTER TABLE botbot_skill_catalog ALTER COLUMN admin_only SET DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE botbot_skill_catalog ALTER COLUMN updated_at SET DEFAULT now();`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS botbot_skill_access (
+      subject_type TEXT NOT NULL,
+      subject_key  TEXT NOT NULL,
+      skill_key    TEXT NOT NULL,
+      allowed      BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (subject_type, subject_key, skill_key)
+    );
+  `);
+  await pool.query(`ALTER TABLE botbot_skill_access ADD COLUMN IF NOT EXISTS subject_type TEXT;`);
+  await pool.query(`ALTER TABLE botbot_skill_access ADD COLUMN IF NOT EXISTS subject_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_skill_access ADD COLUMN IF NOT EXISTS skill_key TEXT;`);
+  await pool.query(`ALTER TABLE botbot_skill_access ADD COLUMN IF NOT EXISTS allowed BOOLEAN;`);
+  await pool.query(`ALTER TABLE botbot_skill_access ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_skill_access ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE botbot_skill_access ALTER COLUMN allowed SET DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE botbot_skill_access ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE botbot_skill_access ALTER COLUMN updated_at SET DEFAULT now();`);
+
+  for (const skill of BOTBOT_SKILL_CATALOG) {
+    await pool.query(
+      `INSERT INTO botbot_skill_catalog
+         (skill_key, label, description, default_allowed, admin_only, updated_at)
+       VALUES ($1, $2, $3, $4, $5, now())
+       ON CONFLICT (skill_key) DO UPDATE SET
+         label = EXCLUDED.label,
+         description = EXCLUDED.description,
+         default_allowed = EXCLUDED.default_allowed,
+         admin_only = EXCLUDED.admin_only,
+         updated_at = now()`,
+      [skill.skillKey, skill.label, skill.description, skill.defaultAllowed, Boolean(skill.adminOnly)]
+    );
+  }
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS botbot_settings (
