@@ -1,5 +1,7 @@
 import type {
   ManufacturerCatalogItem,
+  ManufacturerPricebookSummary,
+  ManufacturerUploadAnalysis,
   ManufacturerPricebookUpload,
   ManufacturerReferenceNote,
 } from "../types";
@@ -112,6 +114,31 @@ export async function fetchManufacturerPricebookUploads(
   return rows.map((row: any) => mapUpload(row));
 }
 
+export async function fetchManufacturerPricebookSummary(): Promise<ManufacturerPricebookSummary> {
+  const json = await fetchJson("/api/manufacturer-pricebooks/summary");
+  return {
+    totals: {
+      manufacturers: Number((json as any)?.totals?.manufacturers ?? 0),
+      uploads: Number((json as any)?.totals?.uploads ?? 0),
+      catalogRows: Number((json as any)?.totals?.catalogRows ?? 0),
+      holding: Number((json as any)?.totals?.holding ?? 0),
+    },
+    manufacturers: Array.isArray((json as any)?.manufacturers)
+      ? (json as any).manufacturers.map((row: any) => ({
+          manufacturer: String(row.manufacturer ?? ""),
+          manufacturerSlug: String(row.manufacturerSlug ?? row.manufacturer_slug ?? ""),
+          statuses: row.statuses && typeof row.statuses === "object" ? row.statuses : {},
+          uploadCount: Number(row.uploadCount ?? 0),
+          catalogRows: Number(row.catalogRows ?? 0),
+          pricedRows: Number(row.pricedRows ?? 0),
+          parserSupported: Boolean(row.parserSupported),
+          latestUploadAt: row.latestUploadAt ?? null,
+          latestCatalogAt: row.latestCatalogAt ?? null,
+        }))
+      : [],
+  };
+}
+
 export async function uploadManufacturerPricebookToHolding(input: {
   manufacturer: string;
   files: File[];
@@ -154,6 +181,64 @@ export async function previewManufacturerPricebookUpload(uploadId: string): Prom
     upload: (json as any)?.upload ? mapUpload((json as any).upload) : null,
     rows: rows.map((row: any) => mapCatalogItem(row)),
     notes: notes.map((row: any) => mapReferenceNote(row)),
+  };
+}
+
+export async function analyzeManufacturerPricebookUpload(uploadId: string): Promise<{
+  upload: ManufacturerPricebookUpload | null;
+  resolvedUpload: ManufacturerPricebookUpload | null;
+  supported: boolean;
+  parserSupported: boolean;
+  parserKind: string;
+  analysis: ManufacturerUploadAnalysis;
+}> {
+  const json = await fetchJson(`/api/manufacturer-pricebooks/uploads/${encodeURIComponent(uploadId)}/analyze`);
+  return {
+    upload: (json as any)?.upload ? mapUpload((json as any).upload) : null,
+    resolvedUpload: (json as any)?.resolvedUpload ? mapUpload((json as any).resolvedUpload) : null,
+    supported: Boolean((json as any)?.supported),
+    parserSupported: Boolean((json as any)?.parserSupported),
+    parserKind: String((json as any)?.parserKind ?? ""),
+    analysis: ((json as any)?.analysis || { mode: "unknown", supported: false, parserKind: "unknown" }) as ManufacturerUploadAnalysis,
+  };
+}
+
+export async function previewMappedManufacturerPricebookUpload(input: {
+  uploadId: string;
+  sheetName?: string;
+  headerRowIndex?: number;
+  mappings: Record<string, number | string | null | undefined>;
+  saveProfile?: boolean;
+}): Promise<{
+  upload: ManufacturerPricebookUpload | null;
+  rows: ManufacturerCatalogItem[];
+  notes: ManufacturerReferenceNote[];
+  analysis: { sheetName: string; headerRowIndex: number; rowCount: number; headers: string[] };
+}> {
+  const json = await fetchJson(`/api/manufacturer-pricebooks/uploads/${encodeURIComponent(input.uploadId)}/mapped-preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sheetName: input.sheetName,
+      headerRowIndex: input.headerRowIndex,
+      mappings: input.mappings,
+      saveProfile: input.saveProfile ?? true,
+    }),
+  });
+  const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
+  const notes = Array.isArray((json as any)?.notes) ? (json as any).notes : [];
+  return {
+    upload: (json as any)?.upload ? mapUpload((json as any).upload) : null,
+    rows: rows.map((row: any) => mapCatalogItem(row)),
+    notes: notes.map((row: any) => mapReferenceNote(row)),
+    analysis: {
+      sheetName: String((json as any)?.analysis?.sheetName ?? ""),
+      headerRowIndex: Number((json as any)?.analysis?.headerRowIndex ?? 0),
+      rowCount: Number((json as any)?.analysis?.rowCount ?? rows.length),
+      headers: Array.isArray((json as any)?.analysis?.headers)
+        ? (json as any).analysis.headers.map((value: any) => String(value))
+        : [],
+    },
   };
 }
 

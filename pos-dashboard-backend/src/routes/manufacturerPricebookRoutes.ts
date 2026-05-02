@@ -3,6 +3,7 @@ import path from "path";
 import type { Express } from "express";
 import type { Pool, PoolClient } from "pg";
 import multer from "multer";
+import * as XLSX from "xlsx";
 import {
   isBestResidentialWorkbook,
   parseBestPricebookWorkbook,
@@ -59,6 +60,28 @@ type UploadFileRow = {
   extractedFileCount?: number;
 };
 
+type GenericMappingField =
+  | "manufacturer"
+  | "category"
+  | "collectionName"
+  | "collectionCode"
+  | "productType"
+  | "productName"
+  | "description"
+  | "colorFinish"
+  | "colorFamily"
+  | "material"
+  | "shape"
+  | "dimensionsText"
+  | "widthInches"
+  | "depthInches"
+  | "heightInches"
+  | "cubes"
+  | "weightLbs"
+  | "basePrice";
+
+type GenericColumnMapping = Record<string, number | string | null | undefined>;
+
 type RegisterManufacturerPricebookRoutesDeps = {
   app: Express;
   pool: Pool;
@@ -68,6 +91,37 @@ type RegisterManufacturerPricebookRoutesDeps = {
 };
 
 const ACCEPTED_FILE_PATTERN = /\.(pdf|csv|xlsx|xls|zip)$/i;
+const SPREADSHEET_FILE_PATTERN = /\.(csv|xlsx|xls)$/i;
+const CUSTOM_PARSER_MANUFACTURERS = new Set([
+  "liberty",
+  "best",
+  "england",
+  "jackson-catnapper",
+  "guardsman",
+  "gbs-protectall",
+  "innovations",
+]);
+
+const GENERIC_MAPPING_FIELDS: Array<{ key: GenericMappingField; label: string; required?: boolean; synonyms: string[] }> = [
+  { key: "manufacturer", label: "Manufacturer", synonyms: ["manufacturer", "vendor", "brand", "mfg"] },
+  { key: "category", label: "Category", required: true, synonyms: ["category", "cat", "product category", "group", "department"] },
+  { key: "collectionName", label: "Collection", synonyms: ["collection", "collection name", "series", "group name", "suite"] },
+  { key: "collectionCode", label: "Collection Code", synonyms: ["collection code", "group code", "series code"] },
+  { key: "productType", label: "Product Type", synonyms: ["product type", "type", "item type", "style type"] },
+  { key: "productName", label: "Item # / SKU", required: true, synonyms: ["sku", "item", "item #", "item number", "item no", "model", "model #", "product", "product id", "number"] },
+  { key: "description", label: "Description", required: true, synonyms: ["description", "desc", "item description", "product description", "name", "product name"] },
+  { key: "colorFinish", label: "Color / Finish", synonyms: ["color", "colour", "finish", "color finish", "fabric", "cover", "cover name"] },
+  { key: "colorFamily", label: "Color Family", synonyms: ["color family", "colour family", "finish family"] },
+  { key: "material", label: "Material", synonyms: ["material", "materials", "wood", "fabric content"] },
+  { key: "shape", label: "Shape", synonyms: ["shape"] },
+  { key: "dimensionsText", label: "Dimensions", synonyms: ["dimensions", "dims", "size", "w x d x h", "wxdxh"] },
+  { key: "widthInches", label: "Width", synonyms: ["width", "w", "w in", "width inches"] },
+  { key: "depthInches", label: "Depth", synonyms: ["depth", "d", "d in", "depth inches"] },
+  { key: "heightInches", label: "Height", synonyms: ["height", "h", "h in", "height inches"] },
+  { key: "cubes", label: "Cubes", synonyms: ["cube", "cubes", "cuft", "cu ft"] },
+  { key: "weightLbs", label: "Weight", synonyms: ["weight", "wt", "lbs", "pounds"] },
+  { key: "basePrice", label: "Base Cost / Price", required: true, synonyms: ["price", "cost", "base price", "base cost", "dealer", "kiosk", "kiosk price", "wholesale", "list price", "msrp"] },
+];
 
 function sanitizeManufacturer(value: string) {
   return value
@@ -186,12 +240,329 @@ function normalizeText(value: any) {
   return String(value ?? "").trim();
 }
 
+function normalizeHeaderText(value: any) {
+  return normalizeText(value)
+    .toLowerCase()
+    .replace(/[#/\\().:_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function normalizeTextArray(value: any) {
   if (!Array.isArray(value)) return [];
   return value
     .map((entry) => normalizeText(entry))
     .filter(Boolean)
     .slice(0, 50);
+}
+
+function isSpreadsheetUpload(uploadRow: any) {
+  return SPREADSHEET_FILE_PATTERN.test(
+    `${String(uploadRow.original_name || "")} ${String(uploadRow.storage_name || "")}`.toLowerCase()
+  );
+}
+
+function getCustomParserAvailable(uploadRow: any) {
+  return CUSTOM_PARSER_MANUFACTURERS.has(String(uploadRow.manufacturer_slug || "").trim().toLowerCase());
+}
+
+function getCellText(row: any[], columnIndex: number) {
+  if (!Number.isFinite(columnIndex) || columnIndex < 0) return "";
+  return normalizeText(row[columnIndex]);
+}
+
+function getFieldMatchScore(header: string, field: (typeof GENERIC_MAPPING_FIELDS)[number]) {
+  const normalizedHeader = normalizeHeaderText(header);
+  if (!normalizedHeader) return 0;
+  let best = 0;
+  for (const synonym of field.synonyms) {
+    const normalizedSynonym = normalizeHeaderText(synonym);
+    if (!normalizedSynonym) continue;
+    if (normalizedHeader === normalizedSynonym) best = Math.max(best, 100);
+    if (normalizedHeader.includes(normalizedSynonym)) best = Math.max(best, 82);
+    if (normalizedSynonym.includes(normalizedHeader) && normalizedHeader.length >= 3) best = Math.max(best, 65);
+  }
+  if (field.key === "basePrice" && /(retail|sell|sale)/.test(normalizedHeader) && !/(cost|dealer|kiosk|base|wholesale|price)/.test(normalizedHeader)) {
+    best = Math.min(best, 45);
+  }
+  return best;
+}
+
+function suggestMappingsForHeaders(headers: string[]) {
+  const usedColumns = new Set<number>();
+  const suggestions: Record<string, { columnIndex: number; header: string; confidence: number }> = {};
+
+  for (const field of GENERIC_MAPPING_FIELDS) {
+    let best: { columnIndex: number; header: string; confidence: number } | null = null;
+    headers.forEach((header, columnIndex) => {
+      if (usedColumns.has(columnIndex)) return;
+      const confidence = getFieldMatchScore(header, field);
+      if (confidence <= 0) return;
+      if (!best || confidence > best.confidence) {
+        best = { columnIndex, header, confidence };
+      }
+    });
+    if (best && best.confidence >= 50) {
+      suggestions[field.key] = best;
+      usedColumns.add(best.columnIndex);
+    }
+  }
+
+  return suggestions;
+}
+
+function inferHeaderRow(rows: any[][]) {
+  let best = { rowIndex: 0, score: -1, headers: [] as string[] };
+  rows.slice(0, 30).forEach((row, rowIndex) => {
+    const headers = row.map((cell) => normalizeText(cell));
+    const nonEmpty = headers.filter(Boolean).length;
+    if (nonEmpty < 2) return;
+    const suggestions = suggestMappingsForHeaders(headers);
+    const requiredMatches = GENERIC_MAPPING_FIELDS.filter((field) => field.required && suggestions[field.key]).length;
+    const score = Object.keys(suggestions).length * 40 + requiredMatches * 35 + Math.min(nonEmpty, 16) * 2 - rowIndex;
+    if (score > best.score) best = { rowIndex, score, headers };
+  });
+  return best;
+}
+
+function readSpreadsheetRows(filePath: string, sheetName?: string) {
+  const workbook = XLSX.readFile(filePath, { cellDates: false, raw: false });
+  const selectedSheetName = sheetName && workbook.Sheets[sheetName] ? sheetName : workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[selectedSheetName];
+  const rows = worksheet
+    ? (XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "", raw: false }) as any[][])
+    : [];
+  return {
+    workbook,
+    sheetName: selectedSheetName,
+    rows,
+  };
+}
+
+function analyzeSpreadsheetFile(filePath: string, uploadRow: any, savedProfile?: any) {
+  const workbook = XLSX.readFile(filePath, { cellDates: false, raw: false });
+  let bestAnalysis: any = null;
+
+  for (const sheetName of workbook.SheetNames) {
+    const worksheet = workbook.Sheets[sheetName];
+    const rows = worksheet
+      ? (XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "", raw: false }) as any[][])
+      : [];
+    const header = inferHeaderRow(rows);
+    const suggestions = suggestMappingsForHeaders(header.headers);
+    const dataRows = rows.slice(header.rowIndex + 1).filter((row) => row.some((cell) => normalizeText(cell)));
+    const score = header.score + dataRows.length / 100;
+    const analysis = {
+      sheetName,
+      headerRowIndex: header.rowIndex,
+      rowCount: dataRows.length,
+      score,
+      columns: header.headers.map((headerText, columnIndex) => ({
+        index: columnIndex,
+        key: `col_${columnIndex}`,
+        header: headerText || `Column ${columnIndex + 1}`,
+        sampleValues: dataRows
+          .map((row) => getCellText(row, columnIndex))
+          .filter(Boolean)
+          .slice(0, 5),
+      })),
+      suggestedMappings: suggestions,
+      sampleRows: dataRows.slice(0, 10).map((row, rowIndex) => ({
+        rowNumber: header.rowIndex + rowIndex + 2,
+        values: header.headers.map((headerText, columnIndex) => ({
+          header: headerText || `Column ${columnIndex + 1}`,
+          value: getCellText(row, columnIndex),
+        })),
+      })),
+    };
+    if (!bestAnalysis || analysis.score > bestAnalysis.score) bestAnalysis = analysis;
+  }
+
+  return {
+    mode: "spreadsheet",
+    supported: true,
+    parserKind: "generic_mapper",
+    manufacturer: String(uploadRow.manufacturer || ""),
+    manufacturerSlug: String(uploadRow.manufacturer_slug || ""),
+    sheetNames: workbook.SheetNames,
+    savedProfile,
+    ...bestAnalysis,
+  };
+}
+
+async function loadLatestMappingProfile(pool: Pool, manufacturerSlug: string) {
+  const result = await pool.query(
+    `
+      SELECT
+        id,
+        manufacturer,
+        manufacturer_slug,
+        profile_name,
+        file_type,
+        sheet_name,
+        header_row_index,
+        mappings,
+        updated_at
+      FROM manufacturer_pricebook_mapping_profiles
+      WHERE manufacturer_slug = $1
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `,
+    [manufacturerSlug]
+  );
+  const row = result.rows[0];
+  if (!row) return null;
+  return {
+    id: String(row.id),
+    manufacturer: String(row.manufacturer || ""),
+    manufacturerSlug: String(row.manufacturer_slug || ""),
+    profileName: String(row.profile_name || ""),
+    fileType: String(row.file_type || ""),
+    sheetName: String(row.sheet_name || ""),
+    headerRowIndex: Number(row.header_row_index || 0),
+    mappings: row.mappings || {},
+    updatedAt: row.updated_at || null,
+  };
+}
+
+async function saveMappingProfile(input: {
+  pool: Pool;
+  uploadRow: any;
+  profileName?: string;
+  sheetName: string;
+  headerRowIndex: number;
+  mappings: GenericColumnMapping;
+  userId: number | null;
+}) {
+  await input.pool.query(
+    `
+      INSERT INTO manufacturer_pricebook_mapping_profiles (
+        manufacturer,
+        manufacturer_slug,
+        profile_name,
+        file_type,
+        sheet_name,
+        header_row_index,
+        mappings,
+        updated_by_user_id,
+        created_at,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, now(), now())
+      ON CONFLICT (manufacturer_slug, profile_name)
+      DO UPDATE SET
+        file_type = EXCLUDED.file_type,
+        sheet_name = EXCLUDED.sheet_name,
+        header_row_index = EXCLUDED.header_row_index,
+        mappings = EXCLUDED.mappings,
+        updated_by_user_id = EXCLUDED.updated_by_user_id,
+        updated_at = now()
+    `,
+    [
+      String(input.uploadRow.manufacturer || ""),
+      String(input.uploadRow.manufacturer_slug || ""),
+      input.profileName || "Default",
+      path.extname(String(input.uploadRow.original_name || input.uploadRow.storage_name || "")).replace(".", "").toLowerCase(),
+      input.sheetName,
+      input.headerRowIndex,
+      JSON.stringify(input.mappings || {}),
+      input.userId,
+    ]
+  );
+}
+
+function resolveMappedColumnIndex(mapping: any, headers: string[]) {
+  if (typeof mapping === "number" && Number.isFinite(mapping)) return mapping;
+  if (typeof mapping === "string") {
+    const trimmed = mapping.trim();
+    if (!trimmed) return null;
+    const asNumber = Number(trimmed);
+    if (Number.isFinite(asNumber)) return asNumber;
+    const normalized = normalizeHeaderText(trimmed);
+    const index = headers.findIndex((header) => normalizeHeaderText(header) === normalized);
+    return index >= 0 ? index : null;
+  }
+  if (mapping && typeof mapping === "object") {
+    return resolveMappedColumnIndex(mapping.columnIndex ?? mapping.header, headers);
+  }
+  return null;
+}
+
+function buildMappedRows(input: {
+  filePath: string;
+  uploadRow: any;
+  sheetName?: string;
+  headerRowIndex?: number;
+  mappings: GenericColumnMapping;
+}) {
+  const { sheetName, rows } = readSpreadsheetRows(input.filePath, input.sheetName);
+  const headerRowIndex = Math.max(Number(input.headerRowIndex ?? inferHeaderRow(rows).rowIndex) || 0, 0);
+  const headers = (rows[headerRowIndex] || []).map((cell) => normalizeText(cell));
+  const dataRows = rows.slice(headerRowIndex + 1);
+  const mappedRows: ParsedManufacturerCatalogRow[] = [];
+
+  const getMappedValue = (row: any[], field: GenericMappingField) => {
+    const columnIndex = resolveMappedColumnIndex(input.mappings[field], headers);
+    return columnIndex === null ? "" : getCellText(row, columnIndex);
+  };
+
+  dataRows.forEach((row, index) => {
+    if (!row.some((cell) => normalizeText(cell))) return;
+    const manufacturer = getMappedValue(row, "manufacturer") || normalizeText(input.uploadRow.manufacturer);
+    const category = getMappedValue(row, "category");
+    const sku = getMappedValue(row, "productName");
+    const description = getMappedValue(row, "description");
+    const basePrice = parseNumericInput(getMappedValue(row, "basePrice"));
+    if (!manufacturer && !category && !sku && !description && basePrice === null) return;
+
+    const normalized: ParsedManufacturerCatalogRow = {
+      manufacturer: manufacturer || normalizeText(input.uploadRow.manufacturer),
+      manufacturerSlug: normalizeText(input.uploadRow.manufacturer_slug) || sanitizeManufacturer(manufacturer),
+      collectionCode: getMappedValue(row, "collectionCode"),
+      collectionName: getMappedValue(row, "collectionName"),
+      category,
+      productType: getMappedValue(row, "productType"),
+      sku,
+      description,
+      colorFinish: getMappedValue(row, "colorFinish"),
+      colorFamily: getMappedValue(row, "colorFamily"),
+      material: getMappedValue(row, "material"),
+      shape: getMappedValue(row, "shape"),
+      dimensionsText: getMappedValue(row, "dimensionsText"),
+      widthInches: parseNumericInput(getMappedValue(row, "widthInches")),
+      depthInches: parseNumericInput(getMappedValue(row, "depthInches")),
+      heightInches: parseNumericInput(getMappedValue(row, "heightInches")),
+      cubes: parseNumericInput(getMappedValue(row, "cubes")),
+      weightLbs: parseNumericInput(getMappedValue(row, "weightLbs")),
+      basePrice,
+      isSet: false,
+      setPieceCount: null,
+      isSwatch: false,
+      isSample: false,
+      isNewProduct: false,
+      upholsteryCover: "",
+      hardwareOptions: [],
+      cushionOptions: [],
+      featureTags: [],
+      searchKeywords: [],
+      imageUrls: [],
+      sourceNote: `Mapped from ${input.uploadRow.original_name || input.uploadRow.storage_name} · ${sheetName} row ${headerRowIndex + index + 2}`,
+      sourceSortOrder: index + 1,
+    };
+    normalized.searchKeywords = buildSearchText(normalized)
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((value) => value.length >= 2)
+      .slice(0, 50);
+    mappedRows.push(normalized);
+  });
+
+  return {
+    sheetName,
+    headerRowIndex,
+    headers,
+    rows: mappedRows,
+  };
 }
 
 function buildSearchText(row: ParsedManufacturerCatalogRow) {
@@ -709,6 +1080,94 @@ export function registerManufacturerPricebookRoutes({
     limits: { fileSize: 250 * 1024 * 1024 },
   });
 
+  app.get("/api/manufacturer-pricebooks/summary", requireOwner, async (_req, res) => {
+    const [uploadResult, catalogResult] = await Promise.all([
+      pool.query(
+        `
+          SELECT
+            manufacturer,
+            manufacturer_slug,
+            status,
+            COUNT(*)::int AS count,
+            MAX(created_at) AS latest_upload_at
+          FROM manufacturer_pricebook_uploads
+          GROUP BY manufacturer, manufacturer_slug, status
+          ORDER BY manufacturer ASC, status ASC
+        `
+      ),
+      pool.query(
+        `
+          SELECT
+            manufacturer,
+            manufacturer_slug,
+            COUNT(*)::int AS catalog_rows,
+            COUNT(*) FILTER (WHERE base_price IS NOT NULL)::int AS priced_rows,
+            MAX(created_at) AS latest_catalog_at
+          FROM manufacturer_catalog_items
+          GROUP BY manufacturer, manufacturer_slug
+          ORDER BY manufacturer ASC
+        `
+      ),
+    ]);
+
+    const bySlug = new Map<string, any>();
+    for (const row of uploadResult.rows) {
+      const slug = String(row.manufacturer_slug || sanitizeManufacturer(String(row.manufacturer || "")));
+      if (!bySlug.has(slug)) {
+        bySlug.set(slug, {
+          manufacturer: String(row.manufacturer || ""),
+          manufacturerSlug: slug,
+          statuses: {},
+          uploadCount: 0,
+          catalogRows: 0,
+          pricedRows: 0,
+          parserSupported: CUSTOM_PARSER_MANUFACTURERS.has(slug),
+          latestUploadAt: null,
+          latestCatalogAt: null,
+        });
+      }
+      const entry = bySlug.get(slug);
+      const count = Number(row.count || 0);
+      entry.statuses[String(row.status || "holding")] = count;
+      entry.uploadCount += count;
+      entry.latestUploadAt = row.latest_upload_at || entry.latestUploadAt;
+    }
+    for (const row of catalogResult.rows) {
+      const slug = String(row.manufacturer_slug || sanitizeManufacturer(String(row.manufacturer || "")));
+      if (!bySlug.has(slug)) {
+        bySlug.set(slug, {
+          manufacturer: String(row.manufacturer || ""),
+          manufacturerSlug: slug,
+          statuses: {},
+          uploadCount: 0,
+          catalogRows: 0,
+          pricedRows: 0,
+          parserSupported: CUSTOM_PARSER_MANUFACTURERS.has(slug),
+          latestUploadAt: null,
+          latestCatalogAt: null,
+        });
+      }
+      const entry = bySlug.get(slug);
+      entry.catalogRows = Number(row.catalog_rows || 0);
+      entry.pricedRows = Number(row.priced_rows || 0);
+      entry.latestCatalogAt = row.latest_catalog_at || null;
+    }
+
+    const manufacturers = [...bySlug.values()].sort((left, right) =>
+      String(left.manufacturer).localeCompare(String(right.manufacturer))
+    );
+    res.json({
+      ok: true,
+      totals: {
+        manufacturers: manufacturers.length,
+        uploads: manufacturers.reduce((sum, entry) => sum + Number(entry.uploadCount || 0), 0),
+        catalogRows: manufacturers.reduce((sum, entry) => sum + Number(entry.catalogRows || 0), 0),
+        holding: manufacturers.reduce((sum, entry) => sum + Number(entry.statuses?.holding || 0), 0),
+      },
+      manufacturers,
+    });
+  });
+
   app.get("/api/manufacturer-pricebooks/uploads", requireOwner, async (req, res) => {
     const manufacturer =
       typeof req.query?.manufacturer === "string" ? String(req.query.manufacturer).trim() : "";
@@ -871,6 +1330,150 @@ export function registerManufacturerPricebookRoutes({
       row: mapUploadRow(insertedRows[0] || {}),
       rows: insertedRows.map(mapUploadRow),
     });
+  });
+
+  app.get("/api/manufacturer-pricebooks/uploads/:uploadId/analyze", requireOwner, async (req, res) => {
+    const uploadRow = await loadUploadByIdOr404(pool, String(req.params.uploadId || ""), res);
+    if (!uploadRow) return;
+
+    try {
+      const resolvedUploadRow = await resolveUploadRowForProcessing(pool, uploadRow);
+      const filePath = path.join(holdingDir, String(resolvedUploadRow.relative_path || ""));
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ ok: false, error: `Holding file is missing at ${resolvedUploadRow.relative_path}` });
+      }
+
+      const savedProfile = await loadLatestMappingProfile(pool, String(resolvedUploadRow.manufacturer_slug || ""));
+      const parserSupported = getCustomParserAvailable(resolvedUploadRow);
+      if (!isSpreadsheetUpload(resolvedUploadRow)) {
+        return res.json({
+          ok: true,
+          supported: false,
+          parserSupported,
+          parserKind: parserSupported ? "custom_parser" : "parser_needed",
+          upload: mapUploadRow(uploadRow),
+          resolvedUpload: mapUploadRow(resolvedUploadRow),
+          analysis: {
+            mode: "unsupported_file",
+            supported: false,
+            parserKind: parserSupported ? "custom_parser" : "parser_needed",
+            message: parserSupported
+              ? "This file type uses the existing manufacturer parser. Use Load Into Validation."
+              : "PDF parser needed for this manufacturer. Spreadsheet and CSV files can use generic mapping now.",
+            savedProfile,
+          },
+        });
+      }
+
+      const analysis = analyzeSpreadsheetFile(filePath, resolvedUploadRow, savedProfile);
+      res.json({
+        ok: true,
+        supported: true,
+        parserSupported,
+        parserKind: "generic_mapper",
+        upload: mapUploadRow(uploadRow),
+        resolvedUpload: mapUploadRow(resolvedUploadRow),
+        analysis,
+      });
+    } catch (error: any) {
+      res.status(500).json({ ok: false, error: String(error?.message || error || "Failed to analyze upload") });
+    }
+  });
+
+  app.post("/api/manufacturer-pricebooks/uploads/:uploadId/mapped-preview", requireOwner, async (req, res) => {
+    const uploadRow = await loadUploadByIdOr404(pool, String(req.params.uploadId || ""), res);
+    if (!uploadRow) return;
+
+    try {
+      const resolvedUploadRow = await resolveUploadRowForProcessing(pool, uploadRow);
+      const filePath = path.join(holdingDir, String(resolvedUploadRow.relative_path || ""));
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ ok: false, error: `Holding file is missing at ${resolvedUploadRow.relative_path}` });
+      }
+      if (!isSpreadsheetUpload(resolvedUploadRow)) {
+        return res.status(400).json({ ok: false, error: "Generic mapping currently supports CSV, XLS, and XLSX files." });
+      }
+
+      const mappings = (req.body?.mappings || {}) as GenericColumnMapping;
+      const built = buildMappedRows({
+        filePath,
+        uploadRow: resolvedUploadRow,
+        sheetName: typeof req.body?.sheetName === "string" ? String(req.body.sheetName) : undefined,
+        headerRowIndex: Number(req.body?.headerRowIndex ?? 0),
+        mappings,
+      });
+      if (req.body?.saveProfile) {
+        await saveMappingProfile({
+          pool,
+          uploadRow: resolvedUploadRow,
+          profileName: typeof req.body?.profileName === "string" ? String(req.body.profileName).trim() || "Default" : "Default",
+          sheetName: built.sheetName,
+          headerRowIndex: built.headerRowIndex,
+          mappings,
+          userId: toNumericUserId(req),
+        });
+      }
+      await pool.query(
+        `
+          UPDATE manufacturer_pricebook_uploads
+          SET status = CASE WHEN status = 'published' THEN status ELSE 'previewed' END,
+              parsed_row_count = $2,
+              last_error = NULL,
+              previewed_at = now()
+          WHERE id = $1
+        `,
+        [Number(resolvedUploadRow.id), built.rows.length]
+      );
+      res.json({
+        ok: true,
+        upload: mapUploadRow({
+          ...resolvedUploadRow,
+          status: resolvedUploadRow.status === "published" ? "published" : "previewed",
+          parsed_row_count: built.rows.length,
+        }),
+        analysis: {
+          sheetName: built.sheetName,
+          headerRowIndex: built.headerRowIndex,
+          rowCount: built.rows.length,
+          headers: built.headers,
+        },
+        notes: [],
+        rows: built.rows.map((row, index) =>
+          mapCatalogRow({
+            ...row,
+            id: `mapped-preview-${index + 1}`,
+            upload_id: resolvedUploadRow.id,
+            manufacturer_slug: row.manufacturerSlug,
+            collection_code: row.collectionCode,
+            collection_name: row.collectionName,
+            product_type: row.productType,
+            color_finish: row.colorFinish,
+            color_family: row.colorFamily,
+            dimensions_text: row.dimensionsText,
+            width_inches: row.widthInches,
+            depth_inches: row.depthInches,
+            height_inches: row.heightInches,
+            weight_lbs: row.weightLbs,
+            base_price: row.basePrice,
+            is_set: row.isSet,
+            set_piece_count: row.setPieceCount,
+            is_swatch: row.isSwatch,
+            is_sample: row.isSample,
+            is_new_product: row.isNewProduct,
+            upholstery_cover: row.upholsteryCover,
+            hardware_options: row.hardwareOptions,
+            cushion_options: row.cushionOptions,
+            feature_tags: row.featureTags,
+            search_keywords: row.searchKeywords,
+            image_urls: row.imageUrls,
+            source_note: row.sourceNote,
+            source_sort_order: row.sourceSortOrder,
+          })
+        ),
+      });
+    } catch (error: any) {
+      res.status(500).json({ ok: false, error: String(error?.message || error || "Failed to build mapped preview") });
+    }
   });
 
   app.get("/api/manufacturer-pricebooks/uploads/:uploadId/preview", requireOwner, async (req, res) => {

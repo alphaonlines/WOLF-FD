@@ -261,6 +261,68 @@ export interface ManufacturerPricebookUpload {
   createdAt?: string;
 }
 
+export interface ManufacturerPricebookSummaryManufacturer {
+  manufacturer: string;
+  manufacturerSlug: string;
+  statuses: Record<string, number>;
+  uploadCount: number;
+  catalogRows: number;
+  pricedRows: number;
+  parserSupported: boolean;
+  latestUploadAt?: string | null;
+  latestCatalogAt?: string | null;
+}
+
+export interface ManufacturerPricebookSummary {
+  totals: {
+    manufacturers: number;
+    uploads: number;
+    catalogRows: number;
+    holding: number;
+  };
+  manufacturers: ManufacturerPricebookSummaryManufacturer[];
+}
+
+export interface ManufacturerUploadColumn {
+  index: number;
+  key: string;
+  header: string;
+  sampleValues: string[];
+}
+
+export interface ManufacturerUploadMappingSuggestion {
+  columnIndex: number;
+  header: string;
+  confidence: number;
+}
+
+export interface ManufacturerUploadAnalysis {
+  mode: string;
+  supported: boolean;
+  parserKind: string;
+  message?: string;
+  manufacturer?: string;
+  manufacturerSlug?: string;
+  sheetName?: string;
+  sheetNames?: string[];
+  headerRowIndex?: number;
+  rowCount?: number;
+  columns?: ManufacturerUploadColumn[];
+  suggestedMappings?: Record<string, ManufacturerUploadMappingSuggestion>;
+  sampleRows?: Array<{
+    rowNumber: number;
+    values: Array<{ header: string; value: string }>;
+  }>;
+  savedProfile?: {
+    id: string;
+    profileName: string;
+    sheetName: string;
+    headerRowIndex: number;
+    mappings: Record<string, unknown>;
+    updatedAt?: string | null;
+  } | null;
+}
+
 export interface ManufacturerReferenceNote {
   id: string;
   manufacturer: string;

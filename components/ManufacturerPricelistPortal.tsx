@@ -11,18 +11,23 @@ import {
 import { CANONICAL_PRODUCT_MANUFACTURERS, calcSuggestedRetail } from "../constants/productCatalog";
 import type {
   ManufacturerCatalogItem,
+  ManufacturerPricebookSummary,
   ManufacturerPricebookUpload,
   ManufacturerReferenceNote,
+  ManufacturerUploadAnalysis,
 } from "../types";
 import {
+  analyzeManufacturerPricebookUpload,
+  fetchManufacturerPricebookSummary,
   fetchManufacturerPricebookUploads,
   fetchManufacturerReferenceNotes,
+  previewMappedManufacturerPricebookUpload,
   previewManufacturerPricebookUpload,
   publishManufacturerPricebookUpload,
   uploadManufacturerPricebookToHolding,
 } from "../services/manufacturerPricelistApi";
 
-type PortalScreen = "ingestion" | "validation";
+type PortalScreen = "triage" | "ingestion" | "mapping" | "validation";
 type ValidationSort =
   | "flagged"
   | "source"
@@ -83,8 +88,30 @@ type ManufacturerPricelistPortalProps = {
 const MANUFACTURERS = [...CANONICAL_PRODUCT_MANUFACTURERS];
 
 const PORTAL_SCREENS: Array<{ key: PortalScreen; label: string }> = [
+  { key: "triage", label: "Triage" },
   { key: "ingestion", label: "Upload & Ingestion" },
+  { key: "mapping", label: "Map Spreadsheet" },
   { key: "validation", label: "Validation & Correction" },
+];
+
+const GENERIC_MAPPING_FIELDS: Array<{ key: keyof NormalizedProductRow; label: string; required?: boolean }> = [
+  { key: "category", label: "Category", required: true },
+  { key: "productName", label: "Item # / SKU", required: true },
+  { key: "description", label: "Description", required: true },
+  { key: "basePrice", label: "Base Cost / Price", required: true },
+  { key: "manufacturer", label: "Manufacturer" },
+  { key: "collectionName", label: "Collection" },
+  { key: "collectionCode", label: "Collection Code" },
+  { key: "productType", label: "Product Type" },
+  { key: "colorFinish", label: "Color / Finish" },
+  { key: "colorFamily", label: "Color Family" },
+  { key: "material", label: "Material" },
+  { key: "dimensionsText", label: "Dimensions" },
+  { key: "widthInches", label: "Width" },
+  { key: "depthInches", label: "Depth" },
+  { key: "heightInches", label: "Height" },
+  { key: "cubes", label: "Cubes" },
+  { key: "weightLbs", label: "Weight" },
 ];
 
 const cloneRows = (rows: NormalizedProductRow[]) => rows.map((row) => ({ ...row }));
@@ -716,7 +743,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
   onBack,
   onOpenProductSearch,
 }) => {
-  const [activeScreen, setActiveScreen] = useState<PortalScreen>("ingestion");
+  const [activeScreen, setActiveScreen] = useState<PortalScreen>("triage");
   const [selectedManufacturer, setSelectedManufacturer] = useState("Ashley");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedDocumentType, setSelectedDocumentType] = useState("auto");
@@ -736,6 +763,13 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
   const [previewBusy, setPreviewBusy] = useState(false);
   const [publishBusy, setPublishBusy] = useState(false);
   const [referenceNotes, setReferenceNotes] = useState<ManufacturerReferenceNote[]>([]);
+  const [summary, setSummary] = useState<ManufacturerPricebookSummary | null>(null);
+  const [summaryBusy, setSummaryBusy] = useState(false);
+  const [analysisBusy, setAnalysisBusy] = useState(false);
+  const [mappingBusy, setMappingBusy] = useState(false);
+  const [uploadAnalysis, setUploadAnalysis] = useState<ManufacturerUploadAnalysis | null>(null);
+  const [mappingUploadId, setMappingUploadId] = useState<string | null>(null);
+  const [columnMappings, setColumnMappings] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const template = MANUFACTURER_TEMPLATES[selectedManufacturer] || MANUFACTURER_TEMPLATES.Ashley;
@@ -784,6 +818,27 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
     });
   }, [rows, validationSort]);
 
+  const selectedSummary = useMemo(
+    () => summary?.manufacturers.find((entry) => entry.manufacturer === selectedManufacturer) || null,
+    [selectedManufacturer, summary]
+  );
+
+  const selectedMappingUpload = useMemo(
+    () => getResolvedPreviewUpload(holdingUploads, mappingUploadId || selectedUploadId),
+    [holdingUploads, mappingUploadId, selectedUploadId]
+  );
+
+  const loadSummary = async () => {
+    setSummaryBusy(true);
+    try {
+      setSummary(await fetchManufacturerPricebookSummary());
+    } catch {
+      // Summary is helpful, but the manufacturer workspace can still function without it.
+    } finally {
+      setSummaryBusy(false);
+    }
+  };
+
   const refreshHoldingUploads = async (manufacturer: string) => {
     const uploads = await fetchManufacturerPricebookUploads(manufacturer);
     setHoldingUploads(uploads);
@@ -793,6 +848,10 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
     }
     return uploads;
   };
+
+  useEffect(() => {
+    void loadSummary();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -866,6 +925,83 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
     }
   };
 
+  const analyzeSelectedUpload = async (uploadId?: string) => {
+    const targetUpload = uploadId
+      ? holdingUploads.find((upload) => upload.id === uploadId) || null
+      : getResolvedPreviewUpload(holdingUploads, selectedUploadId);
+    if (!targetUpload) {
+      setHoldingError("Choose an uploaded spreadsheet or pricebook first.");
+      return;
+    }
+    setAnalysisBusy(true);
+    setHoldingError(null);
+    setValidationMessage(null);
+    try {
+      const result = await analyzeManufacturerPricebookUpload(targetUpload.id);
+      const analysis = result.analysis;
+      setUploadAnalysis(analysis);
+      const resolvedUploadId = result.resolvedUpload?.id || targetUpload.id;
+      setMappingUploadId(resolvedUploadId);
+      setSelectedUploadId(resolvedUploadId);
+      const suggested = analysis.suggestedMappings || {};
+      const nextMappings: Record<string, string> = {};
+      for (const field of GENERIC_MAPPING_FIELDS) {
+        const savedValue = (analysis.savedProfile?.mappings as any)?.[field.key];
+        const suggestedValue = suggested[field.key]?.columnIndex;
+        const value = savedValue ?? suggestedValue;
+        if (value !== undefined && value !== null && value !== "") nextMappings[field.key] = String(value);
+      }
+      setColumnMappings(nextMappings);
+      setActiveScreen("mapping");
+      setHoldingMessage(
+        analysis.supported
+          ? `Analyzed ${result.resolvedUpload?.originalName || targetUpload.originalName}. Review the mapped columns, then load the preview.`
+          : analysis.message || "This upload needs a custom parser before it can be mapped."
+      );
+    } catch (error: any) {
+      setHoldingError(String(error?.message || error || "Failed to analyze upload"));
+    } finally {
+      setAnalysisBusy(false);
+    }
+  };
+
+  const loadMappedPreview = async () => {
+    const targetUpload = selectedMappingUpload;
+    if (!targetUpload) {
+      setValidationMessage("Choose a spreadsheet upload before loading mapped rows.");
+      return;
+    }
+    if (!uploadAnalysis?.supported) {
+      setValidationMessage(uploadAnalysis?.message || "This upload is not available for generic mapping.");
+      return;
+    }
+    setMappingBusy(true);
+    setValidationMessage(null);
+    try {
+      const preview = await previewMappedManufacturerPricebookUpload({
+        uploadId: targetUpload.id,
+        sheetName: uploadAnalysis.sheetName,
+        headerRowIndex: uploadAnalysis.headerRowIndex,
+        mappings: columnMappings,
+        saveProfile: true,
+      });
+      setRows(preview.rows.map((row) => catalogItemToRow(row)));
+      setSelectedUploadId(targetUpload.id);
+      setIngestionStage("review");
+      setExtractionProgress(100);
+      setActiveScreen("validation");
+      setValidationMessage(
+        `Mapped ${preview.rows.length} rows from ${targetUpload.originalName}. Review highlighted fields before publishing.`
+      );
+      await refreshHoldingUploads(selectedManufacturer);
+      await loadSummary();
+    } catch (error: any) {
+      setValidationMessage(String(error?.message || error || "Failed to load mapped preview"));
+    } finally {
+      setMappingBusy(false);
+    }
+  };
+
   const updateRow = (rowId: string, field: keyof NormalizedProductRow, value: string) => {
     setRows((current) =>
       current.map((row) => (row.id === rowId ? { ...row, [field]: value } : row))
@@ -898,6 +1034,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
         `Published ${result.publishedRows} ${selectedManufacturer} rows into the searchable catalog.`
       );
       await refreshHoldingUploads(selectedManufacturer);
+      await loadSummary();
     } catch (error: any) {
       setValidationMessage(String(error?.message || error || "Failed to publish manufacturer catalog"));
     } finally {
@@ -934,6 +1071,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
         uploadedRows[0] ||
         null;
       if (firstUsableUpload) setSelectedUploadId(firstUsableUpload.id);
+      if (firstUsableUpload) setMappingUploadId(firstUsableUpload.id);
 
       const archiveCount = uploadedRows.filter((row) => row.documentType === "archive").length;
       const extractedCount = uploadedRows.filter((row) => row.parentUploadId).length;
@@ -947,6 +1085,7 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
       }
       setHoldingMessage(messageParts.join(" "));
       setSelectedFiles([]);
+      await loadSummary();
     } catch (error: any) {
       setHoldingError(String(error?.message || error || "Failed to upload file to holding"));
     } finally {
@@ -995,6 +1134,142 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
         </div>
       </div>
 
+      {activeScreen === "triage" && (
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-600">Shop catalog workbench</div>
+                <h3 className="mt-2 text-xl font-semibold text-slate-900">Triage uploaded manufacturer files</h3>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                  Start with one manufacturer, pick the best uploaded source, then either use an existing parser or map a spreadsheet into the catalog fields.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void loadSummary()}
+                className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                {summaryBusy ? "Refreshing..." : "Refresh status"}
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-4">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Manufacturers</div>
+                <div className="mt-2 text-2xl font-semibold text-slate-900">{summary?.totals.manufacturers ?? "..."}</div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Uploads</div>
+                <div className="mt-2 text-2xl font-semibold text-slate-900">{summary?.totals.uploads ?? "..."}</div>
+              </div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-amber-700">Holding</div>
+                <div className="mt-2 text-2xl font-semibold text-amber-900">{summary?.totals.holding ?? "..."}</div>
+              </div>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Catalog rows</div>
+                <div className="mt-2 text-2xl font-semibold text-emerald-900">{summary?.totals.catalogRows?.toLocaleString() ?? "..."}</div>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-2">
+              {(summary?.manufacturers || []).map((entry) => {
+                const active = entry.manufacturer === selectedManufacturer;
+                const needsWork = (entry.statuses.holding || 0) + (entry.statuses.error || 0);
+                return (
+                  <button
+                    key={entry.manufacturerSlug}
+                    type="button"
+                    onClick={() => {
+                      setSelectedManufacturer(entry.manufacturer);
+                      setActiveScreen("ingestion");
+                    }}
+                    className={`flex w-full flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${
+                      active ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white hover:bg-slate-50"
+                    }`}
+                  >
+                    <div>
+                      <div className="font-semibold text-slate-900">{entry.manufacturer}</div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {entry.parserSupported ? "Parser available" : "Spreadsheet mapping / parser needed"} · {entry.catalogRows.toLocaleString()} catalog rows
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{entry.uploadCount} uploads</span>
+                      <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-700">{needsWork} need work</span>
+                      {entry.statuses.published ? (
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-700">{entry.statuses.published} published</span>
+                      ) : null}
+                    </div>
+                  </button>
+                );
+              })}
+              {!summary?.manufacturers.length && (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  No upload summary loaded yet.
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Selected manufacturer</div>
+            <h3 className="mt-2 text-xl font-semibold text-slate-900">{selectedManufacturer}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {selectedSummary
+                ? `${selectedSummary.uploadCount} uploads, ${selectedSummary.catalogRows.toLocaleString()} published catalog rows.`
+                : "Choose a manufacturer to see staged uploads."}
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveScreen("ingestion")}
+                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+              >
+                Open upload workspace
+              </button>
+              <button
+                type="button"
+                onClick={() => void analyzeSelectedUpload()}
+                disabled={!holdingUploads.length || analysisBusy}
+                className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 disabled:opacity-50"
+              >
+                {analysisBusy ? "Analyzing..." : "Analyze best file"}
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-2">
+              {holdingUploads.slice(0, 8).map((upload) => (
+                <div key={upload.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-slate-900">{upload.originalName}</div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {upload.documentType} · {upload.status} · {upload.parsedRowCount || 0} parsed
+                      </div>
+                      {upload.lastError ? <div className="mt-1 text-xs text-rose-700">{upload.lastError}</div> : null}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void analyzeSelectedUpload(upload.id)}
+                      className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                      Analyze
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {!holdingUploads.length && (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                  No staged uploads for {selectedManufacturer}. Open Upload & Ingestion to add files.
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
       {activeScreen === "ingestion" && (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -1020,6 +1295,9 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
                     setRows(cloneRows((MANUFACTURER_TEMPLATES[event.target.value] || template).rows));
                     setSelectedFiles([]);
                     setSelectedUploadId(null);
+                    setMappingUploadId(null);
+                    setUploadAnalysis(null);
+                    setColumnMappings({});
                     setValidationMessage(null);
                     setPublishedAt(null);
                   }}
@@ -1233,6 +1511,156 @@ const ManufacturerPricelistPortal: React.FC<ManufacturerPricelistPortalProps> = 
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {activeScreen === "mapping" && (
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-600">Generic spreadsheet mapper</div>
+                <h3 className="mt-2 text-xl font-semibold text-slate-900">
+                  Map vendor columns into Shop catalog fields
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  This works best for CSV, XLS, and XLSX files. PDFs still need custom parser rules when the vendor layout is not tabular.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void analyzeSelectedUpload(mappingUploadId || selectedUploadId || undefined)}
+                disabled={analysisBusy || !selectedMappingUpload}
+                className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 disabled:opacity-50"
+              >
+                {analysisBusy ? "Analyzing..." : "Re-analyze"}
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <label className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Selected upload</label>
+              <select
+                value={mappingUploadId || selectedUploadId || ""}
+                onChange={(event) => {
+                  setMappingUploadId(event.target.value || null);
+                  setSelectedUploadId(event.target.value || null);
+                  setUploadAnalysis(null);
+                  setColumnMappings({});
+                }}
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="">Choose an uploaded file</option>
+                {holdingUploads.map((upload) => (
+                  <option key={upload.id} value={upload.id}>
+                    {upload.originalName} · {upload.status}
+                  </option>
+                ))}
+              </select>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => void analyzeSelectedUpload(mappingUploadId || selectedUploadId || undefined)}
+                  disabled={analysisBusy || !(mappingUploadId || selectedUploadId)}
+                  className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {analysisBusy ? "Analyzing..." : "Analyze this file"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void startExtraction()}
+                  disabled={previewBusy || !selectedUploadId}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50"
+                >
+                  Use custom parser
+                </button>
+              </div>
+            </div>
+
+            {uploadAnalysis && (
+              <div className={`mt-5 rounded-2xl border px-4 py-3 text-sm ${
+                uploadAnalysis.supported ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"
+              }`}>
+                {uploadAnalysis.supported
+                  ? `Detected ${uploadAnalysis.rowCount || 0} data rows on ${uploadAnalysis.sheetName || "the first sheet"}.`
+                  : uploadAnalysis.message || "This file needs a custom parser before mapping."}
+              </div>
+            )}
+
+            {uploadAnalysis?.savedProfile ? (
+              <div className="mt-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                Reusing saved mapping profile: {uploadAnalysis.savedProfile.profileName}
+              </div>
+            ) : null}
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Column mapping</h3>
+                <p className="text-sm text-slate-500">
+                  Required fields must be mapped before the rows can be published.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void loadMappedPreview()}
+                disabled={mappingBusy || !uploadAnalysis?.supported}
+                className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {mappingBusy ? "Loading..." : "Load mapped rows"}
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              {GENERIC_MAPPING_FIELDS.map((field) => (
+                <label key={String(field.key)} className="space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {field.label}
+                    {field.required ? <span className="ml-1 text-rose-500">*</span> : null}
+                  </span>
+                  <select
+                    value={columnMappings[String(field.key)] || ""}
+                    onChange={(event) =>
+                      setColumnMappings((current) => ({ ...current, [String(field.key)]: event.target.value }))
+                    }
+                    disabled={!uploadAnalysis?.supported}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                  >
+                    <option value="">Do not map</option>
+                    {(uploadAnalysis?.columns || []).map((column) => (
+                      <option key={column.key} value={column.index}>
+                        {column.header || `Column ${column.index + 1}`}
+                        {column.sampleValues.length ? ` · ${column.sampleValues.slice(0, 2).join(" / ")}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm font-semibold text-slate-900">Sample rows</div>
+              <div className="mt-3 max-h-72 space-y-2 overflow-auto">
+                {(uploadAnalysis?.sampleRows || []).slice(0, 5).map((sample) => (
+                  <div key={sample.rowNumber} className="rounded-xl bg-white p-3 text-xs text-slate-600">
+                    <div className="font-semibold text-slate-900">Source row {sample.rowNumber}</div>
+                    <div className="mt-1 line-clamp-2">
+                      {sample.values
+                        .filter((entry) => entry.value)
+                        .slice(0, 6)
+                        .map((entry) => `${entry.header}: ${entry.value}`)
+                        .join(" · ")}
+                    </div>
+                  </div>
+                ))}
+                {!uploadAnalysis?.sampleRows?.length && (
+                  <div className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">
+                    Analyze a spreadsheet to see sample rows.
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
         </div>
       )}
 

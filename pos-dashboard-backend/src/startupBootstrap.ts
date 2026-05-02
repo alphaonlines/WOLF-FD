@@ -1289,6 +1289,43 @@ async function ensureManufacturerPricebookSchema(pool: Pool) {
   await pool.query(
     `CREATE INDEX IF NOT EXISTS idx_manufacturer_reference_notes_lookup ON manufacturer_reference_notes(manufacturer_slug, note_type, source_sort_order);`
   );
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS manufacturer_pricebook_mapping_profiles (
+      id                  BIGSERIAL PRIMARY KEY,
+      manufacturer        TEXT NOT NULL,
+      manufacturer_slug   TEXT NOT NULL,
+      profile_name        TEXT NOT NULL DEFAULT 'Default',
+      file_type           TEXT NOT NULL DEFAULT '',
+      sheet_name          TEXT NOT NULL DEFAULT '',
+      header_row_index    INTEGER NOT NULL DEFAULT 0,
+      mappings            JSONB NOT NULL DEFAULT '{}'::jsonb,
+      updated_by_user_id  BIGINT NULL,
+      created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (manufacturer_slug, profile_name)
+    );
+  `);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ADD COLUMN IF NOT EXISTS manufacturer TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ADD COLUMN IF NOT EXISTS manufacturer_slug TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ADD COLUMN IF NOT EXISTS profile_name TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ADD COLUMN IF NOT EXISTS file_type TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ADD COLUMN IF NOT EXISTS sheet_name TEXT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ADD COLUMN IF NOT EXISTS header_row_index INTEGER;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ADD COLUMN IF NOT EXISTS mappings JSONB;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ADD COLUMN IF NOT EXISTS updated_by_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ALTER COLUMN profile_name SET DEFAULT 'Default';`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ALTER COLUMN file_type SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ALTER COLUMN sheet_name SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ALTER COLUMN header_row_index SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ALTER COLUMN mappings SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE manufacturer_pricebook_mapping_profiles ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_manufacturer_pricebook_mapping_profiles_unique ON manufacturer_pricebook_mapping_profiles(manufacturer_slug, profile_name);`
+  );
 }
 
 async function ensureBotBotSchema(pool: Pool) {
