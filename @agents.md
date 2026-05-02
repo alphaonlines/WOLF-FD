@@ -21,6 +21,15 @@
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current display version as of this handoff: `0.5.1.2040`
 
+
+## WOLFbot Playground Coordination
+
+- `/ai` on `wolf.discount` is planned to become WOLFbot Playground.
+- Staging root: `/home/alphahs/wolfbot-playground`.
+- Reuse WOLF-FD login/session patterns for users.
+- Keep model execution local on `MSILaptop`; do not add hosted LLM fallback without explicit direction.
+- Do not deploy over live `/ai` without final confirmation.
+
 ## Maintenance Rule
 
 Keep detailed history and running-task notes in `AGENTS.md`; keep this file as a compact pointer for agents that look for `@agents.md`.

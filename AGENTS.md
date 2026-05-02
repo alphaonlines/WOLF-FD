@@ -84,6 +84,14 @@ Backend deploy flow for route/schema/runtime changes:
 3. Verify through the live nginx path, not just direct localhost assumptions.
 
 
+
+## WOLFbot Playground Coordination
+
+- `https://wolf.discount/ai` is planned to become WOLFbot Playground, staged outside this repo at `/home/alphahs/wolfbot-playground` before live deployment.
+- WOLFbot Playground should reuse WOLF-FD account/session patterns for login before users can create project files.
+- Keep public route/auth/project storage on `alphahs`; route model and skill execution to `MSILaptop` as the local AI brain.
+- Do not replace live `/srv/www/wolf.discount/ai-guest/` content without final deployment confirmation because `/ai` is public website content.
+
 ## Local LLM Boundary
 
 - Treat this machine as local-LLM infrastructure only. Do not add cloud LLM provider keys, hosted-model credentials, or outbound cloud inference routes here unless Anthony explicitly changes that direction.
@@ -148,6 +156,8 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-01 21:07 EDT - Added WOLFbot Playground coordination notes for the future `/ai` replacement and shared WOLF-FD auth reuse. Files: `/home/alphahs/WOLF-FD/AGENTS.md`, `/home/alphahs/WOLF-FD/@agents.md`. Commands/tests: remote Python doc update; no build needed for doc-only change.
 
 - 2026-05-01 20:54 EDT - Updated agent guidance to clarify the local-LLM-only boundary for this host and refreshed the legacy `@agents.md` handoff pointer, and corrected current branch/display-version metadata. Files: `/home/alphahs/WOLF-FD/AGENTS.md`, `/home/alphahs/WOLF-FD/@agents.md`. Commands/tests: remote Python doc update; no build needed for doc-only change.
 
