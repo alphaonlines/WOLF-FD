@@ -54,6 +54,13 @@ const PROMPT_CARDS = [
     systemPrompt: 'Act as an operations reviewer. Look for likely risks, missing context, data quality warnings, and practical safeguards before making recommendations.',
   },
   {
+    id: 'objections',
+    label: 'Handling objections',
+    prompt: 'Help me handle a customer objection and coach me on what to say next.',
+    systemPrompt: 'Act as a furniture sales objection-handling coach. Use calm, non-pushy language, acknowledge the customer first, ask a clarifying question, then offer two or three practical rebuttal options.',
+    includeObjections: true,
+  },
+  {
     id: 'doc',
     label: 'Read context',
     prompt: 'Use the context note I added and help me turn it into a clear answer or plan.',
@@ -88,6 +95,7 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({
   const [contextText, setContextText] = useState('');
   const [contextOpen, setContextOpen] = useState(false);
   const [pendingSystemPrompt, setPendingSystemPrompt] = useState<string | null>(null);
+  const [pendingIncludeObjections, setPendingIncludeObjections] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isQuotaExceeded, setIsQuotaExceeded] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -174,6 +182,7 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({
   const applyPromptCard = (card: (typeof PROMPT_CARDS)[number]) => {
     setInputText(card.prompt);
     setPendingSystemPrompt(card.systemPrompt);
+    setPendingIncludeObjections(Boolean(card.includeObjections));
     if (card.id === 'doc') {
       setContextOpen(true);
     }
@@ -219,8 +228,10 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({
       const result = await sendMessage(activeConvId, text, pageContext, {
         systemPrompt: pendingSystemPrompt || undefined,
         documentContext: contextText.trim() || undefined,
+        includeObjections: pendingIncludeObjections,
       });
       setPendingSystemPrompt(null);
+      setPendingIncludeObjections(false);
 
       // 4. Update UI with AI response and token usage
       setMessages(prev => [...prev, result.message]);

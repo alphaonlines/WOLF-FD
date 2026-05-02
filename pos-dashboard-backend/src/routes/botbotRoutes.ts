@@ -487,6 +487,45 @@ function buildPromptContextAddendum(promptContext: unknown) {
   return parts.length ? parts.join("\n\n") : "";
 }
 
+async function loadObjectionHandlingPromptContext(pool: Pool) {
+  try {
+    const result = await pool.query(
+      `SELECT label, rebuttals
+       FROM custom_objections
+       WHERE is_active = true
+       ORDER BY sort_order ASC, id ASC
+       LIMIT 12`
+    );
+    if (!result.rows.length) {
+      return [
+        "DEN objection library note:",
+        "No active custom objections are currently saved in the DEN objection library. Use general furniture sales objection-handling best practices and ask the user for the exact objection if needed.",
+      ].join("\n");
+    }
+    const rows = result.rows.map((row, index) => {
+      const rebuttals = Array.isArray(row.rebuttals) ? row.rebuttals : [];
+      const topRebuttals = rebuttals
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .slice(0, 3)
+        .map((item, rebuttalIndex) => `   ${rebuttalIndex + 1}. ${item}`)
+        .join("\n");
+      return `${index + 1}. ${String(row.label || "Objection").trim()}\n${topRebuttals || "   No rebuttals saved yet."}`;
+    });
+    return [
+      "DEN objection library context:",
+      "Use these saved objections/rebuttals as source material. Do not read them verbatim unless the user asks; adapt them naturally to the conversation.",
+      ...rows,
+    ].join("\n");
+  } catch (error) {
+    console.error("botbot_objection_context_error", error);
+    return [
+      "DEN objection library note:",
+      "The saved objection library could not be loaded for this request. Coach from general best practices and ask the user for the exact customer objection.",
+    ].join("\n");
+  }
+}
+
 async function logBotBotUsageEvent(
   pool: Pool,
   event: {
@@ -847,7 +886,7 @@ export function registerBotBotRoutes({
     const { content, pageContext, promptContext } = (req.body ?? {}) as {
       content?: string;
       pageContext?: PageContext;
-      promptContext?: { systemPrompt?: string; documentContext?: string };
+      promptContext?: { systemPrompt?: string; documentContext?: string; includeObjections?: boolean };
     };
 
     if (!content || typeof content !== "string" || !content.trim()) {
@@ -1019,9 +1058,12 @@ export function registerBotBotRoutes({
       }
     }
     const promptContextAddendum = buildPromptContextAddendum(promptContext);
+    const objectionContextAddendum =
+      promptContext?.includeObjections ? await loadObjectionHandlingPromptContext(pool) : "";
     const systemPrompt = [
       buildSystemPrompt(user.name, assistantName, ctx, liveContextSnapshot),
       promptContextAddendum,
+      objectionContextAddendum,
     ].filter(Boolean).join("\n\n");
     const responseStartedAt = Date.now();
 

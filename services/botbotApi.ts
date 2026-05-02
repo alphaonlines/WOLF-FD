@@ -260,7 +260,7 @@ export async function sendMessage(
   conversationId: number,
   content: string,
   pageContext?: PageContext,
-  promptContext?: { systemPrompt?: string; documentContext?: string }
+  promptContext?: { systemPrompt?: string; documentContext?: string; includeObjections?: boolean }
 ): Promise<SendMessageResult> {
   return postJson(`/api/botbot/conversations/${conversationId}/messages`, {
     content,
