@@ -16,6 +16,8 @@ import {
   type BotBotSubjectType,
 } from "../botbotAccess";
 import { buildSystemPrompt, type PageContext } from "../botbotPrompt";
+import { parseDateParam, parseTextParam } from "../parsers";
+import { buildPro1stExcludedSql, buildQualifiedPro1stSql } from "../pro1stSql";
 import {
   BOTBOT_LOCAL_AI_URL,
   BOTBOT_ENABLED,
@@ -45,6 +47,364 @@ const RANGE_CONFIG: Record<string, { interval: string; bucketSeconds: number }> 
   "24h": { interval: "24 hours", bucketSeconds: 3600 },
   "7d": { interval: "7 days", bucketSeconds: 86400 },
 };
+
+type SalesSnapshot = {
+  page: string;
+  range: { start: string; end: string; label: string };
+  filters: { location: string | null; salesperson: string | null };
+  summary: { ticketCount: number; sales: number; profit: number; marginPct: number | null };
+  pro1st: {
+    totalSales: number;
+    proSales: number;
+    attachRate: number;
+    ticketCount: number;
+    lowProfitTicketCount: number;
+    midProfitTicketCount: number;
+    highProfitTicketCount: number;
+  };
+  lowMargin: {
+    count: number;
+    topTickets: Array<{
+      saleId: string;
+      salesperson: string;
+      location: string;
+      grandTotal: number;
+      profit: number;
+      marginPct: number | null;
+    }>;
+  };
+  leaderboard: Array<{ salesperson: string; sales: number; profit: number; ticketCount: number }>;
+  warnings: string[];
+  insightCandidates: string[];
+};
+
+const money = (value: number) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(
+    Number.isFinite(value) ? value : 0
+  );
+
+const pct = (value: number | null) =>
+  value === null || !Number.isFinite(value) ? "unknown" : `${value.toFixed(1)}%`;
+
+const asNumber = (value: unknown) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+};
+
+const arrayLength = (value: unknown) => (Array.isArray(value) ? value.length : 0);
+
+const isSalesContext = (ctx: PageContext) =>
+  ctx.pageId === "sales-dashboard" || ctx.subPageId === "pulse-sales" || ctx.module === "sales";
+
+const getContextFilter = (ctx: PageContext, key: string) => {
+  const value = ctx.filters?.[key];
+  return value === null || value === undefined || String(value).trim() === "" ? null : String(value).trim();
+};
+
+const salesContextParams = (ctx: PageContext) => {
+  const start = ctx.dateRange?.start;
+  const end = ctx.dateRange?.end;
+  if (!start || !end) return null;
+  return {
+    start,
+    end,
+    label: ctx.dateRange?.label || `${start} to ${end}`,
+    location: getContextFilter(ctx, "location"),
+    salesperson: getContextFilter(ctx, "salesperson"),
+  };
+};
+
+async function buildSalesSnapshot(
+  pool: Pool,
+  params: { start: string; end: string; label: string; location: string | null; salesperson: string | null }
+): Promise<SalesSnapshot> {
+  const pro1stItemSql = buildQualifiedPro1stSql("i.");
+  const excludedPro1stSql = buildPro1stExcludedSql("i.");
+  const queryParams = [params.start, params.end, params.location, params.salesperson];
+
+  const summarySql = `
+    WITH item_rollup AS (
+      SELECT
+        i.sale_id,
+        SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END)::numeric AS item_sales,
+        SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END)::numeric AS item_profit
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE s.delivery_confirmed_date >= $1
+        AND s.delivery_confirmed_date < $2
+      GROUP BY i.sale_id
+    ),
+    people_counts AS (
+      SELECT sale_id, COUNT(*)::int AS cnt
+      FROM pos_sales_people
+      GROUP BY sale_id
+    )
+    SELECT
+      COUNT(DISTINCT p.sale_id)::int AS ticket_count,
+      COALESCE(SUM(COALESCE(item_rollup.item_sales, 0) / NULLIF(people_counts.cnt, 0)), 0)::numeric AS sales,
+      COALESCE(SUM(COALESCE(item_rollup.item_profit, 0) / NULLIF(people_counts.cnt, 0)), 0)::numeric AS profit
+    FROM pos_sales_people p
+    JOIN pos_sales s ON s.sale_id = p.sale_id
+    LEFT JOIN item_rollup ON item_rollup.sale_id = p.sale_id
+    LEFT JOIN people_counts ON people_counts.sale_id = p.sale_id
+    WHERE s.delivery_confirmed_date >= $1
+      AND s.delivery_confirmed_date < $2
+      AND ($3::text IS NULL OR COALESCE(p.location, s.location) ILIKE ('%' || $3 || '%'))
+      AND ($4::text IS NULL OR p.salesperson ILIKE ('%' || $4 || '%'))
+      AND p.sale_id IS NOT NULL
+      AND p.sale_id <> '';
+  `;
+
+  const lowMarginSql = `
+    WITH item_totals AS (
+      SELECT
+        sale_id,
+        SUM(CASE WHEN total_sale_price IS NULL OR total_sale_price <> total_sale_price THEN 0 ELSE total_sale_price END)::numeric AS item_sales,
+        SUM(CASE WHEN total_profit IS NULL OR total_profit <> total_profit THEN 0 ELSE total_profit END)::numeric AS item_profit
+      FROM pos_sale_items
+      WHERE sale_id IS NOT NULL
+        AND sale_id <> ''
+        AND (category IS NULL OR category NOT ILIKE '%mattress%')
+      GROUP BY sale_id
+    ),
+    people_counts AS (
+      SELECT sale_id, COUNT(*)::int AS people_count
+      FROM pos_sales_people
+      GROUP BY sale_id
+    ),
+    sale_rows AS (
+      SELECT
+        p.sale_id,
+        p.salesperson,
+        COALESCE(p.location, s.location) AS location,
+        p.grand_total_split::numeric AS grand_total,
+        (COALESCE(item_totals.item_profit, 0) / NULLIF(people_counts.people_count, 0))::numeric AS profit,
+        CASE
+          WHEN item_totals.item_sales IS NULL OR item_totals.item_sales = 0 THEN NULL
+          ELSE (COALESCE(item_totals.item_profit, 0) / item_totals.item_sales) * 100
+        END::numeric AS margin_pct
+      FROM pos_sales_people p
+      JOIN pos_sales s ON s.sale_id = p.sale_id
+      LEFT JOIN item_totals ON item_totals.sale_id = p.sale_id
+      LEFT JOIN people_counts ON people_counts.sale_id = p.sale_id
+      WHERE s.delivery_confirmed_date >= $1
+        AND s.delivery_confirmed_date < $2
+        AND ($3::text IS NULL OR COALESCE(p.location, s.location) ILIKE ('%' || $3 || '%'))
+        AND ($4::text IS NULL OR p.salesperson ILIKE ('%' || $4 || '%'))
+        AND p.salesperson IS NOT NULL
+        AND p.salesperson <> ''
+        AND p.salesperson <> 'Sales, Store'
+    )
+    SELECT *, COUNT(*) OVER ()::int AS total_count
+    FROM sale_rows
+    WHERE margin_pct BETWEEN -100 AND 100
+    ORDER BY margin_pct ASC NULLS LAST, profit ASC, grand_total DESC
+    LIMIT 5;
+  `;
+
+  const leaderboardSql = `
+    WITH item_rollup AS (
+      SELECT
+        i.sale_id,
+        SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END)::numeric AS item_sales,
+        SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END)::numeric AS item_profit
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE s.delivery_confirmed_date >= $1
+        AND s.delivery_confirmed_date < $2
+      GROUP BY i.sale_id
+    ),
+    people_counts AS (
+      SELECT sale_id, COUNT(*)::int AS cnt
+      FROM pos_sales_people
+      GROUP BY sale_id
+    )
+    SELECT
+      p.salesperson,
+      COUNT(DISTINCT p.sale_id)::int AS ticket_count,
+      COALESCE(SUM(COALESCE(item_rollup.item_sales, 0) / NULLIF(people_counts.cnt, 0)), 0)::numeric AS sales,
+      COALESCE(SUM(COALESCE(item_rollup.item_profit, 0) / NULLIF(people_counts.cnt, 0)), 0)::numeric AS profit
+    FROM pos_sales_people p
+    JOIN pos_sales s ON s.sale_id = p.sale_id
+    LEFT JOIN item_rollup ON item_rollup.sale_id = p.sale_id
+    LEFT JOIN people_counts ON people_counts.sale_id = p.sale_id
+    WHERE s.delivery_confirmed_date >= $1
+      AND s.delivery_confirmed_date < $2
+      AND ($3::text IS NULL OR COALESCE(p.location, s.location) ILIKE ('%' || $3 || '%'))
+      AND ($4::text IS NULL OR p.salesperson ILIKE ('%' || $4 || '%'))
+      AND p.salesperson IS NOT NULL
+      AND p.salesperson <> ''
+      AND p.salesperson <> 'Sales, Store'
+    GROUP BY p.salesperson
+    ORDER BY sales DESC
+    LIMIT 5;
+  `;
+
+  const pro1stSql = `
+    WITH non_mattress_items AS (
+      SELECT
+        i.sale_id,
+        SUM(COALESCE(i.total_sale_price, 0))::numeric AS eligible_sales
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE s.delivery_confirmed_date >= $1
+        AND s.delivery_confirmed_date < $2
+        AND NOT (${excludedPro1stSql})
+      GROUP BY i.sale_id
+    ),
+    pro_items AS (
+      SELECT
+        i.sale_id,
+        SUM(COALESCE(i.total_sale_price, 0))::numeric AS pro_sales,
+        SUM(COALESCE(i.total_profit, 0))::numeric AS pro_profit
+      FROM pos_sale_items i
+      JOIN pos_sales s ON s.sale_id = i.sale_id
+      WHERE s.delivery_confirmed_date >= $1
+        AND s.delivery_confirmed_date < $2
+        AND ${pro1stItemSql}
+      GROUP BY i.sale_id
+    ),
+    people_counts AS (
+      SELECT sale_id, COUNT(*)::int AS cnt
+      FROM pos_sales_people
+      GROUP BY sale_id
+    )
+    SELECT
+      COALESCE(SUM(COALESCE(non_mattress_items.eligible_sales, 0) / NULLIF(people_counts.cnt, 0)), 0)::numeric AS total_sales,
+      COALESCE(SUM(COALESCE(pro_items.pro_sales, 0) / NULLIF(people_counts.cnt, 0)), 0)::numeric AS pro_sales,
+      COUNT(DISTINCT p.sale_id) FILTER (WHERE pro_items.sale_id IS NOT NULL)::int AS ticket_count,
+      ARRAY_AGG(DISTINCT p.sale_id) FILTER (WHERE pro_items.pro_profit < 100) AS low_ids,
+      ARRAY_AGG(DISTINCT p.sale_id) FILTER (WHERE pro_items.pro_profit >= 100 AND pro_items.pro_profit < 200) AS mid_ids,
+      ARRAY_AGG(DISTINCT p.sale_id) FILTER (WHERE pro_items.pro_profit >= 200) AS high_ids
+    FROM pos_sales_people p
+    JOIN pos_sales s ON s.sale_id = p.sale_id
+    LEFT JOIN non_mattress_items ON non_mattress_items.sale_id = p.sale_id
+    LEFT JOIN pro_items ON pro_items.sale_id = p.sale_id
+    LEFT JOIN people_counts ON people_counts.sale_id = p.sale_id
+    WHERE s.delivery_confirmed_date >= $1
+      AND s.delivery_confirmed_date < $2
+      AND ($3::text IS NULL OR COALESCE(p.location, s.location) ILIKE ('%' || $3 || '%'))
+      AND ($4::text IS NULL OR p.salesperson ILIKE ('%' || $4 || '%'))
+      AND p.sale_id IS NOT NULL
+      AND p.sale_id <> '';
+  `;
+
+  const [summaryResult, lowMarginResult, leaderboardResult, pro1stResult] = await Promise.all([
+    pool.query(summarySql, queryParams),
+    pool.query(lowMarginSql, queryParams),
+    pool.query(leaderboardSql, queryParams),
+    pool.query(pro1stSql, queryParams),
+  ]);
+
+  const summaryRow = summaryResult.rows[0] ?? {};
+  const proRow = pro1stResult.rows[0] ?? {};
+  const sales = asNumber(summaryRow.sales);
+  const profit = asNumber(summaryRow.profit);
+  const marginPct = sales > 0 ? (profit / sales) * 100 : null;
+  const proTotalSales = asNumber(proRow.total_sales);
+  const proSales = asNumber(proRow.pro_sales);
+  const attachRate = proTotalSales > 0 ? (proSales / proTotalSales) * 100 : 0;
+  const lowProfitTicketCount = arrayLength(proRow.low_ids);
+  const midProfitTicketCount = arrayLength(proRow.mid_ids);
+  const highProfitTicketCount = arrayLength(proRow.high_ids);
+  const lowMarginCount = lowMarginResult.rows.length
+    ? Number(lowMarginResult.rows[0]?.total_count ?? lowMarginResult.rows.length)
+    : 0;
+
+  const warnings = [
+    Number(summaryRow.ticket_count ?? 0) === 0 || sales === 0
+      ? "Sales report data is empty for this range/filter."
+      : "",
+    Number(summaryRow.ticket_count ?? 0) > 0 && proTotalSales === 0
+      ? "Item report data appears missing or incomplete, so Pro1st/item insights may be unreliable."
+      : "",
+  ].filter(Boolean);
+
+  const insightCandidates = [
+    marginPct !== null && marginPct < 40
+      ? `Overall margin is ${pct(marginPct)}, below the 40% coaching threshold.`
+      : "",
+    lowMarginCount > 0
+      ? `${lowMarginCount} low-margin ticket${lowMarginCount === 1 ? "" : "s"} should be reviewed.`
+      : "",
+    proTotalSales > 0 && attachRate < 8
+      ? `Pro1st attach rate is ${pct(attachRate)}, which is below the 8% watch threshold.`
+      : "",
+    proTotalSales > 0 && attachRate >= 12
+      ? `Pro1st attach rate is ${pct(attachRate)}, which looks healthy for this range.`
+      : "",
+    lowProfitTicketCount > 0
+      ? `${lowProfitTicketCount} Pro1st ticket${lowProfitTicketCount === 1 ? "" : "s"} are below $100 estimated Pro1st profit.`
+      : "",
+    warnings.length ? "Call out data completeness before making firm recommendations." : "",
+  ].filter(Boolean);
+
+  return {
+    page: "Sales Dashboard",
+    range: { start: params.start, end: params.end, label: params.label },
+    filters: { location: params.location, salesperson: params.salesperson },
+    summary: {
+      ticketCount: Number(summaryRow.ticket_count ?? 0),
+      sales,
+      profit,
+      marginPct,
+    },
+    pro1st: {
+      totalSales: proTotalSales,
+      proSales,
+      attachRate,
+      ticketCount: Number(proRow.ticket_count ?? 0),
+      lowProfitTicketCount,
+      midProfitTicketCount,
+      highProfitTicketCount,
+    },
+    lowMargin: {
+      count: lowMarginCount,
+      topTickets: lowMarginResult.rows.map((row: any) => ({
+        saleId: String(row.sale_id ?? ""),
+        salesperson: String(row.salesperson ?? ""),
+        location: String(row.location ?? ""),
+        grandTotal: asNumber(row.grand_total),
+        profit: asNumber(row.profit),
+        marginPct: row.margin_pct === null || row.margin_pct === undefined ? null : asNumber(row.margin_pct),
+      })),
+    },
+    leaderboard: leaderboardResult.rows.map((row: any) => ({
+      salesperson: String(row.salesperson ?? ""),
+      sales: asNumber(row.sales),
+      profit: asNumber(row.profit),
+      ticketCount: Number(row.ticket_count ?? 0),
+    })),
+    warnings,
+    insightCandidates,
+  };
+}
+
+function formatSalesSnapshotForPrompt(snapshot: SalesSnapshot): string {
+  const filterParts = [
+    snapshot.filters.location ? `location=${snapshot.filters.location}` : "",
+    snapshot.filters.salesperson ? `salesperson=${snapshot.filters.salesperson}` : "",
+  ].filter(Boolean);
+  const topLowMargin = snapshot.lowMargin.topTickets
+    .slice(0, 3)
+    .map((row) => `${row.saleId} (${row.salesperson}, ${pct(row.marginPct)}, ${money(row.profit)} profit)`)
+    .join("; ");
+  const leaders = snapshot.leaderboard
+    .slice(0, 3)
+    .map((row) => `${row.salesperson}: ${money(row.sales)} sales, ${money(row.profit)} profit`)
+    .join("; ");
+
+  return [
+    `${snapshot.page} snapshot for ${snapshot.range.label} (${snapshot.range.start} to ${snapshot.range.end}, end exclusive).`,
+    filterParts.length ? `Filters: ${filterParts.join(", ")}.` : "Filters: none.",
+    `Summary: ${snapshot.summary.ticketCount} tickets, ${money(snapshot.summary.sales)} sales, ${money(snapshot.summary.profit)} profit, ${pct(snapshot.summary.marginPct)} margin.`,
+    `Pro1st: ${pct(snapshot.pro1st.attachRate)} attach rate, ${money(snapshot.pro1st.proSales)} Pro1st sales out of ${money(snapshot.pro1st.totalSales)} eligible sales, ${snapshot.pro1st.ticketCount} attached tickets, tiers low/mid/high=${snapshot.pro1st.lowProfitTicketCount}/${snapshot.pro1st.midProfitTicketCount}/${snapshot.pro1st.highProfitTicketCount}.`,
+    `Low margin: ${snapshot.lowMargin.count} flagged tickets${topLowMargin ? `; examples: ${topLowMargin}` : ""}.`,
+    leaders ? `Leaderboard highlights: ${leaders}.` : "",
+    snapshot.warnings.length ? `Warnings: ${snapshot.warnings.join(" ")}` : "",
+    snapshot.insightCandidates.length ? `Pre-considered checks: ${snapshot.insightCandidates.join(" ")}` : "",
+  ].filter(Boolean).join("\n");
+}
 
 async function fetchOllamaTags(baseUrl: string) {
   const controller = new AbortController();
@@ -331,6 +691,34 @@ export function registerBotBotRoutes({
     });
   });
 
+  app.get("/api/botbot/context/sales-snapshot", async (req, res) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const start = parseDateParam(req.query.start, today);
+    const end = parseDateParam(req.query.end, tomorrow);
+    const location = parseTextParam(req.query.location);
+    const salesperson = parseTextParam(req.query.salesperson);
+    const label = parseTextParam(req.query.label) || `${start} to ${end}`;
+
+    try {
+      const snapshot = await buildSalesSnapshot(pool, {
+        start,
+        end,
+        label,
+        location,
+        salesperson,
+      });
+      res.json({ ok: true, snapshot });
+    } catch (err: any) {
+      console.error("botbot_sales_snapshot_error", err);
+      res.status(500).json({
+        ok: false,
+        error: "sales_snapshot_failed",
+        detail: String(err?.message ?? err),
+      });
+    }
+  });
+
   app.get("/api/botbot/conversations", async (req, res) => {
     const uid = userId(req);
     const r = await pool.query(
@@ -601,7 +989,20 @@ export function registerBotBotRoutes({
         errorCode: "skill_not_allowed",
       });
     }
-    const systemPrompt = buildSystemPrompt(user.name, assistantName, ctx);
+    let liveContextSnapshot = "";
+    if (isSalesContext(ctx)) {
+      const params = salesContextParams(ctx);
+      if (params) {
+        try {
+          liveContextSnapshot = formatSalesSnapshotForPrompt(await buildSalesSnapshot(pool, params));
+        } catch (err: any) {
+          console.error("botbot_sales_context_snapshot_error", err);
+          liveContextSnapshot =
+            "Sales live snapshot could not be loaded for this request. Explain the page using the manual and ask the user to verify the dashboard data.";
+        }
+      }
+    }
+    const systemPrompt = buildSystemPrompt(user.name, assistantName, ctx, liveContextSnapshot);
     const responseStartedAt = Date.now();
 
     let llmResponse: {

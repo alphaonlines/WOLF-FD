@@ -203,6 +203,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   enableTourAutoStart = true,
   isDarkMode = true,
 }) => {
+  const { setPageContext } = useBotBotContext();
   const [salesData, setSalesData] = useState<SalespersonPoint[]>([]);
   const [storeData, setStoreData] = useState<StoreData[]>([]);
   const [trendData, setTrendData] = useState<Array<{ day: string; furnitureSales: number; mattressBoxSpringAdjustableSales: number }>>([]);
@@ -1441,6 +1442,88 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       })
     );
   }, [selectedSalesperson, selectedStore]);
+
+  useEffect(() => {
+    const range = currentRangeInput;
+    const compareRange = compareRangeInput;
+    const dataWarnings = [
+      missingItemData ? "Item report data is missing for this range, so item-level cards and Pro1st attach may be incomplete." : "",
+      missingSalesData ? "Sales report data is missing or zero for this range." : "",
+      error ? `Sales dashboard error: ${error}` : "",
+    ].filter(Boolean);
+    const visibleSections = [
+      "Date range selector",
+      "Sales overview",
+      "Finance overview",
+      collapsedCards["best-sellers"] ? "" : "Best sellers",
+      collapsedCards["top-categories"] ? "" : "Top categories",
+      collapsedCards["top-manufacturers"] ? "" : "Top manufacturers",
+      collapsedCards["pro1st-attach"] ? "" : "Pro1st attach rate",
+      lowMarginData.length ? "Low margin tickets" : "",
+      salesData.length ? "Salesperson leaderboard" : "",
+      storeData.length ? "Store performance" : "",
+      trendData.length ? "Daily sales trend" : "",
+    ].filter(Boolean);
+
+    setPageContext({
+      pageName: "Sales Analysis",
+      module: "sales",
+      pageId: "sales-dashboard",
+      subPageId: "pulse-sales",
+      userRole: "Employee",
+      keyMetricsVisible: [
+        "Total sales",
+        "Ticket count",
+        "Average ticket",
+        "Finance amount",
+        "Low margin tickets",
+        "Pro1st attach rate",
+      ],
+      suggestedActions: [
+        "Review this range",
+        "Find low-margin risks",
+        "Explain Pro1st attach rate",
+        "Summarize leaderboard gaps",
+      ],
+      dateRange: range
+        ? {
+            start: range.start,
+            end: range.endExclusive,
+            label: rangeLabel,
+            compareStart: compareRange?.start,
+            compareEnd: compareRange?.endExclusive,
+            compareLabel: compareRange ? formatRangeLabel(compareRange) : undefined,
+          }
+        : undefined,
+      filters: {
+        salesperson: selectedSalesperson,
+        location: selectedStore,
+        category: reportCategory !== "ALL" ? reportCategory : null,
+        manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : null,
+      },
+      visibleSections,
+      dataWarnings,
+      selectedSort: itemSortMetric,
+    });
+  }, [
+    collapsedCards,
+    compareRangeInput,
+    currentRangeInput,
+    error,
+    itemSortMetric,
+    lowMarginData.length,
+    missingItemData,
+    missingSalesData,
+    rangeLabel,
+    reportCategory,
+    reportManufacturer,
+    salesData.length,
+    selectedSalesperson,
+    selectedStore,
+    setPageContext,
+    storeData.length,
+    trendData.length,
+  ]);
 
   useEffect(() => {
     const handler = () => {
