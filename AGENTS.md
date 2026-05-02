@@ -22,8 +22,8 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Auth: HTTP-only session cookies plus Google Workspace sign-in/request-access flow.
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
-- Current branch: `main`
-- Current display version in `package.json`: `0.5.1.1737`
+- Current branch: `botbot-tutorial-revive`
+- Current display version in `package.json`: `0.5.1.2040`
 
 ## Project Structure
 
@@ -83,6 +83,13 @@ Backend deploy flow for route/schema/runtime changes:
 2. `pm2 restart pos-api`
 3. Verify through the live nginx path, not just direct localhost assumptions.
 
+
+## Local LLM Boundary
+
+- Treat this machine as local-LLM infrastructure only. Do not add cloud LLM provider keys, hosted-model credentials, or outbound cloud inference routes here unless Anthony explicitly changes that direction.
+- Model/runtime work should use local services on this PC or LAN-local runtimes such as Ollama. Keep model selection, model health, and token/cost tracking oriented around local models first.
+- If a feature needs an LLM and no local runtime is available, stop and surface the missing local model/runtime instead of silently falling back to a hosted API.
+
 ## Environment Notes
 
 - Backend default runtime port is `5057` (`pos-dashboard-backend/src/runtimeConfig.ts`).
@@ -110,7 +117,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `0.5.1.1737`
+- Current display version: `0.5.1.2040`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -141,6 +148,8 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-01 20:54 EDT - Updated agent guidance to clarify the local-LLM-only boundary for this host and refreshed the legacy `@agents.md` handoff pointer, and corrected current branch/display-version metadata. Files: `/home/alphahs/WOLF-FD/AGENTS.md`, `/home/alphahs/WOLF-FD/@agents.md`. Commands/tests: remote Python doc update; no build needed for doc-only change.
 
 - 2026-05-01 17:38 EDT — Expanded the BotBot launch tutorial into a warmer Den-first onboarding flow. Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/botbot/BotBotTutorial.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`.
   - Changes: first tutorial step now spotlights the pulsing BotBot orb and introduces BotBot as a personal AI trainer that can be renamed later; Den is now the preferred guided first module when available; added a top-pages step explaining that modules have pages across the top, using Den as the example for UPS, customers, tasks, meetings, message board updates, and direct messages; final step now reinforces renaming/personality/settings instead of ending abruptly; `displayVersion` moved to `0.5.1.1737`.
