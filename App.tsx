@@ -984,6 +984,7 @@ const App: React.FC = () => {
       case Tab.ADMIN:
         return (
       <OwnerSettings
+            isDarkMode={isDarkMode}
             onOpenChangePassword={openChangePasswordModal}
             requestedPanel={requestedSettingsPanel}
             onConsumeRequestedPanel={() => setRequestedSettingsPanel(null)}
