@@ -36,6 +36,7 @@ export type BotBotMessage = {
 
 export type TokenUsageRow = {
   modelKey: string;
+  billingModelKey?: string;
   displayName: string;
   tokensUsed: number;
   quota: number;
@@ -132,6 +133,7 @@ export type SendMessageResult = {
   tokensUsed: number;
   quota: number;
   quotaRemaining: number;
+  billingModelKey?: string;
   error?: string;
 };
 
@@ -257,11 +259,13 @@ export const fetchMessages = (conversationId: number): Promise<BotBotMessage[]> 
 export async function sendMessage(
   conversationId: number,
   content: string,
-  pageContext?: PageContext
+  pageContext?: PageContext,
+  promptContext?: { systemPrompt?: string; documentContext?: string }
 ): Promise<SendMessageResult> {
   return postJson(`/api/botbot/conversations/${conversationId}/messages`, {
     content,
     pageContext,
+    promptContext,
   });
 }
 

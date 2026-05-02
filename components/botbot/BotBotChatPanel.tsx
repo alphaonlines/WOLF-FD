@@ -34,6 +34,40 @@ const THEME_COLORS: Record<string, { bg: string; text: string; border: string; b
   teal: { bg: 'bg-teal-50 dark:bg-teal-950', text: 'text-teal-600 dark:text-teal-400', border: 'border-teal-200 dark:border-teal-800', button: 'bg-teal-500 hover:bg-teal-600' },
 };
 
+const PROMPT_CARDS = [
+  {
+    id: 'explain',
+    label: 'Explain this page',
+    prompt: 'Explain what I am looking at on this page and what matters most.',
+    systemPrompt: 'Act as a patient dashboard trainer. Explain the current page in plain language, prioritize what matters first, and avoid overwhelming the user.',
+  },
+  {
+    id: 'coach',
+    label: 'Coach my next step',
+    prompt: 'Coach me through the next best action here.',
+    systemPrompt: 'Act as a floor coach. Give one recommended next action, explain why it matters, and include a short checklist the user can follow.',
+  },
+  {
+    id: 'risks',
+    label: 'Find risks',
+    prompt: 'Look for risks, mistakes, or things I should double-check.',
+    systemPrompt: 'Act as an operations reviewer. Look for likely risks, missing context, data quality warnings, and practical safeguards before making recommendations.',
+  },
+  {
+    id: 'doc',
+    label: 'Read context',
+    prompt: 'Use the context note I added and help me turn it into a clear answer or plan.',
+    systemPrompt: 'Treat the provided context note as source material. Summarize it first, then suggest concrete next steps. If the note is incomplete, ask for the missing detail.',
+  },
+];
+
+const FOLLOW_UP_PROMPTS = [
+  'Make that simpler.',
+  'Turn that into a checklist.',
+  'Give me the next 3 steps.',
+  'Write this as a message I can send.',
+];
+
 const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({
   authUser,
   isDarkMode,
@@ -51,6 +85,9 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({
   const [selectedModelKey, setSelectedModelKey] = useState('local');
   const [tokenUsage, setTokenUsage] = useState<TokenUsageRow[]>([]);
   const [inputText, setInputText] = useState('');
+  const [contextText, setContextText] = useState('');
+  const [contextOpen, setContextOpen] = useState(false);
+  const [pendingSystemPrompt, setPendingSystemPrompt] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isQuotaExceeded, setIsQuotaExceeded] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -131,8 +168,20 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({
     : 'fixed inset-x-2 top-16 bottom-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] flex flex-col rounded-3xl border shadow-2xl z-40 lg:inset-auto lg:bottom-32 lg:right-6 lg:h-[560px] lg:max-h-[calc(100dvh-9rem)] lg:w-[min(24rem,calc(100vw-2rem))]';
 
   // Get current model's quota usage
-  const currentModelUsage = tokenUsage.find(u => u.modelKey === selectedModelKey);
+  const currentModelUsage = tokenUsage.find(u => u.modelKey === selectedModelKey) || tokenUsage.find(u => u.modelKey === 'local');
   const quotaPct = currentModelUsage?.pctUsed ?? 0;
+
+  const applyPromptCard = (card: (typeof PROMPT_CARDS)[number]) => {
+    setInputText(card.prompt);
+    setPendingSystemPrompt(card.systemPrompt);
+    if (card.id === 'doc') {
+      setContextOpen(true);
+    }
+  };
+
+  const applyFollowUpPrompt = (prompt: string) => {
+    setInputText(current => current.trim() ? `${current.trim()}\n\n${prompt}` : prompt);
+  };
 
   const handleSendMessage = async () => {
     if (!inputText.trim() || isSending || isQuotaExceeded) return;
@@ -167,22 +216,27 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({
       setMessages(prev => [...prev, optimisticUserMsg]);
 
       // 3. Send to backend
-      const result = await sendMessage(activeConvId, text, pageContext);
+      const result = await sendMessage(activeConvId, text, pageContext, {
+        systemPrompt: pendingSystemPrompt || undefined,
+        documentContext: contextText.trim() || undefined,
+      });
+      setPendingSystemPrompt(null);
 
       // 4. Update UI with AI response and token usage
       setMessages(prev => [...prev, result.message]);
       setTokenUsage(prev => {
-        const index = prev.findIndex(u => u.modelKey === selectedModelKey);
-        if (index === -1) return prev;
-        const next = [...prev];
-        next[index] = {
-          ...next[index],
-          tokensUsed: result.tokensUsed,
-          quota: result.quota,
-          quotaRemaining: result.quotaRemaining,
-          pctUsed: Math.min(100, Math.round((result.tokensUsed / (result.quota || 1)) * 100)),
-        };
-        return next;
+        const billingKey = result.billingModelKey || selectedModelKey;
+        return prev.map(row => {
+          const rowBillingKey = row.billingModelKey || row.modelKey;
+          if (rowBillingKey !== billingKey) return row;
+          return {
+            ...row,
+            tokensUsed: result.tokensUsed,
+            quota: result.quota,
+            quotaRemaining: result.quotaRemaining,
+            pctUsed: Math.min(100, Math.round((result.tokensUsed / (result.quota || 1)) * 100)),
+          };
+        });
       });
 
       // 5. Update conversation list with last message count (if needed)
@@ -432,6 +486,23 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({
                 <Bot size={40} className="mb-3 opacity-20" />
                 <p className="text-sm font-medium">Hello {authUser?.name?.split(' ')[0]}!</p>
                 <p className="text-xs mt-1">I&apos;m {assistantName}, your personal AI agent. How can I help you in the {pageContext.pageName} today?</p>
+                <div className="mt-5 grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
+                  {PROMPT_CARDS.map(card => (
+                    <button
+                      key={card.id}
+                      type="button"
+                      onClick={() => applyPromptCard(card)}
+                      className={`rounded-2xl border px-3 py-3 text-left transition ${
+                        isDarkMode
+                          ? 'border-slate-700 bg-slate-800/70 text-slate-200 hover:border-sky-500/50 hover:bg-slate-800'
+                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-sky-200 hover:bg-white'
+                      }`}
+                    >
+                      <div className="text-xs font-bold">{card.label}</div>
+                      <div className="mt-1 text-[10px] leading-relaxed opacity-60">{card.prompt}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -519,6 +590,76 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({
 
           {/* ── Input Area ────────────────────────────────────────────── */}
           <div className={`p-4 border-t ${isDarkMode ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
+            {messages.length > 0 && !showSettings && !showAdmin && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {FOLLOW_UP_PROMPTS.map(prompt => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => applyFollowUpPrompt(prompt)}
+                    className={`rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${
+                      isDarkMode
+                        ? 'border-slate-700 bg-slate-800 text-slate-300 hover:border-sky-500/50'
+                        : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-sky-200'
+                    }`}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setContextOpen(value => !value)}
+                  className={`rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${
+                    contextText.trim()
+                      ? 'border-sky-400 bg-sky-500/10 text-sky-500'
+                      : isDarkMode
+                        ? 'border-slate-700 bg-slate-800 text-slate-300 hover:border-sky-500/50'
+                        : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-sky-200'
+                  }`}
+                >
+                  {contextText.trim() ? 'Context attached' : 'Add context/doc'}
+                </button>
+              </div>
+            )}
+
+            {(contextOpen || contextText.trim()) && (
+              <div className={`mb-3 rounded-2xl border p-3 ${isDarkMode ? 'border-slate-700 bg-slate-800/70' : 'border-slate-200 bg-slate-50'}`}>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Context BotBot can read</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContextText('');
+                      setContextOpen(false);
+                    }}
+                    className="text-[10px] font-bold uppercase tracking-widest opacity-45 hover:opacity-80"
+                  >
+                    Clear
+                  </button>
+                </div>
+                <textarea
+                  value={contextText}
+                  onChange={event => setContextText(event.target.value.slice(0, 8000))}
+                  placeholder="Paste a note, policy, customer detail, product info, or rough document here. BotBot will use it as extra context for your next messages."
+                  rows={3}
+                  className={`w-full resize-none rounded-xl border px-3 py-2 text-xs outline-none ${
+                    isDarkMode
+                      ? 'border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500'
+                      : 'border-slate-200 bg-white text-slate-900 placeholder:text-slate-400'
+                  }`}
+                />
+              </div>
+            )}
+
+            {pendingSystemPrompt && (
+              <div className={`mb-3 flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-[10px] ${
+                isDarkMode ? 'border-sky-500/30 bg-sky-500/10 text-sky-200' : 'border-sky-100 bg-sky-50 text-sky-700'
+              }`}>
+                <span className="font-bold uppercase tracking-widest">Prompt mode loaded</span>
+                <button type="button" onClick={() => setPendingSystemPrompt(null)} className="font-bold opacity-60 hover:opacity-100">Clear</button>
+              </div>
+            )}
+
             <div className={`relative flex items-end gap-2 p-1.5 rounded-2xl border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 focus-within:border-slate-500' : 'bg-slate-50 border-slate-200 focus-within:border-slate-400'}`}>
               <textarea
                 value={inputText}

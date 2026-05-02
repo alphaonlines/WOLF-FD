@@ -10,6 +10,7 @@ import {
 import {
   BOTBOT_SKILL_CATALOG,
   inferBotBotSkill,
+  isLocalProvider,
   resolveModelAccess,
   resolveSkillAccess,
   type BotBotAuthUser,
@@ -465,6 +466,27 @@ const parseQuota = (value: unknown, fallback: number) => {
   return Number.isFinite(numeric) && numeric >= 0 ? Math.round(numeric) : fallback;
 };
 
+const tokenLedgerKeyForProvider = (provider: string, modelKey: string) =>
+  isLocalProvider(provider) ? "local" : modelKey;
+
+const clipPromptText = (value: unknown, maxLength: number) =>
+  typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+
+function buildPromptContextAddendum(promptContext: unknown) {
+  const context = promptContext && typeof promptContext === "object" ? (promptContext as any) : {};
+  const systemPrompt = clipPromptText(context.systemPrompt, 1600);
+  const documentContext = clipPromptText(context.documentContext, 8000);
+  const parts = [
+    systemPrompt
+      ? `Temporary conversation mode selected by the user:\n${systemPrompt}`
+      : "",
+    documentContext
+      ? `User-provided document or note to consider for this request:\n${documentContext}`
+      : "",
+  ].filter(Boolean);
+  return parts.length ? parts.join("\n\n") : "";
+}
+
 async function logBotBotUsageEvent(
   pool: Pool,
   event: {
@@ -822,9 +844,10 @@ export function registerBotBotRoutes({
     const uid = userId(req);
     const user = getAuthUser(req)!;
     const convId = parseInt(req.params.id, 10);
-    const { content, pageContext } = (req.body ?? {}) as {
+    const { content, pageContext, promptContext } = (req.body ?? {}) as {
       content?: string;
       pageContext?: PageContext;
+      promptContext?: { systemPrompt?: string; documentContext?: string };
     };
 
     if (!content || typeof content !== "string" || !content.trim()) {
@@ -868,11 +891,13 @@ export function registerBotBotRoutes({
       });
     }
     const model = modelResult.rows[0];
+    const provider = String(model.provider ?? "");
+    const ledgerModelKey = tokenLedgerKeyForProvider(provider, conv.model_key);
     const modelAccess = await resolveModelAccess(
       pool,
       toAuthUser(user),
       conv.model_key,
-      String(model.provider ?? ""),
+      provider,
       parseQuota(model.free_token_quota, 0)
     );
     if (!modelAccess.allowed) {
@@ -897,7 +922,7 @@ export function registerBotBotRoutes({
               COALESCE(tokens_purchased, 0) AS tokens_purchased
        FROM botbot_token_ledger
        WHERE user_id = $1 AND model_key = $2`,
-      [uid, conv.model_key]
+      [uid, ledgerModelKey]
     );
     const ledger =
       ledgerResult.rows[0] ?? { tokens_used: 0, tokens_purchased: 0 };
@@ -913,7 +938,9 @@ export function registerBotBotRoutes({
         modelKey: conv.model_key,
         displayName: model.display_name ?? conv.model_key,
         tokensUsed,
-        quota,
+        quota: quota + tokensPurchased,
+        quotaRemaining: 0,
+        billingModelKey: ledgerModelKey,
       });
     }
 
@@ -971,8 +998,9 @@ export function registerBotBotRoutes({
       return res.status(200).json({
         message: errRow.rows[0],
         tokensUsed,
-        quota,
+        quota: quota + tokensPurchased,
         quotaRemaining: Math.max(0, quota + tokensPurchased - tokensUsed),
+        billingModelKey: ledgerModelKey,
         error: errMsg,
         errorCode: "skill_not_allowed",
       });
@@ -990,7 +1018,11 @@ export function registerBotBotRoutes({
         }
       }
     }
-    const systemPrompt = buildSystemPrompt(user.name, assistantName, ctx, liveContextSnapshot);
+    const promptContextAddendum = buildPromptContextAddendum(promptContext);
+    const systemPrompt = [
+      buildSystemPrompt(user.name, assistantName, ctx, liveContextSnapshot),
+      promptContextAddendum,
+    ].filter(Boolean).join("\n\n");
     const responseStartedAt = Date.now();
 
     let llmResponse: {
@@ -1068,8 +1100,9 @@ export function registerBotBotRoutes({
       return res.status(200).json({
         message: errRow.rows[0],
         tokensUsed,
-        quota,
+        quota: quota + tokensPurchased,
         quotaRemaining: Math.max(0, quota + tokensPurchased - tokensUsed),
+        billingModelKey: ledgerModelKey,
         error: errMsg,
         errorCode,
       });
@@ -1109,7 +1142,7 @@ export function registerBotBotRoutes({
        DO UPDATE SET
          tokens_used = botbot_token_ledger.tokens_used + EXCLUDED.tokens_used,
          updated_at = now()`,
-      [uid, conv.model_key, totalNew]
+      [uid, ledgerModelKey, totalNew]
     );
 
     await pool.query(
@@ -1121,8 +1154,9 @@ export function registerBotBotRoutes({
     res.json({
       message: msgResult.rows[0],
       tokensUsed: newTokensUsed,
-      quota,
+      quota: quota + tokensPurchased,
       quotaRemaining: Math.max(0, quota + tokensPurchased - newTokensUsed),
+      billingModelKey: ledgerModelKey,
     });
   });
 
@@ -1131,10 +1165,13 @@ export function registerBotBotRoutes({
     const user = toAuthUser(getAuthUser(req)!);
     const r = await pool.query(
       `SELECT m.model_key, m.display_name, m.provider, m.free_token_quota AS quota,
+              CASE WHEN m.provider IN ('wolfbot', 'ollama') THEN 'local' ELSE m.model_key END AS billing_model_key,
               COALESCE(l.tokens_used, 0) AS tokens_used,
               COALESCE(l.tokens_purchased, 0) AS tokens_purchased
        FROM botbot_model_config m
-       LEFT JOIN botbot_token_ledger l ON l.model_key = m.model_key AND l.user_id = $1
+       LEFT JOIN botbot_token_ledger l
+         ON l.model_key = CASE WHEN m.provider IN ('wolfbot', 'ollama') THEN 'local' ELSE m.model_key END
+        AND l.user_id = $1
        WHERE m.enabled = TRUE
        ORDER BY m.sort_order ASC`,
       [uid]
@@ -1155,9 +1192,10 @@ export function registerBotBotRoutes({
       const effective = quota + tokensPurchased;
       usage.push({
         modelKey: row.model_key,
+        billingModelKey: row.billing_model_key,
         displayName: row.display_name,
         tokensUsed,
-        quota,
+        quota: effective,
         quotaRemaining: Math.max(0, effective - tokensUsed),
         pctUsed:
           effective > 0
