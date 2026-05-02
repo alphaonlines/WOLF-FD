@@ -1,8 +1,15 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
-import { callOllama, callClaude, type LLMMessage } from "../llmClient";
+import {
+  callBotBotLocalAi,
+  callClaude,
+  callOllama,
+  callOpenAI,
+  type LLMMessage,
+} from "../llmClient";
 import { buildSystemPrompt, type PageContext } from "../botbotPrompt";
 import {
+  BOTBOT_LOCAL_AI_URL,
   BOTBOT_ENABLED,
   DEFAULT_OLLAMA_NODE_KEY,
   OLLAMA_NODE_CONFIGS,
@@ -127,6 +134,7 @@ export function registerBotBotRoutes({
         enabled: BOTBOT_ENABLED,
         defaultNodeKey: DEFAULT_OLLAMA_NODE_KEY,
         preferredNodeKey,
+        localAiPlatformUrl: BOTBOT_LOCAL_AI_URL,
         primaryNodeLabel: OLLAMA_PRIMARY_NODE_LABEL,
         primaryModel: OLLAMA_PRIMARY_MODEL,
         nodes,
@@ -267,7 +275,7 @@ export function registerBotBotRoutes({
     const conv = convResult.rows[0];
 
     const modelResult = await pool.query(
-      `SELECT model_key, provider, ollama_model_name, free_token_quota, enabled
+      `SELECT model_key, display_name, provider, ollama_model_name, free_token_quota, enabled
        FROM botbot_model_config WHERE model_key = $1`,
       [conv.model_key]
     );
@@ -348,12 +356,24 @@ export function registerBotBotRoutes({
       outputTokens: number;
     };
     try {
-      if (model.provider === "ollama") {
+      if (model.provider === "wolfbot") {
+        llmResponse = await callBotBotLocalAi(
+          model.ollama_model_name || OLLAMA_PRIMARY_MODEL,
+          history,
+          systemPrompt
+        );
+      } else if (model.provider === "ollama") {
         llmResponse = await callOllama(
           model.ollama_model_name,
           history,
           systemPrompt,
           ollamaNode.baseUrl
+        );
+      } else if (model.provider === "openai") {
+        llmResponse = await callOpenAI(
+          model.ollama_model_name || conv.model_key,
+          history,
+          systemPrompt
         );
       } else if (model.provider === "anthropic") {
         llmResponse = await callClaude(conv.model_key, history, systemPrompt);
@@ -368,6 +388,14 @@ export function registerBotBotRoutes({
         errMsg =
           "Claude models are not configured on this server. Please use Local AI.";
         errorCode = "claude_not_configured";
+      } else if (err.message === "openai_unavailable") {
+        errMsg =
+          "OpenAI models are not configured on this server yet. Please use Local AI.";
+        errorCode = "openai_not_configured";
+      } else if (err.message?.includes("BotBot AI platform")) {
+        errMsg =
+          "Local AI is reachable through BotBot, but the MSI platform could not complete the request. Please try again.";
+        errorCode = "botbot_platform_down";
       } else if (err.message?.includes("Ollama")) {
         errMsg = "Local AI is currently unavailable. Please try again.";
         errorCode = "ollama_down";

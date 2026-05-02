@@ -94,6 +94,20 @@ export const OLLAMA_BASE_URL = resolveOllamaNode(DEFAULT_OLLAMA_NODE_KEY).baseUr
 export const OLLAMA_PRIMARY_NODE_LABEL =
   `${resolveOllamaNode(DEFAULT_OLLAMA_NODE_KEY).host}`;
 export const OLLAMA_PRIMARY_MODEL =
-  envString("OLLAMA_PRIMARY_MODEL", "gemma4:e4b") ?? "gemma4:e4b";
+  envString("OLLAMA_PRIMARY_MODEL", "gemma4:e4b-it-q4_K_M") ??
+  "gemma4:e4b-it-q4_K_M";
 export const ANTHROPIC_API_KEY = envString("ANTHROPIC_API_KEY", "") ?? "";
+export const BOTBOT_LOCAL_AI_URL =
+  envString("BOTBOT_LOCAL_AI_URL", "http://192.168.4.80:3000") ??
+  "http://192.168.4.80:3000";
+export const BOTBOT_LOCAL_AI_TOKEN =
+  envString("BOTBOT_LOCAL_AI_TOKEN", "") ?? "";
+export const OPENAI_API_KEY = envString("OPENAI_API_KEY", "") ?? "";
+export const OPENAI_BASE_URL =
+  envString("OPENAI_BASE_URL", "https://api.openai.com/v1") ??
+  "https://api.openai.com/v1";
+export const OPENAI_FAST_MODEL =
+  envString("OPENAI_FAST_MODEL", "gpt-4o-mini") ?? "gpt-4o-mini";
+export const OPENAI_BALANCED_MODEL =
+  envString("OPENAI_BALANCED_MODEL", "gpt-4o") ?? "gpt-4o";
 export const BOTBOT_ENABLED = envString("BOTBOT_ENABLED", "true") === "true";
