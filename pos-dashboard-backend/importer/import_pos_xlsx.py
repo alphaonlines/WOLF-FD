@@ -642,7 +642,15 @@ def clean_item_rows(df: pd.DataFrame, source_file: str) -> pd.DataFrame:
             if not val:
                 continue
             s = str(val).lower()
-            if "pro1st" in s or "pro 1st" in s or "pro-1st" in s:
+            if (
+                "pro1st" in s
+                or "pro 1st" in s
+                or "pro-1st" in s
+                or "protection 1st" in s
+                or "protection first" in s
+                or "protection programs" in s
+                or "max_elite" in s
+            ):
                 return True
         return False
 

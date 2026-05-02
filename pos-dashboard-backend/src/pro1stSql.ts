@@ -1,4 +1,12 @@
-const PRO1ST_PATTERNS = ["%pro1st%", "%pro 1st%", "%pro-1st%"];
+const PRO1ST_PATTERNS = [
+  "%pro1st%",
+  "%pro 1st%",
+  "%pro-1st%",
+  "%protection 1st%",
+  "%protection first%",
+  "%protection programs%",
+  "%max_elite%",
+];
 const PRO1ST_EXCLUDED_PATTERNS = [
   "%mattress%",
   "%box spring%",
