@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   LayoutDashboard,
+  Menu,
   Sofa,
   Activity,
   Star,
@@ -342,6 +343,11 @@ const App: React.FC = () => {
   const [requestedShopSubTab, setRequestedShopSubTab] = useState<'search' | 'pos'>('search');
   const [requestedShopSubTabToken, setRequestedShopSubTabToken] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const closeSidebarForMobile = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  };
   type ThemeMode = 'light' | 'live' | 'dark';
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     try {
@@ -1138,8 +1144,18 @@ const App: React.FC = () => {
         ` : ''}
       </style>
       <div className="flex transition-[filter] duration-500">
+        {sidebarOpen && (
+          <button
+            type="button"
+            aria-label="Close navigation"
+            className="fixed inset-0 z-20 bg-slate-950/60 backdrop-blur-sm lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
         <aside
-          className={`${sidebarOpen ? 'w-64' : 'w-20'} fixed h-screen border-r text-white backdrop-blur-xl transition-all duration-300 ease-in-out z-20 flex flex-col ${
+          className={`fixed inset-y-0 left-0 h-[100dvh] w-[min(18rem,86vw)] border-r text-white backdrop-blur-xl transition-all duration-300 ease-in-out z-30 flex flex-col lg:z-20 ${
+            sidebarOpen ? 'translate-x-0 lg:w-64' : '-translate-x-full lg:translate-x-0 lg:w-20'
+          } ${
             isDarkMode
               ? 'bg-[#101825]/94 border-white/6'
               : 'bg-white/88 border-slate-200/80 text-slate-900'
@@ -1167,7 +1183,7 @@ const App: React.FC = () => {
             )}
           </button>
 
-          <nav data-tour-id="sidebar-module-menu" className="flex-1 py-6 px-3 space-y-1.5">
+          <nav data-tour-id="sidebar-module-menu" className="flex-1 overflow-y-auto py-6 px-3 space-y-1.5">
             {canView(Tab.DASHBOARD) && (
               <NavItem
                 ref={(el) => elementRefs.current.set('sidebar-dashboard-nav-item', el)}
@@ -1177,6 +1193,7 @@ const App: React.FC = () => {
                 isActive={activeTab === Tab.DASHBOARD}
                 onClick={() => {
                   setActiveTab(Tab.DASHBOARD);
+                  closeSidebarForMobile();
                 }}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
@@ -1189,7 +1206,10 @@ const App: React.FC = () => {
                 icon={<Inbox size={24} />}
                 label="Den"
                 isActive={activeTab === Tab.WOLFDEN}
-                onClick={() => openWolfdenSubTab('ups')}
+                onClick={() => {
+                  openWolfdenSubTab('ups');
+                  closeSidebarForMobile();
+                }}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
@@ -1200,7 +1220,10 @@ const App: React.FC = () => {
                 icon={<Zap size={24} />}
                 label="Pulse"
                 isActive={activeTab === Tab.PULSE}
-                onClick={() => openPulseSubTab('sales')}
+                onClick={() => {
+                  openPulseSubTab('sales');
+                  closeSidebarForMobile();
+                }}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
@@ -1211,7 +1234,10 @@ const App: React.FC = () => {
                 icon={<Bot size={24} />}
                 label="AMP"
                 isActive={activeTab === Tab.AMP}
-                onClick={() => openAmpSubTab('bot')}
+                onClick={() => {
+                  openAmpSubTab('bot');
+                  closeSidebarForMobile();
+                }}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
@@ -1223,7 +1249,10 @@ const App: React.FC = () => {
                 icon={<ClipboardList size={24} />}
                 label="Shop"
                 isActive={activeTab === Tab.SHOP}
-                onClick={() => setActiveTab(Tab.SHOP)}
+                onClick={() => {
+                  setActiveTab(Tab.SHOP);
+                  closeSidebarForMobile();
+                }}
                 isOpen={sidebarOpen}
                 isDarkMode={isDarkMode}
               />
@@ -1235,7 +1264,10 @@ const App: React.FC = () => {
               <button
                 ref={(el) => elementRefs.current.set('sidebar-settings-nav-item', el)}
                 data-tour-id="sidebar-settings-nav-item"
-                onClick={() => { setActiveTab(Tab.ADMIN); }}
+                onClick={() => {
+                  setActiveTab(Tab.ADMIN);
+                  closeSidebarForMobile();
+                }}
                 className={`w-full flex items-center gap-3 px-3 py-4 h-14 rounded-2xl cursor-pointer transition-all ${
                   activeTab === Tab.ADMIN
                     ? isDarkMode
@@ -1273,6 +1305,7 @@ const App: React.FC = () => {
                   } else {
                     setUpdatePanelOpen(true);
                   }
+                  closeSidebarForMobile();
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-4 h-14 rounded-2xl transition-all ${
                   updatePanelOpen
@@ -1301,14 +1334,27 @@ const App: React.FC = () => {
           </div>
         </aside>
 
-      <main className={`flex-1 transition-[margin] duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
-        <header className={`h-20 backdrop-blur-xl sticky top-0 z-10 px-6 lg:px-8 flex items-center justify-between shadow-sm border-b ${
+      <main className={`min-w-0 flex-1 transition-[margin] duration-300 ml-0 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'}`}>
+        <header className={`min-h-20 backdrop-blur-xl sticky top-0 z-10 px-3 py-3 sm:px-4 lg:h-20 lg:px-8 lg:py-0 flex flex-wrap items-center gap-3 lg:flex-nowrap shadow-sm border-b ${
             isDarkMode
               ? 'bg-[#121b27]/78 border-slate-700/60'
               : 'bg-white/70 border-slate-200/60'
           }`}>
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <button
+                type="button"
+                data-tour-id="sidebar-toggle-mobile"
+                onClick={() => setSidebarOpen(true)}
+                className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border transition lg:hidden ${
+                  isDarkMode
+                    ? 'border-slate-700 bg-slate-900/80 text-slate-200 hover:bg-slate-800'
+                    : 'border-slate-200 bg-white/80 text-slate-700 hover:bg-white'
+                }`}
+                aria-label="Open navigation"
+              >
+                <Menu size={20} />
+              </button>
+              <h1 className="min-w-0 text-lg font-semibold text-slate-800 flex items-center gap-2 sm:text-xl">
                 <span>{getTabTitle(activeTab)}</span>
               </h1>
               {authUser && (
@@ -1404,7 +1450,7 @@ const App: React.FC = () => {
               </div>
             )}
 
-            <div data-tour-id="top-right-controls" className="flex items-center gap-4">
+            <div data-tour-id="top-right-controls" className="ml-auto flex flex-wrap items-center justify-end gap-2 sm:gap-3 lg:gap-4">
               {isSalesHeaderView && showRange && rangeLabel && (
                 <button
                   onClick={() => window.dispatchEvent(new Event('fd-open-range'))}
@@ -1507,7 +1553,7 @@ const App: React.FC = () => {
                   {weatherLabel}
                 </div>
               )}
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-row gap-0.5 sm:flex-col">
                 <button
                   onClick={() => { setThemeMode('light'); localStorage.setItem('fd_theme_mode', 'light'); }}
                   className={`p-1.5 rounded-full transition-all ${
@@ -1546,7 +1592,7 @@ const App: React.FC = () => {
             </div>
           </header>
 
-          <div className="p-5 lg:p-7">
+          <div className="p-3 sm:p-4 lg:p-7">
             <div data-tour-id="botbot-main-content">
             {renderContent()}
             </div>
@@ -1557,7 +1603,7 @@ const App: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowTooltips((prev) => !prev)}
-            className={`fixed bottom-24 right-6 z-40 h-12 w-12 rounded-full shadow-lg border text-lg font-bold transition-colors ${
+            className={`fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] right-4 z-40 h-12 w-12 rounded-full shadow-lg border text-lg font-bold transition-colors sm:right-6 ${
               showTooltips
                 ? 'bg-slate-900 text-white border-slate-900'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'

@@ -38,7 +38,7 @@ const BotBotOrb: React.FC<BotBotOrbProps> = ({
   return (
     <motion.div
       data-tour-id="botbot-entry"
-      className="fixed bottom-10 right-6 z-50"
+      className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] right-4 z-50 sm:bottom-8 sm:right-6"
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
@@ -47,7 +47,7 @@ const BotBotOrb: React.FC<BotBotOrbProps> = ({
         onClick={onToggle}
         aria-label={isExpanded ? 'Close BotBot' : `Open ${assistantName}`}
         className={`relative flex items-center justify-center rounded-full ${colors.bg} shadow-lg ring-2 ${colors.ring} transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-4 ${
-          isExpanded ? 'h-20 w-20' : 'h-16 w-16'
+          isExpanded ? 'h-16 w-16 sm:h-20 sm:w-20' : 'h-14 w-14 sm:h-16 sm:w-16'
         }`}
         whileHover={!isThinking ? { scale: 1.1 } : {}}
         whileTap={{ scale: 0.95 }}

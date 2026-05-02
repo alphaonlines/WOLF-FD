@@ -113,8 +113,8 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({ authUser, isDarkMode,
 
   const colors = THEME_COLORS[theme] ?? THEME_COLORS.sky;
   const panelSizeClass = isFullscreen
-    ? 'fixed inset-4 sm:inset-6 flex flex-col rounded-2xl border shadow-2xl z-50'
-    : 'fixed bottom-32 right-6 flex w-[min(24rem,calc(100vw-2rem))] flex-col rounded-3xl border shadow-2xl h-[560px] max-h-[calc(100vh-9rem)] z-40';
+    ? 'fixed inset-2 sm:inset-4 lg:inset-6 flex flex-col rounded-2xl border shadow-2xl z-50'
+    : 'fixed inset-x-2 top-16 bottom-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] flex flex-col rounded-3xl border shadow-2xl z-40 lg:inset-auto lg:bottom-32 lg:right-6 lg:h-[560px] lg:max-h-[calc(100dvh-9rem)] lg:w-[min(24rem,calc(100vw-2rem))]';
 
   // Get current model's quota usage
   const currentModelUsage = tokenUsage.find(u => u.modelKey === selectedModelKey);
@@ -212,7 +212,7 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({ authUser, isDarkMode,
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.95 }}
         transition={{ duration: 0.2 }}
-        className={`fixed bottom-32 right-6 flex w-[600px] flex-col items-center justify-center rounded-3xl border shadow-2xl h-[700px] z-40 ${isDarkMode ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}
+        className={`${panelSizeClass} items-center justify-center ${isDarkMode ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}
       >
         <Loader size={32} className={`animate-spin ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
         <p className={`mt-2 text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Loading BotBot...</p>
@@ -227,7 +227,7 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({ authUser, isDarkMode,
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.95 }}
         transition={{ duration: 0.2 }}
-        className={`fixed bottom-32 right-6 flex w-[600px] flex-col items-center justify-center rounded-3xl border shadow-2xl h-[700px] z-40 ${isDarkMode ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}
+        className={`${panelSizeClass} items-center justify-center p-6 ${isDarkMode ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}
       >
         <p className={`text-sm font-semibold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>Error</p>
         <p className={`mt-2 text-xs text-center ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{fetchError}</p>
@@ -250,8 +250,8 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({ authUser, isDarkMode,
       className={`${panelSizeClass} ${isDarkMode ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}
     >
       {/* ── Header ────────────────────────────────────────────────── */}
-      <div className={`flex items-center justify-between border-b px-6 py-4 ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-        <div className="flex items-center gap-2">
+      <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-6 sm:py-4 ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+        <div className="flex min-w-0 items-center gap-2">
           <div className={`h-3 w-3 rounded-full ${colors.bg}`} />
           <div>
             <h2 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
@@ -260,13 +260,13 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({ authUser, isDarkMode,
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
           {!selectedConvId && !showSettings && !showAdmin && models.length > 0 && (
             <select
               value={selectedModelKey}
               onChange={e => setSelectedModelKey(e.target.value)}
               disabled={isSending}
-              className={`rounded-lg border px-2 py-1 text-xs font-medium ${isDarkMode ? 'border-slate-600 bg-slate-800 text-slate-100' : 'border-slate-300 bg-white text-slate-900'} disabled:opacity-50`}
+              className={`max-w-[10rem] rounded-lg border px-2 py-1 text-xs font-medium sm:max-w-none ${isDarkMode ? 'border-slate-600 bg-slate-800 text-slate-100' : 'border-slate-300 bg-white text-slate-900'} disabled:opacity-50`}
             >
               {models.map(m => (
                 <option key={m.modelKey} value={m.modelKey}>

@@ -92,11 +92,19 @@ const buildTargetRect = (rect: DOMRect, highlightId?: string): DOMRect => {
 const getTargetElement = (highlightId?: string): HTMLElement | null => {
   if (typeof document === 'undefined' || !highlightId) return null;
 
-  const byDataTour = document.querySelector(`[data-tour-id="${highlightId}"]`) as HTMLElement | null;
-  if (byDataTour) return byDataTour;
+  const targetIds = typeof window !== 'undefined' && window.innerWidth < 1024 && highlightId === 'sidebar-toggle'
+    ? ['sidebar-toggle-mobile', highlightId]
+    : [highlightId];
 
-  const byId = document.getElementById(highlightId) as HTMLElement | null;
-  return byId;
+  for (const targetId of targetIds) {
+    const byDataTour = document.querySelector(`[data-tour-id="${targetId}"]`) as HTMLElement | null;
+    if (byDataTour) return byDataTour;
+
+    const byId = document.getElementById(targetId) as HTMLElement | null;
+    if (byId) return byId;
+  }
+
+  return null;
 };
 
 const BotBotTutorial: React.FC<BotBotTutorialProps> = ({

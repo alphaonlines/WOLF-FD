@@ -51,6 +51,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   forceTargetPulse = false,
   onHighlightedAreaClick,
 }) => {
+  const isMobileSheet = typeof window !== 'undefined' && window.innerWidth < 768;
   const cardPosition = useMemo(() => {
     if (typeof window === 'undefined') {
       return { left: CARD_MARGIN, top: CARD_MARGIN };
@@ -101,6 +102,15 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
     return { left, top };
   }, [highlightedElementRect]);
 
+  const cardStyle = isMobileSheet
+    ? {
+        left: 12,
+        right: 12,
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
+        width: 'auto',
+        maxHeight: 'min(58dvh, 430px)',
+      }
+    : { left: cardPosition.left, top: cardPosition.top, width: CARD_WIDTH };
   const description = slide.description || slide.body || 'Follow the highlighted area and BotBot will walk you through this step.';
   const actionCount = actions.length;
   const shouldShowTargetPulse = Boolean(highlightedElementRect);
@@ -195,11 +205,11 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -12, scale: 0.98 }}
         transition={{ duration: 0.28, ease: 'easeOut' }}
-        className="fixed pointer-events-auto max-w-[calc(100vw-32px)]"
-        style={{ left: cardPosition.left, top: cardPosition.top, width: CARD_WIDTH }}
+        className="fixed pointer-events-auto max-w-[calc(100vw-24px)]"
+        style={cardStyle}
       >
         <div className="relative">
-          <div className={`rounded-3xl px-6 py-5 shadow-2xl ${isDarkMode ? 'bg-slate-950/95 border border-slate-700 text-white' : 'bg-white/95 border border-slate-200 text-slate-950'}`}>
+          <div className={`max-h-[inherit] overflow-y-auto rounded-3xl px-5 py-5 shadow-2xl sm:px-6 ${isDarkMode ? 'bg-slate-950/95 border border-slate-700 text-white' : 'bg-white/95 border border-slate-200 text-slate-950'}`}>
             <div className="flex items-start gap-3">
               <div className="shrink-0 rounded-2xl bg-sky-500 p-2.5 text-white shadow-lg shadow-sky-500/30">
                 <Bot size={24} />
@@ -236,7 +246,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
               </div>
             )}
 
-            <div className="mt-5 flex items-center justify-between gap-3">
+            <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <div className="flex items-center gap-1.5">
                 {Array.from({ length: totalSteps }).map((_, index) => (
                   <span
@@ -246,14 +256,14 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
                 ))}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 {actions.map((action) => (
                   <button
                     key={action.id}
                     type="button"
                     disabled={action.disabled}
                     onClick={action.onClick}
-                    className={`inline-flex items-center gap-1 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+                    className={`inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-semibold transition sm:py-1.5 sm:text-xs ${
                       action.variant === 'danger'
                         ? isDarkMode
                           ? 'bg-rose-600 hover:bg-rose-500 text-white disabled:opacity-50'
@@ -275,7 +285,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-700 px-4 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 sm:py-1.5 sm:text-xs"
                   >
                     Close
                   </button>
@@ -287,15 +297,17 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
               Step {currentStep + 1} of {totalSteps}
             </div>
 
-            <div
-              className="absolute -bottom-3 right-12 h-0 w-0"
-              style={{
-                borderLeft: '12px solid transparent',
-                borderRight: '12px solid transparent',
-                borderTop: `12px solid ${isDarkMode ? '#020617' : '#ffffff'}`,
-                filter: isDarkMode ? '' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
-              }}
-            />
+            {!isMobileSheet && (
+              <div
+                className="absolute -bottom-3 right-12 h-0 w-0"
+                style={{
+                  borderLeft: '12px solid transparent',
+                  borderRight: '12px solid transparent',
+                  borderTop: `12px solid ${isDarkMode ? '#020617' : '#ffffff'}`,
+                  filter: isDarkMode ? '' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+                }}
+              />
+            )}
           </div>
 
         </div>
