@@ -26,6 +26,7 @@ export const PUBLIC_AUTH_PATHS = new Set([
   "/auth/config",
   "/auth/google/start",
   "/auth/google/request-access",
+  "/botbot/external/usage",
 ]);
 export const GOOGLE_WORKSPACE_CLIENT_ID = envString("GOOGLE_WORKSPACE_CLIENT_ID", "");
 export const GOOGLE_WORKSPACE_DOMAIN = (envString("GOOGLE_WORKSPACE_DOMAIN", "furnituredistributors.net") || "furnituredistributors.net").toLowerCase();
@@ -102,6 +103,8 @@ export const BOTBOT_LOCAL_AI_URL =
   "http://192.168.4.80:3000";
 export const BOTBOT_LOCAL_AI_TOKEN =
   envString("BOTBOT_LOCAL_AI_TOKEN", "") ?? "";
+export const BOTBOT_LEDGER_TOKEN =
+  envString("BOTBOT_LEDGER_TOKEN", "") ?? "";
 export const OPENAI_API_KEY = envString("OPENAI_API_KEY", "") ?? "";
 export const OPENAI_BASE_URL =
   envString("OPENAI_BASE_URL", "https://api.openai.com/v1") ??

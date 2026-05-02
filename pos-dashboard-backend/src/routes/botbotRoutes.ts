@@ -22,6 +22,7 @@ import { buildPro1stExcludedSql, buildQualifiedPro1stSql } from "../pro1stSql";
 import {
   BOTBOT_LOCAL_AI_URL,
   BOTBOT_ENABLED,
+  BOTBOT_LEDGER_TOKEN,
   OLLAMA_BASE_URL,
   OLLAMA_PRIMARY_MODEL,
   OLLAMA_PRIMARY_NODE_LABEL,
@@ -469,6 +470,12 @@ const parseQuota = (value: unknown, fallback: number) => {
 const tokenLedgerKeyForProvider = (provider: string, modelKey: string) =>
   isLocalProvider(provider) ? "local" : modelKey;
 
+const normalizeExternalUserKey = (value: unknown) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .slice(0, 160);
+
 const clipPromptText = (value: unknown, maxLength: number) =>
   typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 
@@ -679,6 +686,83 @@ export function registerBotBotRoutes({
       | { id: string; name: string; roles: string[] }
       | undefined;
   const userId = (req: any): number => parseInt(getAuthUser(req)!.id, 10);
+
+  app.post("/api/botbot/external/usage", async (req, res) => {
+    const headerToken = String(req.headers["x-botbot-ledger-token"] || "");
+    if (!BOTBOT_LEDGER_TOKEN || headerToken !== BOTBOT_LEDGER_TOKEN) {
+      return res.status(401).json({ ok: false, error: "unauthorized" });
+    }
+
+    const userKey = normalizeExternalUserKey(req.body?.externalUserKey || req.body?.username || req.body?.email);
+    if (!userKey) {
+      return res.status(400).json({ ok: false, error: "externalUserKey required" });
+    }
+
+    const userResult = await pool.query(
+      `SELECT id, name, email
+       FROM users
+       WHERE lower(email) = $1
+          OR lower(split_part(email, '@', 1)) = $1
+          OR lower(name) = $1
+       ORDER BY
+         CASE
+           WHEN lower(email) = $1 THEN 1
+           WHEN lower(split_part(email, '@', 1)) = $1 THEN 2
+           ELSE 3
+         END,
+         id ASC
+       LIMIT 1`,
+      [userKey]
+    );
+    if (!userResult.rows.length) {
+      return res.status(404).json({ ok: false, error: "user_not_found" });
+    }
+
+    const provider = String(req.body?.provider || "wolfbot").trim().toLowerCase() || "wolfbot";
+    const modelKey = String(req.body?.modelKey || "local").trim() || "local";
+    const ledgerModelKey = tokenLedgerKeyForProvider(provider, modelKey);
+    const inputTokens = Math.max(0, Math.round(Number(req.body?.inputTokens ?? 0)) || 0);
+    const outputTokens = Math.max(0, Math.round(Number(req.body?.outputTokens ?? 0)) || 0);
+    const totalTokens = inputTokens + outputTokens;
+    const status = req.body?.status === "error" || req.body?.status === "denied" ? req.body.status : "success";
+    const taskKey = String(req.body?.taskKey || req.body?.source || "wolfbot-ai").slice(0, 120);
+    const responseMs = Math.max(0, Math.round(Number(req.body?.responseMs ?? 0)) || 0);
+
+    if (totalTokens > 0) {
+      await pool.query(
+        `INSERT INTO botbot_token_ledger (user_id, model_key, tokens_used, updated_at)
+         VALUES ($1, $2, $3, now())
+         ON CONFLICT (user_id, model_key)
+         DO UPDATE SET
+           tokens_used = botbot_token_ledger.tokens_used + EXCLUDED.tokens_used,
+           updated_at = now()`,
+        [Number(userResult.rows[0].id), ledgerModelKey, totalTokens]
+      );
+    }
+
+    await logBotBotUsageEvent(pool, {
+      userId: Number(userResult.rows[0].id),
+      conversationId: null,
+      messageId: null,
+      modelKey,
+      provider,
+      skillKey: "wolfbot_workspace",
+      taskKey,
+      inputTokens,
+      outputTokens,
+      status,
+      errorCode: status === "success" ? null : String(req.body?.errorCode || "wolfbot_workspace_error"),
+      responseMs,
+    });
+
+    return res.json({
+      ok: true,
+      userId: Number(userResult.rows[0].id),
+      modelKey,
+      billingModelKey: ledgerModelKey,
+      tokensRecorded: totalTokens,
+    });
+  });
 
   app.get("/api/botbot/models", async (req, res) => {
     const user = toAuthUser(getAuthUser(req)!);
