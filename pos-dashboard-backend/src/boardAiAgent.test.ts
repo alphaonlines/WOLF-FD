@@ -18,7 +18,7 @@ describe("boardAiAgent", () => {
     expect(config.model).toBe("gemma4:e4b-it-q4_K_M");
   });
 
-  it("only runs on weekdays during configured workday hours", () => {
+  it("runs during configured hours and includes weekends by default", () => {
     const config = buildBoardAiConfig({
       BOARD_AI_AGENT_ENABLED: "true",
       BOARD_AI_AGENT_WORKDAY_START: "09:00",
@@ -28,7 +28,17 @@ describe("boardAiAgent", () => {
     expect(isWithinBoardAiWorkday(new Date("2026-05-01T14:30:00"), config)).toBe(true);
     expect(isWithinBoardAiWorkday(new Date("2026-05-01T08:59:00"), config)).toBe(false);
     expect(isWithinBoardAiWorkday(new Date("2026-05-01T17:01:00"), config)).toBe(false);
+    expect(isWithinBoardAiWorkday(new Date("2026-05-02T11:00:00"), config)).toBe(true);
+  });
+
+  it("can disable weekend runs by env flag", () => {
+    const config = buildBoardAiConfig({
+      BOARD_AI_AGENT_ENABLED: "true",
+      BOARD_AI_AGENT_INCLUDE_WEEKENDS: "false",
+    });
+
     expect(isWithinBoardAiWorkday(new Date("2026-05-02T11:00:00"), config)).toBe(false);
+    expect(isWithinBoardAiWorkday(new Date("2026-05-04T11:00:00"), config)).toBe(true);
   });
 
   it("cleans generated text and labels it as WOLFbot", () => {

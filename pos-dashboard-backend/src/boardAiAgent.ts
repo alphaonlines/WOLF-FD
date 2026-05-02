@@ -11,6 +11,7 @@ export type BoardAiConfig = {
   model: string;
   authorName: string;
   authorEmail: string;
+  includeWeekends: boolean;
 };
 
 type EnvLike = Record<string, string | undefined>;
@@ -68,12 +69,13 @@ export function buildBoardAiConfig(env: EnvLike = process.env): BoardAiConfig {
     model: String(env.BOARD_AI_AGENT_MODEL || OLLAMA_PRIMARY_MODEL || "gemma4:e4b-it-q4_K_M").trim(),
     authorName: String(env.BOARD_AI_AGENT_AUTHOR_NAME || "WOLFbot Product Coach").trim(),
     authorEmail: String(env.BOARD_AI_AGENT_AUTHOR_EMAIL || "wolfbot@furnituredistributors.local").trim(),
+    includeWeekends: String(env.BOARD_AI_AGENT_INCLUDE_WEEKENDS || "true").trim().toLowerCase() !== "false",
   };
 }
 
 export function isWithinBoardAiWorkday(now: Date, config: BoardAiConfig): boolean {
   const day = now.getDay();
-  if (day === 0 || day === 6) return false;
+  if (!config.includeWeekends && (day === 0 || day === 6)) return false;
   const minutes = now.getHours() * 60 + now.getMinutes();
   return minutes >= timeToMinutes(config.workdayStart) && minutes <= timeToMinutes(config.workdayEnd);
 }
@@ -176,7 +178,7 @@ export function startBoardAiAgent(pool: Pool, env: EnvLike = process.env) {
   const interval = setInterval(tick, config.intervalMs);
   setTimeout(tick, 30000);
   console.log(
-    `Board AI agent enabled for ${config.channels.join(", ")} every ${Math.round(config.intervalMs / 60000)} minutes during ${config.workdayStart}-${config.workdayEnd}.`
+    `Board AI agent enabled for ${config.channels.join(", ")} every ${Math.round(config.intervalMs / 60000)} minutes during ${config.workdayStart}-${config.workdayEnd}${config.includeWeekends ? " including weekends" : " on weekdays"}.`
   );
 
   return {
