@@ -268,7 +268,13 @@ export async function fetchManufacturerCatalog(input?: {
   color?: string;
   query?: string;
   limit?: number;
-}): Promise<ManufacturerCatalogItem[]> {
+}): Promise<{
+  rows: ManufacturerCatalogItem[];
+  total: number;
+  count: number;
+  limit: number;
+  hasMore: boolean;
+}> {
   const params = new URLSearchParams();
   if (input?.manufacturer) params.set("manufacturer", input.manufacturer);
   if (input?.category) params.set("category", input.category);
@@ -278,7 +284,13 @@ export async function fetchManufacturerCatalog(input?: {
   const search = params.toString();
   const json = await fetchJson(`/api/manufacturer-pricebooks/catalog${search ? `?${search}` : ""}`);
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
-  return rows.map((row: any) => mapCatalogItem(row));
+  return {
+    rows: rows.map((row: any) => mapCatalogItem(row)),
+    total: Number((json as any)?.total ?? rows.length),
+    count: Number((json as any)?.count ?? rows.length),
+    limit: Number((json as any)?.limit ?? input?.limit ?? rows.length),
+    hasMore: Boolean((json as any)?.has_more ?? (json as any)?.hasMore),
+  };
 }
 
 export async function fetchManufacturerReferenceNotes(

@@ -92,6 +92,8 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
 
   // Catalog state
   const [items, setItems] = useState<ManufacturerCatalogItem[]>([]);
+  const [catalogTotal, setCatalogTotal] = useState(0);
+  const [catalogHasMore, setCatalogHasMore] = useState(false);
   const [notes, setNotes] = useState<ManufacturerReferenceNote[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -188,18 +190,21 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
     setLoading(true);
     setError(null);
     try {
-      const [catalogRows, noteRows] = await Promise.all([
+      const [catalogResult, noteRows] = await Promise.all([
         fetchManufacturerCatalog({ manufacturer: manufacturer || undefined, category: category || undefined, color: color || undefined, query: query || undefined, limit: CATALOG_FETCH_LIMIT }),
         manufacturer ? fetchManufacturerReferenceNotes(manufacturer) : Promise.resolve([]),
       ]);
+      const catalogRows = catalogResult.rows;
       setItems(catalogRows);
+      setCatalogTotal(catalogResult.total);
+      setCatalogHasMore(catalogResult.hasMore);
       setNotes(noteRows);
       if (!selectedId || !catalogRows.some((item) => item.id === selectedId)) {
         setSelectedId(catalogRows[0]?.id ?? null);
       }
     } catch (err: any) {
       setError(String(err?.message ?? err ?? "Unable to load product catalog"));
-      setItems([]); setNotes([]); setSelectedId(null);
+      setItems([]); setCatalogTotal(0); setCatalogHasMore(false); setNotes([]); setSelectedId(null);
     } finally {
       setLoading(false);
     }
@@ -422,7 +427,12 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
           )}
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className={badgeClassName}>{sortedItems.length.toLocaleString()} products</span>
+            <span className={badgeClassName}>
+              Showing {sortedItems.length.toLocaleString()} of {(catalogTotal || sortedItems.length).toLocaleString()} products
+            </span>
+            {catalogHasMore && (
+              <span className={badgeClassName}>Refine search to see more than {CATALOG_FETCH_LIMIT.toLocaleString()}</span>
+            )}
             <span className={badgeClassName}>{new Set(sortedItems.map((i) => i.manufacturer).filter(Boolean)).size} manufacturers</span>
             <button type="button" onClick={() => void loadCatalog()}
               className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition ${isDarkMode ? "border border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"}`}>

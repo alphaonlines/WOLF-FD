@@ -21,6 +21,8 @@ type BotBotChatPanelProps = {
   authUser: { id: string; name: string; roles: string[] } | null;
   isDarkMode: boolean;
   onClose: () => void;
+  initialFullscreen?: boolean;
+  fullscreenRequestKey?: number;
 };
 
 const THEME_COLORS: Record<string, { bg: string; text: string; border: string; button: string }> = {
@@ -32,7 +34,13 @@ const THEME_COLORS: Record<string, { bg: string; text: string; border: string; b
   teal: { bg: 'bg-teal-50 dark:bg-teal-950', text: 'text-teal-600 dark:text-teal-400', border: 'border-teal-200 dark:border-teal-800', button: 'bg-teal-500 hover:bg-teal-600' },
 };
 
-const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({ authUser, isDarkMode, onClose }) => {
+const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({
+  authUser,
+  isDarkMode,
+  onClose,
+  initialFullscreen = false,
+  fullscreenRequestKey = 0,
+}) => {
   const { pageContext } = useBotBotContext();
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -50,7 +58,7 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({ authUser, isDarkMode,
   const [theme, setTheme] = useState('sky');
   const [showAdmin, setShowAdmin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(initialFullscreen);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isOwner = authUser?.roles?.includes('Owner') ?? false;
@@ -82,6 +90,12 @@ const BotBotChatPanel: React.FC<BotBotChatPanelProps> = ({ authUser, isDarkMode,
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  useEffect(() => {
+    if (fullscreenRequestKey > 0) {
+      setIsFullscreen(true);
+    }
+  }, [fullscreenRequestKey]);
 
   // Fetch messages when conversation changes
   useEffect(() => {

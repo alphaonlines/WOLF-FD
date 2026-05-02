@@ -1670,9 +1670,11 @@ export function registerManufacturerPricebookRoutes({
         `(lower(search_text) LIKE '%' || $${values.length} || '%' OR lower(sku) LIKE '%' || $${values.length} || '%')`
       );
     }
+    const countValues = [...values];
     values.push(limit);
 
-    const result = await pool.query(
+    const [result, countResult] = await Promise.all([
+      pool.query(
       `
         SELECT
           id,
@@ -1715,10 +1717,24 @@ export function registerManufacturerPricebookRoutes({
         LIMIT $${values.length}
       `,
       values
-    );
+      ),
+      pool.query(
+        `
+          SELECT COUNT(*)::int AS total
+          FROM manufacturer_catalog_items
+          ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+        `,
+        countValues
+      ),
+    ]);
+    const totalCount = Number(countResult.rows[0]?.total ?? result.rows.length);
 
     res.json({
       ok: true,
+      count: result.rows.length,
+      total: totalCount,
+      limit,
+      has_more: totalCount > result.rows.length,
       rows: result.rows.map(mapCatalogRow),
     });
   });

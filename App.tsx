@@ -426,6 +426,8 @@ const App: React.FC = () => {
   const [missingSalesData, setMissingSalesData] = useState(false);
   const [activeFilterLabel, setActiveFilterLabel] = useState<string | null>(null);
   const [botbotOpen, setBotbotOpen] = useState(false);
+  const [botbotInitialFullscreen, setBotbotInitialFullscreen] = useState(false);
+  const [botbotFullscreenRequestKey, setBotbotFullscreenRequestKey] = useState(0);
   const [botbotAssistantName, setBotbotAssistantName] = useState('BotBot');
   const [botbotTheme, setBotbotTheme] = useState('sky');
   const [showBotBotTutorial, setShowBotBotTutorial] = useState(false);
@@ -461,6 +463,30 @@ const App: React.FC = () => {
     setRequestedSettingsPanel('permissions');
     setBotbotOpen(true);
     setBotBotTutorialRunKey((value) => value + 1);
+  };
+
+  const openBotBotPanel = (options?: { fullscreen?: boolean }) => {
+    const shouldOpenFullscreen = Boolean(options?.fullscreen);
+    setBotbotInitialFullscreen(shouldOpenFullscreen);
+    if (shouldOpenFullscreen) {
+      setBotbotFullscreenRequestKey((value) => value + 1);
+    }
+    setBotbotOpen(true);
+  };
+
+  const closeBotBotPanel = () => {
+    setBotbotOpen(false);
+    setBotbotInitialFullscreen(false);
+  };
+
+  const toggleBotBotPanel = () => {
+    if (botbotOpen) {
+      closeBotBotPanel();
+      return;
+    }
+
+    setBotbotInitialFullscreen(false);
+    setBotbotOpen(true);
   };
   const [showTooltips, setShowTooltips] = useState(() => {
     try {
@@ -1022,7 +1048,7 @@ const App: React.FC = () => {
             isDarkMode={isDarkMode}
             requestedSubTab={requestedAmpSubTab}
             requestedSubTabToken={requestedAmpSubTabToken}
-            onOpenBotBot={() => setBotbotOpen(true)}
+            onOpenBotBot={() => openBotBotPanel({ fullscreen: true })}
             onOpenSocialIntegrations={() => {
               setRequestedSettingsPanel('social');
               setActiveTab(Tab.ADMIN);
@@ -1712,7 +1738,9 @@ const App: React.FC = () => {
         <BotBotChatPanel
           authUser={authUser}
           isDarkMode={isDarkMode}
-          onClose={() => setBotbotOpen(false)}
+          onClose={closeBotBotPanel}
+          initialFullscreen={botbotInitialFullscreen}
+          fullscreenRequestKey={botbotFullscreenRequestKey}
         />
       )}
       <BotBotOrb
@@ -1722,7 +1750,7 @@ const App: React.FC = () => {
         assistantName="BotBot"
         theme="sky"
         isDarkMode={isDarkMode}
-        onToggle={() => setBotbotOpen(!botbotOpen)}
+        onToggle={toggleBotBotPanel}
       />
 
       {/* BotBot Tutorial - spotlight intro on first login */}
