@@ -27,6 +27,7 @@ import {
 } from "./runtimeConfig";
 import { registerAllRoutes } from "./routeWiring";
 import { createSocialPublisher } from "./socialPublishing";
+import { startBoardAiAgent } from "./boardAiAgent";
 
 const DASHBOARD_LOCKED = false;
 const DASHBOARD_NOTICE = "System down until further notice.";
@@ -128,6 +129,8 @@ async function startServer() {
       });
     }, 5000);
   }
+
+  startBoardAiAgent(pool);
 
   const httpServer = http.createServer(app);
   attachMeetingSignaling(httpServer);
