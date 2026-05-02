@@ -38,7 +38,7 @@ const BotBotSettingsPanel: React.FC<BotBotSettingsPanelProps> = ({ isDarkMode, o
             assistantTheme: 'sky',
             tutorialCompleted: false,
             preferredModelKey: 'local',
-            preferredRuntimeNode: runtimeStatus.defaultNodeKey,
+            preferredRuntimeNode: runtimeStatus.endpointKey || 'alphaai',
           });
         }
         setTokenUsage(usage);
@@ -132,7 +132,7 @@ const BotBotSettingsPanel: React.FC<BotBotSettingsPanelProps> = ({ isDarkMode, o
       {/* ── Preferred Model ──────────────────────────────────────── */}
       <section>
         <h3 className={`text-[10px] uppercase tracking-widest font-bold mb-4 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-          Default Brain
+          Default Model
         </h3>
         <div className={`rounded-xl border p-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
           {tokenUsage.map((u) => (
@@ -146,38 +146,27 @@ const BotBotSettingsPanel: React.FC<BotBotSettingsPanelProps> = ({ isDarkMode, o
             </button>
           ))}
         </div>
+        <p className="mt-2 text-[10px] leading-relaxed opacity-50">
+          All models route through the shared AlphaAI endpoint. Pick the model here; BotBot handles the system routing.
+        </p>
       </section>
 
-      {/* ── Preferred Thinker ───────────────────────────────────── */}
+      {/* ── Shared Endpoint ─────────────────────────────────────── */}
       {runtime && (
         <section>
           <h3 className={`text-[10px] uppercase tracking-widest font-bold mb-4 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-            Preferred Thinker
+            Shared AI Endpoint
           </h3>
-          <div className="space-y-2">
-            {runtime.nodes.map((node) => (
-              <button
-                key={node.key}
-                onClick={() => handleSave({ preferredRuntimeNode: node.key })}
-                className={`w-full rounded-xl border px-3 py-3 text-left transition ${
-                  settings.preferredRuntimeNode === node.key
-                    ? isDarkMode
-                      ? 'border-cyan-500/40 bg-cyan-500/10 text-white'
-                      : 'border-cyan-200 bg-cyan-50 text-slate-900'
-                    : isDarkMode
-                      ? 'border-slate-700 bg-slate-800/60 text-slate-300 hover:border-slate-600'
-                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-xs font-semibold">{node.label} · {node.host}</div>
-                    <div className="mt-1 text-[10px] opacity-70">{node.description}</div>
-                  </div>
-                  <div className={`h-2.5 w-2.5 rounded-full ${node.reachable ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+          <div className={`rounded-xl border px-3 py-3 ${isDarkMode ? 'border-slate-700 bg-slate-800/60 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-semibold">{runtime.endpointLabel || 'AlphaAI model endpoint'}</div>
+                <div className="mt-1 text-[10px] opacity-70">
+                  {runtime.modelCount ?? runtime.models?.length ?? 0} local model{(runtime.modelCount ?? runtime.models?.length ?? 0) === 1 ? '' : 's'} detected. System routing is managed centrally.
                 </div>
-              </button>
-            ))}
+              </div>
+              <div className={`h-2.5 w-2.5 rounded-full ${runtime.reachable ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+            </div>
           </div>
         </section>
       )}

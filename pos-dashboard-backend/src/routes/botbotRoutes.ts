@@ -21,11 +21,9 @@ import { buildPro1stExcludedSql, buildQualifiedPro1stSql } from "../pro1stSql";
 import {
   BOTBOT_LOCAL_AI_URL,
   BOTBOT_ENABLED,
-  DEFAULT_OLLAMA_NODE_KEY,
-  OLLAMA_NODE_CONFIGS,
+  OLLAMA_BASE_URL,
   OLLAMA_PRIMARY_MODEL,
   OLLAMA_PRIMARY_NODE_LABEL,
-  resolveOllamaNode,
 } from "../runtimeConfig";
 
 type BotBotRoutesDeps = {
@@ -652,41 +650,34 @@ export function registerBotBotRoutes({
   });
 
   app.get("/api/botbot/runtime", async (req, res) => {
-    const uid = userId(req);
-    const settingsResult = await pool.query(
-      `SELECT preferred_runtime_node FROM botbot_settings WHERE user_id = $1`,
-      [uid]
-    );
-    const preferredNodeKey =
-      settingsResult.rows[0]?.preferred_runtime_node ?? DEFAULT_OLLAMA_NODE_KEY;
-
-    const nodes = await Promise.all(
-      OLLAMA_NODE_CONFIGS.map(async (node) => {
-        const tagInfo = await fetchOllamaTags(node.baseUrl);
-        return {
-          key: node.key,
-          label: node.label,
-          host: node.host,
-          baseUrl: node.baseUrl,
-          description: node.description,
-          reachable: tagInfo.reachable,
-          models: tagInfo.models,
-          modelCount: tagInfo.models.length,
-          isDefault: node.key === DEFAULT_OLLAMA_NODE_KEY,
-          isSelected: node.key === preferredNodeKey,
-        };
-      })
-    );
+    const tagInfo = await fetchOllamaTags(OLLAMA_BASE_URL);
 
     res.json({
       runtime: {
         enabled: BOTBOT_ENABLED,
-        defaultNodeKey: DEFAULT_OLLAMA_NODE_KEY,
-        preferredNodeKey,
+        endpointKey: "alphaai",
+        endpointLabel: "AlphaAI model endpoint",
+        endpointUrl: OLLAMA_BASE_URL,
         localAiPlatformUrl: BOTBOT_LOCAL_AI_URL,
         primaryNodeLabel: OLLAMA_PRIMARY_NODE_LABEL,
         primaryModel: OLLAMA_PRIMARY_MODEL,
-        nodes,
+        reachable: tagInfo.reachable,
+        models: tagInfo.models,
+        modelCount: tagInfo.models.length,
+        nodes: [
+          {
+            key: "alphaai",
+            label: "AlphaAI",
+            host: OLLAMA_PRIMARY_NODE_LABEL,
+            baseUrl: OLLAMA_BASE_URL,
+            description: "Shared AI endpoint for all BotBot model choices.",
+            reachable: tagInfo.reachable,
+            models: tagInfo.models,
+            modelCount: tagInfo.models.length,
+            isDefault: true,
+            isSelected: true,
+          },
+        ],
       },
     });
   });
@@ -942,14 +933,11 @@ export function registerBotBotRoutes({
     const history: LLMMessage[] = historyResult.rows.reverse();
 
     const settingsResult = await pool.query(
-      `SELECT assistant_name, preferred_runtime_node FROM botbot_settings WHERE user_id = $1`,
+      `SELECT assistant_name FROM botbot_settings WHERE user_id = $1`,
       [uid]
     );
     const assistantName =
       settingsResult.rows[0]?.assistant_name ?? "BotBot";
-    const preferredRuntimeNode =
-      settingsResult.rows[0]?.preferred_runtime_node ?? DEFAULT_OLLAMA_NODE_KEY;
-    const ollamaNode = resolveOllamaNode(preferredRuntimeNode);
 
     const ctx: PageContext = pageContext ?? {
       pageName: "Dashboard",
@@ -1022,7 +1010,7 @@ export function registerBotBotRoutes({
           model.ollama_model_name,
           history,
           systemPrompt,
-          ollamaNode.baseUrl
+          OLLAMA_BASE_URL
         );
       } else if (model.provider === "openai") {
         llmResponse = await callOpenAI(
@@ -1197,13 +1185,11 @@ export function registerBotBotRoutes({
       assistantTheme,
       tutorialCompleted,
       preferredModelKey,
-      preferredRuntimeNode,
     } = (req.body ?? {}) as {
       assistantName?: string;
       assistantTheme?: string;
       tutorialCompleted?: boolean;
       preferredModelKey?: string;
-      preferredRuntimeNode?: string;
     };
 
     const validThemes = [
@@ -1222,12 +1208,6 @@ export function registerBotBotRoutes({
       ? assistantTheme
       : undefined;
 
-    const safeRuntimeNode = OLLAMA_NODE_CONFIGS.some(
-      (node) => node.key === preferredRuntimeNode
-    )
-      ? preferredRuntimeNode
-      : undefined;
-
     await pool.query(
       `INSERT INTO botbot_settings (user_id, assistant_name, assistant_theme, tutorial_completed, preferred_model_key, preferred_runtime_node)
        VALUES ($1,
@@ -1235,7 +1215,7 @@ export function registerBotBotRoutes({
          COALESCE($3, 'sky'),
          COALESCE($4, FALSE),
          COALESCE($5, 'local'),
-         COALESCE($6, '${DEFAULT_OLLAMA_NODE_KEY}')
+         COALESCE($6, 'alphaai')
        )
        ON CONFLICT (user_id) DO UPDATE SET
          assistant_name      = COALESCE($2, botbot_settings.assistant_name),
@@ -1244,7 +1224,7 @@ export function registerBotBotRoutes({
          preferred_model_key = COALESCE($5, botbot_settings.preferred_model_key),
          preferred_runtime_node = COALESCE($6, botbot_settings.preferred_runtime_node),
          updated_at = now()`,
-      [uid, safeName, safeTheme, tutorialCompleted, preferredModelKey, safeRuntimeNode]
+      [uid, safeName, safeTheme, tutorialCompleted, preferredModelKey, undefined]
     );
     res.json({ ok: true });
   });

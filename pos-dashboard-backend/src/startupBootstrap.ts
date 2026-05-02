@@ -1618,16 +1618,19 @@ async function ensureBotBotSchema(pool: Pool) {
   await pool.query(`
     INSERT INTO botbot_model_config (model_key, display_name, provider, ollama_model_name, free_token_quota, enabled, sort_order)
     VALUES
-      ('local', 'Local AI (MSI WOLFbot)', 'wolfbot', '${OLLAMA_PRIMARY_MODEL}', 500000, TRUE, 1),
-      ('${OPENAI_FAST_MODEL}', 'OpenAI Fast API', 'openai', '${OPENAI_FAST_MODEL}', 50000, TRUE, 2),
-      ('${OPENAI_BALANCED_MODEL}', 'OpenAI Balanced API', 'openai', '${OPENAI_BALANCED_MODEL}', 25000, TRUE, 3),
-      ('claude-haiku-4-5', 'Claude Haiku', 'anthropic', '', 50000, TRUE, 4),
-      ('claude-sonnet-4-5', 'Claude Sonnet', 'anthropic', '', 10000, TRUE, 5)
+      ('local', 'AlphaAI Default', 'wolfbot', '${OLLAMA_PRIMARY_MODEL}', 500000, TRUE, 1),
+      ('gemma4:e4b-it-q4_K_M', 'Gemma 4B Local', 'wolfbot', 'gemma4:e4b-it-q4_K_M', 500000, TRUE, 2),
+      ('gemma4:e2b-it-q4_K_M', 'Gemma 2B Fast Local', 'wolfbot', 'gemma4:e2b-it-q4_K_M', 500000, TRUE, 3),
+      ('qwen2.5-coder:7b', 'Qwen Coder 7B Local', 'wolfbot', 'qwen2.5-coder:7b', 300000, TRUE, 4),
+      ('${OPENAI_FAST_MODEL}', 'OpenAI Fast API', 'openai', '${OPENAI_FAST_MODEL}', 50000, TRUE, 20),
+      ('${OPENAI_BALANCED_MODEL}', 'OpenAI Balanced API', 'openai', '${OPENAI_BALANCED_MODEL}', 25000, TRUE, 21),
+      ('claude-haiku-4-5', 'Claude Haiku', 'anthropic', '', 50000, TRUE, 30),
+      ('claude-sonnet-4-5', 'Claude Sonnet', 'anthropic', '', 10000, TRUE, 31)
     ON CONFLICT (model_key) DO UPDATE SET
       display_name = EXCLUDED.display_name,
       provider = EXCLUDED.provider,
       ollama_model_name = CASE
-        WHEN botbot_model_config.model_key IN ('local', '${OPENAI_FAST_MODEL}', '${OPENAI_BALANCED_MODEL}') THEN EXCLUDED.ollama_model_name
+        WHEN botbot_model_config.model_key IN ('local', 'gemma4:e4b-it-q4_K_M', 'gemma4:e2b-it-q4_K_M', 'qwen2.5-coder:7b', '${OPENAI_FAST_MODEL}', '${OPENAI_BALANCED_MODEL}') THEN EXCLUDED.ollama_model_name
         ELSE botbot_model_config.ollama_model_name
       END,
       enabled = EXCLUDED.enabled,

@@ -114,10 +114,16 @@ export type BotBotRuntimeNode = {
 
 export type BotBotRuntimeStatus = {
   enabled: boolean;
+  endpointKey?: string;
+  endpointLabel?: string;
+  endpointUrl?: string;
   defaultNodeKey: string;
   preferredNodeKey: string;
   primaryNodeLabel: string;
   primaryModel: string;
+  reachable?: boolean;
+  models?: string[];
+  modelCount?: number;
   nodes: BotBotRuntimeNode[];
 };
 
@@ -269,7 +275,7 @@ const mapSettings = (raw: any): BotBotSettings | null => {
     assistantTheme: String(raw.assistantTheme ?? raw.assistant_theme ?? 'sky'),
     tutorialCompleted: Boolean(raw.tutorialCompleted ?? raw.tutorial_completed),
     preferredModelKey: String(raw.preferredModelKey ?? raw.preferred_model_key ?? 'local'),
-    preferredRuntimeNode: String(raw.preferredRuntimeNode ?? raw.preferred_runtime_node ?? 'msi'),
+    preferredRuntimeNode: String(raw.preferredRuntimeNode ?? raw.preferred_runtime_node ?? 'alphaai'),
   };
 };
 
@@ -288,7 +294,6 @@ export const saveSettings = (settings: Partial<BotBotSettings>): Promise<void> =
       assistantTheme: settings.assistantTheme,
       tutorialCompleted: settings.tutorialCompleted,
       preferredModelKey: settings.preferredModelKey,
-      preferredRuntimeNode: settings.preferredRuntimeNode,
     }),
   });
 
