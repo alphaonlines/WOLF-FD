@@ -164,12 +164,9 @@ export function registerSalesDetailRoutes({
 
   app.get("/api/open-location-tickets", async (req, res) => {
     const storeQ = parseTextParam(req.query.store);
-    const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
-    if (!storeQ) {
-      return res.status(400).json({ error: "store is required" });
-    }
-
-    const mappedLocations = storeLocationMap[storeQ] ?? [storeQ];
+    const limit = Math.min(Math.max(Number(req.query.limit || 50), 1), 250);
+    const allLocations = !storeQ || storeQ.toUpperCase() === "ALL";
+    const mappedLocations = allLocations ? null : storeLocationMap[storeQ] ?? [storeQ];
     const sql = `
       SELECT
         sale_id,
@@ -180,11 +177,12 @@ export function registerSalesDetailRoutes({
         receipt_no,
         customer_name,
         grand_total,
-        sale_status
+        sale_status,
+        COUNT(*) OVER()::int AS total_count
       FROM pos_sales
       WHERE
         lower(COALESCE(sale_status, '')) LIKE 'open%'
-        AND location = ANY($1::text[])
+        AND ($1::text[] IS NULL OR location = ANY($1::text[]))
       ORDER BY
         est_delivery_date ASC NULLS LAST,
         sale_date DESC NULLS LAST,
@@ -192,9 +190,13 @@ export function registerSalesDetailRoutes({
       LIMIT $2
     `;
     const result = await pool.query(sql, [mappedLocations, limit]);
+    const returnedLocations = Array.from(
+      new Set(result.rows.map((row: any) => String(row.location ?? "").trim()).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b));
     res.json({
-      store: storeQ,
-      locations: mappedLocations,
+      store: allLocations ? "ALL" : storeQ,
+      locations: allLocations ? returnedLocations : mappedLocations,
+      total_count: Number(result.rows[0]?.total_count ?? 0),
       limit,
       rows: result.rows.map((row: any) => ({
         sale_id: String(row.sale_id ?? ""),

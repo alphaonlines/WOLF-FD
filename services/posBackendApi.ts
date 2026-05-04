@@ -344,22 +344,24 @@ export type OpenLocationTicketRow = {
 };
 
 export async function fetchOpenLocationTickets(params: {
-  store: string;
+  store?: string;
   limit?: number;
-}): Promise<{
+} = {}): Promise<{
   store: string;
   locations: string[];
+  totalCount: number;
   rows: OpenLocationTicketRow[];
 }> {
   const qs = new URLSearchParams({
-    store: params.store,
-    limit: String(params.limit ?? 10),
+    limit: String(params.limit ?? 50),
   });
+  if (params.store?.trim()) qs.set("store", params.store.trim());
   const json = await fetchJson(`/api/open-location-tickets?${qs.toString()}`);
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
   return {
-    store: String((json as any)?.store ?? params.store),
+    store: String((json as any)?.store ?? params.store ?? "ALL"),
     locations: Array.isArray((json as any)?.locations) ? (json as any).locations.map((value: any) => String(value)) : [],
+    totalCount: Number((json as any)?.total_count ?? rows.length),
     rows: rows.map((row: any) => ({
       saleId: String(row.sale_id ?? ""),
       saleDate: row.sale_date ? String(row.sale_date) : null,

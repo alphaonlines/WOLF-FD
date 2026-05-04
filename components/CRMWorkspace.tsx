@@ -326,6 +326,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
   const [printingUps, setPrintingUps] = useState(false);
   const [openLocationTickets, setOpenLocationTickets] = useState<OpenLocationTicketRow[]>([]);
   const [openLocationTicketLocations, setOpenLocationTicketLocations] = useState<string[]>([]);
+  const [openLocationTicketTotalCount, setOpenLocationTicketTotalCount] = useState(0);
   const [loadingOpenLocationTickets, setLoadingOpenLocationTickets] = useState(false);
   const [openLocationTicketsError, setOpenLocationTicketsError] = useState<string | null>(null);
   const [openTicketsExpanded, setOpenTicketsExpanded] = useState(false);
@@ -437,7 +438,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
   const breakCount = queue.filter((item) => item.status === "on_break").length;
   const selectedQueueItem = queue.find((item) => item.id === selectedQueueId) || myQueueItem || queue[0] || null;
   const defaultDraftStore = !isViewingAllStores ? selectedStore : selectedQueueItem?.store || myQueueItem?.store || "FD7";
-  const openTicketsStore = !isViewingAllStores ? selectedStore : selectedQueueItem?.store || draft.store || null;
   const nextOpportunityId = queue.find((item) => item.status === "waiting")?.id || null;
   const ownerOptions = useMemo(() => {
     const rows = owners.length
@@ -642,9 +642,10 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
   }, [draft.firstName, draft.lastName]);
 
   useEffect(() => {
-    if (!openTicketsStore || syncMode !== "POS_DB") {
+    if (syncMode !== "POS_DB") {
       setOpenLocationTickets([]);
       setOpenLocationTicketLocations([]);
+      setOpenLocationTicketTotalCount(0);
       setLoadingOpenLocationTickets(false);
       setOpenLocationTicketsError(null);
       return;
@@ -654,16 +655,18 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
     setLoadingOpenLocationTickets(true);
     setOpenLocationTicketsError(null);
 
-    void fetchOpenLocationTickets({ store: openTicketsStore, limit: 12 })
+    void fetchOpenLocationTickets({ limit: 50 })
       .then((result) => {
         if (cancelled) return;
         setOpenLocationTickets(result.rows);
         setOpenLocationTicketLocations(result.locations);
+        setOpenLocationTicketTotalCount(result.totalCount);
       })
       .catch((error) => {
         if (cancelled) return;
         setOpenLocationTickets([]);
         setOpenLocationTicketLocations([]);
+        setOpenLocationTicketTotalCount(0);
         setOpenLocationTicketsError(error instanceof Error ? error.message : "Unable to load open tickets.");
       })
       .finally(() => {
@@ -674,7 +677,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
     return () => {
       cancelled = true;
     };
-  }, [openTicketsStore, syncMode]);
+  }, [syncMode]);
 
   const applyCustomer = (customer: CRMCustomerAccount) => {
     setDraft((current) => ({
@@ -1507,7 +1510,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
 
           {view !== "queue" && <div className="flex flex-col gap-4">
             {/* Open Tickets — collapsible, hidden when empty after load */}
-            {(loadingOpenLocationTickets || openLocationTickets.length > 0 || !openTicketsStore) && (
+            {(loadingOpenLocationTickets || openLocationTicketsError || openLocationTickets.length > 0) && (
               <div className={`rounded-3xl border ${isDarkMode ? "border-rose-500/30 bg-rose-500/8" : "border-rose-200 bg-rose-50/60"}`}>
                 <button
                   onClick={() => setOpenTicketsExpanded((v) => !v)}
@@ -1516,14 +1519,12 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                   <div>
                     <div className={`text-sm font-semibold ${isDarkMode ? "text-rose-200" : "text-rose-800"}`}>Open Tickets — Fully Delivered</div>
                     <div className={`text-xs ${isDarkMode ? "text-rose-300/70" : "text-rose-600/80"}`}>
-                      {openTicketsStore
-                        ? `${openTicketsStore}${openLocationTicketLocations.length ? ` · ${openLocationTicketLocations.join(", ")}` : ""}`
-                        : "Select a location to view open tickets"}
+                      All locations{openLocationTicketLocations.length ? ` · ${openLocationTicketLocations.join(", ")}` : ""}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <div className={`text-[11px] font-medium uppercase tracking-[0.18em] ${isDarkMode ? "text-rose-400" : "text-rose-500"}`}>
-                      {loadingOpenLocationTickets ? "Loading" : `${openLocationTickets.length} Open`}
+                      {loadingOpenLocationTickets ? "Loading" : `${openLocationTicketTotalCount || openLocationTickets.length} Open`}
                     </div>
                     {openTicketsExpanded
                       ? <ChevronUp size={16} className={isDarkMode ? "text-rose-400" : "text-rose-500"} />
@@ -1536,10 +1537,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                     {openLocationTicketsError ? (
                       <div className="text-xs text-rose-600 dark:text-rose-300">{openLocationTicketsError}</div>
                     ) : null}
-                    {!openTicketsStore ? (
-                      <div className="text-sm text-slate-500 dark:text-slate-400">Open tickets follow the selected showroom.</div>
-                    ) : loadingOpenLocationTickets ? (
-                      <div className="text-sm text-slate-500 dark:text-slate-400">Loading open tickets...</div>
+                    {loadingOpenLocationTickets ? (
+                      <div className="text-sm text-slate-500 dark:text-slate-400">Loading open tickets across all locations...</div>
                     ) : openLocationTickets.length ? (
                       <div className="space-y-2">
                         {openLocationTickets.map((ticket, index) => (
@@ -1557,7 +1556,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                                   {ticket.customerName || "Open ticket"}
                                 </div>
                                 <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                  {ticket.location || openTicketsStore} · {ticket.receiptNo || "No receipt"} · {ticket.saleStatus}
+                                  {ticket.location || "Unknown location"} · {ticket.receiptNo || "No receipt"} · {ticket.saleStatus}
                                 </div>
                                 <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                   Sale {formatShortDate(ticket.saleDate)}{ticket.estDeliveryDate ? ` · Est ${formatShortDate(ticket.estDeliveryDate)}` : ""}
@@ -1579,7 +1578,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                         ))}
                       </div>
                     ) : (
-                      <div className="text-sm text-slate-500 dark:text-slate-400">No open tickets found for this location.</div>
+                      <div className="text-sm text-slate-500 dark:text-slate-400">No open tickets found at any location.</div>
                     )}
                   </div>
                 )}
