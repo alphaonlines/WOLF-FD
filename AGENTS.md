@@ -157,6 +157,12 @@ Backend deploy flow for route/schema/runtime changes:
 
 ## Running Log
 
+
+- 2026-05-04 16:18 EDT — Grounded WOLFbot Product Coach message-board posts in manufacturer knowledge instead of generic product chatter.
+  - Files: `pos-dashboard-backend/src/boardAiAgent.ts`, `pos-dashboard-backend/src/boardAiAgent.test.ts`, `AGENTS.md`.
+  - Changes: added rotating manufacturer focus for Best, England, Jackson/Catnapper, Vaughan-Bassett, and Archbold; loads recent WOLFbot posts to reduce repetition; pulls `manufacturer_reference_notes` and `manufacturer_catalog_items` before local fallback talking points; prompt now requires manufacturer-specific sales phrases and avoids generic sectional-shape advice.
+  - Commands/tests: `npm test -- --config vitest.config.ts` PASS (13 tests), `npm run build` PASS, `pm2 restart pos-api --update-env` PASS, live health PASS (`{"ok":true,"db":1}`), verified new sales-floor WOLFbot post used Vaughan-Bassett brand-specific talking points.
+
 - 2026-05-01 21:07 EDT - Added WOLFbot Playground coordination notes for the future `/ai` replacement and shared WOLF-FD auth reuse. Files: `/home/alphahs/WOLF-FD/AGENTS.md`, `/home/alphahs/WOLF-FD/@agents.md`. Commands/tests: remote Python doc update; no build needed for doc-only change.
 
 - 2026-05-01 20:54 EDT - Updated agent guidance to clarify the local-LLM-only boundary for this host and refreshed the legacy `@agents.md` handoff pointer, and corrected current branch/display-version metadata. Files: `/home/alphahs/WOLF-FD/AGENTS.md`, `/home/alphahs/WOLF-FD/@agents.md`. Commands/tests: remote Python doc update; no build needed for doc-only change.
