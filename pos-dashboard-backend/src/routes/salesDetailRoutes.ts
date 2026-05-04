@@ -19,8 +19,8 @@ export function registerSalesDetailRoutes({
 }: RegisterSalesDetailRoutesDeps) {
   const pro1stItemSql = buildQualifiedPro1stSql();
   const storeLocationMap: Record<string, string[]> = {
-    FD7: ["Morehead", "Morehead City", "Havelock"],
-    FD5: ["Newport"],
+    FD7: ["Morehead", "Morehead City"],
+    FD5: ["Havelock"],
     G1: ["Greenville"],
     Base: ["Cherry Point"],
     Camp: ["Camp LeJeune", "Camp Lejeune"],

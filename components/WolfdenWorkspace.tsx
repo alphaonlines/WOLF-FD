@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { CheckSquare, CalendarClock, Compass, Link2, MapPin, MessageSquare, UserCheck, Users } from "lucide-react";
+import { CheckSquare, CalendarClock, Compass, Link2, MessageSquare, UserCheck, Users } from "lucide-react";
 import type { AuthUser } from "../types";
 import { TaskStatus } from "../types";
 import { useBotBotContext } from "./botbot/BotBotContext";
@@ -9,12 +9,15 @@ import MessageBoard from "./MessageBoard";
 import TaskManager from "./TaskManager";
 import { createTask } from "../services/tasksService";
 import MeetingRoom from "./MeetingRoom";
+import { DEFAULT_STORE_CODE, normalizeStoreCode, type StoreCode } from "../storeLocations";
 
 type WolfdenWorkspaceProps = {
   authUser: AuthUser;
   isDarkMode: boolean;
   requestedSubTab?: WolfdenSubTab;
   requestedSubTabToken?: number;
+  selectedStore?: StoreCode;
+  onStoreChange?: (store: string) => void;
   hideTabBar?: boolean;
   tourStorageKey?: string;
   enableTourAutoStart?: boolean;
@@ -23,8 +26,6 @@ type WolfdenWorkspaceProps = {
 export type WolfdenSubTab = "ups" | "crm" | "board" | "meeting" | "tasks";
 
 const QUICKLINKS_URL = "https://sites.google.com/view/fdserver/home";
-
-const STORE_OPTIONS = ["ALL", "Camp", "Base", "G1", "FD7", "FD5"];
 
 const WOLFDEN_TOUR_STEPS: BotBotTutorialStep[] = [
   {
@@ -101,12 +102,16 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
   isDarkMode,
   requestedSubTab = "ups",
   requestedSubTabToken,
+  selectedStore: controlledStore,
+  onStoreChange,
   hideTabBar = false,
   tourStorageKey = "fd-tour-den",
   enableTourAutoStart = true,
 }) => {
   const [subTab, setSubTab] = useState<WolfdenSubTab>(requestedSubTab);
-  const [selectedStore, setSelectedStore] = useState("FD7");
+  const [internalStore, setInternalStore] = useState<StoreCode>(DEFAULT_STORE_CODE);
+  const selectedStore = normalizeStoreCode(controlledStore) ?? internalStore;
+  const setSelectedStore = onStoreChange ?? ((store: string) => setInternalStore(normalizeStoreCode(store) ?? DEFAULT_STORE_CODE));
   const [showDenTour, setShowDenTour] = useState(false);
   const { setPageContext } = useBotBotContext();
 
@@ -154,9 +159,6 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
   const stickyBarClass = isDarkMode
     ? "sticky top-20 z-20 border-b border-slate-800 bg-[#121b27]/94 backdrop-blur-xl"
     : "sticky top-20 z-20 border-b border-slate-200 bg-white/92 backdrop-blur-xl";
-  const selectCls = isDarkMode
-    ? "rounded-lg border border-slate-700 bg-slate-900 pl-7 pr-3 py-1.5 text-xs font-semibold text-slate-100 outline-none focus:border-amber-500"
-    : "rounded-lg border border-slate-200 bg-white pl-7 pr-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-amber-400";
 
   const tabBtn = (active: boolean) =>
     `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
@@ -216,20 +218,6 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
           <Link2 size={15} />
           <span>QuickLinks</span>
         </a>
-
-        {/* Store selector — lives in the header so it's visible everywhere */}
-        <div className="ml-auto relative flex items-center">
-          <MapPin size={13} className={`absolute left-2 pointer-events-none ${isDarkMode ? "text-amber-400" : "text-amber-500"}`} />
-          <select
-            value={selectedStore}
-            onChange={(e) => setSelectedStore(e.target.value)}
-            className={selectCls}
-          >
-            {STORE_OPTIONS.map((s) => (
-              <option key={s} value={s}>{s === "ALL" ? "All Stores" : s}</option>
-            ))}
-          </select>
-        </div>
       </div>
       )}
 
@@ -257,7 +245,7 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
         {subTab === "meeting" && <MeetingRoom isDarkMode={isDarkMode} authUser={authUser} />}
         {subTab === "tasks" && (
           <div className="h-full overflow-auto px-5 py-5 lg:px-7 lg:py-7">
-            <TaskManager />
+            <TaskManager selectedStore={selectedStore} />
           </div>
         )}
       </div>

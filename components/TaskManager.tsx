@@ -1,11 +1,23 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, Circle, Clock, Plus, User, Send, Check } from "lucide-react";
+import { AlertCircle, CheckCircle2, Circle, Clock, MapPin, Plus, User, Send, Check } from "lucide-react";
 import { useBotBotContext } from "./botbot/BotBotContext";
 import { INITIAL_TASKS } from "../constants";
 import { Task, TaskStatus } from "../types";
 import { createTask, getNextSortIndex, seedLocalTasksIfEmpty, subscribeTasks, updateTask } from "../services/tasksService";
 import { createCustomObjection } from "../services/customObjectionsApi";
 import { updateTaskInApi } from "../services/tasksApi";
+import {
+  DEFAULT_STORE_CODE,
+  buildTaskLocationMeta,
+  getStoreLabel,
+  getTaskStoreCode,
+  normalizeStoreCode,
+  type StoreCode,
+} from "../storeLocations";
+
+type TaskManagerProps = {
+  selectedStore?: StoreCode;
+};
 
 type ColumnId = TaskStatus | "OVERDUE";
 
@@ -170,7 +182,22 @@ const formatDuration = (ms: number) => {
   return `${mins}m`;
 };
 
-const TaskManager: React.FC = () => {
+const taskMatchesSelectedStore = (task: Task, selectedStore: StoreCode) => {
+  if (selectedStore === "ALL") return true;
+  const taskStore = getTaskStoreCode(task.taskMeta);
+  // Keep legacy/unscoped tasks visible so existing work does not disappear after adding location context.
+  if (!taskStore || taskStore === "ALL") return true;
+  return taskStore === selectedStore;
+};
+
+const getTaskLocationLabel = (task: Task) => {
+  const taskStore = getTaskStoreCode(task.taskMeta);
+  return taskStore ? getStoreLabel(taskStore) : "Shared";
+};
+
+const TaskManager: React.FC<TaskManagerProps> = ({ selectedStore: selectedStoreProp = DEFAULT_STORE_CODE }) => {
+  const selectedStore = normalizeStoreCode(selectedStoreProp) ?? DEFAULT_STORE_CODE;
+  const selectedStoreLabel = getStoreLabel(selectedStore);
   const { setPageContext } = useBotBotContext();
   const [tasks, setTasks] = useState<Task[]>([]);
 
@@ -187,6 +214,10 @@ const TaskManager: React.FC = () => {
   const selectedTask = useMemo(
     () => (detailsTaskId ? tasks.find((t) => t.id === detailsTaskId) ?? null : null),
     [detailsTaskId, tasks]
+  );
+  const scopedTasks = useMemo(
+    () => tasks.filter((task) => taskMatchesSelectedStore(task, selectedStore)),
+    [tasks, selectedStore]
   );
   const [detailsDueDate, setDetailsDueDate] = useState("");
 
@@ -249,6 +280,7 @@ const TaskManager: React.FC = () => {
     const status = TaskStatus.TODO;
     const sortIndex = getNextSortIndex(tasks, status);
     const nowIso = new Date().toISOString();
+    const taskMeta = buildTaskLocationMeta(selectedStore);
 
     setAddError(null);
     try {
@@ -259,11 +291,12 @@ const TaskManager: React.FC = () => {
         status,
         priority: newTaskPriority,
         sortIndex,
+        taskMeta,
         createdAt: nowIso,
       });
       setTasks((prev) => [
         ...prev,
-        { id, title, assignee, deadline: "", status, priority: newTaskPriority, sortIndex, createdAt: nowIso, updatedAt: nowIso },
+        { id, title, assignee, deadline: "", status, priority: newTaskPriority, sortIndex, taskMeta, createdAt: nowIso, updatedAt: nowIso },
       ]);
 
       setNewTaskTitle("");
@@ -293,14 +326,14 @@ const TaskManager: React.FC = () => {
   };
 
   const completedTasks = useMemo(() => {
-    const rows = tasks.filter((t) => t.status === TaskStatus.DONE);
+    const rows = scopedTasks.filter((t) => t.status === TaskStatus.DONE);
     return [...rows].sort((a, b) => {
       const aMs = parseIsoMs(a.completedAt) ?? 0;
       const bMs = parseIsoMs(b.completedAt) ?? 0;
       if (aMs !== bMs) return bMs - aMs;
       return (b.sortIndex ?? 0) - (a.sortIndex ?? 0);
     });
-  }, [tasks]);
+  }, [scopedTasks]);
 
   const completionStats = useMemo(() => {
     const responseMs: number[] = [];
@@ -328,8 +361,8 @@ const TaskManager: React.FC = () => {
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Task Board</h2>
-          <p className="text-slate-500">Add tasks, drag them between stages, and track completion.</p>
-          <p className="text-xs text-slate-400 mt-1">{syncMode}</p>
+          <p className="text-slate-500">Add tasks, drag them between stages, and track completion for {selectedStoreLabel}.</p>
+          <p className="text-xs text-slate-400 mt-1">{syncMode} · legacy shared tasks stay visible</p>
         </div>
         <button
           onClick={() => setIsAdding((v) => !v)}
@@ -385,7 +418,7 @@ const TaskManager: React.FC = () => {
       <div className="flex-1 overflow-x-auto">
         <div className="flex gap-6 min-w-[1000px] h-full pb-4">
           {Columns.map((col) => {
-            const colTasks = tasksInColumn(tasks, col.id);
+            const colTasks = tasksInColumn(scopedTasks, col.id);
             const isDragOver = col.droppable && dragOverStatus === col.id;
             return (
               <div
@@ -450,6 +483,10 @@ const TaskManager: React.FC = () => {
                               Objection
                             </span>
                           )}
+                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-medium">
+                            <MapPin size={10} />
+                            {getTaskLocationLabel(task)}
+                          </span>
                         </div>
                         <select
                           value={task.status}
@@ -557,6 +594,10 @@ const TaskManager: React.FC = () => {
                               {task.priority}
                             </span>
                             <span className="text-xs text-slate-500 truncate">{task.assignee}</span>
+                            <span className="inline-flex items-center gap-1 text-[10px] text-slate-500">
+                              <MapPin size={10} />
+                              {getTaskLocationLabel(task)}
+                            </span>
                           </div>
                           <div className="font-medium text-slate-900 mt-1 truncate">{task.title}</div>
                         </div>
@@ -613,7 +654,7 @@ const TaskManager: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                       <p className="text-xs text-slate-500 mb-1">Assignee</p>
                       <p className="text-sm text-slate-800">{selectedTask.assignee}</p>
@@ -625,6 +666,10 @@ const TaskManager: React.FC = () => {
                         {selectedTask.status === TaskStatus.IN_PROGRESS && "In Progress"}
                         {selectedTask.status === TaskStatus.DONE && "Completed"}
                       </p>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                      <p className="text-xs text-slate-500 mb-1">Location</p>
+                      <p className="text-sm text-slate-800">{getTaskLocationLabel(selectedTask)}</p>
                     </div>
                   </div>
 

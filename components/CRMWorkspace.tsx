@@ -35,13 +35,20 @@ import {
   type CRMCustomerVisit,
 } from "../services/crmApi";
 import { APP_VERSION } from "../constants";
+import {
+  DEFAULT_STORE_CODE,
+  STORE_CODES,
+  getStoreLabel,
+  normalizeStoreCode,
+  type StoreCode,
+} from "../storeLocations";
 import ObjectionsDrawer from "./crm/ObjectionsDrawer";
 
 type CRMWorkspaceProps = {
   authUser: AuthUser;
   isDarkMode: boolean;
   view?: "all" | "queue" | "customers";
-  selectedStore?: string;
+  selectedStore?: StoreCode;
   onStoreChange?: (store: string) => void;
 };
 
@@ -74,8 +81,6 @@ type CustomerDraft = {
   objectionNote: string;
 };
 
-const LOCATION_OPTIONS = ["Camp", "Base", "G1", "FD7", "FD5"];
-const STORE_FILTER_OPTIONS = ["ALL", ...LOCATION_OPTIONS];
 const CHANNEL_OPTIONS: CRMLeadChannel[] = ["Phone", "SMS", "Webchat", "Facebook", "Instagram"];
 const STAGE_OPTIONS: CRMLeadStage[] = ["New", "Contacted", "Appointment", "Quoted", "Won", "Lost"];
 
@@ -140,7 +145,7 @@ const formatShortDate = (value: string | null) => {
 
 const formatWeatherSnapshot = (item: CRMUpsQueueItem) => {
   const parts = [
-    item.currentWeatherLocation || item.store,
+    item.currentWeatherLocation || getStoreLabel(item.store),
     item.currentWeatherSummary,
     item.currentWeatherTempF === null || item.currentWeatherTempF === undefined ? null : `${Math.round(item.currentWeatherTempF)}F`,
     item.currentWeatherPrecipPct === null || item.currentWeatherPrecipPct === undefined ? null : `${item.currentWeatherPrecipPct}% precip`,
@@ -150,11 +155,11 @@ const formatWeatherSnapshot = (item: CRMUpsQueueItem) => {
 
 const formatLiveWeather = (item: CRMUpsQueueItem) => {
   const parts = [
-    item.liveWeatherLocation || item.store,
+    item.liveWeatherLocation || getStoreLabel(item.store),
     item.liveWeatherTempF === null || item.liveWeatherTempF === undefined ? null : `${Math.round(item.liveWeatherTempF)}F`,
     item.liveWeatherSummary,
   ].filter(Boolean);
-  return parts.length ? parts.join(" · ") : item.store;
+  return parts.length ? parts.join(" · ") : getStoreLabel(item.store);
 };
 
 const formatCurrency = (value: number | null) => {
@@ -183,7 +188,8 @@ const openUpsPrintWindow = (rows: CRMUpsHistoryEntry[], selectedStore: string, r
   const printWindow = window.open("", "_blank", "width=1280,height=900");
   if (!printWindow) return;
 
-  const title = `UPS Daily Sheet · ${reportDate}${selectedStore && selectedStore !== "ALL" ? ` · ${selectedStore}` : ""}`;
+  const selectedStoreLabel = getStoreLabel(selectedStore);
+  const title = `UPS Daily Sheet · ${reportDate}${selectedStore && selectedStore !== "ALL" ? ` · ${selectedStoreLabel}` : ""}`;
   const bodyRows = rows.length
     ? rows
         .map((row) => {
@@ -228,7 +234,7 @@ const openUpsPrintWindow = (rows: CRMUpsHistoryEntry[], selectedStore: string, r
     </head>
     <body>
       <h1>UPS Daily Sheet</h1>
-      <div class="meta">Date: ${escapePrintHtml(reportDate)}${selectedStore && selectedStore !== "ALL" ? ` · Store: ${escapePrintHtml(selectedStore)}` : ""}</div>
+      <div class="meta">Date: ${escapePrintHtml(reportDate)}${selectedStore && selectedStore !== "ALL" ? ` · Store: ${escapePrintHtml(selectedStoreLabel)}` : ""}</div>
       <table>
         <thead>
           <tr>
@@ -297,13 +303,11 @@ const namesLikelyMatch = (left: string, right: string) => {
   return leftTokens.length > 0 && leftTokens.join("|") === rightTokens.join("|");
 };
 
-const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view = "all", selectedStore: controlledStore, onStoreChange }) => {
+const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view = "all", selectedStore: controlledStore }) => {
   const { setPageContext } = useBotBotContext();
   const isManager = authUser.roles.includes("Owner") || authUser.roles.includes("Manager");
   const [syncMode, setSyncMode] = useState<SyncMode>("OFFLINE");
-  const [internalStore, setInternalStore] = useState("FD7");
-  const selectedStore = controlledStore ?? internalStore;
-  const setSelectedStore = onStoreChange ?? setInternalStore;
+  const selectedStore = normalizeStoreCode(controlledStore) ?? DEFAULT_STORE_CODE;
   const [owners, setOwners] = useState<CRMOwnerOption[]>([]);
   const [salespeople, setSalespeople] = useState<CRMSalespersonOption[]>([]);
   const [queue, setQueue] = useState<CRMUpsQueueItem[]>([]);
@@ -314,7 +318,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
   const [joinBusy, setJoinBusy] = useState(false);
   const [selectedSalespersonName, setSelectedSalespersonName] = useState("");
   const [startDrafts, setStartDrafts] = useState<Record<string, { customer: string; customerType: UpsQueueCustomerType }>>({});
-  const [draft, setDraft] = useState<CustomerDraft>(() => buildDraft(authUser, "FD7"));
+  const [draft, setDraft] = useState<CustomerDraft>(() => buildDraft(authUser, DEFAULT_STORE_CODE));
   const [customerSearchFieldValues, setCustomerSearchFieldValues] = useState<CustomerSearchFieldValues>({});
   const [customerSearch, setCustomerSearch] = useState<{ fields: CustomerSearchField[]; query: string }>({
     fields: [],
@@ -433,12 +437,22 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
     [queue, authUser.id, authUser.name]
   );
   const isViewingAllStores = selectedStore === "ALL";
+  const selectedStoreLabel = getStoreLabel(selectedStore);
   const activeCount = queue.reduce((total, item) => total + item.activeCustomerCount, 0);
   const waitingCount = queue.filter((item) => item.status === "waiting").length;
   const breakCount = queue.filter((item) => item.status === "on_break").length;
   const selectedQueueItem = queue.find((item) => item.id === selectedQueueId) || myQueueItem || queue[0] || null;
-  const defaultDraftStore = !isViewingAllStores ? selectedStore : selectedQueueItem?.store || myQueueItem?.store || "FD7";
+  const defaultDraftStore = !isViewingAllStores ? selectedStore : selectedQueueItem?.store || myQueueItem?.store || DEFAULT_STORE_CODE;
   const nextOpportunityId = queue.find((item) => item.status === "waiting")?.id || null;
+
+  useEffect(() => {
+    if (isViewingAllStores) return;
+    setDraft((current) => {
+      if (current.queueId || current.accountId || current.store === selectedStore) return current;
+      return { ...current, store: selectedStore };
+    });
+  }, [isViewingAllStores, selectedStore]);
+
   const ownerOptions = useMemo(() => {
     const rows = owners.length
       ? owners
@@ -655,7 +669,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
     setLoadingOpenLocationTickets(true);
     setOpenLocationTicketsError(null);
 
-    void fetchOpenLocationTickets({ limit: 50 })
+    void fetchOpenLocationTickets({ store: selectedStore, limit: 50 })
       .then((result) => {
         if (cancelled) return;
         setOpenLocationTickets(result.rows);
@@ -677,7 +691,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
     return () => {
       cancelled = true;
     };
-  }, [syncMode]);
+  }, [syncMode, selectedStore]);
 
   const applyCustomer = (customer: CRMCustomerAccount) => {
     setDraft((current) => ({
@@ -732,7 +746,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       setQueue((current) => [...current.filter((item) => item.id !== row.id), row].sort((a, b) => a.queuePosition - b.queuePosition));
       setSelectedQueueId(row.id);
       setSelectedSalespersonName("");
-      setStatusMessage(selectedSalesperson ? `${selectedSalesperson.name} added to ${selectedStore}.` : `Checked into ${selectedStore}.`);
+      setStatusMessage(selectedSalesperson ? `${selectedSalesperson.name} added to ${selectedStoreLabel}.` : `Checked into ${selectedStoreLabel}.`);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to add to queue.");
     } finally {
@@ -1036,17 +1050,13 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                 </div>
               </div>
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-                <select
-                  value={selectedStore}
-                  onChange={(event) => setSelectedStore(event.target.value)}
-                  className={`w-full min-w-0 sm:w-auto ${subtleInputClassName}`}
-                >
-                  {STORE_FILTER_OPTIONS.map((location) => (
-                    <option key={location} value={location}>
-                      {location === "ALL" ? "All Stores" : location}
-                    </option>
-                  ))}
-                </select>
+                <div className={`w-full min-w-0 rounded-xl border px-3 py-2 text-xs font-semibold sm:w-auto ${
+                  isDarkMode
+                    ? "border-slate-700 bg-slate-900/78 text-slate-200"
+                    : "border-slate-200 bg-slate-50 text-slate-600"
+                }`}>
+                  Location: {selectedStoreLabel}
+                </div>
                 <select
                   value={selectedSalespersonName}
                   onChange={(event) => setSelectedSalespersonName(event.target.value)}
@@ -1170,7 +1180,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                         </div>
                         <div className="col-span-2 pl-[60px] text-left sm:col-span-1 sm:pl-0 sm:text-right">
                           <div className="text-[11px] font-medium text-slate-500 dark:text-slate-300">
-                            {item.store}
+                            {getStoreLabel(item.store)}
                           </div>
                           <div className={liveWeatherTextClassName}>
                             {liveWeather}
@@ -1519,7 +1529,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                   <div>
                     <div className={`text-sm font-semibold ${isDarkMode ? "text-rose-200" : "text-rose-800"}`}>Open Tickets — Fully Delivered</div>
                     <div className={`text-xs ${isDarkMode ? "text-rose-300/70" : "text-rose-600/80"}`}>
-                      All locations{openLocationTicketLocations.length ? ` · ${openLocationTicketLocations.join(", ")}` : ""}
+                      {isViewingAllStores
+                        ? `All Locations${openLocationTicketLocations.length ? ` · ${openLocationTicketLocations.join(", ")}` : ""}`
+                        : selectedStoreLabel}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -1538,7 +1550,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                       <div className="text-xs text-rose-600 dark:text-rose-300">{openLocationTicketsError}</div>
                     ) : null}
                     {loadingOpenLocationTickets ? (
-                      <div className="text-sm text-slate-500 dark:text-slate-400">Loading open tickets across all locations...</div>
+                      <div className="text-sm text-slate-500 dark:text-slate-400">Loading open tickets for {selectedStoreLabel}...</div>
                     ) : openLocationTickets.length ? (
                       <div className="space-y-2">
                         {openLocationTickets.map((ticket, index) => (
@@ -1578,7 +1590,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                         ))}
                       </div>
                     ) : (
-                      <div className="text-sm text-slate-500 dark:text-slate-400">No open tickets found at any location.</div>
+                      <div className="text-sm text-slate-500 dark:text-slate-400">No open tickets found for {selectedStoreLabel}.</div>
                     )}
                   </div>
                 )}
@@ -1747,7 +1759,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                 ) : null}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <select value={draft.store} onChange={(event) => updateDraft("store", event.target.value)} className={subtleInputClassName}>
-                    {LOCATION_OPTIONS.map((location) => <option key={location} value={location}>{location}</option>)}
+                    {STORE_CODES.map((location) => <option key={location} value={location}>{getStoreLabel(location)}</option>)}
                   </select>
                   <select
                     value={draft.owner}

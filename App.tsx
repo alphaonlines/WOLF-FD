@@ -24,6 +24,7 @@ import {
   Tv,
   Share2,
   FolderSearch,
+  MapPin,
 } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import WorkAdvertising from './components/WorkAdvertising';
@@ -60,6 +61,13 @@ import NavItem from './components/app/NavItem'; // Added NavItem import
 import { APP_THEME_STYLES } from './components/app/themeStyles';
 import { canAccessTab, getTabTitle, Tab } from './components/app/tabs';
 import { DASHBOARD_CARD_PERMISSION_BY_ID, FEATURE_PERMISSION_KEYS, MODULE_PERMISSION_KEYS, hasPermission } from './components/app/permissions';
+import {
+  DEFAULT_STORE_CODE,
+  STORE_LOCATIONS,
+  getStoreLabel,
+  normalizeStoreCode,
+  type StoreCode,
+} from './storeLocations';
 
 const buildBotBotTutorialSteps = ({
   canOpenPulse,
@@ -358,6 +366,19 @@ const App: React.FC = () => {
       return 'dark';
     }
   });
+  const [globalStore, setGlobalStore] = useState<StoreCode>(() => {
+    try {
+      const storedStore = normalizeStoreCode(localStorage.getItem('fd_global_store'));
+      return storedStore && storedStore !== 'ALL' ? storedStore : DEFAULT_STORE_CODE;
+    } catch {
+      return DEFAULT_STORE_CODE;
+    }
+  });
+  const handleGlobalStoreChange = (store: string) => {
+    const nextStore = normalizeStoreCode(store);
+    setGlobalStore(nextStore && nextStore !== 'ALL' ? nextStore : DEFAULT_STORE_CODE);
+  };
+  const globalStoreLabel = getStoreLabel(globalStore);
   const [liveWeatherCondition, setLiveWeatherCondition] = useState<string | null>(null);
   const parseWeather = (cond: string | null) => {
     if (!cond) return { code: -1, isDay: true };
@@ -706,6 +727,14 @@ const App: React.FC = () => {
     }
   }, [isDarkMode]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('fd_global_store', globalStore);
+    } catch {
+      // ignore storage failures
+    }
+  }, [globalStore]);
+
   const userRoles = (authUser?.roles || []) as UserRole[];
   const userPermissions = authUser?.permissions || [];
   const permissionMode = authUser?.permissionMode;
@@ -990,7 +1019,7 @@ const App: React.FC = () => {
       case Tab.PRODUCT_SEARCH:
         return <ProductSearchWorkspace isDarkMode={isDarkMode} onOpenUploadArea={() => setUpdatePanelOpen(true)} />;
       case Tab.CRM:
-        return <CRMWorkspace authUser={authUser!} isDarkMode={isDarkMode} />;
+        return <CRMWorkspace authUser={authUser!} isDarkMode={isDarkMode} selectedStore={globalStore} onStoreChange={handleGlobalStoreChange} />;
       case Tab.SOCIAL:
         return (
           <WorkAdvertising
@@ -1006,7 +1035,7 @@ const App: React.FC = () => {
       case Tab.MESSAGE_BOARD:
         return <MessageBoard authUser={authUser!} />;
       case Tab.TASKS:
-        return <TaskManager />;
+        return <TaskManager selectedStore={globalStore} />;
       case Tab.ADMIN:
         return (
       <OwnerSettings
@@ -1024,6 +1053,8 @@ const App: React.FC = () => {
             isDarkMode={isDarkMode}
             requestedSubTab={requestedWolfdenSubTab}
             requestedSubTabToken={requestedWolfdenSubTabToken}
+            selectedStore={globalStore}
+            onStoreChange={handleGlobalStoreChange}
             hideTabBar={true}
             tourStorageKey={getModuleTourStorageKey('den', authUser)}
             enableTourAutoStart={!isBotBotTutorialBlockingTours}
@@ -1573,6 +1604,30 @@ const App: React.FC = () => {
                   </button>
                 </div>
 )}
+              <div
+                className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-semibold ${
+                  isDarkMode
+                    ? 'border-slate-700 bg-slate-900/80 text-slate-100'
+                    : 'border-slate-200 bg-white/80 text-slate-700'
+                }`}
+                title={`Dashboard location: ${globalStoreLabel}`}
+              >
+                <MapPin size={14} className={isDarkMode ? 'text-amber-300' : 'text-amber-600'} />
+                <select
+                  value={globalStore}
+                  onChange={(event) => handleGlobalStoreChange(event.target.value)}
+                  className={`max-w-[150px] bg-transparent outline-none ${
+                    isDarkMode ? 'text-slate-100' : 'text-slate-700'
+                  }`}
+                  aria-label="Dashboard location"
+                >
+                  {STORE_LOCATIONS.map((location) => (
+                    <option key={location.code} value={location.code}>
+                      {location.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
               {weatherLabel && (
                 <div className={`hidden md:flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
                   isWeatherDay
