@@ -879,11 +879,6 @@ function showLicenseLockScreen(message) {
             const financingSelected = !!allElements.showFinancingCheckbox?.checked;
             const discountReasons = getDiscountReasonDetails();
 
-            if (currentRetailPrice > 0) {
-                notes.push(`Subtotal: ${formatCurrency(currentTotalBeforeTax)}`);
-                notes.push(`Customer Total: ${formatCurrency(currentGrandTotal)}`);
-            }
-
             if (thresholdSelected) {
                 notes.push('Threshold Delivery: $75.00');
             }

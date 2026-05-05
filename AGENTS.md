@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `0.5.5.1906`
+- Current display version in `package.json`: `0.5.5.1910`
 
 ## Project Structure
 
@@ -156,6 +156,11 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-05 19:11 EDT — Removed subtotal and customer total from Smart Calc generated notes.
+  - Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `AGENTS.md`.
+  - Changes: Sales Order notes no longer include `Subtotal:` or `Customer Total:` lines; Pro1st declined note remains with the 5-day pickup/delivery parenthetical; bumped `displayVersion` to `0.5.5.1910`.
+  - Validation/deploy: `git diff --check` PASS; `npm run build` PASS; `npm test` PASS (2 files/6 tests); deployed `dist/.` to `/srv/www/wolf.discount/fd/`; live `/fd/` PASS (200); live `/fd/tools/smart-pricing-calculator.html` PASS (200); FD health PASS (`{"ok":true,"db":1}`); deployed Smart Calc grep confirmed subtotal/customer-total note strings removed and Pro1st declined note retained; deployed bundle `assets/index-BQHxlpEm.js` contains version `0.5.5.1910`.
 
 - 2026-05-05 19:07 EDT — Added Pro1st post-delivery window text to Smart Calc declined notes.
   - Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `AGENTS.md`.
