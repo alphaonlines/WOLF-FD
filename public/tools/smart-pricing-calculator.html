@@ -176,6 +176,7 @@
                         </div>
                         <span id="delivery-cost-display" class="font-medium text-gray-900"></span>
                     </div>
+                    <p class="pl-7 text-xs leading-5 text-gray-500">Policy: enter the full delivery charge on the ticket. If discounted, put the discount in Adjustment and document it in notes.</p>
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <input id="add-threshold-delivery" name="add-threshold-delivery" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
@@ -183,6 +184,7 @@
                         </div>
                         <span id="threshold-delivery-cost-display" class="font-medium text-gray-900">$75.00</span>
                     </div>
+                    <p class="pl-7 text-xs leading-5 text-gray-500">Policy: warehouse product only, max 2 items. Floor merchandise does not qualify. Exceptions need manager approval by name.</p>
                      <div id="long-distance-wrapper" class="hidden pl-7 space-y-1">
                          <div class="flex items-center">
                              <input id="add-long-distance" name="add-long-distance" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
@@ -195,6 +197,7 @@
                                 <span class="font-medium text-gray-600">Outside Area Upcharge</span>
                                 <span id="delivery-upcharge-display" class="font-semibold text-gray-900">$0.00</span>
                              </div>
+                             <p class="text-xs leading-5 text-gray-500">Policy: enter this amount separately in DEL_UPCHARGE.</p>
                          </div>
                      </div>
                      <div class="flex items-center justify-between">
@@ -204,6 +207,7 @@
                         </div>
                         <span id="pro1st-cost-display" class="font-medium text-gray-900"></span>
                     </div>
+                    <p class="pl-7 text-xs leading-5 text-gray-500">Policy: if Pro1st is discounted, enter the discount in Adjustment and document it in notes.</p>
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <input id="add-tax" name="add-tax" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
@@ -223,6 +227,7 @@
                             <input id="pay-tax" name="pay-tax" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
                             <label for="pay-tax" class="ml-3 block text-sm font-medium text-gray-700">Pay Customer's Tax (Out-the-Door Price)</label>
                         </div>
+                        <p class="pl-7 pt-1 text-xs leading-5 text-gray-500">Policy: document the tax discount and add it to the Adjustment total with any other discounts.</p>
                     </div>
                 </div>
                  <div id="grand-total-section" class="pt-4 text-right hidden grand-total p-4 rounded-lg mt-4">
@@ -240,8 +245,9 @@
             <div id="financing-section" class="form-section hidden space-y-3 pt-4 mt-2">
                 <div class="flex items-center">
                     <input id="show-financing" name="show-financing" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
-                    <label for="show-financing" class="ml-3 block text-sm font-medium text-gray-700">Equal Monthly paymens </label>
+                    <label for="show-financing" class="ml-3 block text-sm font-medium text-gray-700">Equal Monthly Payments</label>
                 </div>
+                <p class="pl-7 text-xs leading-5 text-gray-500">Policy: 12 months is standard. Anything above 12 months needs Jill Thigpen approval unless advertised. Record the plan code in Approval Code.</p>
 
                 <div id="financing-breakdown" class="hidden">
                     <table class="w-full text-sm text-left text-gray-600 mt-2">
@@ -254,6 +260,18 @@
                         <tbody id="financing-table-body">
                             </tbody>
                     </table>
+                </div>
+            </div>
+            <div id="sales-notes-section" class="form-section hidden space-y-3 pt-4 mt-2">
+                <h3 class="text-lg font-medium text-brand-brown border-b pb-2">Sales Order Notes Helper</h3>
+                <div class="requirement-note p-3 rounded-md text-sm text-yellow-900 space-y-1">
+                    <p><strong>Policy reminder:</strong> document each discount clearly. Adjustment total must match the notes.</p>
+                    <p><strong>Approval reminder:</strong> write the manager's name when approval is needed. Do not write only "Manager Approval".</p>
+                </div>
+                <textarea id="sales-order-notes" rows="8" readonly class="w-full rounded-md border-gray-300 bg-gray-50 shadow-sm custom-focus sm:text-sm p-3 font-mono text-xs leading-5"></textarea>
+                <div class="flex items-center justify-between gap-3">
+                    <button id="copy-sales-notes" type="button" class="bg-brand-orange text-white font-semibold py-2 px-4 rounded-md hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Copy Notes</button>
+                    <span id="copy-notes-status" class="text-sm font-medium text-gray-600"></span>
                 </div>
             </div>
             <button id="reset-btn" class="w-full bg-gray-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition hidden mt-6">Start Over</button>
@@ -328,11 +346,18 @@ function showLicenseLockScreen(message) {
                 financingSection: document.getElementById('financing-section'),
                 showFinancingCheckbox: document.getElementById('show-financing'),
                 financingBreakdown: document.getElementById('financing-breakdown'),
-                financingTableBody: document.getElementById('financing-table-body')
+                financingTableBody: document.getElementById('financing-table-body'),
+                salesNotesSection: document.getElementById('sales-notes-section'),
+                salesOrderNotes: document.getElementById('sales-order-notes'),
+                copySalesNotesBtn: document.getElementById('copy-sales-notes'),
+                copyNotesStatus: document.getElementById('copy-notes-status')
             };
 
             let currentRetailPrice = 0;
             let currentGrandTotal = 0; // MODIFIED: Keep track of grand total globally
+            let currentTaxAmount = 0;
+            let currentDiscountedSubtotal = 0;
+            let currentTotalBeforeTax = 0;
 
             function initialize() {
                 const vendors = Object.keys(vendorFreightData).sort();
@@ -394,6 +419,7 @@ function showLicenseLockScreen(message) {
                 allElements.payTaxCheckbox.addEventListener('change', updateGrandTotal);
                 allElements.storeLocationSelect.addEventListener('change', updateGrandTotal);
                 allElements.resetBtn.addEventListener('click', resetForm);
+                allElements.copySalesNotesBtn.addEventListener('click', copySalesOrderNotes);
                 allElements.showFinancingCheckbox.addEventListener('change', updateFinancingBreakdown); // ADDED
             }
 
@@ -519,12 +545,82 @@ function showLicenseLockScreen(message) {
                 return miles > 25 ? (miles - 25) * 3 : 0;
             }
 
+            function getPro1stCharge() {
+                const pro1stTier = pro1stTiers.find(t => currentRetailPrice >= t.from && currentRetailPrice <= t.to);
+                return pro1stTier ? pro1stTier.price : 0;
+            }
+
+            function buildSalesOrderNotes() {
+                const lines = [];
+                const miles = Math.max(0, parseFloat(allElements.longDistanceMilesInput.value) || 0);
+                const extraMiles = Math.max(0, miles - 25);
+                const storeLabel = allElements.storeLocationSelect.options[allElements.storeLocationSelect.selectedIndex]?.textContent || '';
+
+                lines.push('Sales Order Notes - Smart Calc');
+                lines.push('Discounts/Adjustments: __________ (must equal Adjustment field total).');
+                lines.push('Manager approval, if required: __________ (write manager name, not only "Manager Approval").');
+
+                if (allElements.addDeliveryCheckbox.checked) {
+                    lines.push(`Local delivery charge entered: ${formatCurrency(getLocalDeliveryCharge())}.`);
+                    lines.push('Delivery discount, if any: __________ entered in Adjustment.');
+                }
+
+                if (allElements.addLongDistanceCheckbox.checked) {
+                    lines.push(`Outside delivery DEL_UPCHARGE: ${formatCurrency(getDeliveryUpcharge())} (${miles || '____'} miles - 25 included = ${extraMiles || '____'} miles x $3.00).`);
+                }
+
+                if (allElements.addThresholdDeliveryCheckbox.checked) {
+                    lines.push('Threshold delivery: $75.00. Warehouse product only, max 2 items; floor merchandise does not qualify. Exception approval, if any: __________.');
+                }
+
+                if (allElements.addPro1stCheckbox.checked) {
+                    lines.push(`Pro1st protection: ${formatCurrency(getPro1stCharge())}. Pro1st discount, if any: __________ entered in Adjustment.`);
+                }
+
+                if (allElements.payTaxCheckbox.checked) {
+                    lines.push(`Customer tax paid / out-the-door pricing: tax discount ${formatCurrency(currentTaxAmount)}; discounted subtotal ${formatCurrency(currentDiscountedSubtotal)}.`);
+                } else if (allElements.addTaxCheckbox.checked) {
+                    lines.push(`Sales tax added: ${formatCurrency(currentTaxAmount)} (${storeLabel}).`);
+                }
+
+                if (allElements.showFinancingCheckbox.checked) {
+                    lines.push('Financing promo entered: ____ months interest free. Plan code in Approval Code: __________. Approval/promo source if above 12 months: __________.');
+                }
+
+                if (allElements.addDeliveryCheckbox.checked || allElements.addThresholdDeliveryCheckbox.checked) {
+                    lines.push('Estimated Delivery Date entered after Slack delivery_scheduling request: __________.');
+                }
+
+                lines.push('Special order ETA / payment arrangements / customer issue notes, if applicable: __________.');
+                return lines.join('\n');
+            }
+
+            function updateSalesOrderNotes() {
+                allElements.salesNotesSection.classList.remove('hidden');
+                allElements.salesOrderNotes.value = buildSalesOrderNotes();
+                allElements.copyNotesStatus.textContent = '';
+            }
+
+            async function copySalesOrderNotes() {
+                const text = allElements.salesOrderNotes.value;
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(text);
+                    } else {
+                        allElements.salesOrderNotes.select();
+                        document.execCommand('copy');
+                    }
+                    allElements.copyNotesStatus.textContent = 'Copied';
+                } catch (error) {
+                    allElements.copyNotesStatus.textContent = 'Select text and copy manually';
+                }
+            }
+
             function updateAddonCosts() {
                 allElements.deliveryCostDisplay.textContent = formatCurrency(getLocalDeliveryCharge());
                 allElements.deliveryUpchargeDisplay.textContent = formatCurrency(getDeliveryUpcharge());
                 
-                const pro1stTier = pro1stTiers.find(t => currentRetailPrice >= t.from && currentRetailPrice <= t.to);
-                allElements.pro1stCostDisplay.textContent = pro1stTier ? formatCurrency(pro1stTier.price) : '$0.00';
+                allElements.pro1stCostDisplay.textContent = formatCurrency(getPro1stCharge());
                 
                 updateGrandTotal();
             }
@@ -542,11 +638,11 @@ function showLicenseLockScreen(message) {
                 allElements.thresholdDeliveryCostDisplay.textContent = formatCurrency(75);
                 
                 if (allElements.addPro1stCheckbox.checked) {
-                    const pro1stTier = pro1stTiers.find(t => currentRetailPrice >= t.from && currentRetailPrice <= t.to);
-                    if(pro1stTier) pro1stCharge = pro1stTier.price;
+                    pro1stCharge = getPro1stCharge();
                 }
                 
                 let totalBeforeTax = currentRetailPrice + deliveryCharge + pro1stCharge;
+                currentTotalBeforeTax = totalBeforeTax;
                 let grandTotal = totalBeforeTax;
                 let breakdownHtml = '';
 
@@ -557,6 +653,7 @@ function showLicenseLockScreen(message) {
                     
                     const taxRate = taxRates[allElements.storeLocationSelect.value];
                     const discountedSubtotal = totalBeforeTax / (1 + taxRate);
+                    currentDiscountedSubtotal = discountedSubtotal;
                     taxAmount = totalBeforeTax - discountedSubtotal;
                     
                     breakdownHtml = `
@@ -568,10 +665,12 @@ function showLicenseLockScreen(message) {
                     if (allElements.addTaxCheckbox.checked) {
                         const taxRate = taxRates[allElements.storeLocationSelect.value];
                         taxAmount = totalBeforeTax * taxRate;
+                        currentDiscountedSubtotal = 0;
                         grandTotal += taxAmount;
                     }
                 }
                 
+                currentTaxAmount = taxAmount;
                 allElements.taxAmountDisplay.textContent = formatCurrency(taxAmount);
                 allElements.breakdownDisplay.innerHTML = breakdownHtml;
                 allElements.grandTotalDisplay.textContent = formatCurrency(grandTotal);
@@ -581,6 +680,7 @@ function showLicenseLockScreen(message) {
                 currentGrandTotal = grandTotal; 
                 allElements.financingSection.classList.remove('hidden');
                 updateFinancingBreakdown();
+                updateSalesOrderNotes();
             }
 
             // ADDED: New function to calculate and display financing options
@@ -603,6 +703,7 @@ function showLicenseLockScreen(message) {
                 } else {
                     allElements.financingBreakdown.classList.add('hidden');
                 }
+                updateSalesOrderNotes();
             }
             
             function resetForm() {
@@ -614,9 +715,10 @@ function showLicenseLockScreen(message) {
                 currentGrandTotal = 0; // MODIFIED
                 addDeliveryCheckbox.checked = false; addThresholdDeliveryCheckbox.checked = false; addPro1stCheckbox.checked = false; addTaxCheckbox.checked = false; addLongDistanceCheckbox.checked = false; payTaxCheckbox.checked = false; showFinancingCheckbox.checked = false; // MODIFIED
 
-                const sectionsToHide = [allElements.calculatorSection, allElements.resultSection, allElements.addonsSection, allElements.grandTotalSection, allElements.resetBtn, allElements.vendorInfoDiv, storeLocationWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection, allElements.financingBreakdown]; // MODIFIED
+                const sectionsToHide = [allElements.calculatorSection, allElements.resultSection, allElements.addonsSection, allElements.grandTotalSection, allElements.resetBtn, allElements.vendorInfoDiv, storeLocationWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection, allElements.financingBreakdown, allElements.salesNotesSection]; // MODIFIED
                 sectionsToHide.forEach(sec => sec.classList.add('hidden'));
                 allElements.addTaxCheckbox.disabled = false;
+                allElements.salesOrderNotes.value = ''; allElements.copyNotesStatus.textContent = '';
             }
             
             function formatCurrency(num) {
