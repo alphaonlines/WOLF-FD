@@ -349,7 +349,7 @@ const App: React.FC = () => {
   const [currentPulseSubTab, setCurrentPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('sales');
   const [requestedAmpSubTab, setRequestedAmpSubTab] = useState<AmpSubTab>('bot');
   const [requestedAmpSubTabToken, setRequestedAmpSubTabToken] = useState(0);
-  const [requestedShopSubTab, setRequestedShopSubTab] = useState<ShopSubTab>('search');
+  const [requestedShopSubTab, setRequestedShopSubTab] = useState<ShopSubTab>('calculator');
   const [requestedShopSubTabToken, setRequestedShopSubTabToken] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebarForMobile = () => {

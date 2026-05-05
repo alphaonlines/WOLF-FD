@@ -171,21 +171,21 @@
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
-                            <input id="add-delivery" name="add-delivery" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
-                            <label for="add-delivery" class="ml-3 block text-sm font-medium text-gray-700">Add Local Delivery (within 25 miles)</label>
-                        </div>
-                        <span id="delivery-cost-display" class="font-medium text-gray-900"></span>
-                    </div>
-                    <p class="pl-7 text-xs leading-5 text-gray-500">Policy: enter the full delivery charge on the ticket. If discounted, put the discount in Adjustment and document it in notes.</p>
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
                             <input id="add-threshold-delivery" name="add-threshold-delivery" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
                             <label for="add-threshold-delivery" class="ml-3 block text-sm font-medium text-gray-700">Add Threshold Delivery</label>
                         </div>
                         <span id="threshold-delivery-cost-display" class="font-medium text-gray-900">$75.00</span>
                     </div>
                     <p class="pl-7 text-xs leading-5 text-gray-500">Policy: warehouse product only, max 2 items. Floor merchandise does not qualify. Exceptions need manager approval by name.</p>
-                     <div id="long-distance-wrapper" class="hidden pl-7 space-y-1">
+                     <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="add-delivery" name="add-delivery" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                            <label for="add-delivery" class="ml-3 block text-sm font-medium text-gray-700">Add Local Delivery (within 25 miles)</label>
+                        </div>
+                        <span id="delivery-cost-display" class="font-medium text-gray-900"></span>
+                    </div>
+                    <p class="pl-7 text-xs leading-5 text-gray-500">Policy: enter the full delivery charge on the ticket. If discounted, put the discount in Adjustment and document it in notes.</p>
+                    <div id="long-distance-wrapper" class="hidden pl-7 space-y-1">
                          <div class="flex items-center">
                              <input id="add-long-distance" name="add-long-distance" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
                             <label for="add-long-distance" class="ml-3 block text-sm font-medium text-gray-600">Outside Local Area?</label>
@@ -208,6 +208,85 @@
                         <span id="pro1st-cost-display" class="font-medium text-gray-900"></span>
                     </div>
                     <p class="pl-7 text-xs leading-5 text-gray-500">Policy: if Pro1st is discounted, enter the discount in Adjustment and document it in notes.</p>
+                    <div class="space-y-3 border-t border-gray-200 pt-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <input id="add-removal" name="add-removal" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                <label for="add-removal" class="ml-3 block text-sm font-medium text-gray-700">Add Removal Fee</label>
+                            </div>
+                            <span id="removal-cost-display" class="font-medium text-gray-900">$35.00</span>
+                        </div>
+                        <div id="removal-wrapper" class="hidden pl-7 space-y-2">
+                            <label for="removal-items" class="block text-sm font-medium text-gray-600">Removal Items:</label>
+                            <input type="number" id="removal-items" min="1" step="1" value="1" class="block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                            <div class="flex justify-between text-sm text-gray-700">
+                                <span>Additional Removal Line Item</span>
+                                <span id="additional-removal-display" class="font-semibold">$0.00</span>
+                            </div>
+                            <p class="text-xs leading-5 text-gray-500">Policy: $35 covers 1-2 items. Add $20 for each additional item. Removal fees must be collected before delivery; any discount must be entered in Adjustment and documented in notes.</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3 border-t border-gray-200 pt-3">
+                        <div class="space-y-2">
+                            <label for="additional-discount" class="block text-sm font-medium text-gray-700">Additional Discount / Adjustment ($)</label>
+                            <input type="number" id="additional-discount" min="0" step="0.01" placeholder="e.g. 50" class="block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                            <p class="text-xs leading-5 text-gray-500">Policy: every discount must be documented in Sales Order notes, and the documented discounts must add up to the amount entered in Adjustment. Use the discount reason checkboxes below to document why the Adjustment was given.</p>
+                        </div>
+                        <fieldset class="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
+                            <legend class="px-1 text-sm font-semibold text-brand-brown">Discount reason(s) for Adjustment</legend>
+                            <p class="text-xs leading-5 text-gray-500">Check every reason that applies. The matching detail box/dropdown will be included in the notes.</p>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="discount-competition-match" name="discount-competition-match" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                    <label for="discount-competition-match" class="ml-3 block text-sm font-medium text-gray-700">Competition Match</label>
+                                </div>
+                                <div id="competition-match-wrapper" class="hidden pl-7">
+                                    <label for="competition-name" class="block text-xs font-medium text-gray-500">Competitor Name</label>
+                                    <input type="text" id="competition-name" placeholder="e.g., Rooms To Go" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="discount-manager-approval" name="discount-manager-approval" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                    <label for="discount-manager-approval" class="ml-3 block text-sm font-medium text-gray-700">Manager Approval</label>
+                                </div>
+                                <div id="manager-approval-wrapper" class="hidden pl-7">
+                                    <label for="manager-approval-name" class="block text-xs font-medium text-gray-500">Manager Name</label>
+                                    <input type="text" id="manager-approval-name" placeholder="Type approving manager name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="discount-vendor-ad" name="discount-vendor-ad" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                    <label for="discount-vendor-ad" class="ml-3 block text-sm font-medium text-gray-700">Vendor Advertisement</label>
+                                </div>
+                                <div id="vendor-ad-wrapper" class="hidden pl-7">
+                                    <label for="vendor-ad-select" class="block text-xs font-medium text-gray-500">Vendor Advertisement</label>
+                                    <select id="vendor-ad-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                        <option value="">-- Select advertised vendor --</option>
+                                        <option value="Nectar">Nectar</option>
+                                        <option value="Tempur-Pedic">Tempur-Pedic</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="discount-other" name="discount-other" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                    <label for="discount-other" class="ml-3 block text-sm font-medium text-gray-700">Other Discount</label>
+                                </div>
+                                <div id="other-discount-wrapper" class="hidden pl-7">
+                                    <label for="other-discount-explanation" class="block text-xs font-medium text-gray-500">Explanation</label>
+                                    <input type="text" id="other-discount-explanation" placeholder="Type explanation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                </div>
+                            </div>
+
+                            <p id="discount-documentation-status" class="text-xs font-medium text-amber-700"></p>
+                        </fieldset>
+                    </div>
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <input id="add-tax" name="add-tax" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
@@ -218,7 +297,7 @@
                     <div id="store-location-wrapper" class="hidden pl-7 space-y-1">
                          <label for="store-location" class="block text-sm font-medium text-gray-600">Store Location for Tax:</label>
                          <select id="store-location" class="block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
-                            <option value="greenville">Greenville (7%)</option>
+                            <option value="camp-greenville" selected>Camp / Greenville (7%) - Default</option>
                             <option value="other">Other Stores (6.75%)</option>
                         </select>
                     </div>
@@ -236,12 +315,6 @@
                     <p id="grand-total-display" class="text-3xl font-bold text-brand-orange"></p>
                 </div>
             </div>
-<div id="grand-total-section" class="pt-4 text-right hidden grand-total p-4 rounded-lg mt-4">
-                <div id="breakdown-display"></div>
-                <p class="text-lg font-semibold text-brand-brown mt-2">Grand Total:</p>
-                <p id="grand-total-display" class="text-3xl font-bold text-brand-orange"></p>
-            </div>
-
             <div id="financing-section" class="form-section hidden space-y-3 pt-4 mt-2">
                 <div class="flex items-center">
                     <input id="show-financing" name="show-financing" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
@@ -263,27 +336,27 @@
                 </div>
             </div>
             <div id="sales-notes-section" class="form-section hidden space-y-3 pt-4 mt-2">
-                <h3 class="text-lg font-medium text-brand-brown border-b pb-2">Sales Order Notes Helper</h3>
+                <h3 class="text-lg font-medium text-brand-brown border-b pb-2">Sales Order Notes / Comments Helper</h3>
                 <div class="requirement-note p-3 rounded-md text-sm text-yellow-900 space-y-1">
-                    <p><strong>Policy reminder:</strong> document each discount clearly. Adjustment total must match the notes.</p>
-                    <p><strong>Approval reminder:</strong> write the manager's name when approval is needed. Do not write only "Manager Approval".</p>
+                    <p><strong>Policy reminder:</strong> document each discount clearly. Adjustment total must match the notes and selected discount reason(s).</p>
                 </div>
-                <textarea id="sales-order-notes" rows="8" readonly class="w-full rounded-md border-gray-300 bg-gray-50 shadow-sm custom-focus sm:text-sm p-3 font-mono text-xs leading-5"></textarea>
-                <div class="flex items-center justify-between gap-3">
-                    <button id="copy-sales-notes" type="button" class="bg-brand-orange text-white font-semibold py-2 px-4 rounded-md hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Copy Notes</button>
+                <textarea id="sales-order-notes" rows="10" class="w-full rounded-md border-gray-300 bg-white shadow-sm custom-focus sm:text-sm p-3 font-mono text-xs leading-5"></textarea>
+                <p class="text-xs leading-5 text-gray-500">You can edit these comments before copying. Manual edits are preserved until you click Refresh Notes or Start Over.</p>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex flex-wrap gap-2">
+                        <button id="copy-sales-notes" type="button" class="bg-brand-orange text-white font-semibold py-2 px-4 rounded-md hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Copy Notes</button>
+                        <button id="refresh-sales-notes" type="button" class="bg-white text-brand-brown border border-gray-300 font-semibold py-2 px-4 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Refresh Notes</button>
+                    </div>
                     <span id="copy-notes-status" class="text-sm font-medium text-gray-600"></span>
                 </div>
             </div>
             <button id="reset-btn" class="w-full bg-gray-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition hidden mt-6">Start Over</button>
         </div>
     </div>
-            <button id="reset-btn" class="w-full bg-gray-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition hidden mt-6">Start Over</button>
-        </div>
-    </div>
 
     <script>
 
-        
+
 // === ALPHA FD LICENSE CHECK (IMAGE SWITCH) ===
 const LICENSE_CONFIG = {
   checkUrl: 'https://cdn.shopify.com/s/files/1/0790/0525/3951/files/FD_server_link.jpg?v=1762568017',
@@ -337,12 +410,68 @@ function showLicenseLockScreen(message) {
             const costCipher = { 'D': '1', 'T': '2', 'E': '3', 'A': '4', 'M': '5', 'W': '6', 'O': '7', 'R': '8', 'K': '9', 'F': '0' };
             const deliveryTiers = [ { from: 0, to: 499.99, charge: 129.99 }, { from: 500, to: 1999, charge: 169.99 }, { from: 2000, to: 2999, charge: 199.99 }, { from: 3000, to: 4999, charge: 249.99 }, { from: 5000, to: 7499, charge: 349.99 }, { from: 7500, to: 9999, charge: 399.99 }, { from: 10000, to: Infinity, charge: 499.99 } ];
             const pro1stTiers = [ { from: 0, to: 499, price: 99.99 }, { from: 500, to: 799, price: 129.99 }, { from: 800, to: 1200, price: 169.99 }, { from: 1201, to: 2500, price: 249.99 }, { from: 2501, to: 3000, price: 299.99 }, { from: 3001, to: 3500, price: 349.99 }, { from: 3501, to: 5000, price: 499.99 }, { from: 5001, to: 7000, price: 699.99 }, { from: 7001, to: 10000, price: 999.99 }, { from: 10001, to: 15000, price: 1499.99 }, { from: 15001, to: 20000, price: 1999.99 }, { from: 20001, to: 25000, price: 2499.99 }, { from: 25001, to: 30000, price: 2999.99 }, { from: 30001, to: 35000, price: 3499.99 }, { from: 35001, to: 40000, price: 3999.99 }, { from: 40001, to: 45000, price: 4499.99 }, { from: 45001, to: 50000, price: 4999.99 } ];
-            const taxRates = { 'greenville': 0.07, 'other': 0.0675 };
+            const taxRates = { 'camp-greenville': 0.07, 'greenville': 0.07, 'camp': 0.07, 'other': 0.0675 };
             const financingTerms = [3, 6, 12, 15, 18, 24]; // ADDED: Financing terms
 
             const allElements = {
-                baseCostBtn: document.getElementById('btn-base-cost'), ezCodeBtn: document.getElementById('btn-ez-code'), taggedPriceBtn: document.getElementById('btn-tagged-price'), baseCostSection: document.getElementById('base-cost-section'), ezCodeSection: document.getElementById('ez-code-section'), taggedPriceSection: document.getElementById('tagged-price-section'), calculatorSection: document.getElementById('calculator-section'), resultSection: document.getElementById('result-section'), addonsSection: document.getElementById('addons-section'), vendorSelect: document.getElementById('vendor-select'), baseCostInput: document.getElementById('base-cost'), costCodeInput: document.getElementById('cost-code'), manualRetailInput: document.getElementById('manual-retail-price'), totalCostInput: document.getElementById('total-cost'), marginPercentInput: document.getElementById('margin-percent'), retailPriceInput: document.getElementById('retail-price'), addDeliveryCheckbox: document.getElementById('add-delivery'), addThresholdDeliveryCheckbox: document.getElementById('add-threshold-delivery'), thresholdDeliveryCostDisplay: document.getElementById('threshold-delivery-cost-display'), longDistanceWrapper: document.getElementById('long-distance-wrapper'), addLongDistanceCheckbox: document.getElementById('add-long-distance'), milesInputWrapper: document.getElementById('miles-input-wrapper'), longDistanceMilesInput: document.getElementById('long-distance-miles'), addPro1stCheckbox: document.getElementById('add-pro1st'), addTaxCheckbox: document.getElementById('add-tax'), payTaxCheckbox: document.getElementById('pay-tax'), storeLocationWrapper: document.getElementById('store-location-wrapper'), storeLocationSelect: document.getElementById('store-location'), resetBtn: document.getElementById('reset-btn'), vendorInfoDiv: document.getElementById('vendor-info'), resultContent: document.getElementById('result-content'), marginNote: document.getElementById('margin-note'), deliveryCostDisplay: document.getElementById('delivery-cost-display'), deliveryUpchargeDisplay: document.getElementById('delivery-upcharge-display'), pro1stCostDisplay: document.getElementById('pro1st-cost-display'), taxAmountDisplay: document.getElementById('tax-amount-display'), grandTotalSection: document.getElementById('grand-total-section'), grandTotalDisplay: document.getElementById('grand-total-display'), breakdownDisplay: document.getElementById('breakdown-display'),
-                // ADDED: New elements for financing feature
+                baseCostBtn: document.getElementById('btn-base-cost'),
+                ezCodeBtn: document.getElementById('btn-ez-code'),
+                taggedPriceBtn: document.getElementById('btn-tagged-price'),
+                baseCostSection: document.getElementById('base-cost-section'),
+                ezCodeSection: document.getElementById('ez-code-section'),
+                taggedPriceSection: document.getElementById('tagged-price-section'),
+                calculatorSection: document.getElementById('calculator-section'),
+                resultSection: document.getElementById('result-section'),
+                addonsSection: document.getElementById('addons-section'),
+                vendorSelect: document.getElementById('vendor-select'),
+                baseCostInput: document.getElementById('base-cost'),
+                costCodeInput: document.getElementById('cost-code'),
+                manualRetailInput: document.getElementById('manual-retail-price'),
+                totalCostInput: document.getElementById('total-cost'),
+                marginPercentInput: document.getElementById('margin-percent'),
+                retailPriceInput: document.getElementById('retail-price'),
+                addDeliveryCheckbox: document.getElementById('add-delivery'),
+                addThresholdDeliveryCheckbox: document.getElementById('add-threshold-delivery'),
+                thresholdDeliveryCostDisplay: document.getElementById('threshold-delivery-cost-display'),
+                longDistanceWrapper: document.getElementById('long-distance-wrapper'),
+                addLongDistanceCheckbox: document.getElementById('add-long-distance'),
+                milesInputWrapper: document.getElementById('miles-input-wrapper'),
+                longDistanceMilesInput: document.getElementById('long-distance-miles'),
+                addPro1stCheckbox: document.getElementById('add-pro1st'),
+                addRemovalCheckbox: document.getElementById('add-removal'),
+                removalWrapper: document.getElementById('removal-wrapper'),
+                removalItemsInput: document.getElementById('removal-items'),
+                removalCostDisplay: document.getElementById('removal-cost-display'),
+                additionalRemovalDisplay: document.getElementById('additional-removal-display'),
+                additionalDiscountInput: document.getElementById('additional-discount'),
+                discountCompetitionCheckbox: document.getElementById('discount-competition-match'),
+                competitionMatchWrapper: document.getElementById('competition-match-wrapper'),
+                competitionNameInput: document.getElementById('competition-name'),
+                discountManagerApprovalCheckbox: document.getElementById('discount-manager-approval'),
+                managerApprovalWrapper: document.getElementById('manager-approval-wrapper'),
+                managerApprovalNameInput: document.getElementById('manager-approval-name'),
+                discountVendorAdCheckbox: document.getElementById('discount-vendor-ad'),
+                vendorAdWrapper: document.getElementById('vendor-ad-wrapper'),
+                vendorAdSelect: document.getElementById('vendor-ad-select'),
+                discountOtherCheckbox: document.getElementById('discount-other'),
+                otherDiscountWrapper: document.getElementById('other-discount-wrapper'),
+                otherDiscountExplanationInput: document.getElementById('other-discount-explanation'),
+                discountDocumentationStatus: document.getElementById('discount-documentation-status'),
+                addTaxCheckbox: document.getElementById('add-tax'),
+                payTaxCheckbox: document.getElementById('pay-tax'),
+                storeLocationWrapper: document.getElementById('store-location-wrapper'),
+                storeLocationSelect: document.getElementById('store-location'),
+                resetBtn: document.getElementById('reset-btn'),
+                vendorInfoDiv: document.getElementById('vendor-info'),
+                resultContent: document.getElementById('result-content'),
+                marginNote: document.getElementById('margin-note'),
+                deliveryCostDisplay: document.getElementById('delivery-cost-display'),
+                deliveryUpchargeDisplay: document.getElementById('delivery-upcharge-display'),
+                pro1stCostDisplay: document.getElementById('pro1st-cost-display'),
+                taxAmountDisplay: document.getElementById('tax-amount-display'),
+                grandTotalSection: document.getElementById('grand-total-section'),
+                grandTotalDisplay: document.getElementById('grand-total-display'),
+                breakdownDisplay: document.getElementById('breakdown-display'),
                 financingSection: document.getElementById('financing-section'),
                 showFinancingCheckbox: document.getElementById('show-financing'),
                 financingBreakdown: document.getElementById('financing-breakdown'),
@@ -350,6 +479,7 @@ function showLicenseLockScreen(message) {
                 salesNotesSection: document.getElementById('sales-notes-section'),
                 salesOrderNotes: document.getElementById('sales-order-notes'),
                 copySalesNotesBtn: document.getElementById('copy-sales-notes'),
+                refreshSalesNotesBtn: document.getElementById('refresh-sales-notes'),
                 copyNotesStatus: document.getElementById('copy-notes-status')
             };
 
@@ -358,6 +488,11 @@ function showLicenseLockScreen(message) {
             let currentTaxAmount = 0;
             let currentDiscountedSubtotal = 0;
             let currentTotalBeforeTax = 0;
+        let currentRemovalCharge = 0;
+        let currentAdditionalDiscount = 0;
+        let currentAdjustmentTotal = 0;
+        let notesManuallyEdited = false;
+        let lastGeneratedNotes = '';
 
             function initialize() {
                 const vendors = Object.keys(vendorFreightData).sort();
@@ -368,6 +503,7 @@ function showLicenseLockScreen(message) {
                     allElements.vendorSelect.appendChild(option);
                 });
                 setEntryMode('base');
+                if (allElements.storeLocationSelect) allElements.storeLocationSelect.value = 'camp-greenville';
                 setupEventListeners();
             }
 
@@ -413,14 +549,55 @@ function showLicenseLockScreen(message) {
                 allElements.longDistanceMilesInput.addEventListener('input', updateGrandTotal);
                 allElements.addPro1stCheckbox.addEventListener('change', updateGrandTotal);
                 allElements.addTaxCheckbox.addEventListener('change', () => {
+                    if (!allElements.addTaxCheckbox.checked && allElements.payTaxCheckbox.checked) {
+                        allElements.payTaxCheckbox.checked = false;
+                    }
                     allElements.storeLocationWrapper.classList.toggle('hidden', !allElements.addTaxCheckbox.checked);
                     updateGrandTotal();
                 });
-                allElements.payTaxCheckbox.addEventListener('change', updateGrandTotal);
+                allElements.payTaxCheckbox.addEventListener('change', () => {
+                    if (allElements.payTaxCheckbox.checked && allElements.addTaxCheckbox) {
+                        allElements.addTaxCheckbox.checked = true;
+                    }
+                    updateGrandTotal();
+                });
                 allElements.storeLocationSelect.addEventListener('change', updateGrandTotal);
                 allElements.resetBtn.addEventListener('click', resetForm);
                 allElements.copySalesNotesBtn.addEventListener('click', copySalesOrderNotes);
-                allElements.showFinancingCheckbox.addEventListener('change', updateFinancingBreakdown); // ADDED
+                allElements.refreshSalesNotesBtn.addEventListener('click', () => {
+                    notesManuallyEdited = false;
+                    updateSalesOrderNotes(true);
+                    allElements.copyNotesStatus.textContent = 'Notes refreshed';
+                });
+                allElements.showFinancingCheckbox.addEventListener('change', updateFinancingBreakdown);
+
+                const discountReasonToggles = [
+                    allElements.discountCompetitionCheckbox,
+                    allElements.discountManagerApprovalCheckbox,
+                    allElements.discountVendorAdCheckbox,
+                    allElements.discountOtherCheckbox
+                ].filter(Boolean);
+                discountReasonToggles.forEach((el) => {
+                    el.addEventListener('change', () => {
+                        updateDiscountReasonControls();
+                        updateSalesOrderNotes();
+                    });
+                });
+
+                [
+                    allElements.competitionNameInput,
+                    allElements.managerApprovalNameInput,
+                    allElements.vendorAdSelect,
+                    allElements.otherDiscountExplanationInput
+                ].filter(Boolean).forEach((el) => {
+                    el.addEventListener('input', updateSalesOrderNotes);
+                    el.addEventListener('change', updateSalesOrderNotes);
+                });
+
+                allElements.salesOrderNotes.addEventListener('input', () => {
+                    notesManuallyEdited = allElements.salesOrderNotes.value !== lastGeneratedNotes;
+                    allElements.copyNotesStatus.textContent = notesManuallyEdited ? 'Manual edits will be copied' : '';
+                });
             }
 
             function setEntryMode(mode) {
@@ -429,8 +606,8 @@ function showLicenseLockScreen(message) {
                 const buttons = [baseCostBtn, ezCodeBtn, taggedPriceBtn];
                 sections.forEach(s => s.classList.add('hidden'));
                 buttons.forEach(b => b.classList.remove('active'));
-                if (mode === 'base') { baseCostSection.classList.remove('hidden'); baseCostBtn.classList.add('active'); } 
-                else if (mode === 'ez') { ezCodeSection.classList.remove('hidden'); ezCodeBtn.classList.add('active'); } 
+                if (mode === 'base') { baseCostSection.classList.remove('hidden'); baseCostBtn.classList.add('active'); }
+                else if (mode === 'ez') { ezCodeSection.classList.remove('hidden'); ezCodeBtn.classList.add('active'); }
                 else if (mode === 'tagged') { taggedPriceSection.classList.remove('hidden'); taggedPriceBtn.classList.add('active'); }
                 resetForm();
             }
@@ -455,13 +632,13 @@ function showLicenseLockScreen(message) {
                     let decodedString = '';
                     let isValid = true;
                     for (let char of code) {
-                        if (costCipher[char]) { decodedString += costCipher[char]; } 
-                        else if (char === '.' && !decodedString.includes('.')) { decodedString += '.'; } 
+                        if (costCipher[char]) { decodedString += costCipher[char]; }
+                        else if (char === '.' && !decodedString.includes('.')) { decodedString += '.'; }
                         else if (char) { isValid = false; break; }
                     }
                     totalCost = isValid ? (parseFloat(decodedString) || 0) : 0;
                 }
-                
+
                 if (totalCost > 0) {
                     allElements.totalCostInput.value = totalCost.toFixed(2);
                     allElements.calculatorSection.classList.remove('hidden');
@@ -471,7 +648,7 @@ function showLicenseLockScreen(message) {
                 }
                 allElements.marginPercentInput.value = ''; allElements.retailPriceInput.value = ''; allElements.resultSection.classList.add('hidden'); allElements.addonsSection.classList.add('hidden');
             }
-            
+
             function handleManualRetailInput() {
                 const retailPrice = parseFloat(allElements.manualRetailInput.value);
                 if (!isNaN(retailPrice) && retailPrice > 0) {
@@ -490,7 +667,7 @@ function showLicenseLockScreen(message) {
                 const changedInputId = event.target.id;
                 if (changedInputId === 'margin-percent') allElements.retailPriceInput.value = '';
                 else if (changedInputId === 'retail-price') allElements.marginPercentInput.value = '';
-                
+
                 const margin = parseFloat(allElements.marginPercentInput.value);
                 const retail = parseFloat(allElements.retailPriceInput.value);
                 let resultHtml = '', calculatedMargin = 0;
@@ -505,7 +682,7 @@ function showLicenseLockScreen(message) {
                     calculatedMargin = ((retail - totalCost) / retail) * 100;
                     resultHtml = `<p>With a retail price of <strong>${formatCurrency(retail)}</strong>, the margin is:</p><p class="text-3xl font-bold mt-2">${calculatedMargin.toFixed(2)}%</p>`;
                 }
-                
+
                 const {resultClass, noteText} = getMarginFeedback(calculatedMargin);
                 allElements.resultSection.className = `form-section p-4 rounded-md ${resultClass}`;
                 allElements.marginNote.textContent = noteText;
@@ -550,55 +727,160 @@ function showLicenseLockScreen(message) {
                 return pro1stTier ? pro1stTier.price : 0;
             }
 
-            function buildSalesOrderNotes() {
-                const lines = [];
-                const miles = Math.max(0, parseFloat(allElements.longDistanceMilesInput.value) || 0);
-                const extraMiles = Math.max(0, miles - 25);
-                const storeLabel = allElements.storeLocationSelect.options[allElements.storeLocationSelect.selectedIndex]?.textContent || '';
 
-                lines.push('Sales Order Notes - Smart Calc');
-                lines.push('Discounts/Adjustments: __________ (must equal Adjustment field total).');
-                lines.push('Manager approval, if required: __________ (write manager name, not only "Manager Approval").');
+        function getRemovalItemCount() {
+            const rawCount = parseInt(allElements.removalItemsInput?.value || '1', 10);
+            return Math.max(1, Number.isFinite(rawCount) ? rawCount : 1);
+        }
 
-                if (allElements.addDeliveryCheckbox.checked) {
-                    lines.push(`Local delivery charge entered: ${formatCurrency(getLocalDeliveryCharge())}.`);
-                    lines.push('Delivery discount, if any: __________ entered in Adjustment.');
+        function getAdditionalRemovalCharge() {
+            if (!allElements.addRemovalCheckbox?.checked) return 0;
+            return Math.max(0, getRemovalItemCount() - 2) * 20;
+        }
+
+        function getRemovalCharge() {
+            if (!allElements.addRemovalCheckbox?.checked) return 0;
+            return 35 + getAdditionalRemovalCharge();
+        }
+
+        function getSelectedTaxRate() {
+            const location = (allElements.storeLocationSelect?.value || 'camp-greenville').toLowerCase();
+            if (Object.prototype.hasOwnProperty.call(taxRates, location)) {
+                return taxRates[location];
+            }
+            return location.includes('camp') || location.includes('greenville') ? 0.07 : 0.0675;
+        }
+
+        function getAdditionalDiscount(subtotal) {
+            const rawDiscount = parseFloat(allElements.additionalDiscountInput?.value || '0');
+            const discount = Number.isFinite(rawDiscount) ? Math.max(0, rawDiscount) : 0;
+            return Math.min(discount, Math.max(0, subtotal));
+        }
+
+        function getCleanDetail(value, fallback) {
+            const cleanValue = (value || '').trim();
+            return cleanValue || fallback;
+        }
+
+        function getDiscountReasonDetails() {
+            const details = [];
+            if (allElements.discountCompetitionCheckbox?.checked) {
+                details.push(`Competition Match: ${getCleanDetail(allElements.competitionNameInput?.value, '[competitor name needed]')}`);
+            }
+            if (allElements.discountManagerApprovalCheckbox?.checked) {
+                details.push(`Manager Approval: ${getCleanDetail(allElements.managerApprovalNameInput?.value, '[manager name needed]')}`);
+            }
+            if (allElements.discountVendorAdCheckbox?.checked) {
+                details.push(`Vendor Advertisement: ${getCleanDetail(allElements.vendorAdSelect?.value, '[vendor needed]')}`);
+            }
+            if (allElements.discountOtherCheckbox?.checked) {
+                details.push(`Other Discount: ${getCleanDetail(allElements.otherDiscountExplanationInput?.value, '[explanation needed]')}`);
+            }
+            return details;
+        }
+
+        function updateDiscountReasonControls() {
+            allElements.competitionMatchWrapper?.classList.toggle('hidden', !allElements.discountCompetitionCheckbox?.checked);
+            allElements.managerApprovalWrapper?.classList.toggle('hidden', !allElements.discountManagerApprovalCheckbox?.checked);
+            allElements.vendorAdWrapper?.classList.toggle('hidden', !allElements.discountVendorAdCheckbox?.checked);
+            allElements.otherDiscountWrapper?.classList.toggle('hidden', !allElements.discountOtherCheckbox?.checked);
+
+            const details = getDiscountReasonDetails();
+            if (allElements.discountDocumentationStatus) {
+                if (currentAdditionalDiscount > 0 && !details.length) {
+                    allElements.discountDocumentationStatus.textContent = 'Select at least one discount reason for the Adjustment note.';
+                    allElements.discountDocumentationStatus.className = 'text-xs font-medium text-amber-700';
+                } else if (details.length) {
+                    allElements.discountDocumentationStatus.textContent = `${details.length} discount reason${details.length === 1 ? '' : 's'} will be included in the notes.`;
+                    allElements.discountDocumentationStatus.className = 'text-xs font-medium text-green-700';
+                } else {
+                    allElements.discountDocumentationStatus.textContent = '';
+                    allElements.discountDocumentationStatus.className = 'text-xs font-medium text-amber-700';
                 }
+            }
+        }
 
-                if (allElements.addLongDistanceCheckbox.checked) {
-                    lines.push(`Outside delivery DEL_UPCHARGE: ${formatCurrency(getDeliveryUpcharge())} (${miles || '____'} miles - 25 included = ${extraMiles || '____'} miles x $3.00).`);
-                }
+        function buildSalesOrderNotes() {
+            const notes = [];
+            const deliverySelected = !!allElements.addDeliveryCheckbox?.checked;
+            const thresholdSelected = !!allElements.addThresholdDeliveryCheckbox?.checked;
+            const removalSelected = !!allElements.addRemovalCheckbox?.checked;
+            const pro1stSelected = !!allElements.addPro1stCheckbox?.checked;
+            const taxSelected = !!allElements.addTaxCheckbox?.checked || !!allElements.payTaxCheckbox?.checked;
+            const payTaxSelected = !!allElements.payTaxCheckbox?.checked;
+            const financingSelected = !!allElements.showFinancingCheckbox?.checked;
+            const discountReasons = getDiscountReasonDetails();
 
-                if (allElements.addThresholdDeliveryCheckbox.checked) {
-                    lines.push('Threshold delivery: $75.00. Warehouse product only, max 2 items; floor merchandise does not qualify. Exception approval, if any: __________.');
-                }
-
-                if (allElements.addPro1stCheckbox.checked) {
-                    lines.push(`Pro1st protection: ${formatCurrency(getPro1stCharge())}. Pro1st discount, if any: __________ entered in Adjustment.`);
-                }
-
-                if (allElements.payTaxCheckbox.checked) {
-                    lines.push(`Customer tax paid / out-the-door pricing: tax discount ${formatCurrency(currentTaxAmount)}; discounted subtotal ${formatCurrency(currentDiscountedSubtotal)}.`);
-                } else if (allElements.addTaxCheckbox.checked) {
-                    lines.push(`Sales tax added: ${formatCurrency(currentTaxAmount)} (${storeLabel}).`);
-                }
-
-                if (allElements.showFinancingCheckbox.checked) {
-                    lines.push('Financing promo entered: ____ months interest free. Plan code in Approval Code: __________. Approval/promo source if above 12 months: __________.');
-                }
-
-                if (allElements.addDeliveryCheckbox.checked || allElements.addThresholdDeliveryCheckbox.checked) {
-                    lines.push('Estimated Delivery Date entered after Slack delivery_scheduling request: __________.');
-                }
-
-                lines.push('Special order ETA / payment arrangements / customer issue notes, if applicable: __________.');
-                return lines.join('\n');
+            if (currentRetailPrice > 0) {
+                notes.push(`Subtotal: ${formatCurrency(currentTotalBeforeTax)}`);
+                notes.push(`Customer Total: ${formatCurrency(currentGrandTotal)}`);
             }
 
-            function updateSalesOrderNotes() {
+            if (thresholdSelected) {
+                notes.push('Threshold Delivery: $75.00');
+            }
+
+            if (deliverySelected) {
+                const localDelivery = getLocalDeliveryCharge();
+                const upcharge = getDeliveryUpcharge();
+                if (localDelivery > 0) notes.push(`Local Delivery: ${formatCurrency(localDelivery)}`);
+                if (allElements.addLongDistanceCheckbox?.checked && upcharge > 0) notes.push(`Outside Delivery Upcharge: ${formatCurrency(upcharge)}`);
+            }
+
+            if (removalSelected) {
+                notes.push(`Removal Fee: ${formatCurrency(currentRemovalCharge)}`);
+            }
+
+            if (pro1stSelected) {
+                notes.push(`Pro1st: ${formatCurrency(getPro1stCharge())}`);
+            }
+
+            if (currentAdditionalDiscount > 0) {
+                notes.push(`Additional Discount: -${formatCurrency(currentAdditionalDiscount)}`);
+            }
+
+            if (discountReasons.length) {
+                notes.push('Discount Documentation:');
+                discountReasons.forEach((reason) => notes.push(`- ${reason}`));
+            }
+
+            if (payTaxSelected) {
+                notes.push(`Sales Tax Discount: -${formatCurrency(currentTaxAmount)}`);
+            } else if (taxSelected) {
+                notes.push(`Sales Tax: ${formatCurrency(currentTaxAmount)}`);
+            }
+
+            if (currentAdjustmentTotal > 0) {
+                notes.push(`Adjustment Total: ${formatCurrency(currentAdjustmentTotal)}`);
+            }
+
+            if (financingSelected && currentGrandTotal > 0) {
+                notes.push(`Financing Total: ${formatCurrency(currentGrandTotal)}`);
+            }
+
+            if (currentRetailPrice > 0 && !pro1stSelected) {
+                notes.push('Pro1st Declined: Customer declined Pro1st protection.');
+            }
+
+            if (!notes.length) {
+                notes.push('No selected charges yet.');
+            }
+
+            return notes.join('\n');
+        }
+
+        function updateSalesOrderNotes(force = false) {
                 allElements.salesNotesSection.classList.remove('hidden');
-                allElements.salesOrderNotes.value = buildSalesOrderNotes();
-                allElements.copyNotesStatus.textContent = '';
+                updateDiscountReasonControls();
+                const generatedNotes = buildSalesOrderNotes();
+                lastGeneratedNotes = generatedNotes;
+                if (force || !notesManuallyEdited || !allElements.salesOrderNotes.value.trim()) {
+                    allElements.salesOrderNotes.value = generatedNotes;
+                    notesManuallyEdited = false;
+                    allElements.copyNotesStatus.textContent = '';
+                } else {
+                    allElements.copyNotesStatus.textContent = 'Manual edits will be copied';
+                }
             }
 
             async function copySalesOrderNotes() {
@@ -617,77 +899,157 @@ function showLicenseLockScreen(message) {
             }
 
             function updateAddonCosts() {
-                allElements.deliveryCostDisplay.textContent = formatCurrency(getLocalDeliveryCharge());
-                allElements.deliveryUpchargeDisplay.textContent = formatCurrency(getDeliveryUpcharge());
-                
-                allElements.pro1stCostDisplay.textContent = formatCurrency(getPro1stCharge());
-                
-                updateGrandTotal();
+            const localDelivery = getLocalDeliveryCharge();
+            const deliveryUpcharge = getDeliveryUpcharge();
+            const pro1stCharge = getPro1stCharge();
+            const removalCharge = getRemovalCharge();
+            const additionalRemoval = getAdditionalRemovalCharge();
+
+            if (allElements.deliveryCostDisplay) {
+                allElements.deliveryCostDisplay.textContent = formatCurrency(localDelivery);
+            }
+            if (allElements.deliveryUpchargeDisplay) {
+                allElements.deliveryUpchargeDisplay.textContent = formatCurrency(deliveryUpcharge);
+            }
+            if (allElements.thresholdDeliveryCostDisplay) {
+                allElements.thresholdDeliveryCostDisplay.textContent = formatCurrency(75);
+            }
+            if (allElements.pro1stCostDisplay) {
+                allElements.pro1stCostDisplay.textContent = formatCurrency(pro1stCharge);
+            }
+            if (allElements.removalCostDisplay) {
+                allElements.removalCostDisplay.textContent = formatCurrency(removalCharge || 35);
+            }
+            if (allElements.additionalRemovalDisplay) {
+                allElements.additionalRemovalDisplay.textContent = formatCurrency(additionalRemoval);
             }
 
-            function updateGrandTotal() {
-                let subtotal = currentRetailPrice;
-                let deliveryCharge = 0, pro1stCharge = 0, taxAmount = 0;
-                
-                if (allElements.addDeliveryCheckbox.checked) {
-                    deliveryCharge = getLocalDeliveryCharge() + getDeliveryUpcharge();
-                } else if (allElements.addThresholdDeliveryCheckbox.checked) {
-                    deliveryCharge = 75;
-                }
-                allElements.deliveryUpchargeDisplay.textContent = formatCurrency(getDeliveryUpcharge());
-                allElements.thresholdDeliveryCostDisplay.textContent = formatCurrency(75);
-                
-                if (allElements.addPro1stCheckbox.checked) {
-                    pro1stCharge = getPro1stCharge();
-                }
-                
-                let totalBeforeTax = currentRetailPrice + deliveryCharge + pro1stCharge;
-                currentTotalBeforeTax = totalBeforeTax;
-                let grandTotal = totalBeforeTax;
-                let breakdownHtml = '';
+            updateGrandTotal();
+        }
 
-                if (allElements.payTaxCheckbox.checked) {
-                    allElements.addTaxCheckbox.checked = true;
-                    allElements.addTaxCheckbox.disabled = true;
-                    allElements.storeLocationWrapper.classList.remove('hidden');
-                    
-                    const taxRate = taxRates[allElements.storeLocationSelect.value];
-                    const discountedSubtotal = totalBeforeTax / (1 + taxRate);
-                    currentDiscountedSubtotal = discountedSubtotal;
-                    taxAmount = totalBeforeTax - discountedSubtotal;
-                    
-                    breakdownHtml = `
-                        <p class="text-sm">Discounted Subtotal: <span class="font-semibold">${formatCurrency(discountedSubtotal)}</span></p>
-                        <p class="text-sm">Sales Tax Paid: <span class="font-semibold">${formatCurrency(taxAmount)}</span></p>
-                    `;
-                } else {
-                    allElements.addTaxCheckbox.disabled = false;
-                    if (allElements.addTaxCheckbox.checked) {
-                        const taxRate = taxRates[allElements.storeLocationSelect.value];
-                        taxAmount = totalBeforeTax * taxRate;
-                        currentDiscountedSubtotal = 0;
-                        grandTotal += taxAmount;
-                    }
-                }
-                
-                currentTaxAmount = taxAmount;
-                allElements.taxAmountDisplay.textContent = formatCurrency(taxAmount);
-                allElements.breakdownDisplay.innerHTML = breakdownHtml;
-                allElements.grandTotalDisplay.textContent = formatCurrency(grandTotal);
-                allElements.grandTotalSection.classList.remove('hidden');
-                
-                // MODIFIED: Store grand total and call financing update
-                currentGrandTotal = grandTotal; 
-                allElements.financingSection.classList.remove('hidden');
+        function updateGrandTotal() {
+            if (!currentRetailPrice || currentRetailPrice <= 0) {
+                currentGrandTotal = 0;
+                currentTaxAmount = 0;
+                currentDiscountedSubtotal = 0;
+                currentTotalBeforeTax = 0;
+                currentRemovalCharge = 0;
+                currentAdditionalDiscount = 0;
+                currentAdjustmentTotal = 0;
+                allElements.grandTotalSection?.classList.add('hidden');
+                if (allElements.breakdownDisplay) allElements.breakdownDisplay.innerHTML = '';
                 updateFinancingBreakdown();
                 updateSalesOrderNotes();
+                return;
             }
 
-            // ADDED: New function to calculate and display financing options
-            function updateFinancingBreakdown() {
+            const deliverySelected = !!allElements.addDeliveryCheckbox?.checked;
+            const thresholdSelected = !!allElements.addThresholdDeliveryCheckbox?.checked;
+            let deliveryCharge = 0;
+            let deliveryLabel = '';
+
+            if (deliverySelected) {
+                const localDelivery = getLocalDeliveryCharge();
+                const upcharge = getDeliveryUpcharge();
+                deliveryCharge = localDelivery + upcharge;
+                deliveryLabel = upcharge > 0 ? `Local Delivery + Outside Upcharge` : 'Local Delivery';
+            } else if (thresholdSelected) {
+                deliveryCharge = 75;
+                deliveryLabel = 'Threshold Delivery';
+            }
+
+            const pro1stCharge = allElements.addPro1stCheckbox?.checked ? getPro1stCharge() : 0;
+            currentRemovalCharge = getRemovalCharge();
+
+            const totalBeforeDiscount = currentRetailPrice + deliveryCharge + pro1stCharge + currentRemovalCharge;
+            currentAdditionalDiscount = getAdditionalDiscount(totalBeforeDiscount);
+            const taxableSubtotal = Math.max(0, totalBeforeDiscount - currentAdditionalDiscount);
+            currentTotalBeforeTax = taxableSubtotal;
+
+            if (allElements.storeLocationSelect && !allElements.storeLocationSelect.value) {
+                allElements.storeLocationSelect.value = 'camp-greenville';
+            }
+            const taxRate = getSelectedTaxRate();
+            const payTaxSelected = !!allElements.payTaxCheckbox?.checked;
+            if (allElements.addTaxCheckbox) {
+                if (payTaxSelected) {
+                    allElements.addTaxCheckbox.checked = true;
+                    allElements.addTaxCheckbox.disabled = true;
+                } else {
+                    allElements.addTaxCheckbox.disabled = false;
+                }
+            }
+            const taxSelected = !!allElements.addTaxCheckbox?.checked || payTaxSelected;
+            let grandTotal = taxableSubtotal;
+            let taxAmount = 0;
+            let discountedSubtotal = taxableSubtotal;
+
+            if (allElements.storeLocationWrapper) {
+                allElements.storeLocationWrapper.classList.toggle('hidden', !taxSelected);
+            }
+
+            if (payTaxSelected) {
+                discountedSubtotal = taxableSubtotal / (1 + taxRate);
+                taxAmount = taxableSubtotal - discountedSubtotal;
+                grandTotal = taxableSubtotal;
+            } else if (taxSelected) {
+                taxAmount = taxableSubtotal * taxRate;
+                grandTotal = taxableSubtotal + taxAmount;
+            }
+
+            currentTaxAmount = taxAmount;
+            currentDiscountedSubtotal = discountedSubtotal;
+            currentGrandTotal = grandTotal;
+            currentAdjustmentTotal = currentAdditionalDiscount + (payTaxSelected ? taxAmount : 0);
+            updateDiscountReasonControls();
+
+            if (allElements.taxAmountDisplay) {
+                allElements.taxAmountDisplay.textContent = taxSelected ? formatCurrency(taxAmount) : '';
+            }
+
+            const breakdownLines = [
+                `<p class="text-sm">Retail Price: <span class="font-semibold">${formatCurrency(currentRetailPrice)}</span></p>`
+            ];
+
+            if (deliveryCharge > 0) {
+                breakdownLines.push(`<p class="text-sm">${deliveryLabel}: <span class="font-semibold">${formatCurrency(deliveryCharge)}</span></p>`);
+            }
+            if (pro1stCharge > 0) {
+                breakdownLines.push(`<p class="text-sm">Pro1st: <span class="font-semibold">${formatCurrency(pro1stCharge)}</span></p>`);
+            }
+            if (currentRemovalCharge > 0) {
+                breakdownLines.push(`<p class="text-sm">Removal Fee: <span class="font-semibold">${formatCurrency(currentRemovalCharge)}</span></p>`);
+            }
+            if (currentAdditionalDiscount > 0) {
+                breakdownLines.push(`<p class="text-sm text-green-700">Additional Discount: <span class="font-semibold">-${formatCurrency(currentAdditionalDiscount)}</span></p>`);
+            }
+            if (payTaxSelected) {
+                breakdownLines.push(`<p class="text-sm">Subtotal After Discount: <span class="font-semibold">${formatCurrency(taxableSubtotal)}</span></p>`);
+                breakdownLines.push(`<p class="text-sm text-green-700">Sales Tax Discount: <span class="font-semibold">-${formatCurrency(taxAmount)}</span></p>`);
+                breakdownLines.push(`<p class="text-xs text-gray-600">Taxable subtotal after tax discount: ${formatCurrency(discountedSubtotal)} + tax ${formatCurrency(taxAmount)} = ${formatCurrency(grandTotal)}</p>`);
+            } else if (taxSelected) {
+                breakdownLines.push(`<p class="text-sm">Sales Tax: <span class="font-semibold">${formatCurrency(taxAmount)}</span></p>`);
+            }
+            if (currentAdjustmentTotal > 0) {
+                breakdownLines.push(`<p class="text-sm text-amber-700">Adjustment Total to Document: <span class="font-semibold">${formatCurrency(currentAdjustmentTotal)}</span></p>`);
+            }
+
+            if (allElements.breakdownDisplay) {
+                allElements.breakdownDisplay.innerHTML = breakdownLines.join('');
+            }
+            if (allElements.grandTotalDisplay) {
+                allElements.grandTotalDisplay.textContent = formatCurrency(grandTotal);
+            }
+            allElements.grandTotalSection?.classList.remove('hidden');
+
+            updateFinancingBreakdown();
+            updateSalesOrderNotes();
+        }
+
+        function updateFinancingBreakdown() {
                 if (allElements.showFinancingCheckbox.checked && currentGrandTotal > 0) {
                     allElements.financingBreakdown.classList.remove('hidden');
-                    
+
                     let tableHtml = '';
                     financingTerms.forEach(term => {
                         const monthlyPayment = currentGrandTotal / term;
@@ -705,24 +1067,84 @@ function showLicenseLockScreen(message) {
                 }
                 updateSalesOrderNotes();
             }
-            
-            function resetForm() {
-                const { baseCostInput, costCodeInput, manualRetailInput, totalCostInput, marginPercentInput, retailPriceInput, vendorSelect, addDeliveryCheckbox, addThresholdDeliveryCheckbox, addPro1stCheckbox, addTaxCheckbox, addLongDistanceCheckbox, longDistanceMilesInput, storeLocationWrapper, longDistanceWrapper, milesInputWrapper, payTaxCheckbox, showFinancingCheckbox } = allElements; // MODIFIED
-                const formElements = [baseCostInput, costCodeInput, manualRetailInput, totalCostInput, marginPercentInput, retailPriceInput, longDistanceMilesInput];
-                formElements.forEach(el => el.value = '');
-                vendorSelect.selectedIndex = 0;
-                currentRetailPrice = 0;
-                currentGrandTotal = 0; // MODIFIED
-                addDeliveryCheckbox.checked = false; addThresholdDeliveryCheckbox.checked = false; addPro1stCheckbox.checked = false; addTaxCheckbox.checked = false; addLongDistanceCheckbox.checked = false; payTaxCheckbox.checked = false; showFinancingCheckbox.checked = false; // MODIFIED
 
-                const sectionsToHide = [allElements.calculatorSection, allElements.resultSection, allElements.addonsSection, allElements.grandTotalSection, allElements.resetBtn, allElements.vendorInfoDiv, storeLocationWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection, allElements.financingBreakdown, allElements.salesNotesSection]; // MODIFIED
+            function resetForm() {
+                const {
+                    baseCostInput, costCodeInput, manualRetailInput, totalCostInput,
+                    marginPercentInput, retailPriceInput, vendorSelect, addDeliveryCheckbox,
+                    addThresholdDeliveryCheckbox, addPro1stCheckbox, addTaxCheckbox,
+                    addLongDistanceCheckbox, longDistanceMilesInput, storeLocationWrapper,
+                    storeLocationSelect, longDistanceWrapper, milesInputWrapper, payTaxCheckbox,
+                    showFinancingCheckbox, addRemovalCheckbox, removalWrapper, removalItemsInput,
+                    additionalDiscountInput, discountCompetitionCheckbox, competitionNameInput,
+                    competitionMatchWrapper, discountManagerApprovalCheckbox, managerApprovalNameInput,
+                    managerApprovalWrapper, discountVendorAdCheckbox, vendorAdSelect, vendorAdWrapper,
+                    discountOtherCheckbox, otherDiscountExplanationInput, otherDiscountWrapper,
+                    discountDocumentationStatus
+                } = allElements;
+                const formElements = [
+                    baseCostInput, costCodeInput, manualRetailInput, totalCostInput,
+                    marginPercentInput, retailPriceInput, longDistanceMilesInput,
+                    additionalDiscountInput, competitionNameInput, managerApprovalNameInput,
+                    otherDiscountExplanationInput
+                ].filter(Boolean);
+                formElements.forEach(el => el.value = '');
+                if (removalItemsInput) removalItemsInput.value = '1';
+                if (vendorSelect) vendorSelect.selectedIndex = 0;
+                if (vendorAdSelect) vendorAdSelect.selectedIndex = 0;
+                if (storeLocationSelect) storeLocationSelect.value = 'camp-greenville';
+
+                currentRetailPrice = 0;
+                currentGrandTotal = 0;
+                currentTaxAmount = 0;
+                currentDiscountedSubtotal = 0;
+                currentTotalBeforeTax = 0;
+                currentRemovalCharge = 0;
+                currentAdditionalDiscount = 0;
+                currentAdjustmentTotal = 0;
+                notesManuallyEdited = false;
+                lastGeneratedNotes = '';
+
+                [
+                    addDeliveryCheckbox, addThresholdDeliveryCheckbox, addPro1stCheckbox,
+                    addTaxCheckbox, addLongDistanceCheckbox, payTaxCheckbox, showFinancingCheckbox,
+                    addRemovalCheckbox, discountCompetitionCheckbox, discountManagerApprovalCheckbox,
+                    discountVendorAdCheckbox, discountOtherCheckbox
+                ].filter(Boolean).forEach(el => {
+                    el.checked = false;
+                    el.disabled = false;
+                });
+
+                const sectionsToHide = [
+                    allElements.calculatorSection, allElements.resultSection, allElements.addonsSection,
+                    allElements.grandTotalSection, allElements.resetBtn, allElements.vendorInfoDiv,
+                    storeLocationWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection,
+                    allElements.financingBreakdown, allElements.salesNotesSection, removalWrapper,
+                    competitionMatchWrapper, managerApprovalWrapper, vendorAdWrapper, otherDiscountWrapper
+                ].filter(Boolean);
                 sectionsToHide.forEach(sec => sec.classList.add('hidden'));
-                allElements.addTaxCheckbox.disabled = false;
-                allElements.salesOrderNotes.value = ''; allElements.copyNotesStatus.textContent = '';
+                if (discountDocumentationStatus) discountDocumentationStatus.textContent = '';
+                if (allElements.taxAmountDisplay) allElements.taxAmountDisplay.textContent = '';
+                if (allElements.salesOrderNotes) allElements.salesOrderNotes.value = '';
+                if (allElements.copyNotesStatus) allElements.copyNotesStatus.textContent = '';
             }
-            
+
             function formatCurrency(num) {
                 return num.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+            }
+
+            // Removal and discount controls
+            if (allElements.addRemovalCheckbox) {
+                allElements.addRemovalCheckbox.addEventListener('change', () => {
+                allElements.removalWrapper?.classList.toggle('hidden', !allElements.addRemovalCheckbox.checked);
+                    updateAddonCosts();
+                });
+            }
+            if (allElements.removalItemsInput) {
+                allElements.removalItemsInput.addEventListener('input', updateAddonCosts);
+            }
+            if (allElements.additionalDiscountInput) {
+                allElements.additionalDiscountInput.addEventListener('input', updateGrandTotal);
             }
 
             initialize();

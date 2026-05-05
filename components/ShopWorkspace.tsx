@@ -16,7 +16,7 @@ type ShopWorkspaceProps = {
 
 const ShopWorkspace: React.FC<ShopWorkspaceProps> = ({
   isDarkMode,
-  requestedSubTab = "search",
+  requestedSubTab = "calculator",
   requestedSubTabToken,
   onOpenUploadArea,
   hideTabBar = false,
