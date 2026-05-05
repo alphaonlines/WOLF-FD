@@ -1019,7 +1019,7 @@ const App: React.FC = () => {
       case Tab.PRODUCT_SEARCH:
         return <ProductSearchWorkspace isDarkMode={isDarkMode} onOpenUploadArea={() => setUpdatePanelOpen(true)} />;
       case Tab.CRM:
-        return <CRMWorkspace authUser={authUser!} isDarkMode={isDarkMode} selectedStore={globalStore} onStoreChange={handleGlobalStoreChange} />;
+        return <CRMWorkspace authUser={authUser!} isDarkMode={isDarkMode} selectedStore="ALL" />;
       case Tab.SOCIAL:
         return (
           <WorkAdvertising
@@ -1035,7 +1035,7 @@ const App: React.FC = () => {
       case Tab.MESSAGE_BOARD:
         return <MessageBoard authUser={authUser!} />;
       case Tab.TASKS:
-        return <TaskManager selectedStore={globalStore} />;
+        return <TaskManager selectedStore="ALL" />;
       case Tab.ADMIN:
         return (
       <OwnerSettings
@@ -1604,30 +1604,32 @@ const App: React.FC = () => {
                   </button>
                 </div>
 )}
-              <div
-                className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-semibold ${
-                  isDarkMode
-                    ? 'border-slate-700 bg-slate-900/80 text-slate-100'
-                    : 'border-slate-200 bg-white/80 text-slate-700'
-                }`}
-                title={`Dashboard location: ${globalStoreLabel}`}
-              >
-                <MapPin size={14} className={isDarkMode ? 'text-amber-300' : 'text-amber-600'} />
-                <select
-                  value={globalStore}
-                  onChange={(event) => handleGlobalStoreChange(event.target.value)}
-                  className={`max-w-[150px] bg-transparent outline-none ${
-                    isDarkMode ? 'text-slate-100' : 'text-slate-700'
+              {activeTab === Tab.WOLFDEN && (
+                <div
+                  className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-semibold ${
+                    isDarkMode
+                      ? 'border-slate-700 bg-slate-900/80 text-slate-100'
+                      : 'border-slate-200 bg-white/80 text-slate-700'
                   }`}
-                  aria-label="Dashboard location"
+                  title={`Den location: ${globalStoreLabel}`}
                 >
-                  {STORE_LOCATIONS.map((location) => (
-                    <option key={location.code} value={location.code}>
-                      {location.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <MapPin size={14} className={isDarkMode ? 'text-amber-300' : 'text-amber-600'} />
+                  <select
+                    value={globalStore}
+                    onChange={(event) => handleGlobalStoreChange(event.target.value)}
+                    className={`max-w-[150px] bg-transparent outline-none ${
+                      isDarkMode ? 'text-slate-100' : 'text-slate-700'
+                    }`}
+                    aria-label="Den location"
+                  >
+                    {STORE_LOCATIONS.map((location) => (
+                      <option key={location.code} value={location.code}>
+                        {location.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               {weatherLabel && (
                 <div className={`hidden md:flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
                   isWeatherDay

@@ -195,7 +195,7 @@ const getTaskLocationLabel = (task: Task) => {
   return taskStore ? getStoreLabel(taskStore) : "Shared";
 };
 
-const TaskManager: React.FC<TaskManagerProps> = ({ selectedStore: selectedStoreProp = DEFAULT_STORE_CODE }) => {
+const TaskManager: React.FC<TaskManagerProps> = ({ selectedStore: selectedStoreProp = "ALL" }) => {
   const selectedStore = normalizeStoreCode(selectedStoreProp) ?? DEFAULT_STORE_CODE;
   const selectedStoreLabel = getStoreLabel(selectedStore);
   const { setPageContext } = useBotBotContext();
