@@ -25,12 +25,12 @@ const SmartPricingCalculatorPage: React.FC<SmartPricingCalculatorPageProps> = ({
             <Calculator size={19} />
           </span>
           <div>
-            <h2 className={`text-xl font-semibold ${headingClassName}`}>Smart Pricing Calculator</h2>
-            <p className={`mt-1 text-sm ${mutedClassName}`}>Cost, margin, delivery, tax, protection, and financing calculator.</p>
+            <h2 className={`text-xl font-semibold ${headingClassName}`}>Smart Calc</h2>
+            <p className={`mt-1 text-sm ${mutedClassName}`}>Cost, margin, delivery, tax, protection, and financing tool.</p>
           </div>
         </div>
         <iframe
-          title="Smart Pricing Calculator"
+          title="Smart Calc"
           src={calculatorUrl}
           className={`min-h-[680px] flex-1 rounded-2xl border ${frameClassName}`}
         />

@@ -25,6 +25,7 @@ export const PUBLIC_AUTH_PATHS = new Set([
   "/auth/me",
   "/auth/config",
   "/auth/google/start",
+  "/auth/google/verify-domain",
   "/auth/google/request-access",
   "/botbot/external/usage",
 ]);

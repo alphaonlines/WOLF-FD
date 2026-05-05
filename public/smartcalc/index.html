@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart Pricing Calculator</title>
+  <title>Smart Calc</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root { color-scheme: light; --ink: #172033; --muted: #64748b; --line: #d7dee8; --brand: #f07d00; --brand-dark: #bf6100; }
     * { box-sizing: border-box; }
@@ -14,15 +15,21 @@
     .mark { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: #fff; font-weight: 800; background: linear-gradient(135deg, var(--brand), var(--brand-dark)); box-shadow: 0 10px 24px rgba(240, 125, 0, 0.22); flex: 0 0 auto; }
     h1 { margin: 0; font-size: 18px; line-height: 1.1; }
     .subtitle { margin-top: 3px; color: var(--muted); font-size: 13px; }
-    .unlock { width: min(440px, calc(100vw - 32px)); margin: auto; padding: 28px; border: 1px solid rgba(148, 163, 184, 0.34); border-radius: 18px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 20px 60px rgba(15, 23, 42, 0.14); }
+    .unlock { width: min(460px, calc(100vw - 32px)); margin: auto; padding: 28px; border: 1px solid rgba(148, 163, 184, 0.34); border-radius: 18px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 20px 60px rgba(15, 23, 42, 0.14); }
     .unlock h2 { margin: 0; font-size: 24px; }
     .unlock p { margin: 10px 0 20px; color: var(--muted); line-height: 1.5; font-size: 14px; }
+    .google-box { min-height: 44px; display: flex; align-items: center; }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: #94a3b8; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    .divider::before, .divider::after { content: ""; height: 1px; flex: 1; background: var(--line); }
     label { display: block; margin-bottom: 8px; color: #334155; font-size: 13px; font-weight: 700; }
     .password-row { display: flex; gap: 10px; }
     input { min-width: 0; flex: 1; height: 44px; border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; font-size: 15px; outline: none; }
     input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(240, 125, 0, 0.18); }
     button { height: 44px; border: 0; border-radius: 12px; padding: 0 16px; color: #fff; font-weight: 800; cursor: pointer; background: linear-gradient(135deg, var(--brand), var(--brand-dark)); }
-    .error { min-height: 20px; margin-top: 10px; color: #b91c1c; font-size: 13px; font-weight: 700; }
+    .secondary { width: 100%; color: var(--muted); border: 1px solid rgba(148, 163, 184, 0.42); background: rgba(255, 255, 255, 0.86); box-shadow: none; }
+    .password-panel { display: none; }
+    .password-panel.is-open { display: block; }
+    .status { min-height: 20px; margin-top: 12px; color: #b91c1c; font-size: 13px; font-weight: 700; }
     .calculator-wrap { display: none; flex: 1; min-height: 0; padding: 14px; }
     .calculator-wrap iframe { width: 100%; height: calc(100vh - 95px); border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 16px; background: #fff; box-shadow: 0 16px 48px rgba(15, 23, 42, 0.12); }
     .is-unlocked .unlock { display: none; }
@@ -35,39 +42,125 @@
 <body>
   <main class="shell" id="appShell">
     <header class="topbar">
-      <div class="brand"><div class="mark">FD</div><div><h1>Smart Pricing Calculator</h1><div class="subtitle">Furniture Distributors pricing tool</div></div></div>
+      <div class="brand"><div class="mark">FD</div><div><h1>Smart Calc</h1><div class="subtitle">Furniture Distributors pricing tool</div></div></div>
       <button class="logout" type="button" id="lockButton">Lock</button>
     </header>
-    <section class="unlock" aria-label="Unlock Smart Pricing Calculator">
-      <h2>Enter Team Password</h2>
-      <p>This standalone calculator is available for FD team members during rollout.</p>
-      <form id="unlockForm">
-        <label for="smartcalcPassword">Password</label>
-        <div class="password-row"><input id="smartcalcPassword" name="smartcalcPassword" type="password" autocomplete="current-password" autofocus /><button type="submit">Open</button></div>
-        <div class="error" id="errorMessage" role="alert"></div>
-      </form>
+    <section class="unlock" aria-label="Unlock Smart Calc">
+      <h2>Sign in with FD Email</h2>
+      <p>Use a verified @furnituredistributors.net Google account to open Smart Calc.</p>
+      <div class="google-box" id="googleButton"></div>
+      <div class="status" id="statusMessage" role="alert"></div>
+      <button class="secondary" type="button" id="fallbackToggle">Use team password instead</button>
+      <div class="password-panel" id="passwordPanel">
+        <div class="divider">Fallback</div>
+        <form id="unlockForm">
+          <label for="smartcalcPassword">Team Password</label>
+          <div class="password-row"><input id="smartcalcPassword" name="smartcalcPassword" type="password" autocomplete="current-password" /><button type="submit">Open</button></div>
+        </form>
+      </div>
     </section>
-    <section class="calculator-wrap" aria-label="Smart Pricing Calculator">
-      <iframe title="Smart Pricing Calculator" src="https://furnituredistributors.wolf.discount/fd/tools/smart-pricing-calculator.html"></iframe>
+    <section class="calculator-wrap" aria-label="Smart Calc">
+      <iframe title="Smart Calc" src="https://furnituredistributors.wolf.discount/fd/tools/smart-pricing-calculator.html"></iframe>
     </section>
   </main>
   <script>
     (function () {
+      const API_BASE = 'https://wolf.discount/api';
       const PASSWORD = 'FDteamWork';
-      const STORAGE_KEY = 'fd_smartcalc_unlocked';
+      const STORAGE_KEY = 'fd_smartcalc_verified';
       const shell = document.getElementById('appShell');
+      const googleButton = document.getElementById('googleButton');
       const form = document.getElementById('unlockForm');
       const input = document.getElementById('smartcalcPassword');
-      const error = document.getElementById('errorMessage');
+      const status = document.getElementById('statusMessage');
       const lockButton = document.getElementById('lockButton');
-      function unlock() { shell.classList.add('is-unlocked'); error.textContent = ''; }
-      if (localStorage.getItem(STORAGE_KEY) === 'yes') unlock();
+      const fallbackToggle = document.getElementById('fallbackToggle');
+      const passwordPanel = document.getElementById('passwordPanel');
+
+      function unlock(label) {
+        shell.classList.add('is-unlocked');
+        status.textContent = label ? 'Signed in as ' + label : '';
+      }
+
+      function setError(message) {
+        status.textContent = message;
+      }
+
+      function verifiedStored() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { return null; }
+      }
+
+      const stored = verifiedStored();
+      if (stored && stored.ok === true) unlock(stored.email || 'FD team');
+
+      fallbackToggle.addEventListener('click', function () {
+        passwordPanel.classList.toggle('is-open');
+      });
+
       form.addEventListener('submit', function (event) {
         event.preventDefault();
-        if (input.value === PASSWORD) { localStorage.setItem(STORAGE_KEY, 'yes'); unlock(); }
-        else { error.textContent = 'Password does not match.'; input.select(); }
+        if (input.value === PASSWORD) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ ok: true, method: 'password' }));
+          unlock('FD team');
+        } else {
+          setError('Password does not match.');
+          input.select();
+        }
       });
-      lockButton.addEventListener('click', function () { localStorage.removeItem(STORAGE_KEY); shell.classList.remove('is-unlocked'); input.value = ''; input.focus(); });
+
+      lockButton.addEventListener('click', function () {
+        localStorage.removeItem(STORAGE_KEY);
+        shell.classList.remove('is-unlocked');
+        input.value = '';
+      });
+
+      async function verifyGoogleCredential(response) {
+        try {
+          const res = await fetch(API_BASE + '/auth/google/verify-domain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential: response.credential }),
+          });
+          const json = await res.json().catch(function () { return {}; });
+          if (!res.ok || !json.ok) throw new Error(json.error || 'Google sign-in failed.');
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ ok: true, method: 'google', email: json.email || '' }));
+          unlock(json.email || 'FD team');
+        } catch (error) {
+          setError(error && error.message ? error.message : 'Google sign-in failed.');
+        }
+      }
+
+      async function initGoogle() {
+        try {
+          const res = await fetch(API_BASE + '/auth/config');
+          const config = await res.json();
+          if (!config.googleWorkspaceEnabled || !config.googleClientId) {
+            setError('Google sign-in is not configured. Use the team password fallback.');
+            return;
+          }
+          const waitForGoogle = setInterval(function () {
+            if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+            clearInterval(waitForGoogle);
+            window.google.accounts.id.initialize({
+              client_id: config.googleClientId,
+              callback: verifyGoogleCredential,
+              hosted_domain: config.googleHostedDomain || 'furnituredistributors.net',
+            });
+            window.google.accounts.id.renderButton(googleButton, {
+              type: 'standard',
+              theme: 'outline',
+              size: 'large',
+              text: 'signin_with',
+              shape: 'pill',
+              width: 300,
+            });
+          }, 50);
+        } catch (error) {
+          setError('Could not load Google sign-in. Use the team password fallback.');
+        }
+      }
+
+      initGoogle();
     })();
   </script>
 </body>

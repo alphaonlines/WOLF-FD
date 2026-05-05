@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Pricing & Costing Utility</title>
+    <title>Smart Calc</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
@@ -68,9 +68,6 @@
             background-color: white;
             color: #374151;
         }
-        #chat-container {
-            transition: all 0.3s ease-in-out;
-        }
         .loader {
             border: 4px solid #f3f3f3;
             border-radius: 50%;
@@ -90,7 +87,7 @@
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-md mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
-            <h1 class="text-3xl font-bold text-brand-brown">Smart Pricing Tool</h1>
+            <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
         </header>
 
@@ -259,36 +256,6 @@
         </div>
     </div>
 
-    <!-- Chat Widget Container -->
-    <div id="chat-widget" class="fixed bottom-5 right-5">
-        <!-- Chat Bubble -->
-        <button id="chat-bubble" class="bg-brand-orange w-16 h-16 rounded-full flex items-center justify-center text-white shadow-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.828 8.828 0 01-4.322-.982A.5.5 0 005 16.5v-1.129a.5.5 0 00-.236-.425A7.005 7.005 0 012 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM4.666 4.999a.5.5 0 00.325-.928A9.012 9.012 0 0110 2c4.418 0 8 3.134 8 7a7.007 7.007 0 01-1.334 4.072.5.5 0 00-.188.626l.49 1.144a.5.5 0 01-.736.64l-1.065-.533a.5.5 0 00-.54-.022A8.962 8.962 0 0110 18c-4.418 0-8-3.134-8-7a9.009 9.009 0 011.666-5.001z" clip-rule="evenodd" />
-            </svg>
-        </button>
-
-        <!-- Chat Container -->
-        <div id="chat-container" class="hidden absolute bottom-20 right-0 w-80 md:w-96 bg-white rounded-lg shadow-xl flex flex-col" style="height: 500px;">
-            <!-- Header -->
-            <div class="bg-brand-brown text-white p-4 rounded-t-lg flex justify-between items-center">
-                <h3 class="font-semibold text-lg">Help & Support</h3>
-                <button id="close-chat" class="text-white">&times;</button>
-            </div>
-            <!-- Messages -->
-            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto">
-                <!-- Messages will be injected here -->
-            </div>
-            <!-- Input -->
-            <div class="p-4 border-t">
-                <div class="flex">
-                    <input type="text" id="chat-input" placeholder="Ask a question..." class="flex-1 rounded-l-md border-gray-300 focus:ring-brand-orange focus:border-brand-orange">
-                    <button id="send-btn" class="bg-brand-orange text-white px-4 rounded-r-md">Send</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
 
         
@@ -324,7 +291,7 @@ function showLicenseLockScreen(message) {
   document.body.innerHTML = `
     <div class="min-h-screen flex items-center justify-center bg-gray-100 p-6">
       <div class="bg-white max-w-md w-full p-6 rounded-xl shadow-lg text-center">
-        <h1 class="text-2xl font-bold text-red-600 mb-3">Smart Pricing Tool Locked</h1>
+        <h1 class="text-2xl font-bold text-red-600 mb-3">Smart Calc Locked</h1>
         <p class="text-gray-700 mb-4">${message}</p>
         <p class="text-sm text-gray-500">
           If you believe this is an error, please contact your administrator
@@ -636,112 +603,9 @@ function showLicenseLockScreen(message) {
             initialize();
         };
 
-                // --- CHATBOT SCRIPT (No changes needed here) ---
-        const chatbotLogic = () => {
-            const chatBubble = document.getElementById('chat-bubble');
-            const chatContainer = document.getElementById('chat-container');
-            const closeChat = document.getElementById('close-chat');
-            const chatMessages = document.getElementById('chat-messages');
-            const chatInput = document.getElementById('chat-input');
-            const sendBtn = document.getElementById('send-btn');
-
-            const fallbackKnowledgeBase = {
-                "help": "I can help with questions about the pricing tool. Try asking about 'margin', 'cost code', 'delivery', or 'protection plan'.",
-                "margin": "The result box changes color based on the margin: green is good (53%+), yellow is okay (50-53%), and red is low (<50%). This helps you see if a price is profitable.",
-                "cost code": "The cost code uses the 'FDTEAMWORK' cipher where each letter corresponds to a number (F=0, D=1, T=2...). This allows you to quickly enter cost without typing numbers.",
-                "delivery": "Local delivery is for addresses within 25 miles. For areas outside of that, check the 'Outside Local Area?' box and enter the total miles to calculate the extra charge.",
-                "pro1st": "The Pro1st Protection plan cost is automatically calculated based on the retail price of the furniture. Just check the box to add it.",
-                "protection plan": "The Pro1st Protection plan cost is automatically calculated based on the retail price of the furniture. Just check the box to add it.",
-                "tax": "Sales tax is calculated based on the store location you select. This only appears after you check the 'Add Sales Tax' box. You can also choose 'Pay Customer's Tax' for out-the-door pricing.",
-                "hand off": "I can't answer that. Would you like me to connect you with a manager or open a support ticket?",
-                "manager": "I have notified a manager for assistance. Please stand by.",
-                "ticket": "A support ticket has been created. Someone from the IT department will reach out to you shortly."
-            };
-
-            async function getBotResponse(userInput) {
-                const DIALOGFLOW_API_URL = 'YOUR_API_ENDPOINT_URL_GOES_HERE';
-                addMessage('...', 'bot', true);
-                try {
-                    if (DIALOGFLOW_API_URL === 'YOUR_API_ENDPOINT_URL_GOES_HERE') {
-                        throw new Error('API URL not configured');
-                    }
-                    const response = await fetch(DIALOGFLOW_API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ query: userInput }),
-                    });
-                    if (!response.ok) { throw new Error('API request failed'); }
-                    const data = await response.json();
-                    return data.reply || "Sorry, I couldn't get a proper response from the service.";
-                } catch (error) {
-                    console.warn("API Error, using fallback:", error);
-                    const lowerInput = userInput.toLowerCase();
-                    let bestMatch = null;
-                    for (const key in fallbackKnowledgeBase) {
-                        if (lowerInput.includes(key)) {
-                            bestMatch = fallbackKnowledgeBase[key];
-                            break;
-                        }
-                    }
-                    return bestMatch
-                        ? `(My connection is down, but here's some basic info) ${bestMatch}`
-                        : "I'm having trouble connecting right now, and I don't have a basic answer for that. Please try again later.";
-                }
-            }
-
-            function toggleChat() {
-                chatContainer.classList.toggle('hidden');
-            }
-
-            function addMessage(text, sender, isLoading = false) {
-                const existingLoader = document.querySelector('.loader-message');
-                if (existingLoader) { existingLoader.remove(); }
-
-                const messageDiv = document.createElement('div');
-                messageDiv.classList.add('p-2', 'rounded-lg', 'mb-2', 'max-w-xs', 'break-words');
-
-                if (isLoading) {
-                    messageDiv.classList.add('bg-gray-200', 'text-gray-800', 'mr-auto', 'loader-message');
-                    const loader = document.createElement('div');
-                    loader.className = 'loader';
-                    messageDiv.appendChild(loader);
-                } else {
-                    messageDiv.textContent = text;
-                }
-
-                if (sender === 'user') {
-                    messageDiv.classList.add('bg-brand-orange', 'text-white', 'ml-auto');
-                } else if (!isLoading) {
-                    messageDiv.classList.add('bg-gray-200', 'text-gray-800', 'mr-auto');
-                }
-
-                chatMessages.appendChild(messageDiv);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-
-            async function handleSend() {
-                const userInput = chatInput.value.trim();
-                if (userInput === '') return;
-                addMessage(userInput, 'user');
-                chatInput.value = '';
-                const botResponse = await getBotResponse(userInput);
-                addMessage(botResponse, 'bot');
-            }
-
-            chatBubble.addEventListener('click', toggleChat);
-            closeChat.addEventListener('click', toggleChat);
-            sendBtn.addEventListener('click', handleSend);
-            chatInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') { handleSend(); }
-            });
-
-            addMessage("Hello! I'm here to help. How can I assist you with the pricing tool today?", 'bot');
-        };
-
-        // === BOOTSTRAP INSIDE WOLF-FD SHOP MODULE ===
+                // === BOOTSTRAP INSIDE WOLF-FD SHOP MODULE ===
         document.addEventListener('DOMContentLoaded', function() {
             pricingToolLogic();
-            chatbotLogic();
         });
     </script>
 </body>

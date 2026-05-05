@@ -216,6 +216,39 @@ export function registerAuthRoutes({
     res.json({ ok: true, user: authUser || buildAuthUser(user) });
   });
 
+  app.post("/api/auth/google/verify-domain", async (req, res) => {
+    const credential = typeof req.body?.credential === "string" ? req.body.credential.trim() : "";
+    if (!credential) return res.status(400).json({ ok: false, error: "google credential is required" });
+
+    try {
+      const { payload, config } = await verifyGoogleCredential(pool, credential);
+      return res.json({
+        ok: true,
+        email: normalizeEmail(payload.email),
+        name: String(payload.name || "").trim(),
+        hostedDomain: config.googleHostedDomain,
+      });
+    } catch (error: any) {
+      const message = String(error?.message || error || "");
+      if (message === "google_workspace_not_configured") {
+        return res.status(503).json({ ok: false, error: "google workspace sign-in is not configured yet" });
+      }
+      if (message === "google_email_not_verified") {
+        return res.status(403).json({ ok: false, error: "google email must be verified" });
+      }
+      if (message === "google_workspace_domain_required") {
+        const config = await loadGoogleWorkspaceAuthSettings(pool, {
+          googleWorkspaceEnabled: Boolean(GOOGLE_WORKSPACE_CLIENT_ID),
+          googleClientId: GOOGLE_WORKSPACE_CLIENT_ID,
+          googleHostedDomain: GOOGLE_WORKSPACE_DOMAIN,
+        });
+        return res.status(403).json({ ok: false, error: `use your @${config.googleHostedDomain} Google account` });
+      }
+      console.error("Google Smart Calc domain verification failed:", error);
+      return res.status(401).json({ ok: false, error: "google sign-in failed" });
+    }
+  });
+
   app.post("/api/auth/google/start", async (req, res) => {
     const credential = typeof req.body?.credential === "string" ? req.body.credential.trim() : "";
     if (!credential) return res.status(400).json({ ok: false, error: "google credential is required" });
