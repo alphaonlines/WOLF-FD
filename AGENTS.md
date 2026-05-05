@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `0.5.5.1859`
+- Current display version in `package.json`: `0.5.5.1906`
 
 ## Project Structure
 
@@ -156,6 +156,11 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-05 19:07 EDT — Added Pro1st post-delivery window text to Smart Calc declined notes.
+  - Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `AGENTS.md`.
+  - Changes: generated Sales Order notes now say `Pro1st Declined: Customer declined the accidental protection (can still add up to 5 days after pickup/delivery).`; bumped `displayVersion` to `0.5.5.1906`.
+  - Validation/deploy: `git diff --check` PASS; `npm run build` PASS; `npm test` PASS (2 files/6 tests); deployed `dist/.` to `/srv/www/wolf.discount/fd/`; live `/fd/` PASS (200); live `/fd/tools/smart-pricing-calculator.html` PASS (200); FD health PASS (`{"ok":true,"db":1}`); deployed calculator note grep PASS; deployed bundle `assets/index-35Ksbyse.js` contains version `0.5.5.1906`.
 
 - 2026-05-05 19:00 EDT — Made the Shop Smart Calc fit the WOLF dashboard better and updated the Pro1st declined note wording.
   - Files: `components/SmartPricingCalculatorPage.tsx`, `public/tools/smart-pricing-calculator.html`, `package.json`, `AGENTS.md`.
