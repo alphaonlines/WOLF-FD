@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `0.5.4.2030`
+- Current display version in `package.json`: `0.5.5.1859`
 
 ## Project Structure
 
@@ -156,6 +156,11 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-05 19:00 EDT — Made the Shop Smart Calc fit the WOLF dashboard better and updated the Pro1st declined note wording.
+  - Files: `components/SmartPricingCalculatorPage.tsx`, `public/tools/smart-pricing-calculator.html`, `package.json`, `AGENTS.md`.
+  - Changes: replaced the short fixed-height Smart Calc iframe/card with a taller viewport-based tool frame, compact header, borderless full-height iframe, and `Open full page` action; changed generated notes from `Customer declined Pro1st protection.` to `Customer declined the accidental protection.`; bumped `displayVersion` to `0.5.5.1859`.
+  - Validation/deploy: `git diff --check` PASS; `npm run build` PASS; `npm test` PASS (2 files/6 tests); deployed `dist/.` to `/srv/www/wolf.discount/fd/`; live `/fd/` PASS (200); live `/fd/tools/smart-pricing-calculator.html` PASS (200); FD health PASS (`{"ok":true,"db":1}`); deployed bundle `assets/index-BwWFNVOw.js` contains version and new Smart Calc frame action.
 
 - 2026-05-05 18:47 EDT — Smart Calc margin discount recalculation
   - Updated `public/tools/smart-pricing-calculator.html` so Base Cost and EZ Pro Cost Code recalculate visible margin when Additional Discount / Adjustment changes; Tagged Price still hides margin because cost is unknown.

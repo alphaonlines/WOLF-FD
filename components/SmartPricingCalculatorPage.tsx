@@ -1,5 +1,5 @@
 import React from "react";
-import { Calculator } from "lucide-react";
+import { Calculator, ExternalLink } from "lucide-react";
 
 type SmartPricingCalculatorPageProps = {
   isDarkMode: boolean;
@@ -12,29 +12,45 @@ const SmartPricingCalculatorPage: React.FC<SmartPricingCalculatorPageProps> = ({
   const iconClassName = isDarkMode
     ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
     : "border-emerald-200 bg-emerald-50 text-emerald-700";
-  const dividerClassName = isDarkMode ? "border-slate-800" : "border-slate-200";
   const frameClassName = isDarkMode
-    ? "border-slate-800 bg-slate-950"
-    : "border-slate-200 bg-white";
+    ? "border-slate-800 bg-slate-950 shadow-[0_18px_45px_rgba(2,6,23,0.28)]"
+    : "border-slate-200 bg-white shadow-sm";
+  const toolbarClassName = isDarkMode
+    ? "border-slate-800 bg-slate-950/95"
+    : "border-slate-200 bg-white/95";
+  const actionClassName = isDarkMode
+    ? "border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
+    : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-white";
 
   return (
-    <div className="h-full overflow-hidden p-5 lg:p-7">
-      <div className="flex h-full min-h-[720px] flex-col gap-4">
-        <div className={`flex items-center gap-3 border-b pb-4 ${dividerClassName}`}>
-          <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border ${iconClassName}`}>
-            <Calculator size={19} />
-          </span>
-          <div>
-            <h2 className={`text-xl font-semibold ${headingClassName}`}>Smart Calc</h2>
-            <p className={`mt-1 text-sm ${mutedClassName}`}>Cost, margin, delivery, tax, protection, and financing tool.</p>
+    <div className="p-2 sm:p-3 lg:p-0">
+      <section className={`flex h-[calc(100vh-8rem)] min-h-[760px] w-full flex-col overflow-hidden rounded-lg border lg:h-[calc(100vh-8.5rem)] lg:min-h-[860px] ${frameClassName}`}>
+        <div className={`flex shrink-0 flex-wrap items-center justify-between gap-3 border-b px-4 py-3 ${toolbarClassName}`}>
+          <div className="flex min-w-0 items-center gap-3">
+            <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${iconClassName}`}>
+              <Calculator size={18} />
+            </span>
+            <div className="min-w-0">
+              <h2 className={`text-base font-semibold ${headingClassName}`}>Smart Calc</h2>
+              <p className={`text-xs ${mutedClassName}`}>Cost, margin, delivery, tax, protection, and financing.</p>
+            </div>
           </div>
+          <a
+            href={calculatorUrl}
+            target="_blank"
+            rel="noreferrer"
+            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${actionClassName}`}
+          >
+            <ExternalLink size={14} />
+            Open full page
+          </a>
         </div>
         <iframe
           title="Smart Calc"
           src={calculatorUrl}
-          className={`min-h-[680px] flex-1 rounded-2xl border ${frameClassName}`}
+          className="min-h-0 w-full flex-1 border-0"
         />
-      </div>
+      </section>
     </div>
   );
 };
