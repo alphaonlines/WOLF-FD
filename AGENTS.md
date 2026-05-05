@@ -157,6 +157,11 @@ Backend deploy flow for route/schema/runtime changes:
 
 ## Running Log
 
+- 2026-05-05 19:17 EDT — Kept Smart Calc wide but returned it to a single-column flow.
+  - Files: `public/tools/smart-pricing-calculator.html`, `AGENTS.md`.
+  - Changes: removed the desktop `grid-template-columns` split so Smart Calc stays in one continuous column while retaining the wider `max-w-6xl` card; bumped Smart Calc's separate marker to `Smart Calc v0.5.5.1917`; WOLF dashboard `displayVersion` remains separate at `0.5.5.1913`.
+  - Validation/deploy: `git diff --check` PASS; `npm run build` PASS; `npm test` PASS (2 files/6 tests); deployed `dist/.` to `/srv/www/wolf.discount/fd/`; live `/fd/` PASS (200); live `/fd/tools/smart-pricing-calculator.html` PASS (200); FD health PASS (`{"ok":true,"db":1}`); deployed Smart Calc grep confirmed `max-w-6xl` and `Smart Calc v0.5.5.1917`, with no deployed `grid-template-columns` split.
+
 - 2026-05-05 19:15 EDT — Widened standalone Smart Calc and added its own update/version marker.
   - Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `AGENTS.md`.
   - Changes: changed the Smart Calc card from narrow `max-w-md` to `max-w-6xl`, removed vertical centering, added desktop two-column layout rules for pricing/result vs add-ons/financing/notes once lower workflow sections appear, and added Smart Calc's separate visible update marker `Smart Calc v0.5.5.1915` with `data-smart-calc-version="0.5.5.1915"`; WOLF dashboard `displayVersion` remains separate at `0.5.5.1913`.
