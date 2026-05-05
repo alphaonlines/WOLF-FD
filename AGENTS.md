@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `0.5.5.1910`
+- Current display version in `package.json`: `0.5.5.1913`
 
 ## Project Structure
 
@@ -156,6 +156,11 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-05 19:15 EDT — Widened standalone Smart Calc and added its own update/version marker.
+  - Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `AGENTS.md`.
+  - Changes: changed the Smart Calc card from narrow `max-w-md` to `max-w-6xl`, removed vertical centering, added desktop two-column layout rules for pricing/result vs add-ons/financing/notes once lower workflow sections appear, and added Smart Calc's separate visible update marker `Smart Calc v0.5.5.1915` with `data-smart-calc-version="0.5.5.1915"`; WOLF dashboard `displayVersion` remains separate at `0.5.5.1913`.
+  - Validation/deploy: `git diff --check` PASS; `npm run build` PASS; `npm test` PASS (2 files/6 tests); deployed `dist/.` to `/srv/www/wolf.discount/fd/`; live `/fd/` PASS (200); live `/fd/tools/smart-pricing-calculator.html` PASS (200); FD health PASS (`{"ok":true,"db":1}`); deployed Smart Calc grep confirmed `max-w-6xl`, `calculator-layout`, and `Smart Calc v0.5.5.1915`; deployed bundle `assets/index-rbh-kQZi.js` contains WOLF version `0.5.5.1913`.
 
 - 2026-05-05 19:11 EDT — Removed subtotal and customer total from Smart Calc generated notes.
   - Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `AGENTS.md`.

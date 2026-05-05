@@ -80,15 +80,29 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .calculator-layout {
+            display: block;
+        }
+        @media (min-width: 1024px) {
+            .calculator-layout:has(#addons-section:not(.hidden)),
+            .calculator-layout:has(#financing-section:not(.hidden)),
+            .calculator-layout:has(#sales-notes-section:not(.hidden)) {
+                display: grid;
+                grid-template-columns: minmax(0, 0.9fr) minmax(440px, 1.1fr);
+                gap: 1.5rem;
+                align-items: start;
+            }
+        }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen flex items-center justify-center p-4">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="0.5.5.1915">
 
     <!-- Pricing Tool Container -->
-    <div class="w-full max-w-md mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+    <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v0.5.5.1915</p>
         </header>
 
         <div class="space-y-6">
@@ -102,6 +116,8 @@
                 </div>
             </div>
 
+            <div class="calculator-layout">
+                <div class="space-y-6">
             <!-- Step 2A: Base Cost Inputs -->
             <div id="base-cost-section" class="form-section space-y-4">
                 <h3 class="text-lg font-medium text-brand-brown border-b pb-2">Base Cost Details</h3>
@@ -165,7 +181,9 @@
                 <div id="result-content" class="text-center mt-2"></div>
                 <p id="margin-note" class="text-center text-sm mt-2 font-medium"></p>
             </div>
+                </div>
 
+                <div class="space-y-6">
             <!-- Step 4: Add-On Services -->
             <div id="addons-section" class="form-section hidden space-y-4 mt-6">
                 <h3 class="text-lg font-medium text-brand-brown border-b pb-2">Add-On Services</h3>
@@ -352,6 +370,8 @@
                 </div>
             </div>
             <button id="reset-btn" class="w-full bg-gray-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition hidden mt-6">Start Over</button>
+                </div>
+            </div>
         </div>
     </div>
 
