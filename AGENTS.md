@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `0.5.4.2029`
+- Current display version in `package.json`: `0.5.4.2030`
 
 ## Project Structure
 
@@ -156,6 +156,11 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-05 18:47 EDT — Smart Calc margin discount recalculation
+  - Updated `public/tools/smart-pricing-calculator.html` so Base Cost and EZ Pro Cost Code recalculate visible margin when Additional Discount / Adjustment changes; Tagged Price still hides margin because cost is unknown.
+  - Adjustment discount is treated as a merchandise discount for margin display and shows starting margin plus discount-adjusted margin.
+  - Updated `package.json` displayVersion to `0.5.4.2030`; validation: HTML parse, duplicate ID scan, inline `node --check`, `git diff --check`, `npm run build`, live nginx check, and `/fd/api/health`.
 
 
 - 2026-05-04 16:18 EDT — Grounded WOLFbot Product Coach message-board posts in manufacturer knowledge instead of generic product chatter.

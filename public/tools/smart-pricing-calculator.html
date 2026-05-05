@@ -231,7 +231,7 @@
                         <div class="space-y-2">
                             <label for="additional-discount" class="block text-sm font-medium text-gray-700">Additional Discount / Adjustment ($)</label>
                             <input type="number" id="additional-discount" min="0" step="0.01" placeholder="e.g. 50" class="block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
-                            <p class="text-xs leading-5 text-gray-500">Policy: every discount must be documented in Sales Order notes, and the documented discounts must add up to the amount entered in Adjustment. Use the discount reason checkboxes below to document why the Adjustment was given.</p>
+                            <p class="text-xs leading-5 text-gray-500">Policy: every discount must be documented in Sales Order notes, and the documented discounts must add up to the amount entered in Adjustment. Use the discount reason checkboxes below to document why the Adjustment was given. In Base Cost and EZ Pro Cost Code, the displayed margin recalculates using the retail price minus this merchandise discount.</p>
                         </div>
                         <fieldset class="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
                             <legend class="px-1 text-sm font-semibold text-brand-brown">Discount reason(s) for Adjustment</legend>
@@ -492,6 +492,8 @@ function showLicenseLockScreen(message) {
         let currentRemovalCharge = 0;
         let currentAdditionalDiscount = 0;
         let currentAdjustmentTotal = 0;
+        let currentPricingInputMode = '';
+        let currentTargetMargin = null;
         let notesManuallyEdited = false;
         let lastGeneratedNotes = '';
 
@@ -663,6 +665,8 @@ function showLicenseLockScreen(message) {
                 }
                 allElements.marginPercentInput.value = '';
                 allElements.retailPriceInput.value = '';
+                currentPricingInputMode = '';
+                currentTargetMargin = null;
                 allElements.resultSection.classList.add('hidden');
                 hideSharedOptions();
             }
@@ -682,34 +686,27 @@ function showLicenseLockScreen(message) {
 
             function handleFinalCalculation(event) {
                 const totalCost = parseFloat(allElements.totalCostInput.value);
-                if (isNaN(totalCost)) return;
+                if (isNaN(totalCost) || totalCost <= 0) return;
                 const changedInputId = event.target.id;
                 if (changedInputId === 'margin-percent') allElements.retailPriceInput.value = '';
                 else if (changedInputId === 'retail-price') allElements.marginPercentInput.value = '';
 
                 const margin = parseFloat(allElements.marginPercentInput.value);
                 const retail = parseFloat(allElements.retailPriceInput.value);
-                let resultHtml = '', calculatedMargin = 0;
                 currentRetailPrice = 0;
+                currentPricingInputMode = '';
+                currentTargetMargin = null;
 
                 if (!isNaN(margin) && margin >= 0 && margin < 100) {
                     currentRetailPrice = totalCost / (1 - (margin / 100));
-                    calculatedMargin = margin;
-                    resultHtml = `<p>To get a <strong>${margin}% margin</strong>, price is:</p><p class="text-3xl font-bold mt-2">${formatCurrency(currentRetailPrice)}</p>`;
+                    currentPricingInputMode = 'target-margin';
+                    currentTargetMargin = margin;
                 } else if (!isNaN(retail) && retail > totalCost) {
                     currentRetailPrice = retail;
-                    calculatedMargin = ((retail - totalCost) / retail) * 100;
-                    resultHtml = `<p>With a retail price of <strong>${formatCurrency(retail)}</strong>, the margin is:</p><p class="text-3xl font-bold mt-2">${calculatedMargin.toFixed(2)}%</p>`;
+                    currentPricingInputMode = 'retail-price';
                 }
 
-                const {resultClass, noteText} = getMarginFeedback(calculatedMargin);
-                allElements.resultSection.className = `form-section p-4 rounded-md ${resultClass}`;
-                allElements.marginNote.textContent = noteText;
-                allElements.marginNote.className = `text-center text-sm mt-2 font-medium`;
-
-
-                if (resultHtml) {
-                    allElements.resultContent.innerHTML = resultHtml;
+                if (currentRetailPrice > 0) {
                     allElements.resultSection.classList.remove('hidden');
                     showSharedOptions();
                     updateAddonCosts();
@@ -722,13 +719,64 @@ function showLicenseLockScreen(message) {
             }
 
             function getMarginFeedback(margin) {
+                if (!Number.isFinite(margin)) return { resultClass: '', noteText: '' };
                 if (margin >= 60) return { resultClass: 'result-box-dark-green', noteText: 'Excellent margin! Great job!' };
                 if (margin >= 55) return { resultClass: 'result-box-green', noteText: 'Strong margin!' };
                 if (margin >= 53) return { resultClass: 'result-box-green', noteText: 'Good margin.' };
                 if (margin >= 50) return { resultClass: 'result-box-yellow', noteText: 'Acceptable margin.' };
                 if (margin >= 45) return { resultClass: 'result-box-orange', noteText: 'Margin is getting low.' };
                 if (margin > 0) return { resultClass: 'result-box-red', noteText: 'Very low margin. Manager approval may be required.' };
-                return { resultClass: '', noteText: '' };
+                return { resultClass: 'result-box-red', noteText: 'Below cost / negative margin. Manager approval required.' };
+            }
+
+            function calculateMarginPercent(cost, merchandisePrice) {
+                if (!Number.isFinite(cost) || !Number.isFinite(merchandisePrice) || merchandisePrice <= 0) return null;
+                return ((merchandisePrice - cost) / merchandisePrice) * 100;
+            }
+
+            function getMerchandiseDiscountForMargin() {
+                if (!currentRetailPrice || currentRetailPrice <= 0) return 0;
+                const rawDiscount = parseFloat(allElements.additionalDiscountInput?.value || '0');
+                const discount = Number.isFinite(rawDiscount) ? Math.max(0, rawDiscount) : 0;
+                return Math.min(discount, currentRetailPrice);
+            }
+
+            function updateKnownCostMarginFeedback() {
+                const totalCost = parseFloat(allElements.totalCostInput.value);
+                const hasKnownCost = !allElements.taggedPriceBtn.classList.contains('active') && Number.isFinite(totalCost) && totalCost > 0;
+                if (!hasKnownCost || currentRetailPrice <= 0 || !currentPricingInputMode || allElements.resultSection.classList.contains('hidden')) {
+                    return;
+                }
+
+                const startingMargin = calculateMarginPercent(totalCost, currentRetailPrice);
+                const merchandiseDiscount = getMerchandiseDiscountForMargin();
+                const adjustedMerchandisePrice = Math.max(0, currentRetailPrice - merchandiseDiscount);
+                const adjustedMargin = merchandiseDiscount > 0 ? calculateMarginPercent(totalCost, adjustedMerchandisePrice) : startingMargin;
+                const marginForFeedback = adjustedMargin === null ? 0 : adjustedMargin;
+                const { resultClass, noteText } = getMarginFeedback(marginForFeedback);
+
+                let resultHtml = '';
+                if (currentPricingInputMode === 'target-margin') {
+                    resultHtml = `<p>To get a <strong>${currentTargetMargin}% margin</strong>, retail price is:</p><p class="text-3xl font-bold mt-2">${formatCurrency(currentRetailPrice)}</p>`;
+                } else {
+                    resultHtml = `<p>With a retail price of <strong>${formatCurrency(currentRetailPrice)}</strong>, starting margin is:</p><p class="text-3xl font-bold mt-2">${startingMargin.toFixed(2)}%</p>`;
+                }
+
+                if (merchandiseDiscount > 0) {
+                    const adjustedMarginText = adjustedMargin === null ? 'N/A' : `${adjustedMargin.toFixed(2)}%`;
+                    resultHtml += `
+                        <div class="mt-3 border-t border-white/60 pt-3 text-sm">
+                            <p>After <strong>${formatCurrency(merchandiseDiscount)}</strong> adjustment discount, merchandise price is <strong>${formatCurrency(adjustedMerchandisePrice)}</strong>.</p>
+                            <p class="text-3xl font-bold mt-2">Discount-adjusted margin: ${adjustedMarginText}</p>
+                        </div>
+                    `;
+                }
+
+                allElements.resultContent.innerHTML = resultHtml;
+                allElements.resultSection.className = `form-section p-4 rounded-md ${resultClass}`;
+                allElements.resultSection.classList.remove('hidden');
+                allElements.marginNote.textContent = merchandiseDiscount > 0 ? `${noteText} Margin reflects the merchandise discount.` : noteText;
+                allElements.marginNote.className = 'text-center text-sm mt-2 font-medium';
             }
 
             function getLocalDeliveryCharge() {
@@ -1045,6 +1093,7 @@ function showLicenseLockScreen(message) {
             currentGrandTotal = grandTotal;
             currentAdjustmentTotal = currentAdditionalDiscount + (payTaxSelected ? taxAmount : 0);
             updateDiscountReasonControls();
+            updateKnownCostMarginFeedback();
 
             if (allElements.taxAmountDisplay) {
                 allElements.taxAmountDisplay.textContent = taxSelected ? formatCurrency(taxAmount) : '';
@@ -1146,6 +1195,8 @@ function showLicenseLockScreen(message) {
                 currentRemovalCharge = 0;
                 currentAdditionalDiscount = 0;
                 currentAdjustmentTotal = 0;
+                currentPricingInputMode = '';
+                currentTargetMargin = null;
                 notesManuallyEdited = false;
                 lastGeneratedNotes = '';
 
@@ -1169,6 +1220,8 @@ function showLicenseLockScreen(message) {
                 sectionsToHide.forEach(sec => sec.classList.add('hidden'));
                 if (discountDocumentationStatus) discountDocumentationStatus.textContent = '';
                 if (allElements.taxAmountDisplay) allElements.taxAmountDisplay.textContent = '';
+                if (allElements.resultContent) allElements.resultContent.innerHTML = '';
+                if (allElements.marginNote) allElements.marginNote.textContent = '';
                 if (allElements.salesOrderNotes) allElements.salesOrderNotes.value = '';
                 if (allElements.copyNotesStatus) allElements.copyNotesStatus.textContent = '';
             }
