@@ -176,6 +176,13 @@
                         </div>
                         <span id="delivery-cost-display" class="font-medium text-gray-900"></span>
                     </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="add-threshold-delivery" name="add-threshold-delivery" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                            <label for="add-threshold-delivery" class="ml-3 block text-sm font-medium text-gray-700">Add Threshold Delivery</label>
+                        </div>
+                        <span id="threshold-delivery-cost-display" class="font-medium text-gray-900">$75.00</span>
+                    </div>
                      <div id="long-distance-wrapper" class="hidden pl-7 space-y-1">
                          <div class="flex items-center">
                              <input id="add-long-distance" name="add-long-distance" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
@@ -316,7 +323,7 @@ function showLicenseLockScreen(message) {
             const financingTerms = [3, 6, 12, 15, 18, 24]; // ADDED: Financing terms
 
             const allElements = {
-                baseCostBtn: document.getElementById('btn-base-cost'), ezCodeBtn: document.getElementById('btn-ez-code'), taggedPriceBtn: document.getElementById('btn-tagged-price'), baseCostSection: document.getElementById('base-cost-section'), ezCodeSection: document.getElementById('ez-code-section'), taggedPriceSection: document.getElementById('tagged-price-section'), calculatorSection: document.getElementById('calculator-section'), resultSection: document.getElementById('result-section'), addonsSection: document.getElementById('addons-section'), vendorSelect: document.getElementById('vendor-select'), baseCostInput: document.getElementById('base-cost'), costCodeInput: document.getElementById('cost-code'), manualRetailInput: document.getElementById('manual-retail-price'), totalCostInput: document.getElementById('total-cost'), marginPercentInput: document.getElementById('margin-percent'), retailPriceInput: document.getElementById('retail-price'), addDeliveryCheckbox: document.getElementById('add-delivery'), longDistanceWrapper: document.getElementById('long-distance-wrapper'), addLongDistanceCheckbox: document.getElementById('add-long-distance'), milesInputWrapper: document.getElementById('miles-input-wrapper'), longDistanceMilesInput: document.getElementById('long-distance-miles'), addPro1stCheckbox: document.getElementById('add-pro1st'), addTaxCheckbox: document.getElementById('add-tax'), payTaxCheckbox: document.getElementById('pay-tax'), storeLocationWrapper: document.getElementById('store-location-wrapper'), storeLocationSelect: document.getElementById('store-location'), resetBtn: document.getElementById('reset-btn'), vendorInfoDiv: document.getElementById('vendor-info'), resultContent: document.getElementById('result-content'), marginNote: document.getElementById('margin-note'), deliveryCostDisplay: document.getElementById('delivery-cost-display'), deliveryUpchargeDisplay: document.getElementById('delivery-upcharge-display'), pro1stCostDisplay: document.getElementById('pro1st-cost-display'), taxAmountDisplay: document.getElementById('tax-amount-display'), grandTotalSection: document.getElementById('grand-total-section'), grandTotalDisplay: document.getElementById('grand-total-display'), breakdownDisplay: document.getElementById('breakdown-display'),
+                baseCostBtn: document.getElementById('btn-base-cost'), ezCodeBtn: document.getElementById('btn-ez-code'), taggedPriceBtn: document.getElementById('btn-tagged-price'), baseCostSection: document.getElementById('base-cost-section'), ezCodeSection: document.getElementById('ez-code-section'), taggedPriceSection: document.getElementById('tagged-price-section'), calculatorSection: document.getElementById('calculator-section'), resultSection: document.getElementById('result-section'), addonsSection: document.getElementById('addons-section'), vendorSelect: document.getElementById('vendor-select'), baseCostInput: document.getElementById('base-cost'), costCodeInput: document.getElementById('cost-code'), manualRetailInput: document.getElementById('manual-retail-price'), totalCostInput: document.getElementById('total-cost'), marginPercentInput: document.getElementById('margin-percent'), retailPriceInput: document.getElementById('retail-price'), addDeliveryCheckbox: document.getElementById('add-delivery'), addThresholdDeliveryCheckbox: document.getElementById('add-threshold-delivery'), thresholdDeliveryCostDisplay: document.getElementById('threshold-delivery-cost-display'), longDistanceWrapper: document.getElementById('long-distance-wrapper'), addLongDistanceCheckbox: document.getElementById('add-long-distance'), milesInputWrapper: document.getElementById('miles-input-wrapper'), longDistanceMilesInput: document.getElementById('long-distance-miles'), addPro1stCheckbox: document.getElementById('add-pro1st'), addTaxCheckbox: document.getElementById('add-tax'), payTaxCheckbox: document.getElementById('pay-tax'), storeLocationWrapper: document.getElementById('store-location-wrapper'), storeLocationSelect: document.getElementById('store-location'), resetBtn: document.getElementById('reset-btn'), vendorInfoDiv: document.getElementById('vendor-info'), resultContent: document.getElementById('result-content'), marginNote: document.getElementById('margin-note'), deliveryCostDisplay: document.getElementById('delivery-cost-display'), deliveryUpchargeDisplay: document.getElementById('delivery-upcharge-display'), pro1stCostDisplay: document.getElementById('pro1st-cost-display'), taxAmountDisplay: document.getElementById('tax-amount-display'), grandTotalSection: document.getElementById('grand-total-section'), grandTotalDisplay: document.getElementById('grand-total-display'), breakdownDisplay: document.getElementById('breakdown-display'),
                 // ADDED: New elements for financing feature
                 financingSection: document.getElementById('financing-section'),
                 showFinancingCheckbox: document.getElementById('show-financing'),
@@ -350,9 +357,22 @@ function showLicenseLockScreen(message) {
                 allElements.marginPercentInput.addEventListener('input', handleFinalCalculation);
                 allElements.retailPriceInput.addEventListener('input', handleFinalCalculation);
                 allElements.addDeliveryCheckbox.addEventListener('change', () => {
+                    if (allElements.addDeliveryCheckbox.checked) {
+                        allElements.addThresholdDeliveryCheckbox.checked = false;
+                    }
                     allElements.longDistanceWrapper.classList.toggle('hidden', !allElements.addDeliveryCheckbox.checked);
                     if (!allElements.addDeliveryCheckbox.checked) {
                         allElements.addLongDistanceCheckbox.checked = false;
+                        allElements.milesInputWrapper.classList.add('hidden');
+                        allElements.longDistanceMilesInput.value = '';
+                    }
+                    updateGrandTotal();
+                });
+                allElements.addThresholdDeliveryCheckbox.addEventListener('change', () => {
+                    if (allElements.addThresholdDeliveryCheckbox.checked) {
+                        allElements.addDeliveryCheckbox.checked = false;
+                        allElements.addLongDistanceCheckbox.checked = false;
+                        allElements.longDistanceWrapper.classList.add('hidden');
                         allElements.milesInputWrapper.classList.add('hidden');
                         allElements.longDistanceMilesInput.value = '';
                     }
@@ -515,8 +535,11 @@ function showLicenseLockScreen(message) {
                 
                 if (allElements.addDeliveryCheckbox.checked) {
                     deliveryCharge = getLocalDeliveryCharge() + getDeliveryUpcharge();
+                } else if (allElements.addThresholdDeliveryCheckbox.checked) {
+                    deliveryCharge = 75;
                 }
                 allElements.deliveryUpchargeDisplay.textContent = formatCurrency(getDeliveryUpcharge());
+                allElements.thresholdDeliveryCostDisplay.textContent = formatCurrency(75);
                 
                 if (allElements.addPro1stCheckbox.checked) {
                     const pro1stTier = pro1stTiers.find(t => currentRetailPrice >= t.from && currentRetailPrice <= t.to);
@@ -583,13 +606,13 @@ function showLicenseLockScreen(message) {
             }
             
             function resetForm() {
-                const { baseCostInput, costCodeInput, manualRetailInput, totalCostInput, marginPercentInput, retailPriceInput, vendorSelect, addDeliveryCheckbox, addPro1stCheckbox, addTaxCheckbox, addLongDistanceCheckbox, longDistanceMilesInput, storeLocationWrapper, longDistanceWrapper, milesInputWrapper, payTaxCheckbox, showFinancingCheckbox } = allElements; // MODIFIED
+                const { baseCostInput, costCodeInput, manualRetailInput, totalCostInput, marginPercentInput, retailPriceInput, vendorSelect, addDeliveryCheckbox, addThresholdDeliveryCheckbox, addPro1stCheckbox, addTaxCheckbox, addLongDistanceCheckbox, longDistanceMilesInput, storeLocationWrapper, longDistanceWrapper, milesInputWrapper, payTaxCheckbox, showFinancingCheckbox } = allElements; // MODIFIED
                 const formElements = [baseCostInput, costCodeInput, manualRetailInput, totalCostInput, marginPercentInput, retailPriceInput, longDistanceMilesInput];
                 formElements.forEach(el => el.value = '');
                 vendorSelect.selectedIndex = 0;
                 currentRetailPrice = 0;
                 currentGrandTotal = 0; // MODIFIED
-                addDeliveryCheckbox.checked = false; addPro1stCheckbox.checked = false; addTaxCheckbox.checked = false; addLongDistanceCheckbox.checked = false; payTaxCheckbox.checked = false; showFinancingCheckbox.checked = false; // MODIFIED
+                addDeliveryCheckbox.checked = false; addThresholdDeliveryCheckbox.checked = false; addPro1stCheckbox.checked = false; addTaxCheckbox.checked = false; addLongDistanceCheckbox.checked = false; payTaxCheckbox.checked = false; showFinancingCheckbox.checked = false; // MODIFIED
 
                 const sectionsToHide = [allElements.calculatorSection, allElements.resultSection, allElements.addonsSection, allElements.grandTotalSection, allElements.resetBtn, allElements.vendorInfoDiv, storeLocationWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection, allElements.financingBreakdown]; // MODIFIED
                 sectionsToHide.forEach(sec => sec.classList.add('hidden'));
