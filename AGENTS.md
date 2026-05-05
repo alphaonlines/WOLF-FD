@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `0.5.4.2028`
+- Current display version in `package.json`: `0.5.4.2029`
 
 ## Project Structure
 
@@ -402,3 +402,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Updated sales tax store option to Camp / Greenville at 7% and kept Other Stores at 6.75%; Add Sales Tax now behaves as an actual checkbox unless Pay Customer Tax is selected.
 - Bumped displayVersion to 0.5.4.2028. Existing shop default-to-calculator edits in App.tsx and components/ShopWorkspace.tsx were included in the deployed build.
 - Validation/deploy: ran HTML parser/duplicate-ID checks, node --check on inline scripts, git diff --check, npm run build, deployed dist to /srv/www/wolf.discount/fd/, verified live /fd/tools/smart-pricing-calculator.html returns 200 and browser-tested discount reason notes/tax/editable comments.
+
+## Running Log - 2026-05-05 14:54 EDT
+
+- Smart Calc follow-up: fixed outside-area delivery upcharge display so extra miles update the visible upcharge amount immediately, not just the grand-total math/notes.
+- Made EZ Pro Cost Code and Tagged Price use the same downstream add-on/options flow once a selling price is known; Tagged Price now notes that margin is unavailable because cost is unknown. Financing options now appear with the shared add-ons.
+- Updated `public/tools/smart-pricing-calculator.html`; bumped `package.json` displayVersion to `0.5.4.2029`.
+- Validation/deploy: HTML parser, duplicate-ID scan, inline `node --check`, `git diff --check`, `npm run build`, deployed `dist/*` to `/srv/www/wolf.discount/fd/`, live Smart Calc browser workflow test, and `/fd/api/health` OK.
