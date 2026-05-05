@@ -18,6 +18,7 @@ import {
   Users,
   MessageSquare,
   Calendar,
+  Calculator,
   Link2,
   ShoppingCart,
   Globe,
@@ -348,7 +349,7 @@ const App: React.FC = () => {
   const [currentPulseSubTab, setCurrentPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('sales');
   const [requestedAmpSubTab, setRequestedAmpSubTab] = useState<AmpSubTab>('bot');
   const [requestedAmpSubTabToken, setRequestedAmpSubTabToken] = useState(0);
-  const [requestedShopSubTab, setRequestedShopSubTab] = useState<'search' | 'catalog' | 'pos'>('search');
+  const [requestedShopSubTab, setRequestedShopSubTab] = useState<ShopSubTab>('search');
   const [requestedShopSubTabToken, setRequestedShopSubTabToken] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebarForMobile = () => {
@@ -959,7 +960,7 @@ const App: React.FC = () => {
     setActiveTab(Tab.AMP);
   };
 
-  const openShopSubTab = (subTab: 'search' | 'catalog' | 'pos') => {
+  const openShopSubTab = (subTab: ShopSubTab) => {
     setRequestedShopSubTab(subTab);
     setRequestedShopSubTabToken((current) => current + 1);
     setActiveTab(Tab.SHOP);
@@ -1502,9 +1503,9 @@ const App: React.FC = () => {
                 <button onClick={() => openShopSubTab('search')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedShopSubTab === 'search' ? (isDarkMode ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30' : 'bg-violet-50 text-violet-600 border border-violet-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><FolderSearch size={13} className="inline mr-1.5" />Search</button>
-                <button onClick={() => openShopSubTab('catalog')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  requestedShopSubTab === 'catalog' ? (isDarkMode ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30' : 'bg-violet-50 text-violet-600 border border-violet-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
-                }`}><UploadCloud size={13} className="inline mr-1.5" />Catalog</button>
+                <button onClick={() => openShopSubTab('calculator')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedShopSubTab === 'calculator' ? (isDarkMode ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30' : 'bg-violet-50 text-violet-600 border border-violet-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Calculator size={13} className="inline mr-1.5" />Smart Calc</button>
                 <button onClick={() => openShopSubTab('pos')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedShopSubTab === 'pos' ? (isDarkMode ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30' : 'bg-violet-50 text-violet-600 border border-violet-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><ShoppingCart size={13} className="inline mr-1.5" />POS</button>

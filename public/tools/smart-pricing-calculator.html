@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Pricing & Costing Utility</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Customizing Tailwind to include your brand colors
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-orange': '#F07D00', // A vibrant orange from the screenshot
+                        'brand-orange-dark': '#D97000',
+                        'brand-brown': '#4A3B31', // A dark brown for text
+                        'brand-gray': '#F5F5F5', // Light gray background
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .form-section {
+            transition: all 0.5s ease-in-out;
+            transform-origin: top;
+        }
+        .form-section.hidden {
+            opacity: 0;
+            transform: scaleY(0.9);
+            max-height: 0;
+            overflow: hidden;
+            margin-top: 0;
+            margin-bottom: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .custom-focus:focus {
+            outline: none;
+            border-color: #F07D00;
+            box-shadow: 0 0 0 3px rgba(240, 125, 0, 0.3);
+        }
+        /* New Margin Color Tiers */
+        .result-box-dark-green { background-color: #f0fdf4; border-left: 4px solid #166534; color: #14532d;}
+        .result-box-green { background-color: #f0fdf4; border-left: 4px solid #22c55e; color: #15803d;}
+        .result-box-yellow { background-color: #fefce8; border-left: 4px solid #facc15; color: #a16207;}
+        .result-box-orange { background-color: #fff7ed; border-left: 4px solid #fb923c; color: #c2410c;}
+        .result-box-red { background-color: #fef2f2; border-left: 4px solid #ef4444; color: #b91c1c;}
+
+        .requirement-note {
+            background-color: #FFFBEB; /* A light yellow for notes */
+            border-left: 4px solid #FBBF24; /* A warm yellow border */
+        }
+        .grand-total {
+            background-color: #E0E7FF;
+            border-top: 2px solid #4F46E5;
+        }
+        .entry-btn.active {
+            background-color: #F07D00;
+            color: white;
+            z-index: 10;
+        }
+        .entry-btn:not(.active) {
+            background-color: white;
+            color: #374151;
+        }
+        #chat-container {
+            transition: all 0.3s ease-in-out;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #4A3B31;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-brand-gray min-h-screen flex items-center justify-center p-4">
+
+    <!-- Pricing Tool Container -->
+    <div class="w-full max-w-md mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-brand-brown">Smart Pricing Tool</h1>
+            <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
+        </header>
+
+        <div class="space-y-6">
+            <!-- Step 1: Entry Mode Selection -->
+            <div class="form-section">
+                <label class="block text-sm font-medium text-brand-brown mb-2">1. Choose your starting point</label>
+                <div class="flex rounded-md shadow-sm">
+                    <button id="btn-base-cost" type="button" class="entry-btn active relative inline-flex items-center justify-center w-1/3 rounded-l-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">Base Cost</button>
+                    <button id="btn-ez-code" type="button" class="entry-btn relative -ml-px inline-flex items-center justify-center w-1/3 border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">EZ Pro Cost Code</button>
+                    <button id="btn-tagged-price" type="button" class="entry-btn relative -ml-px inline-flex items-center justify-center w-1/3 rounded-r-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">Tagged Price</button>
+                </div>
+            </div>
+
+            <!-- Step 2A: Base Cost Inputs -->
+            <div id="base-cost-section" class="form-section space-y-4">
+                <h3 class="text-lg font-medium text-brand-brown border-b pb-2">Base Cost Details</h3>
+                <div>
+                    <label for="vendor-select" class="block text-sm font-medium text-brand-brown">Select Vendor</label>
+                    <select id="vendor-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                        <option value="">-- Choose a vendor --</option>
+                    </select>
+                </div>
+                <div id="vendor-info" class="mt-2 text-sm text-yellow-800 p-3 rounded-md hidden requirement-note"></div>
+                <div>
+                    <label for="base-cost" class="block text-sm font-medium text-brand-brown">Enter Base Cost ($)</label>
+                    <input type="number" id="base-cost" min="0" placeholder="e.g., 100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                </div>
+            </div>
+
+            <!-- Step 2B: EZ Pro Cost Code Decoder -->
+            <div id="ez-code-section" class="form-section hidden space-y-4">
+                 <h3 class="text-lg font-medium text-brand-brown border-b pb-2">EZ Pro Cost Code</h3>
+                 <p class="text-sm text-gray-500"> F=0, D=1, T=2, E=3, A=4, M=5, W=6, O=7, R=8, K=9 </p>
+                <div>
+                    <label for="cost-code" class="block text-sm font-medium text-brand-brown">Enter Cost Code</label>
+                    <input type="text" id="cost-code" placeholder="e.g., TEAM.WK" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2 uppercase">
+                </div>
+            </div>
+
+            <!-- Step 2C: Tagged Price Input -->
+            <div id="tagged-price-section" class="form-section hidden space-y-4">
+                <h3 class="text-lg font-medium text-brand-brown border-b pb-2">Tagged Price Details</h3>
+                <div>
+                    <label for="manual-retail-price" class="block text-sm font-medium text-brand-brown">Enter Tagged Retail Price ($)</label>
+                    <input type="number" id="manual-retail-price" min="0" placeholder="e.g., 499.99" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                </div>
+            </div>
+
+            <!-- Step 3: Calculation (Two-way) -->
+            <div id="calculator-section" class="form-section hidden space-y-4">
+                <h3 class="text-lg font-medium text-brand-brown border-b pb-2">Calculate Final Price</h3>
+                 <p class="text-sm text-gray-600">Enter **Total Cost** and EITHER **Margin** or **Retail Price**.</p>
+                <div>
+                    <label for="total-cost" class="block text-sm font-medium text-brand-brown">Total with Freight Included ($)</label>
+                    <input type="number" id="total-cost" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm custom-focus sm:text-sm p-2" readonly>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex-1">
+                        <label for="margin-percent" class="block text-sm font-medium text-brand-brown">Margin (%)</label>
+                        <input type="number" id="margin-percent" min="0" placeholder="e.g., 55" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                    </div>
+                    <div class="text-gray-500 font-bold mt-6">OR</div>
+                     <div class="flex-1">
+                        <label for="retail-price" class="block text-sm font-medium text-brand-brown">Retail Price ($)</label>
+                        <input type="number" id="retail-price" min="0" placeholder="e.g., 250" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result Display -->
+            <div id="result-section" class="form-section hidden p-4 rounded-md">
+                <h3 class="text-lg font-semibold text-center">Calculation Result</h3>
+                <div id="result-content" class="text-center mt-2"></div>
+                <p id="margin-note" class="text-center text-sm mt-2 font-medium"></p>
+            </div>
+
+            <!-- Step 4: Add-On Services -->
+            <div id="addons-section" class="form-section hidden space-y-4 mt-6">
+                <h3 class="text-lg font-medium text-brand-brown border-b pb-2">Add-On Services</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="add-delivery" name="add-delivery" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                            <label for="add-delivery" class="ml-3 block text-sm font-medium text-gray-700">Add Local Delivery (within 25 miles)</label>
+                        </div>
+                        <span id="delivery-cost-display" class="font-medium text-gray-900"></span>
+                    </div>
+                     <div id="long-distance-wrapper" class="hidden pl-7 space-y-1">
+                         <div class="flex items-center">
+                             <input id="add-long-distance" name="add-long-distance" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                            <label for="add-long-distance" class="ml-3 block text-sm font-medium text-gray-600">Outside Local Area?</label>
+                         </div>
+                         <div id="miles-input-wrapper" class="hidden pl-7">
+                            <label for="long-distance-miles" class="block text-sm font-medium text-gray-500">Total Miles from Store:</label>
+                             <input type="number" id="long-distance-miles" min="0" placeholder="e.g., 40" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                             <div id="delivery-upcharge-row" class="flex items-center justify-between pt-2 text-sm">
+                                <span class="font-medium text-gray-600">Outside Area Upcharge</span>
+                                <span id="delivery-upcharge-display" class="font-semibold text-gray-900">$0.00</span>
+                             </div>
+                         </div>
+                     </div>
+                     <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="add-pro1st" name="add-pro1st" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                            <label for="add-pro1st" class="ml-3 block text-sm font-medium text-gray-700">Add Pro1st Protection</label>
+                        </div>
+                        <span id="pro1st-cost-display" class="font-medium text-gray-900"></span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="add-tax" name="add-tax" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                            <label for="add-tax" class="ml-3 block text-sm font-medium text-gray-700">Add Sales Tax</label>
+                        </div>
+                        <span id="tax-amount-display" class="font-medium text-gray-900"></span>
+                    </div>
+                    <div id="store-location-wrapper" class="hidden pl-7 space-y-1">
+                         <label for="store-location" class="block text-sm font-medium text-gray-600">Store Location for Tax:</label>
+                         <select id="store-location" class="block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                            <option value="greenville">Greenville (7%)</option>
+                            <option value="other">Other Stores (6.75%)</option>
+                        </select>
+                    </div>
+                    <div class="border-t pt-3">
+                         <div class="flex items-center">
+                            <input id="pay-tax" name="pay-tax" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                            <label for="pay-tax" class="ml-3 block text-sm font-medium text-gray-700">Pay Customer's Tax (Out-the-Door Price)</label>
+                        </div>
+                    </div>
+                </div>
+                 <div id="grand-total-section" class="pt-4 text-right hidden grand-total p-4 rounded-lg mt-4">
+                    <div id="breakdown-display"></div>
+                    <p class="text-lg font-semibold text-brand-brown mt-2">Grand Total:</p>
+                    <p id="grand-total-display" class="text-3xl font-bold text-brand-orange"></p>
+                </div>
+            </div>
+<div id="grand-total-section" class="pt-4 text-right hidden grand-total p-4 rounded-lg mt-4">
+                <div id="breakdown-display"></div>
+                <p class="text-lg font-semibold text-brand-brown mt-2">Grand Total:</p>
+                <p id="grand-total-display" class="text-3xl font-bold text-brand-orange"></p>
+            </div>
+
+            <div id="financing-section" class="form-section hidden space-y-3 pt-4 mt-2">
+                <div class="flex items-center">
+                    <input id="show-financing" name="show-financing" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                    <label for="show-financing" class="ml-3 block text-sm font-medium text-gray-700">Equal Monthly paymens </label>
+                </div>
+
+                <div id="financing-breakdown" class="hidden">
+                    <table class="w-full text-sm text-left text-gray-600 mt-2">
+                        <thead class="text-xs text-brand-brown uppercase bg-gray-100">
+                            <tr>
+                                <th scope="col" class="px-4 py-2">Term Length</th>
+                                <th scope="col" class="px-4 py-2 text-right">Monthly Payment</th>
+                            </tr>
+                        </thead>
+                        <tbody id="financing-table-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+            <button id="reset-btn" class="w-full bg-gray-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition hidden mt-6">Start Over</button>
+        </div>
+    </div>
+            <button id="reset-btn" class="w-full bg-gray-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition hidden mt-6">Start Over</button>
+        </div>
+    </div>
+
+    <!-- Chat Widget Container -->
+    <div id="chat-widget" class="fixed bottom-5 right-5">
+        <!-- Chat Bubble -->
+        <button id="chat-bubble" class="bg-brand-orange w-16 h-16 rounded-full flex items-center justify-center text-white shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.828 8.828 0 01-4.322-.982A.5.5 0 005 16.5v-1.129a.5.5 0 00-.236-.425A7.005 7.005 0 012 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM4.666 4.999a.5.5 0 00.325-.928A9.012 9.012 0 0110 2c4.418 0 8 3.134 8 7a7.007 7.007 0 01-1.334 4.072.5.5 0 00-.188.626l.49 1.144a.5.5 0 01-.736.64l-1.065-.533a.5.5 0 00-.54-.022A8.962 8.962 0 0110 18c-4.418 0-8-3.134-8-7a9.009 9.009 0 011.666-5.001z" clip-rule="evenodd" />
+            </svg>
+        </button>
+
+        <!-- Chat Container -->
+        <div id="chat-container" class="hidden absolute bottom-20 right-0 w-80 md:w-96 bg-white rounded-lg shadow-xl flex flex-col" style="height: 500px;">
+            <!-- Header -->
+            <div class="bg-brand-brown text-white p-4 rounded-t-lg flex justify-between items-center">
+                <h3 class="font-semibold text-lg">Help & Support</h3>
+                <button id="close-chat" class="text-white">&times;</button>
+            </div>
+            <!-- Messages -->
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto">
+                <!-- Messages will be injected here -->
+            </div>
+            <!-- Input -->
+            <div class="p-4 border-t">
+                <div class="flex">
+                    <input type="text" id="chat-input" placeholder="Ask a question..." class="flex-1 rounded-l-md border-gray-300 focus:ring-brand-orange focus:border-brand-orange">
+                    <button id="send-btn" class="bg-brand-orange text-white px-4 rounded-r-md">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        
+// === ALPHA FD LICENSE CHECK (IMAGE SWITCH) ===
+const LICENSE_CONFIG = {
+  checkUrl: 'https://cdn.shopify.com/s/files/1/0790/0525/3951/files/FD_server_link.jpg?v=1762568017',
+  strict: true // true = if check fails, lock the tool
+};
+
+function checkLicenseImage() {
+  return new Promise((resolve) => {
+    const img = new Image();
+
+    // If image loads, license = OK
+    img.onload = () => {
+      resolve({ ok: true });
+    };
+
+    // If image fails (404 / removed / blocked), license = NOT OK
+    img.onerror = () => {
+      resolve({
+        ok: false,
+        msg: 'License inactive or missing. Please contact support.'
+      });
+    };
+
+    // cacheBust so browser always re-checks
+    img.src = LICENSE_CONFIG.checkUrl + '&_=' + Date.now();
+  });
+}
+
+function showLicenseLockScreen(message) {
+  document.body.innerHTML = `
+    <div class="min-h-screen flex items-center justify-center bg-gray-100 p-6">
+      <div class="bg-white max-w-md w-full p-6 rounded-xl shadow-lg text-center">
+        <h1 class="text-2xl font-bold text-red-600 mb-3">Smart Pricing Tool Locked</h1>
+        <p class="text-gray-700 mb-4">${message}</p>
+        <p class="text-sm text-gray-500">
+          If you believe this is an error, please contact your administrator
+          or email <span class="font-semibold">Info@AlphaonlineS.org</span>.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+
+
+
+
+        // --- PRICING TOOL SCRIPT ---
+        const pricingToolLogic = () => {
+            const vendorFreightData = { "A AMERICA": { freight: 20, requirement: "$750 MINIMUM WAREHOUSE" }, "ALBANY": { freight: 20, requirement: "TRUCKLOAD ONLY" }, "ARCHBOLD": { freight: 12.5, requirement: "$1500 MINIMUM" }, "ASHLEY": { freight: 25.5, requirement: "TRUCKLOAD ONLY" }, "BENCHMASTER": { freight: 15, requirement: "$145 FREIGHT/5 CHAIRS" }, "BEST CHAIR": { freight: 20.5, requirement: "25 SEAT MINIMUM" }, "CATNAPPER": { freight: 22.5, requirement: "NO MINIMUM" }, "COMFORT SLEEP": { freight: 35, requirement: "$1,000 MINIMUM ORDER" }, "CROWNMARK": { freight: 22.5, requirement: "$10,000 MINIMUM" }, "DALYN RUG": { freight: 35, requirement: "CAN SHIP DIRECTLY TO CUSTOMER" }, "ENGLAND": { freight: 31, requirement: "ORDERS PLACED MONDAY BY 2PM" }, "GBS/PROTECT ALL": { freight: 12, requirement: "MUST ORDER BY THE CASE" }, "HILLSDALE": { freight: 32, requirement: "$500 MINIMUM ORDER" }, "INFINITY": { freight: 10, requirement: "" }, "INNOVATIONS": { freight: 19.5, requirement: "$2800-$3500 MINIMUM" }, "JACKSON": { freight: 22.5, requirement: "NO MINIMUM" }, "KNICKERBOCKER": { freight: 7, requirement: "50 PIECE MINIMUM FOR FREE SHIPPING" }, "LIBERTY": { freight: 22.5, requirement: "$1,000 MINIMUM FROM WAREHOUSE" }, "MATTRESS FIRST": { freight: 15, requirement: "6 PCS OR $2,500" }, "NEW CLASSIC": { freight: 12, requirement: "$1,000 MINIMUM" }, "OLLIX": { freight: 15, requirement: "$2000 FOR 9% FREIGHT" }, "RIZE (GLIDEAWAY)": { freight: 25, requirement: "$1,200 MINIMUM ORDER" }, "SEALY": { freight: 6, requirement: "$1,500 MINIMUM" }, "SERTA": { freight: 15, requirement: "6 PCS OR $2,500" }, "SIMMONS BEDDING": { freight: 15, requirement: "6 PCS OR $2,500" }, "SOUTHCO": { freight: 15, requirement: "$2000 MINIMUM APPROX" }, "TEMPURPEDIC": { freight: 6, requirement: "$3,000 MINIMUM ORDER" }, "ULTRACOMFORT": { freight: 10, requirement: "" }, "VAUGHAN-BASSETT": { freight: 13.5, requirement: "$1,000 MINIMUM" } };
+            const costCipher = { 'D': '1', 'T': '2', 'E': '3', 'A': '4', 'M': '5', 'W': '6', 'O': '7', 'R': '8', 'K': '9', 'F': '0' };
+            const deliveryTiers = [ { from: 0, to: 499.99, charge: 129.99 }, { from: 500, to: 1999, charge: 169.99 }, { from: 2000, to: 2999, charge: 199.99 }, { from: 3000, to: 4999, charge: 249.99 }, { from: 5000, to: 7499, charge: 349.99 }, { from: 7500, to: 9999, charge: 399.99 }, { from: 10000, to: Infinity, charge: 499.99 } ];
+            const pro1stTiers = [ { from: 0, to: 499, price: 99.99 }, { from: 500, to: 799, price: 129.99 }, { from: 800, to: 1200, price: 169.99 }, { from: 1201, to: 2500, price: 249.99 }, { from: 2501, to: 3000, price: 299.99 }, { from: 3001, to: 3500, price: 349.99 }, { from: 3501, to: 5000, price: 499.99 }, { from: 5001, to: 7000, price: 699.99 }, { from: 7001, to: 10000, price: 999.99 }, { from: 10001, to: 15000, price: 1499.99 }, { from: 15001, to: 20000, price: 1999.99 }, { from: 20001, to: 25000, price: 2499.99 }, { from: 25001, to: 30000, price: 2999.99 }, { from: 30001, to: 35000, price: 3499.99 }, { from: 35001, to: 40000, price: 3999.99 }, { from: 40001, to: 45000, price: 4499.99 }, { from: 45001, to: 50000, price: 4999.99 } ];
+            const taxRates = { 'greenville': 0.07, 'other': 0.0675 };
+            const financingTerms = [3, 6, 12, 15, 18, 24]; // ADDED: Financing terms
+
+            const allElements = {
+                baseCostBtn: document.getElementById('btn-base-cost'), ezCodeBtn: document.getElementById('btn-ez-code'), taggedPriceBtn: document.getElementById('btn-tagged-price'), baseCostSection: document.getElementById('base-cost-section'), ezCodeSection: document.getElementById('ez-code-section'), taggedPriceSection: document.getElementById('tagged-price-section'), calculatorSection: document.getElementById('calculator-section'), resultSection: document.getElementById('result-section'), addonsSection: document.getElementById('addons-section'), vendorSelect: document.getElementById('vendor-select'), baseCostInput: document.getElementById('base-cost'), costCodeInput: document.getElementById('cost-code'), manualRetailInput: document.getElementById('manual-retail-price'), totalCostInput: document.getElementById('total-cost'), marginPercentInput: document.getElementById('margin-percent'), retailPriceInput: document.getElementById('retail-price'), addDeliveryCheckbox: document.getElementById('add-delivery'), longDistanceWrapper: document.getElementById('long-distance-wrapper'), addLongDistanceCheckbox: document.getElementById('add-long-distance'), milesInputWrapper: document.getElementById('miles-input-wrapper'), longDistanceMilesInput: document.getElementById('long-distance-miles'), addPro1stCheckbox: document.getElementById('add-pro1st'), addTaxCheckbox: document.getElementById('add-tax'), payTaxCheckbox: document.getElementById('pay-tax'), storeLocationWrapper: document.getElementById('store-location-wrapper'), storeLocationSelect: document.getElementById('store-location'), resetBtn: document.getElementById('reset-btn'), vendorInfoDiv: document.getElementById('vendor-info'), resultContent: document.getElementById('result-content'), marginNote: document.getElementById('margin-note'), deliveryCostDisplay: document.getElementById('delivery-cost-display'), deliveryUpchargeDisplay: document.getElementById('delivery-upcharge-display'), pro1stCostDisplay: document.getElementById('pro1st-cost-display'), taxAmountDisplay: document.getElementById('tax-amount-display'), grandTotalSection: document.getElementById('grand-total-section'), grandTotalDisplay: document.getElementById('grand-total-display'), breakdownDisplay: document.getElementById('breakdown-display'),
+                // ADDED: New elements for financing feature
+                financingSection: document.getElementById('financing-section'),
+                showFinancingCheckbox: document.getElementById('show-financing'),
+                financingBreakdown: document.getElementById('financing-breakdown'),
+                financingTableBody: document.getElementById('financing-table-body')
+            };
+
+            let currentRetailPrice = 0;
+            let currentGrandTotal = 0; // MODIFIED: Keep track of grand total globally
+
+            function initialize() {
+                const vendors = Object.keys(vendorFreightData).sort();
+                vendors.forEach(vendor => {
+                    const option = document.createElement('option');
+                    option.value = vendor;
+                    option.textContent = vendor;
+                    allElements.vendorSelect.appendChild(option);
+                });
+                setEntryMode('base');
+                setupEventListeners();
+            }
+
+            function setupEventListeners() {
+                allElements.baseCostBtn.addEventListener('click', () => setEntryMode('base'));
+                allElements.ezCodeBtn.addEventListener('click', () => setEntryMode('ez'));
+                allElements.taggedPriceBtn.addEventListener('click', () => setEntryMode('tagged'));
+                allElements.vendorSelect.addEventListener('change', calculateTotalCost);
+                allElements.baseCostInput.addEventListener('input', calculateTotalCost);
+                allElements.costCodeInput.addEventListener('input', calculateTotalCost);
+                allElements.manualRetailInput.addEventListener('input', handleManualRetailInput);
+                allElements.marginPercentInput.addEventListener('input', handleFinalCalculation);
+                allElements.retailPriceInput.addEventListener('input', handleFinalCalculation);
+                allElements.addDeliveryCheckbox.addEventListener('change', () => {
+                    allElements.longDistanceWrapper.classList.toggle('hidden', !allElements.addDeliveryCheckbox.checked);
+                    if (!allElements.addDeliveryCheckbox.checked) {
+                        allElements.addLongDistanceCheckbox.checked = false;
+                        allElements.milesInputWrapper.classList.add('hidden');
+                        allElements.longDistanceMilesInput.value = '';
+                    }
+                    updateGrandTotal();
+                });
+                allElements.addLongDistanceCheckbox.addEventListener('change', () => {
+                    allElements.milesInputWrapper.classList.toggle('hidden', !allElements.addLongDistanceCheckbox.checked);
+                    if (!allElements.addLongDistanceCheckbox.checked) {
+                        allElements.longDistanceMilesInput.value = '';
+                    }
+                    updateGrandTotal();
+                });
+                allElements.longDistanceMilesInput.addEventListener('input', updateGrandTotal);
+                allElements.addPro1stCheckbox.addEventListener('change', updateGrandTotal);
+                allElements.addTaxCheckbox.addEventListener('change', () => {
+                    allElements.storeLocationWrapper.classList.toggle('hidden', !allElements.addTaxCheckbox.checked);
+                    updateGrandTotal();
+                });
+                allElements.payTaxCheckbox.addEventListener('change', updateGrandTotal);
+                allElements.storeLocationSelect.addEventListener('change', updateGrandTotal);
+                allElements.resetBtn.addEventListener('click', resetForm);
+                allElements.showFinancingCheckbox.addEventListener('change', updateFinancingBreakdown); // ADDED
+            }
+
+            function setEntryMode(mode) {
+                const { baseCostSection, ezCodeSection, taggedPriceSection, baseCostBtn, ezCodeBtn, taggedPriceBtn } = allElements;
+                const sections = [baseCostSection, ezCodeSection, taggedPriceSection];
+                const buttons = [baseCostBtn, ezCodeBtn, taggedPriceBtn];
+                sections.forEach(s => s.classList.add('hidden'));
+                buttons.forEach(b => b.classList.remove('active'));
+                if (mode === 'base') { baseCostSection.classList.remove('hidden'); baseCostBtn.classList.add('active'); } 
+                else if (mode === 'ez') { ezCodeSection.classList.remove('hidden'); ezCodeBtn.classList.add('active'); } 
+                else if (mode === 'tagged') { taggedPriceSection.classList.remove('hidden'); taggedPriceBtn.classList.add('active'); }
+                resetForm();
+            }
+
+            function calculateTotalCost() {
+                let totalCost = 0;
+                if (allElements.baseCostBtn.classList.contains('active')) {
+                    const vendor = allElements.vendorSelect.value;
+                    const baseCost = parseFloat(allElements.baseCostInput.value);
+                    if (vendor) {
+                        const data = vendorFreightData[vendor];
+                        allElements.vendorInfoDiv.innerHTML = `<strong>Freight: ${data.freight}%</strong> | Req: ${data.requirement || 'N/A'}`;
+                        allElements.vendorInfoDiv.classList.remove('hidden');
+                    } else {
+                        allElements.vendorInfoDiv.classList.add('hidden');
+                    }
+                    if (vendor && !isNaN(baseCost)) {
+                        totalCost = baseCost * (1 + vendorFreightData[vendor].freight / 100);
+                    }
+                } else { // EZ Code
+                    const code = allElements.costCodeInput.value.toUpperCase();
+                    let decodedString = '';
+                    let isValid = true;
+                    for (let char of code) {
+                        if (costCipher[char]) { decodedString += costCipher[char]; } 
+                        else if (char === '.' && !decodedString.includes('.')) { decodedString += '.'; } 
+                        else if (char) { isValid = false; break; }
+                    }
+                    totalCost = isValid ? (parseFloat(decodedString) || 0) : 0;
+                }
+                
+                if (totalCost > 0) {
+                    allElements.totalCostInput.value = totalCost.toFixed(2);
+                    allElements.calculatorSection.classList.remove('hidden');
+                } else {
+                    allElements.totalCostInput.value = '';
+                    allElements.calculatorSection.classList.add('hidden');
+                }
+                allElements.marginPercentInput.value = ''; allElements.retailPriceInput.value = ''; allElements.resultSection.classList.add('hidden'); allElements.addonsSection.classList.add('hidden');
+            }
+            
+            function handleManualRetailInput() {
+                const retailPrice = parseFloat(allElements.manualRetailInput.value);
+                if (!isNaN(retailPrice) && retailPrice > 0) {
+                    currentRetailPrice = retailPrice;
+                    allElements.addonsSection.classList.remove('hidden');
+                    allElements.resetBtn.classList.remove('hidden');
+                    updateAddonCosts();
+                } else {
+                    allElements.addonsSection.classList.add('hidden');
+                }
+            }
+
+            function handleFinalCalculation(event) {
+                const totalCost = parseFloat(allElements.totalCostInput.value);
+                if (isNaN(totalCost)) return;
+                const changedInputId = event.target.id;
+                if (changedInputId === 'margin-percent') allElements.retailPriceInput.value = '';
+                else if (changedInputId === 'retail-price') allElements.marginPercentInput.value = '';
+                
+                const margin = parseFloat(allElements.marginPercentInput.value);
+                const retail = parseFloat(allElements.retailPriceInput.value);
+                let resultHtml = '', calculatedMargin = 0;
+                currentRetailPrice = 0;
+
+                if (!isNaN(margin) && margin >= 0 && margin < 100) {
+                    currentRetailPrice = totalCost / (1 - (margin / 100));
+                    calculatedMargin = margin;
+                    resultHtml = `<p>To get a <strong>${margin}% margin</strong>, price is:</p><p class="text-3xl font-bold mt-2">${formatCurrency(currentRetailPrice)}</p>`;
+                } else if (!isNaN(retail) && retail > totalCost) {
+                    currentRetailPrice = retail;
+                    calculatedMargin = ((retail - totalCost) / retail) * 100;
+                    resultHtml = `<p>With a retail price of <strong>${formatCurrency(retail)}</strong>, the margin is:</p><p class="text-3xl font-bold mt-2">${calculatedMargin.toFixed(2)}%</p>`;
+                }
+                
+                const {resultClass, noteText} = getMarginFeedback(calculatedMargin);
+                allElements.resultSection.className = `form-section p-4 rounded-md ${resultClass}`;
+                allElements.marginNote.textContent = noteText;
+                allElements.marginNote.className = `text-center text-sm mt-2 font-medium`;
+
+
+                if (resultHtml) {
+                    allElements.resultContent.innerHTML = resultHtml;
+                    allElements.resultSection.classList.remove('hidden');
+                    allElements.addonsSection.classList.remove('hidden');
+                    allElements.resetBtn.classList.remove('hidden');
+                    updateAddonCosts();
+                } else {
+                    allElements.resultSection.classList.add('hidden');
+                    allElements.addonsSection.classList.add('hidden');
+                }
+            }
+
+            function getMarginFeedback(margin) {
+                if (margin >= 60) return { resultClass: 'result-box-dark-green', noteText: 'Excellent margin! Great job!' };
+                if (margin >= 55) return { resultClass: 'result-box-green', noteText: 'Strong margin!' };
+                if (margin >= 53) return { resultClass: 'result-box-green', noteText: 'Good margin.' };
+                if (margin >= 50) return { resultClass: 'result-box-yellow', noteText: 'Acceptable margin.' };
+                if (margin >= 45) return { resultClass: 'result-box-orange', noteText: 'Margin is getting low.' };
+                if (margin > 0) return { resultClass: 'result-box-red', noteText: 'Very low margin. Manager approval may be required.' };
+                return { resultClass: '', noteText: '' };
+            }
+
+            function getLocalDeliveryCharge() {
+                const deliveryTier = deliveryTiers.find(t => currentRetailPrice >= t.from && currentRetailPrice <= t.to);
+                return deliveryTier ? deliveryTier.charge : 0;
+            }
+
+            function getDeliveryUpcharge() {
+                if (!allElements.addDeliveryCheckbox.checked || !allElements.addLongDistanceCheckbox.checked) return 0;
+                const miles = Math.max(0, parseFloat(allElements.longDistanceMilesInput.value) || 0);
+                return miles > 25 ? (miles - 25) * 3 : 0;
+            }
+
+            function updateAddonCosts() {
+                allElements.deliveryCostDisplay.textContent = formatCurrency(getLocalDeliveryCharge());
+                allElements.deliveryUpchargeDisplay.textContent = formatCurrency(getDeliveryUpcharge());
+                
+                const pro1stTier = pro1stTiers.find(t => currentRetailPrice >= t.from && currentRetailPrice <= t.to);
+                allElements.pro1stCostDisplay.textContent = pro1stTier ? formatCurrency(pro1stTier.price) : '$0.00';
+                
+                updateGrandTotal();
+            }
+
+            function updateGrandTotal() {
+                let subtotal = currentRetailPrice;
+                let deliveryCharge = 0, pro1stCharge = 0, taxAmount = 0;
+                
+                if (allElements.addDeliveryCheckbox.checked) {
+                    deliveryCharge = getLocalDeliveryCharge() + getDeliveryUpcharge();
+                }
+                allElements.deliveryUpchargeDisplay.textContent = formatCurrency(getDeliveryUpcharge());
+                
+                if (allElements.addPro1stCheckbox.checked) {
+                    const pro1stTier = pro1stTiers.find(t => currentRetailPrice >= t.from && currentRetailPrice <= t.to);
+                    if(pro1stTier) pro1stCharge = pro1stTier.price;
+                }
+                
+                let totalBeforeTax = currentRetailPrice + deliveryCharge + pro1stCharge;
+                let grandTotal = totalBeforeTax;
+                let breakdownHtml = '';
+
+                if (allElements.payTaxCheckbox.checked) {
+                    allElements.addTaxCheckbox.checked = true;
+                    allElements.addTaxCheckbox.disabled = true;
+                    allElements.storeLocationWrapper.classList.remove('hidden');
+                    
+                    const taxRate = taxRates[allElements.storeLocationSelect.value];
+                    const discountedSubtotal = totalBeforeTax / (1 + taxRate);
+                    taxAmount = totalBeforeTax - discountedSubtotal;
+                    
+                    breakdownHtml = `
+                        <p class="text-sm">Discounted Subtotal: <span class="font-semibold">${formatCurrency(discountedSubtotal)}</span></p>
+                        <p class="text-sm">Sales Tax Paid: <span class="font-semibold">${formatCurrency(taxAmount)}</span></p>
+                    `;
+                } else {
+                    allElements.addTaxCheckbox.disabled = false;
+                    if (allElements.addTaxCheckbox.checked) {
+                        const taxRate = taxRates[allElements.storeLocationSelect.value];
+                        taxAmount = totalBeforeTax * taxRate;
+                        grandTotal += taxAmount;
+                    }
+                }
+                
+                allElements.taxAmountDisplay.textContent = formatCurrency(taxAmount);
+                allElements.breakdownDisplay.innerHTML = breakdownHtml;
+                allElements.grandTotalDisplay.textContent = formatCurrency(grandTotal);
+                allElements.grandTotalSection.classList.remove('hidden');
+                
+                // MODIFIED: Store grand total and call financing update
+                currentGrandTotal = grandTotal; 
+                allElements.financingSection.classList.remove('hidden');
+                updateFinancingBreakdown();
+            }
+
+            // ADDED: New function to calculate and display financing options
+            function updateFinancingBreakdown() {
+                if (allElements.showFinancingCheckbox.checked && currentGrandTotal > 0) {
+                    allElements.financingBreakdown.classList.remove('hidden');
+                    
+                    let tableHtml = '';
+                    financingTerms.forEach(term => {
+                        const monthlyPayment = currentGrandTotal / term;
+                        tableHtml += `
+                            <tr class="border-b">
+                                <td class="px-4 py-2 font-medium">${term} Months</td>
+                                <td class="px-4 py-2 text-right font-semibold text-brand-orange-dark">${formatCurrency(monthlyPayment)}</td>
+                            </tr>
+                        `;
+                    });
+                    allElements.financingTableBody.innerHTML = tableHtml;
+
+                } else {
+                    allElements.financingBreakdown.classList.add('hidden');
+                }
+            }
+            
+            function resetForm() {
+                const { baseCostInput, costCodeInput, manualRetailInput, totalCostInput, marginPercentInput, retailPriceInput, vendorSelect, addDeliveryCheckbox, addPro1stCheckbox, addTaxCheckbox, addLongDistanceCheckbox, longDistanceMilesInput, storeLocationWrapper, longDistanceWrapper, milesInputWrapper, payTaxCheckbox, showFinancingCheckbox } = allElements; // MODIFIED
+                const formElements = [baseCostInput, costCodeInput, manualRetailInput, totalCostInput, marginPercentInput, retailPriceInput, longDistanceMilesInput];
+                formElements.forEach(el => el.value = '');
+                vendorSelect.selectedIndex = 0;
+                currentRetailPrice = 0;
+                currentGrandTotal = 0; // MODIFIED
+                addDeliveryCheckbox.checked = false; addPro1stCheckbox.checked = false; addTaxCheckbox.checked = false; addLongDistanceCheckbox.checked = false; payTaxCheckbox.checked = false; showFinancingCheckbox.checked = false; // MODIFIED
+
+                const sectionsToHide = [allElements.calculatorSection, allElements.resultSection, allElements.addonsSection, allElements.grandTotalSection, allElements.resetBtn, allElements.vendorInfoDiv, storeLocationWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection, allElements.financingBreakdown]; // MODIFIED
+                sectionsToHide.forEach(sec => sec.classList.add('hidden'));
+                allElements.addTaxCheckbox.disabled = false;
+            }
+            
+            function formatCurrency(num) {
+                return num.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+            }
+
+            initialize();
+        };
+
+                // --- CHATBOT SCRIPT (No changes needed here) ---
+        const chatbotLogic = () => {
+            const chatBubble = document.getElementById('chat-bubble');
+            const chatContainer = document.getElementById('chat-container');
+            const closeChat = document.getElementById('close-chat');
+            const chatMessages = document.getElementById('chat-messages');
+            const chatInput = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-btn');
+
+            const fallbackKnowledgeBase = {
+                "help": "I can help with questions about the pricing tool. Try asking about 'margin', 'cost code', 'delivery', or 'protection plan'.",
+                "margin": "The result box changes color based on the margin: green is good (53%+), yellow is okay (50-53%), and red is low (<50%). This helps you see if a price is profitable.",
+                "cost code": "The cost code uses the 'FDTEAMWORK' cipher where each letter corresponds to a number (F=0, D=1, T=2...). This allows you to quickly enter cost without typing numbers.",
+                "delivery": "Local delivery is for addresses within 25 miles. For areas outside of that, check the 'Outside Local Area?' box and enter the total miles to calculate the extra charge.",
+                "pro1st": "The Pro1st Protection plan cost is automatically calculated based on the retail price of the furniture. Just check the box to add it.",
+                "protection plan": "The Pro1st Protection plan cost is automatically calculated based on the retail price of the furniture. Just check the box to add it.",
+                "tax": "Sales tax is calculated based on the store location you select. This only appears after you check the 'Add Sales Tax' box. You can also choose 'Pay Customer's Tax' for out-the-door pricing.",
+                "hand off": "I can't answer that. Would you like me to connect you with a manager or open a support ticket?",
+                "manager": "I have notified a manager for assistance. Please stand by.",
+                "ticket": "A support ticket has been created. Someone from the IT department will reach out to you shortly."
+            };
+
+            async function getBotResponse(userInput) {
+                const DIALOGFLOW_API_URL = 'YOUR_API_ENDPOINT_URL_GOES_HERE';
+                addMessage('...', 'bot', true);
+                try {
+                    if (DIALOGFLOW_API_URL === 'YOUR_API_ENDPOINT_URL_GOES_HERE') {
+                        throw new Error('API URL not configured');
+                    }
+                    const response = await fetch(DIALOGFLOW_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: userInput }),
+                    });
+                    if (!response.ok) { throw new Error('API request failed'); }
+                    const data = await response.json();
+                    return data.reply || "Sorry, I couldn't get a proper response from the service.";
+                } catch (error) {
+                    console.warn("API Error, using fallback:", error);
+                    const lowerInput = userInput.toLowerCase();
+                    let bestMatch = null;
+                    for (const key in fallbackKnowledgeBase) {
+                        if (lowerInput.includes(key)) {
+                            bestMatch = fallbackKnowledgeBase[key];
+                            break;
+                        }
+                    }
+                    return bestMatch
+                        ? `(My connection is down, but here's some basic info) ${bestMatch}`
+                        : "I'm having trouble connecting right now, and I don't have a basic answer for that. Please try again later.";
+                }
+            }
+
+            function toggleChat() {
+                chatContainer.classList.toggle('hidden');
+            }
+
+            function addMessage(text, sender, isLoading = false) {
+                const existingLoader = document.querySelector('.loader-message');
+                if (existingLoader) { existingLoader.remove(); }
+
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('p-2', 'rounded-lg', 'mb-2', 'max-w-xs', 'break-words');
+
+                if (isLoading) {
+                    messageDiv.classList.add('bg-gray-200', 'text-gray-800', 'mr-auto', 'loader-message');
+                    const loader = document.createElement('div');
+                    loader.className = 'loader';
+                    messageDiv.appendChild(loader);
+                } else {
+                    messageDiv.textContent = text;
+                }
+
+                if (sender === 'user') {
+                    messageDiv.classList.add('bg-brand-orange', 'text-white', 'ml-auto');
+                } else if (!isLoading) {
+                    messageDiv.classList.add('bg-gray-200', 'text-gray-800', 'mr-auto');
+                }
+
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            async function handleSend() {
+                const userInput = chatInput.value.trim();
+                if (userInput === '') return;
+                addMessage(userInput, 'user');
+                chatInput.value = '';
+                const botResponse = await getBotResponse(userInput);
+                addMessage(botResponse, 'bot');
+            }
+
+            chatBubble.addEventListener('click', toggleChat);
+            closeChat.addEventListener('click', toggleChat);
+            sendBtn.addEventListener('click', handleSend);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') { handleSend(); }
+            });
+
+            addMessage("Hello! I'm here to help. How can I assist you with the pricing tool today?", 'bot');
+        };
+
+        // === BOOTSTRAP INSIDE WOLF-FD SHOP MODULE ===
+        document.addEventListener('DOMContentLoaded', function() {
+            pricingToolLogic();
+            chatbotLogic();
+        });
+    </script>
+</body>
+</html>

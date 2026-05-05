@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Receipt, Search, UploadCloud } from "lucide-react";
+import { Calculator, Receipt, Search } from "lucide-react";
 import { useBotBotContext } from "./botbot/BotBotContext";
-import ManufacturerPricelistPortal from "./ManufacturerPricelistPortal";
 import ProductSearchWorkspace from "./ProductSearchWorkspace";
+import SmartPricingCalculatorPage from "./SmartPricingCalculatorPage";
 
-export type ShopSubTab = "search" | "catalog" | "pos";
+export type ShopSubTab = "search" | "calculator" | "pos";
 
 type ShopWorkspaceProps = {
   isDarkMode: boolean;
@@ -18,6 +18,7 @@ const ShopWorkspace: React.FC<ShopWorkspaceProps> = ({
   isDarkMode,
   requestedSubTab = "search",
   requestedSubTabToken,
+  onOpenUploadArea,
   hideTabBar = false,
 }) => {
   const [subTab, setSubTab] = useState<ShopSubTab>(requestedSubTab);
@@ -61,8 +62,8 @@ const ShopWorkspace: React.FC<ShopWorkspaceProps> = ({
         <button className={tabBtn(subTab === "search")} onClick={() => setSubTab("search")}>
           <Search size={15} /> Product Search
         </button>
-        <button className={tabBtn(subTab === "catalog")} onClick={() => setSubTab("catalog")}>
-          <UploadCloud size={15} /> Catalog Uploads
+        <button className={tabBtn(subTab === "calculator")} onClick={() => setSubTab("calculator")}>
+          <Calculator size={15} /> Smart Calc
         </button>
         <button className={tabBtn(subTab === "pos")} onClick={() => setSubTab("pos")}>
           <Receipt size={15} /> POS
@@ -73,15 +74,10 @@ const ShopWorkspace: React.FC<ShopWorkspaceProps> = ({
       <div className="flex-1 overflow-hidden">
         {subTab === "search" ? (
           <div className="h-full overflow-auto p-5 lg:p-7">
-            <ProductSearchWorkspace isDarkMode={isDarkMode} onOpenUploadArea={() => setSubTab("catalog")} />
+            <ProductSearchWorkspace isDarkMode={isDarkMode} onOpenUploadArea={onOpenUploadArea} />
           </div>
-        ) : subTab === "catalog" ? (
-          <div className="h-full overflow-auto p-5 lg:p-7">
-            <ManufacturerPricelistPortal
-              onBack={() => setSubTab("search")}
-              onOpenProductSearch={() => setSubTab("search")}
-            />
-          </div>
+        ) : subTab === "calculator" ? (
+          <SmartPricingCalculatorPage isDarkMode={isDarkMode} />
         ) : (
           <ShopPosPage isDarkMode={isDarkMode} />
         )}
