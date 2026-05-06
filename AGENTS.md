@@ -527,3 +527,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Changes: when Pro1st is selected, known-cost margin now includes the selected Pro1st plan revenue and a flat `75.54` Pro1st plan cost for all Pro1st plan tiers; the margin display notes the Pro1st revenue/cost basis.
 - Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.6.1809`; deployed bundle `assets/index-CuxTWB6W.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
 - Validation/deploy: Smart Calc DOM smoke PASS for Pro1st `75.54` cost included in starting and discount-adjusted margins; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed SHA/version/Pro1st-cost greps PASS; FD health PASS (`{"ok":true,"db":1}`).
+
+## Running Log - 2026-05-06 18:16 EDT
+
+- Clarified Smart Calc Pro1st ticket margin display. Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `public/smartcalc/index.html`, `AGENTS.md`.
+- Changes: target-margin mode now shows `Ticket margin with Pro1st` when Pro1st is selected while still using the `75.54` flat Pro1st plan cost in the margin basis; removed the visible Pro1st revenue/cost explanation and qualitative margin text such as `Acceptable margin` from calculation results.
+- Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.6.1813`; deployed bundle `assets/index-DxUpJ85z.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
+- Validation/deploy: Smart Calc DOM smoke PASS for Pro1st raising a low-margin ticket result from 20% product margin to 21.87% ticket margin without the removed copy; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed SHA/version/text greps PASS; FD health PASS (`{"ok":true,"db":1}`).
