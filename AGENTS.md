@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `0.5.6.1736`
+- Current display version in `package.json`: `0.5.6.1740`
 
 ## Project Structure
 
@@ -125,7 +125,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `0.5.6.1736`
+- Current display version: `0.5.6.1740`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -478,3 +478,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Changes: `Add Removal Fee` now reveals a `Removal Details` text field with placeholder prompt `What is being removed/delivered? e.g., old sofa, queen mattress set`; generated Sales Order Notes include `Removal Details` when removal is selected. Sales tax now defaults checked/locked at the 7% rate, shows the rate selector by default, and lets the user switch between 7% and 6.75% without first clicking Add Sales Tax.
 - Version/deploy: WOLF-FD/Smart Calc version moved together to `0.5.6.1736`; deployed bundle `assets/index-D5LkfwYp.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
 - Validation/deploy: duplicate-ID check PASS; inline script syntax PASS; Smart Calc DOM smoke test PASS for default 7% tax, 6.75% switch, version sync, and removal details notes; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed SHA/version/field greps PASS; FD health PASS (`{"ok":true,"db":1}`).
+
+## Running Log - 2026-05-06 17:40 EDT
+
+- Updated Smart Calc removal-details fallback wording. Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `public/smartcalc/index.html`, `AGENTS.md`.
+- Changes: removal details placeholder and generated Sales Order Notes fallback now read `What is being removed/moved?` / `Removal Details: [what is being removed/moved?]` instead of `removed/delivered`.
+- Version/deploy: WOLF-FD/Smart Calc version moved together to `0.5.6.1740`; deployed bundle `assets/index-DX_zzAQ5.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
+- Validation/deploy: Smart Calc DOM smoke test PASS for removal fallback wording and version sync; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed SHA/version/wording greps PASS; FD health PASS (`{"ok":true,"db":1}`).
