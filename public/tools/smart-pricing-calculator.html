@@ -83,16 +83,31 @@
         .calculator-layout {
             display: block;
         }
+        .powered-footer {
+            margin-top: 1.25rem;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .powered-footer a {
+            color: #c2410c;
+            text-decoration: none;
+        }
+        .powered-footer a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.6.1845">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.6.1901">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.6.1845</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.6.1901</p>
+            <button id="top-reset-btn" type="button" class="mt-4 inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
         </header>
 
         <div class="space-y-6">
@@ -120,7 +135,8 @@
                 <div id="vendor-info" class="mt-2 text-sm text-yellow-800 p-3 rounded-md hidden requirement-note"></div>
                 <div>
                     <label for="base-cost" class="block text-sm font-medium text-brand-brown">Enter Base Cost ($)</label>
-                    <input type="number" id="base-cost" min="0" placeholder="e.g., 100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                    <input type="text" id="base-cost" inputmode="decimal" placeholder="e.g., 399 + 299, 179" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                    <p class="mt-2 text-xs leading-5 text-gray-500">Add multiple pieces with +, commas, or spaces.</p>
                 </div>
             </div>
 
@@ -130,7 +146,8 @@
                  <p class="text-sm text-gray-500"> F=0, D=1, T=2, E=3, A=4, M=5, W=6, O=7, R=8, K=9 </p>
                 <div>
                     <label for="cost-code" class="block text-sm font-medium text-brand-brown">Enter Cost Code</label>
-                    <input type="text" id="cost-code" placeholder="e.g., TEAM.WK" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2 uppercase">
+                    <input type="text" id="cost-code" placeholder="e.g., TEAM.WK + DTF or TEAM.WK, DTF" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2 uppercase">
+                    <p class="mt-2 text-xs leading-5 text-gray-500">Add multiple coded costs with +, commas, or spaces.</p>
                 </div>
             </div>
 
@@ -139,7 +156,8 @@
                 <h3 class="text-lg font-medium text-brand-brown border-b pb-2">Tagged Price Details</h3>
                 <div>
                     <label for="manual-retail-price" class="block text-sm font-medium text-brand-brown">Enter Tagged Retail Price ($)</label>
-                    <input type="number" id="manual-retail-price" min="0" placeholder="e.g., 499.99" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                    <input type="text" id="manual-retail-price" inputmode="decimal" placeholder="e.g., 499.99 + 299, 159" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                    <p class="mt-2 text-xs leading-5 text-gray-500">Add multiple tagged prices with +, commas, or spaces.</p>
                     <p class="mt-2 text-xs leading-5 text-gray-500">Tagged Price starts from the known selling price, so margin is not shown because cost is unknown. All delivery, Pro1st, tax, financing, adjustment, and notes options below still apply.</p>
                 </div>
             </div>
@@ -487,6 +505,9 @@
                 </div>
             </div>
         </div>
+        <footer class="powered-footer">
+            Powered by: <a href="https://wolf.discount" target="_blank" rel="noopener noreferrer">WOLF.discount</a>
+        </footer>
     </div>
 
     <script>
@@ -617,6 +638,7 @@ function showLicenseLockScreen(message) {
                 storeLocationWrapper: document.getElementById('store-location-wrapper'),
                 storeLocationSelect: document.getElementById('store-location'),
                 resetBtn: document.getElementById('reset-btn'),
+                topResetBtn: document.getElementById('top-reset-btn'),
                 vendorInfoDiv: document.getElementById('vendor-info'),
                 resultContent: document.getElementById('result-content'),
                 marginNote: document.getElementById('margin-note'),
@@ -727,6 +749,7 @@ function showLicenseLockScreen(message) {
                 });
                 allElements.storeLocationSelect.addEventListener('change', updateGrandTotal);
                 allElements.resetBtn.addEventListener('click', printCustomerCopy);
+                allElements.topResetBtn.addEventListener('click', resetForm);
                 allElements.copySalesNotesBtn.addEventListener('click', copySalesOrderNotes);
                 allElements.showFinancingCheckbox.addEventListener('change', updateFinancingBreakdown);
 
@@ -829,11 +852,55 @@ function showLicenseLockScreen(message) {
                 else calculateTotalCost();
             }
 
+            function parseMoneyExpression(value) {
+                const raw = String(value || '').trim();
+                if (!raw) return NaN;
+                const tokens = raw.replace(/\$/g, '').split(/[+\s]+/).flatMap((token) => {
+                    const part = token.trim();
+                    if (!part) return [];
+                    if (/^\d{1,2}(,\d{3})+(\.\d{1,2})?$/.test(part)) return [part.replace(/,/g, '')];
+                    return part.split(',').map(item => item.trim()).filter(Boolean);
+                });
+                if (!tokens.length) return NaN;
+
+                let totalCents = 0;
+                for (const token of tokens) {
+                    if (!/^(?:\d+|\d*\.\d{1,2})$/.test(token)) return NaN;
+                    totalCents += Math.round(parseFloat(token) * 100);
+                }
+                return totalCents / 100;
+            }
+
+            function decodeCostCodeToken(token) {
+                let decodedString = '';
+                for (let char of token.toUpperCase()) {
+                    if (costCipher[char]) { decodedString += costCipher[char]; }
+                    else if (char === '.' && !decodedString.includes('.')) { decodedString += '.'; }
+                    else { return NaN; }
+                }
+                if (!decodedString || decodedString === '.') return NaN;
+                const decodedAmount = parseFloat(decodedString);
+                return Number.isFinite(decodedAmount) ? decodedAmount : NaN;
+            }
+
+            function parseCostCodeExpression(value) {
+                const tokens = String(value || '').trim().split(/[+,\s]+/).map(token => token.trim()).filter(Boolean);
+                if (!tokens.length) return NaN;
+
+                let total = 0;
+                for (const token of tokens) {
+                    const decodedAmount = decodeCostCodeToken(token);
+                    if (!Number.isFinite(decodedAmount)) return NaN;
+                    total += decodedAmount;
+                }
+                return total;
+            }
+
             function calculateTotalCost() {
                 let totalCost = 0;
                 if (allElements.baseCostBtn.classList.contains('active')) {
                     const vendor = allElements.vendorSelect.value;
-                    const baseCost = parseFloat(allElements.baseCostInput.value);
+                    const baseCost = parseMoneyExpression(allElements.baseCostInput.value);
                     if (vendor) {
                         const data = vendorFreightData[vendor];
                         allElements.vendorInfoDiv.innerHTML = `<strong>Freight: ${data.freight}%</strong> | Req: ${data.requirement || 'N/A'}`;
@@ -845,15 +912,7 @@ function showLicenseLockScreen(message) {
                         totalCost = baseCost * (1 + vendorFreightData[vendor].freight / 100);
                     }
                 } else { // EZ Code
-                    const code = allElements.costCodeInput.value.toUpperCase();
-                    let decodedString = '';
-                    let isValid = true;
-                    for (let char of code) {
-                        if (costCipher[char]) { decodedString += costCipher[char]; }
-                        else if (char === '.' && !decodedString.includes('.')) { decodedString += '.'; }
-                        else if (char) { isValid = false; break; }
-                    }
-                    totalCost = isValid ? (parseFloat(decodedString) || 0) : 0;
+                    totalCost = parseCostCodeExpression(allElements.costCodeInput.value) || 0;
                 }
 
                 if (totalCost > 0) {
@@ -873,7 +932,7 @@ function showLicenseLockScreen(message) {
             }
 
             function handleManualRetailInput() {
-                const retailPrice = parseFloat(allElements.manualRetailInput.value);
+                const retailPrice = parseMoneyExpression(allElements.manualRetailInput.value);
                 if (!isNaN(retailPrice) && retailPrice > 0) {
                     currentRetailPrice = retailPrice;
                     currentPricingInputMode = 'tagged-price';
@@ -1738,6 +1797,13 @@ function showLicenseLockScreen(message) {
                 if (allElements.marginNote) allElements.marginNote.textContent = '';
                 if (allElements.salesOrderNotes) allElements.salesOrderNotes.value = '';
                 if (allElements.copyNotesStatus) allElements.copyNotesStatus.textContent = '';
+
+                allElements.baseCostBtn.classList.add('active');
+                allElements.ezCodeBtn.classList.remove('active');
+                allElements.taggedPriceBtn.classList.remove('active');
+                allElements.baseCostSection.classList.remove('hidden');
+                allElements.ezCodeSection.classList.add('hidden');
+                allElements.taggedPriceSection.classList.add('hidden');
             }
 
             function formatCurrency(num) {

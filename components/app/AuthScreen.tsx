@@ -201,6 +201,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
               </div>
             )}
           </div>
+          <footer className="mt-6 text-center text-xs font-medium text-slate-500">
+            Powered by:{" "}
+            <a
+              href="https://wolf.discount"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-cyan-200 underline-offset-4 hover:text-cyan-100 hover:underline"
+            >
+              WOLF.discount
+            </a>
+          </footer>
         </div>
       </div>
     );
@@ -438,6 +449,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
                   {error}
                 </div>
               )}
+              <footer className="mt-6 text-center text-xs font-medium text-slate-500">
+                Powered by:{" "}
+                <a
+                  href="https://wolf.discount"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-cyan-200 underline-offset-4 hover:text-cyan-100 hover:underline"
+                >
+                  WOLF.discount
+                </a>
+              </footer>
             </div>
           </section>
         </div>

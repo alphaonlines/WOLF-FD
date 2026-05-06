@@ -1684,6 +1684,23 @@ const App: React.FC = () => {
             <div data-tour-id="botbot-main-content">
             {renderContent()}
             </div>
+            <footer
+              className={`mt-6 pb-2 text-center text-xs font-medium ${
+                isDarkMode ? 'text-slate-500' : 'text-slate-500'
+              }`}
+            >
+              Powered by:{' '}
+              <a
+                href="https://wolf.discount"
+                target="_blank"
+                rel="noreferrer"
+                className={`font-semibold underline-offset-4 hover:underline ${
+                  isDarkMode ? 'text-sky-300 hover:text-sky-200' : 'text-sky-700 hover:text-sky-900'
+                }`}
+              >
+                WOLF.discount
+              </a>
+            </footer>
           </div>
         </main>
 
