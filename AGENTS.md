@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `0.5.6.1712`
+- Current display version in `package.json`: `0.5.6.1719`
 
 ## Project Structure
 
@@ -125,7 +125,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `0.5.6.1712`
+- Current display version: `0.5.6.1719`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -446,3 +446,9 @@ Backend deploy flow for route/schema/runtime changes:
 - Reordered Smart Calc add-ons so sales tax sits with the extra charges above the discount/adjustment section; generated notes and the grand-total breakdown list normal sales tax before adjustments while `Pay Customer's Tax` remains an adjustment/tax-discount line.
 - Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `AGENTS.md`. Version markers: Smart Calc `0.5.6.1712`, WOLF-FD `displayVersion` `0.5.6.1712`; deployed bundle `assets/index-CnUTB8OG.js`.
 - Validation/deploy: duplicate-ID check PASS; old global `additional-discount` grep clean; inline script `node --check` PASS; `git diff --check` PASS; Smart Calc DOM workflow smoke test PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS; deployed `dist/.` to `/srv/www/wolf.discount/fd/`; source/deployed Smart Calc SHA-256 match; live `/fd/` PASS; live `/fd/tools/smart-pricing-calculator.html` contains new reason amount fields/version; FD health PASS (`{"ok":true,"db":1}`).
+
+## Running Log - 2026-05-06 17:19 EDT
+
+- Follow-up for dashboard and dedicated Smart Calc cache/version sync. Files: `components/SmartPricingCalculatorPage.tsx`, `public/smartcalc/index.html`, `public/tools/smart-pricing-calculator.html`, `package.json`, `AGENTS.md`.
+- Changes: dashboard Smart Calc iframe and Open full page URL now append `?v=${APP_VERSION}`; standalone Smart Calc wrapper shows `v0.5.6.1719` and loads the calculator with `?v=0.5.6.1719`; Smart Calc visible/data marker and WOLF-FD `displayVersion` are both `0.5.6.1719` so they are updated together.
+- Validation/deploy: duplicate-ID check PASS; inline script extraction PASS; stale-version grep checked; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS; deployed `dist/.` to `/srv/www/wolf.discount/fd/`; copied standalone wrapper to `/srv/www/wolf.discount/smartcalc/index.html` and `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`; deployed bundle and standalone wrapper grep confirmed `0.5.6.1719`.

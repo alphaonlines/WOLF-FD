@@ -1,12 +1,13 @@
 import React from "react";
 import { Calculator, ExternalLink } from "lucide-react";
+import { APP_VERSION } from "../constants";
 
 type SmartPricingCalculatorPageProps = {
   isDarkMode: boolean;
 };
 
 const SmartPricingCalculatorPage: React.FC<SmartPricingCalculatorPageProps> = ({ isDarkMode }) => {
-  const calculatorUrl = `${import.meta.env.BASE_URL}tools/smart-pricing-calculator.html`;
+  const calculatorUrl = `${import.meta.env.BASE_URL}tools/smart-pricing-calculator.html?v=${encodeURIComponent(APP_VERSION)}`;
   const mutedClassName = isDarkMode ? "text-slate-400" : "text-slate-600";
   const headingClassName = isDarkMode ? "text-white" : "text-slate-950";
   const iconClassName = isDarkMode
