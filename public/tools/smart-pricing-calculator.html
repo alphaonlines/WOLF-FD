@@ -85,14 +85,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.6.1832">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.6.1845">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.6.1832</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.6.1845</p>
         </header>
 
         <div class="space-y-6">
@@ -475,7 +475,7 @@
                     <p><strong>Policy reminder:</strong> document each discount clearly. Adjustment total must match the notes and selected discount reason(s).</p>
                 </div>
                 <textarea id="sales-order-notes" rows="10" class="w-full rounded-md border-gray-300 bg-white shadow-sm custom-focus sm:text-sm p-3 font-mono text-xs leading-5"></textarea>
-                <p class="text-xs leading-5 text-gray-500">You can edit these comments before copying. Manual edits are preserved until you change calculator inputs or click Start Over.</p>
+                <p class="text-xs leading-5 text-gray-500">You can edit these comments before copying. Manual edits are preserved while calculator inputs update.</p>
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="flex flex-wrap gap-2">
                         <button id="copy-sales-notes" type="button" class="bg-brand-orange text-white font-semibold py-2 px-4 rounded-md hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Copy Notes</button>
@@ -483,7 +483,7 @@
                     <span id="copy-notes-status" class="text-sm font-medium text-gray-600"></span>
                 </div>
             </div>
-            <button id="reset-btn" class="w-full bg-gray-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition hidden mt-6">Start Over</button>
+            <button id="reset-btn" type="button" class="w-full bg-brand-orange text-white font-semibold py-2 px-4 rounded-md hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition hidden mt-6">Print Customer Copy</button>
                 </div>
             </div>
         </div>
@@ -726,7 +726,7 @@ function showLicenseLockScreen(message) {
                     updateGrandTotal();
                 });
                 allElements.storeLocationSelect.addEventListener('change', updateGrandTotal);
-                allElements.resetBtn.addEventListener('click', resetForm);
+                allElements.resetBtn.addEventListener('click', printCustomerCopy);
                 allElements.copySalesNotesBtn.addEventListener('click', copySalesOrderNotes);
                 allElements.showFinancingCheckbox.addEventListener('change', updateFinancingBreakdown);
 
@@ -1221,8 +1221,6 @@ function showLicenseLockScreen(message) {
             const thresholdSelected = !!allElements.addThresholdDeliveryCheckbox?.checked;
             const removalSelected = !!allElements.addRemovalCheckbox?.checked;
             const pro1stSelected = !!allElements.addPro1stCheckbox?.checked;
-            const taxSelected = !!allElements.addTaxCheckbox?.checked || !!allElements.payTaxCheckbox?.checked;
-            const payTaxSelected = !!allElements.payTaxCheckbox?.checked;
             const financingSelected = !!allElements.showFinancingCheckbox?.checked;
             const discountReasons = getDiscountReasonDetails();
 
@@ -1231,9 +1229,7 @@ function showLicenseLockScreen(message) {
             }
 
             if (deliverySelected) {
-                const localDelivery = getLocalDeliveryCharge();
                 const upcharge = getDeliveryUpcharge();
-                if (localDelivery > 0) notes.push(`Local Delivery: ${formatCurrency(localDelivery)}`);
                 if (allElements.addLongDistanceCheckbox?.checked && upcharge > 0) notes.push(`Outside Delivery Upcharge: ${formatCurrency(upcharge)}`);
             }
 
@@ -1241,14 +1237,6 @@ function showLicenseLockScreen(message) {
                 notes.push(`Removal Fee: ${formatCurrency(currentRemovalCharge)}`);
                 const removalDescription = (allElements.removalDescriptionInput?.value || '').trim();
                 notes.push(`Removal Details: ${removalDescription || '[what is being removed/moved?]'}`);
-            }
-
-            if (pro1stSelected) {
-                notes.push(`Pro1st: ${formatCurrency(getPro1stCharge())}`);
-            }
-
-            if (taxSelected && !payTaxSelected) {
-                notes.push(`Sales Tax: ${formatCurrency(currentTaxAmount)}`);
             }
 
             if (currentAdditionalDiscount > 0) {
@@ -1498,6 +1486,171 @@ function showLicenseLockScreen(message) {
                     allElements.financingBreakdown.classList.add('hidden');
                 }
                 updateSalesOrderNotes();
+            }
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function printCustomerCopy() {
+                updateGrandTotal();
+                if (!currentRetailPrice || currentRetailPrice <= 0 || !currentGrandTotal || currentGrandTotal <= 0) {
+                    window.alert('Enter a selling price before printing a customer copy.');
+                    return;
+                }
+
+                const chargeRows = [{ label: 'Merchandise', amount: currentRetailPrice }];
+                if (allElements.addThresholdDeliveryCheckbox?.checked) {
+                    chargeRows.push({ label: 'Threshold Delivery', amount: 75 });
+                }
+                if (allElements.addDeliveryCheckbox?.checked) {
+                    const localDelivery = getLocalDeliveryCharge();
+                    const upcharge = getDeliveryUpcharge();
+                    if (localDelivery > 0) chargeRows.push({ label: 'Local Delivery', amount: localDelivery });
+                    if (allElements.addLongDistanceCheckbox?.checked && upcharge > 0) {
+                        chargeRows.push({ label: 'Outside Area Upcharge', amount: upcharge });
+                    }
+                }
+                if (allElements.addPro1stCheckbox?.checked) {
+                    chargeRows.push({ label: 'Pro1st Protection', amount: getPro1stCharge() });
+                }
+                if (allElements.addRemovalCheckbox?.checked && currentRemovalCharge > 0) {
+                    chargeRows.push({ label: 'Removal Fee', amount: currentRemovalCharge });
+                }
+
+                const discountEntries = getDiscountReasonEntries().filter((entry) => entry.amount > 0);
+                const subtotalDiscountEntries = discountEntries.filter((entry) => entry.affectsSubtotal !== false);
+                const salesTaxDiscountEntry = discountEntries.find((entry) => entry.label === 'Sales Tax Discount');
+                const chargeSubtotal = chargeRows.reduce((sum, row) => sum + row.amount, 0);
+                const subtotalDiscountTotal = subtotalDiscountEntries.reduce((sum, entry) => sum + entry.amount, 0);
+                const removalDescription = (allElements.removalDescriptionInput?.value || '').trim();
+                const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+                const chargeRowsHtml = chargeRows.map((row) => `
+                    <div class="row">
+                        <span>${escapeHtml(row.label)}</span>
+                        <strong>${formatCurrency(row.amount)}</strong>
+                    </div>
+                `).join('');
+                const discountRowsHtml = subtotalDiscountEntries.length ? subtotalDiscountEntries.map((entry) => `
+                    <div class="row discount">
+                        <span>${escapeHtml(entry.label)}${entry.detail && entry.detail !== entry.label ? `<small>${escapeHtml(entry.detail)}</small>` : ''}</span>
+                        <strong>-${formatCurrency(entry.amount)}</strong>
+                    </div>
+                `).join('') : '<p class="muted">No discounts applied.</p>';
+                const taxDiscountHtml = salesTaxDiscountEntry ? `
+                    <div class="row discount">
+                        <span>Sales Tax Discount</span>
+                        <strong>-${formatCurrency(salesTaxDiscountEntry.amount)}</strong>
+                    </div>
+                ` : '';
+                const removalDetailsHtml = removalDescription ? `<p><strong>Removal Details:</strong> ${escapeHtml(removalDescription)}</p>` : '';
+                const financingHtml = allElements.showFinancingCheckbox?.checked && currentGrandTotal > 0 ? `
+                    <section>
+                        <h2>Payment Options</h2>
+                        <div class="terms">
+                            ${financingTerms.map((term) => `
+                                <div>
+                                    <span>${term} months</span>
+                                    <strong>${formatCurrency(currentGrandTotal / term)}</strong>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </section>
+                ` : '';
+
+                const printHtml = `
+                    <!doctype html>
+                    <html>
+                    <head>
+                        <title>Furniture Distributors Customer Copy</title>
+                        <style>
+                            * { box-sizing: border-box; }
+                            body { margin: 0; padding: 28px; font-family: Arial, sans-serif; color: #2f241d; background: #fff; }
+                            .sheet { max-width: 760px; margin: 0 auto; border: 2px solid #2f241d; border-radius: 10px; overflow: hidden; }
+                            header { background: #2f241d; color: #fff; padding: 22px 26px; display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; }
+                            h1 { margin: 0; font-size: 28px; letter-spacing: 0; }
+                            h2 { margin: 0 0 12px; font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: #8b3f12; }
+                            .date { text-align: right; font-size: 13px; color: #ffe8dc; }
+                            .total-banner { background: #f97316; color: #fff; padding: 22px 26px; display: flex; justify-content: space-between; align-items: center; }
+                            .total-banner span { font-size: 14px; text-transform: uppercase; letter-spacing: .08em; }
+                            .total-banner strong { font-size: 34px; }
+                            section { padding: 20px 26px; border-top: 1px solid #eadfd8; }
+                            .row { display: flex; justify-content: space-between; gap: 20px; padding: 9px 0; border-bottom: 1px solid #f0e7e0; font-size: 15px; }
+                            .row:last-child { border-bottom: 0; }
+                            .row small { display: block; margin-top: 3px; color: #6b5b50; font-size: 12px; }
+                            .discount strong { color: #15803d; }
+                            .totals { background: #fff7ed; }
+                            .totals .row { font-size: 16px; }
+                            .totals .grand { font-size: 22px; border-top: 2px solid #2f241d; margin-top: 8px; padding-top: 14px; }
+                            .terms { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+                            .terms div { border: 1px solid #eadfd8; border-radius: 7px; padding: 9px; text-align: center; }
+                            .terms span { display: block; font-size: 12px; color: #6b5b50; }
+                            .terms strong { display: block; margin-top: 4px; color: #f97316; }
+                            .muted { color: #6b5b50; margin: 0; }
+                            .fine { padding: 16px 26px 22px; color: #6b5b50; font-size: 12px; line-height: 1.45; }
+                            @media print {
+                                body { padding: 0; }
+                                .sheet { border-radius: 0; border-width: 0; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="sheet">
+                            <header>
+                                <div>
+                                    <h1>Furniture Distributors</h1>
+                                    <p style="margin:6px 0 0;">Customer Copy</p>
+                                </div>
+                                <div class="date">Prepared ${escapeHtml(today)}</div>
+                            </header>
+                            <div class="total-banner">
+                                <span>Today's Total</span>
+                                <strong>${formatCurrency(currentGrandTotal)}</strong>
+                            </div>
+                            <section>
+                                <h2>Included Charges</h2>
+                                ${chargeRowsHtml}
+                            </section>
+                            <section>
+                                <h2>Discounts Applied</h2>
+                                ${discountRowsHtml}
+                            </section>
+                            <section class="totals">
+                                <div class="row"><span>Charges Subtotal</span><strong>${formatCurrency(chargeSubtotal)}</strong></div>
+                                ${subtotalDiscountTotal > 0 ? `<div class="row discount"><span>Discounts</span><strong>-${formatCurrency(subtotalDiscountTotal)}</strong></div>` : ''}
+                                <div class="row"><span>Subtotal After Discounts</span><strong>${formatCurrency(currentTotalBeforeTax)}</strong></div>
+                                ${currentTaxAmount > 0 ? `<div class="row"><span>Sales Tax</span><strong>${formatCurrency(currentTaxAmount)}</strong></div>` : ''}
+                                ${taxDiscountHtml}
+                                <div class="row grand"><span>Total Today</span><strong>${formatCurrency(currentGrandTotal)}</strong></div>
+                            </section>
+                            ${financingHtml}
+                            ${removalDetailsHtml ? `<section><h2>Order Details</h2>${removalDetailsHtml}</section>` : ''}
+                            <div class="fine">Thank you for shopping with Furniture Distributors. Final availability, delivery scheduling, and financing approval are confirmed at checkout.</div>
+                        </div>
+                        <script>
+                            window.addEventListener('load', function() {
+                                window.focus();
+                                window.print();
+                            });
+                        <\\/script>
+                    </body>
+                    </html>
+                `;
+
+                const printWindow = window.open('', '_blank', 'width=840,height=900');
+                if (!printWindow) {
+                    window.alert('Allow pop-ups to print the customer copy.');
+                    return;
+                }
+                printWindow.document.open();
+                printWindow.document.write(printHtml);
+                printWindow.document.close();
             }
 
             function resetForm() {
