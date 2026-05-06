@@ -85,14 +85,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="0.5.5.1917">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="0.5.6.1712">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v0.5.5.1917</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v0.5.6.1712</p>
         </header>
 
         <div class="space-y-6">
@@ -236,23 +236,40 @@
                         </div>
                     </div>
                     <div class="space-y-3 border-t border-gray-200 pt-3">
-                        <div class="space-y-2">
-                            <label for="additional-discount" class="block text-sm font-medium text-gray-700">Additional Discount / Adjustment ($)</label>
-                            <input type="number" id="additional-discount" min="0" step="0.01" placeholder="e.g. 50" class="block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
-                            <p class="text-xs leading-5 text-gray-500">Policy: every discount must be documented in Sales Order notes, and the documented discounts must add up to the amount entered in Adjustment. Use the discount reason checkboxes below to document why the Adjustment was given. In Base Cost and EZ Pro Cost Code, the displayed margin recalculates using the retail price minus this merchandise discount.</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <input id="add-tax" name="add-tax" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                <label for="add-tax" class="ml-3 block text-sm font-medium text-gray-700">Add Sales Tax</label>
+                            </div>
+                            <span id="tax-amount-display" class="font-medium text-gray-900"></span>
                         </div>
+                        <div id="store-location-wrapper" class="hidden pl-7 space-y-1">
+                             <label for="store-location" class="block text-sm font-medium text-gray-600">Store Location for Tax:</label>
+                             <select id="store-location" class="block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                <option value="camp-greenville" selected>Camp / Greenville (7%) - Default</option>
+                                <option value="other">Other Stores (6.75%)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="space-y-3 border-t border-gray-200 pt-3">
                         <fieldset class="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
                             <legend class="px-1 text-sm font-semibold text-brand-brown">Discount reason(s) for Adjustment</legend>
-                            <p class="text-xs leading-5 text-gray-500">Check every reason that applies. The matching detail box/dropdown will be included in the notes.</p>
+                            <p class="text-xs leading-5 text-gray-500">Check every reason that applies. Each selected reason must have its own adjustment amount and detail. These amounts add together as the Additional Discount / Adjustment. In Base Cost and EZ Pro Cost Code, the displayed margin recalculates using the retail price minus this total merchandise discount.</p>
 
                             <div class="space-y-2">
                                 <div class="flex items-center">
                                     <input id="discount-competition-match" name="discount-competition-match" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
                                     <label for="discount-competition-match" class="ml-3 block text-sm font-medium text-gray-700">Competition Match</label>
                                 </div>
-                                <div id="competition-match-wrapper" class="hidden pl-7">
-                                    <label for="competition-name" class="block text-xs font-medium text-gray-500">Competitor Name</label>
-                                    <input type="text" id="competition-name" placeholder="e.g., Rooms To Go" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                <div id="competition-match-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+                                    <div>
+                                        <label for="competition-name" class="block text-xs font-medium text-gray-500">Competitor Name</label>
+                                        <input type="text" id="competition-name" placeholder="e.g., Rooms To Go" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                    <div>
+                                        <label for="competition-match-amount" class="block text-xs font-medium text-gray-500">Adjustment Amount ($)</label>
+                                        <input type="number" id="competition-match-amount" min="0" step="0.01" placeholder="e.g., 25" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
                                 </div>
                             </div>
 
@@ -261,9 +278,15 @@
                                     <input id="discount-manager-approval" name="discount-manager-approval" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
                                     <label for="discount-manager-approval" class="ml-3 block text-sm font-medium text-gray-700">Manager Approval</label>
                                 </div>
-                                <div id="manager-approval-wrapper" class="hidden pl-7">
-                                    <label for="manager-approval-name" class="block text-xs font-medium text-gray-500">Manager Name</label>
-                                    <input type="text" id="manager-approval-name" placeholder="Type approving manager name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                <div id="manager-approval-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+                                    <div>
+                                        <label for="manager-approval-name" class="block text-xs font-medium text-gray-500">Manager Name</label>
+                                        <input type="text" id="manager-approval-name" placeholder="Type approving manager name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                    <div>
+                                        <label for="manager-approval-amount" class="block text-xs font-medium text-gray-500">Adjustment Amount ($)</label>
+                                        <input type="number" id="manager-approval-amount" min="0" step="0.01" placeholder="e.g., 25" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
                                 </div>
                             </div>
 
@@ -272,13 +295,19 @@
                                     <input id="discount-vendor-ad" name="discount-vendor-ad" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
                                     <label for="discount-vendor-ad" class="ml-3 block text-sm font-medium text-gray-700">Vendor Advertisement</label>
                                 </div>
-                                <div id="vendor-ad-wrapper" class="hidden pl-7">
-                                    <label for="vendor-ad-select" class="block text-xs font-medium text-gray-500">Vendor Advertisement</label>
-                                    <select id="vendor-ad-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
-                                        <option value="">-- Select advertised vendor --</option>
-                                        <option value="Nectar">Nectar</option>
-                                        <option value="Tempur-Pedic">Tempur-Pedic</option>
-                                    </select>
+                                <div id="vendor-ad-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+                                    <div>
+                                        <label for="vendor-ad-select" class="block text-xs font-medium text-gray-500">Vendor Advertisement</label>
+                                        <select id="vendor-ad-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                            <option value="">-- Select advertised vendor --</option>
+                                            <option value="Nectar">Nectar</option>
+                                            <option value="Tempur-Pedic">Tempur-Pedic</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="vendor-ad-amount" class="block text-xs font-medium text-gray-500">Adjustment Amount ($)</label>
+                                        <input type="number" id="vendor-ad-amount" min="0" step="0.01" placeholder="e.g., 25" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
                                 </div>
                             </div>
 
@@ -287,28 +316,20 @@
                                     <input id="discount-other" name="discount-other" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
                                     <label for="discount-other" class="ml-3 block text-sm font-medium text-gray-700">Other Discount</label>
                                 </div>
-                                <div id="other-discount-wrapper" class="hidden pl-7">
-                                    <label for="other-discount-explanation" class="block text-xs font-medium text-gray-500">Explanation</label>
-                                    <input type="text" id="other-discount-explanation" placeholder="Type explanation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                <div id="other-discount-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+                                    <div>
+                                        <label for="other-discount-explanation" class="block text-xs font-medium text-gray-500">Explanation</label>
+                                        <input type="text" id="other-discount-explanation" placeholder="Type explanation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                    <div>
+                                        <label for="other-discount-amount" class="block text-xs font-medium text-gray-500">Adjustment Amount ($)</label>
+                                        <input type="number" id="other-discount-amount" min="0" step="0.01" placeholder="e.g., 25" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
                                 </div>
                             </div>
 
                             <p id="discount-documentation-status" class="text-xs font-medium text-amber-700"></p>
                         </fieldset>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <input id="add-tax" name="add-tax" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
-                            <label for="add-tax" class="ml-3 block text-sm font-medium text-gray-700">Add Sales Tax</label>
-                        </div>
-                        <span id="tax-amount-display" class="font-medium text-gray-900"></span>
-                    </div>
-                    <div id="store-location-wrapper" class="hidden pl-7 space-y-1">
-                         <label for="store-location" class="block text-sm font-medium text-gray-600">Store Location for Tax:</label>
-                         <select id="store-location" class="block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
-                            <option value="camp-greenville" selected>Camp / Greenville (7%) - Default</option>
-                            <option value="other">Other Stores (6.75%)</option>
-                        </select>
                     </div>
                     <div class="border-t pt-3">
                          <div class="flex items-center">
@@ -454,19 +475,22 @@ function showLicenseLockScreen(message) {
                 removalItemsInput: document.getElementById('removal-items'),
                 removalCostDisplay: document.getElementById('removal-cost-display'),
                 additionalRemovalDisplay: document.getElementById('additional-removal-display'),
-                additionalDiscountInput: document.getElementById('additional-discount'),
                 discountCompetitionCheckbox: document.getElementById('discount-competition-match'),
                 competitionMatchWrapper: document.getElementById('competition-match-wrapper'),
                 competitionNameInput: document.getElementById('competition-name'),
+                competitionMatchAmountInput: document.getElementById('competition-match-amount'),
                 discountManagerApprovalCheckbox: document.getElementById('discount-manager-approval'),
                 managerApprovalWrapper: document.getElementById('manager-approval-wrapper'),
                 managerApprovalNameInput: document.getElementById('manager-approval-name'),
+                managerApprovalAmountInput: document.getElementById('manager-approval-amount'),
                 discountVendorAdCheckbox: document.getElementById('discount-vendor-ad'),
                 vendorAdWrapper: document.getElementById('vendor-ad-wrapper'),
                 vendorAdSelect: document.getElementById('vendor-ad-select'),
+                vendorAdAmountInput: document.getElementById('vendor-ad-amount'),
                 discountOtherCheckbox: document.getElementById('discount-other'),
                 otherDiscountWrapper: document.getElementById('other-discount-wrapper'),
                 otherDiscountExplanationInput: document.getElementById('other-discount-explanation'),
+                otherDiscountAmountInput: document.getElementById('other-discount-amount'),
                 discountDocumentationStatus: document.getElementById('discount-documentation-status'),
                 addTaxCheckbox: document.getElementById('add-tax'),
                 payTaxCheckbox: document.getElementById('pay-tax'),
@@ -593,7 +617,7 @@ function showLicenseLockScreen(message) {
                 discountReasonToggles.forEach((el) => {
                     el.addEventListener('change', () => {
                         updateDiscountReasonControls();
-                        updateSalesOrderNotes();
+                        updateGrandTotal();
                     });
                 });
 
@@ -605,6 +629,16 @@ function showLicenseLockScreen(message) {
                 ].filter(Boolean).forEach((el) => {
                     el.addEventListener('input', updateSalesOrderNotes);
                     el.addEventListener('change', updateSalesOrderNotes);
+                });
+
+                [
+                    allElements.competitionMatchAmountInput,
+                    allElements.managerApprovalAmountInput,
+                    allElements.vendorAdAmountInput,
+                    allElements.otherDiscountAmountInput
+                ].filter(Boolean).forEach((el) => {
+                    el.addEventListener('input', updateGrandTotal);
+                    el.addEventListener('change', updateGrandTotal);
                 });
 
                 allElements.salesOrderNotes.addEventListener('input', () => {
@@ -746,9 +780,7 @@ function showLicenseLockScreen(message) {
 
             function getMerchandiseDiscountForMargin() {
                 if (!currentRetailPrice || currentRetailPrice <= 0) return 0;
-                const rawDiscount = parseFloat(allElements.additionalDiscountInput?.value || '0');
-                const discount = Number.isFinite(rawDiscount) ? Math.max(0, rawDiscount) : 0;
-                return Math.min(discount, currentRetailPrice);
+                return getAdditionalDiscount(currentRetailPrice);
             }
 
             function updateKnownCostMarginFeedback() {
@@ -830,9 +862,7 @@ function showLicenseLockScreen(message) {
         }
 
         function getAdditionalDiscount(subtotal) {
-            const rawDiscount = parseFloat(allElements.additionalDiscountInput?.value || '0');
-            const discount = Number.isFinite(rawDiscount) ? Math.max(0, rawDiscount) : 0;
-            return Math.min(discount, Math.max(0, subtotal));
+            return Math.min(getDiscountReasonAmountTotal(), Math.max(0, subtotal));
         }
 
         function getCleanDetail(value, fallback) {
@@ -840,21 +870,53 @@ function showLicenseLockScreen(message) {
             return cleanValue || fallback;
         }
 
-        function getDiscountReasonDetails() {
-            const details = [];
+        function getAdjustmentAmount(input) {
+            const rawAmount = parseFloat(input?.value || '0');
+            return Number.isFinite(rawAmount) ? Math.max(0, rawAmount) : 0;
+        }
+
+        function getDiscountReasonEntries() {
+            const entries = [];
             if (allElements.discountCompetitionCheckbox?.checked) {
-                details.push(`Competition Match: ${getCleanDetail(allElements.competitionNameInput?.value, '[competitor name needed]')}`);
+                entries.push({
+                    label: 'Competition Match',
+                    detail: getCleanDetail(allElements.competitionNameInput?.value, '[competitor name needed]'),
+                    amount: getAdjustmentAmount(allElements.competitionMatchAmountInput)
+                });
             }
             if (allElements.discountManagerApprovalCheckbox?.checked) {
-                details.push(`Manager Approval: ${getCleanDetail(allElements.managerApprovalNameInput?.value, '[manager name needed]')}`);
+                entries.push({
+                    label: 'Manager Approval',
+                    detail: getCleanDetail(allElements.managerApprovalNameInput?.value, '[manager name needed]'),
+                    amount: getAdjustmentAmount(allElements.managerApprovalAmountInput)
+                });
             }
             if (allElements.discountVendorAdCheckbox?.checked) {
-                details.push(`Vendor Advertisement: ${getCleanDetail(allElements.vendorAdSelect?.value, '[vendor needed]')}`);
+                entries.push({
+                    label: 'Vendor Advertisement',
+                    detail: getCleanDetail(allElements.vendorAdSelect?.value, '[vendor needed]'),
+                    amount: getAdjustmentAmount(allElements.vendorAdAmountInput)
+                });
             }
             if (allElements.discountOtherCheckbox?.checked) {
-                details.push(`Other Discount: ${getCleanDetail(allElements.otherDiscountExplanationInput?.value, '[explanation needed]')}`);
+                entries.push({
+                    label: 'Other Discount',
+                    detail: getCleanDetail(allElements.otherDiscountExplanationInput?.value, '[explanation needed]'),
+                    amount: getAdjustmentAmount(allElements.otherDiscountAmountInput)
+                });
             }
-            return details;
+            return entries;
+        }
+
+        function getDiscountReasonAmountTotal() {
+            return getDiscountReasonEntries().reduce((sum, entry) => sum + entry.amount, 0);
+        }
+
+        function getDiscountReasonDetails() {
+            return getDiscountReasonEntries().map((entry) => {
+                const amountText = entry.amount > 0 ? `-${formatCurrency(entry.amount)}` : '[amount needed]';
+                return `${entry.label}: ${entry.detail}; Amount: ${amountText}`;
+            });
         }
 
         function updateDiscountReasonControls() {
@@ -863,13 +925,18 @@ function showLicenseLockScreen(message) {
             allElements.vendorAdWrapper?.classList.toggle('hidden', !allElements.discountVendorAdCheckbox?.checked);
             allElements.otherDiscountWrapper?.classList.toggle('hidden', !allElements.discountOtherCheckbox?.checked);
 
-            const details = getDiscountReasonDetails();
+            const entries = getDiscountReasonEntries();
+            const missingAmountCount = entries.filter((entry) => entry.amount <= 0).length;
+            const discountAmountTotal = getDiscountReasonAmountTotal();
             if (allElements.discountDocumentationStatus) {
-                if (currentAdditionalDiscount > 0 && !details.length) {
+                if (currentAdditionalDiscount > 0 && !entries.length) {
                     allElements.discountDocumentationStatus.textContent = 'Select at least one discount reason for the Adjustment note.';
                     allElements.discountDocumentationStatus.className = 'text-xs font-medium text-amber-700';
-                } else if (details.length) {
-                    allElements.discountDocumentationStatus.textContent = `${details.length} discount reason${details.length === 1 ? '' : 's'} will be included in the notes.`;
+                } else if (entries.length && missingAmountCount > 0) {
+                    allElements.discountDocumentationStatus.textContent = `${entries.length} discount reason${entries.length === 1 ? '' : 's'} selected. Enter an adjustment amount for each selected reason.`;
+                    allElements.discountDocumentationStatus.className = 'text-xs font-medium text-amber-700';
+                } else if (entries.length) {
+                    allElements.discountDocumentationStatus.textContent = `${entries.length} discount reason${entries.length === 1 ? '' : 's'} selected. Total adjustment: ${formatCurrency(discountAmountTotal)}.`;
                     allElements.discountDocumentationStatus.className = 'text-xs font-medium text-green-700';
                 } else {
                     allElements.discountDocumentationStatus.textContent = '';
@@ -908,6 +975,10 @@ function showLicenseLockScreen(message) {
                 notes.push(`Pro1st: ${formatCurrency(getPro1stCharge())}`);
             }
 
+            if (taxSelected && !payTaxSelected) {
+                notes.push(`Sales Tax: ${formatCurrency(currentTaxAmount)}`);
+            }
+
             if (currentAdditionalDiscount > 0) {
                 notes.push(`Additional Discount: -${formatCurrency(currentAdditionalDiscount)}`);
             }
@@ -919,8 +990,6 @@ function showLicenseLockScreen(message) {
 
             if (payTaxSelected) {
                 notes.push(`Sales Tax Discount: -${formatCurrency(currentTaxAmount)}`);
-            } else if (taxSelected) {
-                notes.push(`Sales Tax: ${formatCurrency(currentTaxAmount)}`);
             }
 
             if (currentAdjustmentTotal > 0) {
@@ -1117,6 +1186,9 @@ function showLicenseLockScreen(message) {
             if (currentRemovalCharge > 0) {
                 breakdownLines.push(`<p class="text-sm">Removal Fee: <span class="font-semibold">${formatCurrency(currentRemovalCharge)}</span></p>`);
             }
+            if (taxSelected && !payTaxSelected) {
+                breakdownLines.push(`<p class="text-sm">Sales Tax: <span class="font-semibold">${formatCurrency(taxAmount)}</span></p>`);
+            }
             if (currentAdditionalDiscount > 0) {
                 breakdownLines.push(`<p class="text-sm text-green-700">Additional Discount: <span class="font-semibold">-${formatCurrency(currentAdditionalDiscount)}</span></p>`);
             }
@@ -1124,8 +1196,6 @@ function showLicenseLockScreen(message) {
                 breakdownLines.push(`<p class="text-sm">Subtotal After Discount: <span class="font-semibold">${formatCurrency(taxableSubtotal)}</span></p>`);
                 breakdownLines.push(`<p class="text-sm text-green-700">Sales Tax Discount: <span class="font-semibold">-${formatCurrency(taxAmount)}</span></p>`);
                 breakdownLines.push(`<p class="text-xs text-gray-600">Taxable subtotal after tax discount: ${formatCurrency(discountedSubtotal)} + tax ${formatCurrency(taxAmount)} = ${formatCurrency(grandTotal)}</p>`);
-            } else if (taxSelected) {
-                breakdownLines.push(`<p class="text-sm">Sales Tax: <span class="font-semibold">${formatCurrency(taxAmount)}</span></p>`);
             }
             if (currentAdjustmentTotal > 0) {
                 breakdownLines.push(`<p class="text-sm text-amber-700">Adjustment Total to Document: <span class="font-semibold">${formatCurrency(currentAdjustmentTotal)}</span></p>`);
@@ -1174,17 +1244,19 @@ function showLicenseLockScreen(message) {
                     addLongDistanceCheckbox, longDistanceMilesInput, storeLocationWrapper,
                     storeLocationSelect, longDistanceWrapper, milesInputWrapper, payTaxCheckbox,
                     showFinancingCheckbox, addRemovalCheckbox, removalWrapper, removalItemsInput,
-                    additionalDiscountInput, discountCompetitionCheckbox, competitionNameInput,
+                    discountCompetitionCheckbox, competitionNameInput, competitionMatchAmountInput,
                     competitionMatchWrapper, discountManagerApprovalCheckbox, managerApprovalNameInput,
-                    managerApprovalWrapper, discountVendorAdCheckbox, vendorAdSelect, vendorAdWrapper,
-                    discountOtherCheckbox, otherDiscountExplanationInput, otherDiscountWrapper,
+                    managerApprovalAmountInput, managerApprovalWrapper, discountVendorAdCheckbox,
+                    vendorAdSelect, vendorAdAmountInput, vendorAdWrapper, discountOtherCheckbox,
+                    otherDiscountExplanationInput, otherDiscountAmountInput, otherDiscountWrapper,
                     discountDocumentationStatus
                 } = allElements;
                 const formElements = [
                     baseCostInput, costCodeInput, manualRetailInput, totalCostInput,
                     marginPercentInput, retailPriceInput, longDistanceMilesInput,
-                    additionalDiscountInput, competitionNameInput, managerApprovalNameInput,
-                    otherDiscountExplanationInput
+                    competitionNameInput, competitionMatchAmountInput, managerApprovalNameInput,
+                    managerApprovalAmountInput, vendorAdAmountInput, otherDiscountExplanationInput,
+                    otherDiscountAmountInput
                 ].filter(Boolean);
                 formElements.forEach(el => el.value = '');
                 if (removalItemsInput) removalItemsInput.value = '1';
@@ -1244,9 +1316,6 @@ function showLicenseLockScreen(message) {
             }
             if (allElements.removalItemsInput) {
                 allElements.removalItemsInput.addEventListener('input', updateAddonCosts);
-            }
-            if (allElements.additionalDiscountInput) {
-                allElements.additionalDiscountInput.addEventListener('input', updateGrandTotal);
             }
 
             initialize();

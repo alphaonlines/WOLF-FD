@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `0.5.5.1913`
+- Current display version in `package.json`: `0.5.6.1712`
 
 ## Project Structure
 
@@ -125,7 +125,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `0.5.1.2040`
+- Current display version: `0.5.6.1712`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -439,3 +439,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Made EZ Pro Cost Code and Tagged Price use the same downstream add-on/options flow once a selling price is known; Tagged Price now notes that margin is unavailable because cost is unknown. Financing options now appear with the shared add-ons.
 - Updated `public/tools/smart-pricing-calculator.html`; bumped `package.json` displayVersion to `0.5.4.2029`.
 - Validation/deploy: HTML parser, duplicate-ID scan, inline `node --check`, `git diff --check`, `npm run build`, deployed `dist/*` to `/srv/www/wolf.discount/fd/`, live Smart Calc browser workflow test, and `/fd/api/health` OK.
+
+## Running Log - 2026-05-06 17:16 EDT
+
+- Updated Smart Calc discounts so Adjustment is entered per selected discount reason instead of one global field. Each selected reason now reveals its detail control plus its own `Adjustment Amount ($)` input; the selected amounts sum into Additional Discount / Adjustment, margin recalculation, grand total, Adjustment Total, and generated Sales Order notes.
+- Reordered Smart Calc add-ons so sales tax sits with the extra charges above the discount/adjustment section; generated notes and the grand-total breakdown list normal sales tax before adjustments while `Pay Customer's Tax` remains an adjustment/tax-discount line.
+- Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `AGENTS.md`. Version markers: Smart Calc `0.5.6.1712`, WOLF-FD `displayVersion` `0.5.6.1712`; deployed bundle `assets/index-CnUTB8OG.js`.
+- Validation/deploy: duplicate-ID check PASS; old global `additional-discount` grep clean; inline script `node --check` PASS; `git diff --check` PASS; Smart Calc DOM workflow smoke test PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS; deployed `dist/.` to `/srv/www/wolf.discount/fd/`; source/deployed Smart Calc SHA-256 match; live `/fd/` PASS; live `/fd/tools/smart-pricing-calculator.html` contains new reason amount fields/version; FD health PASS (`{"ok":true,"db":1}`).
