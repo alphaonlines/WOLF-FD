@@ -85,14 +85,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.6.1805">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.6.1809">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.6.1805</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.6.1809</p>
         </header>
 
         <div class="space-y-6">
@@ -545,6 +545,7 @@ function showLicenseLockScreen(message) {
             const costCipher = { 'D': '1', 'T': '2', 'E': '3', 'A': '4', 'M': '5', 'W': '6', 'O': '7', 'R': '8', 'K': '9', 'F': '0' };
             const deliveryTiers = [ { from: 0, to: 499.99, charge: 129.99 }, { from: 500, to: 1999, charge: 169.99 }, { from: 2000, to: 2999, charge: 199.99 }, { from: 3000, to: 4999, charge: 249.99 }, { from: 5000, to: 7499, charge: 349.99 }, { from: 7500, to: 9999, charge: 399.99 }, { from: 10000, to: Infinity, charge: 499.99 } ];
             const pro1stTiers = [ { from: 0, to: 499, price: 99.99 }, { from: 500, to: 799, price: 129.99 }, { from: 800, to: 1200, price: 169.99 }, { from: 1201, to: 2500, price: 249.99 }, { from: 2501, to: 3000, price: 299.99 }, { from: 3001, to: 3500, price: 349.99 }, { from: 3501, to: 5000, price: 499.99 }, { from: 5001, to: 7000, price: 699.99 }, { from: 7001, to: 10000, price: 999.99 }, { from: 10001, to: 15000, price: 1499.99 }, { from: 15001, to: 20000, price: 1999.99 }, { from: 20001, to: 25000, price: 2499.99 }, { from: 25001, to: 30000, price: 2999.99 }, { from: 30001, to: 35000, price: 3499.99 }, { from: 35001, to: 40000, price: 3999.99 }, { from: 40001, to: 45000, price: 4499.99 }, { from: 45001, to: 50000, price: 4999.99 } ];
+            const pro1stPlanCost = 75.54;
             const taxRates = { 'camp-greenville': 0.07, 'greenville': 0.07, 'camp': 0.07, 'other': 0.0675 };
             const financingTerms = [3, 6, 12, 15, 18, 24, 36, 48]; // ADDED: Financing terms
 
@@ -934,8 +935,10 @@ function showLicenseLockScreen(message) {
 
             function getMerchandiseDiscountForMargin() {
                 if (!currentRetailPrice || currentRetailPrice <= 0) return 0;
+                const selectedPro1stCharge = allElements.addPro1stCheckbox?.checked ? getPro1stCharge() : 0;
+                const marginSellingPriceBeforeDiscount = currentRetailPrice + selectedPro1stCharge;
                 const selectedDiscountTotal = getDiscountReasonEntries().reduce((sum, entry) => sum + entry.amount, 0);
-                return Math.min(selectedDiscountTotal, currentRetailPrice);
+                return Math.min(selectedDiscountTotal, marginSellingPriceBeforeDiscount);
             }
 
             function updateKnownCostMarginFeedback() {
@@ -945,18 +948,24 @@ function showLicenseLockScreen(message) {
                     return;
                 }
 
-                const startingMargin = calculateMarginPercent(totalCost, currentRetailPrice);
+                const selectedPro1stCharge = allElements.addPro1stCheckbox?.checked ? getPro1stCharge() : 0;
+                const selectedPro1stCost = selectedPro1stCharge > 0 ? pro1stPlanCost : 0;
+                const marginCostBasis = totalCost + selectedPro1stCost;
+                const marginSellingPriceBeforeDiscount = currentRetailPrice + selectedPro1stCharge;
+                const startingMargin = calculateMarginPercent(marginCostBasis, marginSellingPriceBeforeDiscount);
                 const merchandiseDiscount = getMerchandiseDiscountForMargin();
-                const adjustedMerchandisePrice = Math.max(0, currentRetailPrice - merchandiseDiscount);
-                const adjustedMargin = merchandiseDiscount > 0 ? calculateMarginPercent(totalCost, adjustedMerchandisePrice) : startingMargin;
+                const adjustedMerchandisePrice = Math.max(0, marginSellingPriceBeforeDiscount - merchandiseDiscount);
+                const adjustedMargin = merchandiseDiscount > 0 ? calculateMarginPercent(marginCostBasis, adjustedMerchandisePrice) : startingMargin;
                 const marginForFeedback = adjustedMargin === null ? 0 : adjustedMargin;
                 const { resultClass, noteText } = getMarginFeedback(marginForFeedback);
+                const pro1stCostLine = selectedPro1stCharge > 0 ? `<p class="mt-2 text-sm">Pro1st margin basis includes <strong>${formatCurrency(selectedPro1stCharge)}</strong> plan revenue and <strong>${formatCurrency(selectedPro1stCost)}</strong> plan cost.</p>` : '';
 
                 let resultHtml = '';
                 if (currentPricingInputMode === 'target-margin') {
-                    resultHtml = `<p>To get a <strong>${currentTargetMargin}% margin</strong>, retail price is:</p><p class="text-3xl font-bold mt-2">${formatCurrency(currentRetailPrice)}</p>`;
+                    resultHtml = `<p>To get a <strong>${currentTargetMargin}% margin</strong>, retail price is:</p><p class="text-3xl font-bold mt-2">${formatCurrency(currentRetailPrice)}</p>${pro1stCostLine}`;
                 } else {
-                    resultHtml = `<p>With a retail price of <strong>${formatCurrency(currentRetailPrice)}</strong>, starting margin is:</p><p class="text-3xl font-bold mt-2">${startingMargin.toFixed(2)}%</p>`;
+                    const sellingPriceLabel = selectedPro1stCharge > 0 ? 'retail price plus Pro1st' : 'retail price';
+                    resultHtml = `<p>With a ${sellingPriceLabel} of <strong>${formatCurrency(marginSellingPriceBeforeDiscount)}</strong>, starting margin is:</p><p class="text-3xl font-bold mt-2">${startingMargin.toFixed(2)}%</p>${pro1stCostLine}`;
                 }
 
                 if (merchandiseDiscount > 0) {

@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `1.5.6.1805`
+- Current display version in `package.json`: `1.5.6.1809`
 
 ## Project Structure
 
@@ -125,7 +125,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `1.5.6.1805`
+- Current display version: `1.5.6.1809`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -520,3 +520,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Changes: margin now uses the total of all selected discount reasons, including Sales Tax Discount, for the displayed discount-adjusted margin; helper copy now says margin reflects selected discounts.
 - Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.6.1805`; deployed bundle `assets/index-BtP-73tV.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
 - Validation/deploy: Smart Calc DOM smoke PASS for Sales Tax Discount affecting discount-adjusted margin and notes; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed SHA/version/margin-copy greps PASS; FD health PASS (`{"ok":true,"db":1}`).
+
+## Running Log - 2026-05-06 18:09 EDT
+
+- Added flat Pro1st cost to Smart Calc margin basis. Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `public/smartcalc/index.html`, `AGENTS.md`.
+- Changes: when Pro1st is selected, known-cost margin now includes the selected Pro1st plan revenue and a flat `75.54` Pro1st plan cost for all Pro1st plan tiers; the margin display notes the Pro1st revenue/cost basis.
+- Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.6.1809`; deployed bundle `assets/index-CuxTWB6W.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
+- Validation/deploy: Smart Calc DOM smoke PASS for Pro1st `75.54` cost included in starting and discount-adjusted margins; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed SHA/version/Pro1st-cost greps PASS; FD health PASS (`{"ok":true,"db":1}`).
