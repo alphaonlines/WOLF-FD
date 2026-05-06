@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `1.5.6.1752`
+- Current display version in `package.json`: `1.5.6.1756`
 
 ## Project Structure
 
@@ -125,7 +125,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `1.5.6.1752`
+- Current display version: `1.5.6.1756`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -492,3 +492,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Changes: Discount reasons now include Sales Tax, Delivery, Pro1st, Advertised Price, Competition Match, Manager Approval, Vendor Advertisement, and Other Discount. Delivery and Pro1st discount amounts auto-fill from the selected charge and stay editable; Sales Tax auto-fills the tax discount; Advertised Price, Competition Match, Manager Approval, Vendor Advertisement, and Other Discount now use dropdown detail selectors. Pro1st Declined remains automatic when Pro1st is not selected.
 - Version/deploy: per user request, WOLF-FD/Smart Calc moved to `1.5.6.1752`; deployed bundle `assets/index-QxEGLbls.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
 - Validation/deploy: duplicate-ID and inline syntax smoke PASS; Smart Calc DOM smoke PASS for full discount checklist, delivery amount preset/edit, Pro1st amount preset, dropdown detail notes, Pro1st Declined behavior, and version sync; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed SHA/version/field greps PASS; FD health PASS (`{"ok":true,"db":1}`).
+
+## Running Log - 2026-05-06 17:56 EDT
+
+- Removed the Smart Calc `Refresh Notes` button. Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `public/smartcalc/index.html`, `AGENTS.md`.
+- Changes: removed the visible button, DOM reference, click handler, and `Notes refreshed` copy; helper text now says manual edits are preserved until calculator inputs change or Start Over is clicked.
+- Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.6.1756`; deployed bundle `assets/index-5jRrM-sf.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
+- Validation/deploy: Smart Calc DOM smoke PASS for refresh-button removal, auto-generated notes, duplicate IDs, inline syntax, and version sync; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed SHA/version/no-refresh greps PASS; FD health PASS (`{"ok":true,"db":1}`).
