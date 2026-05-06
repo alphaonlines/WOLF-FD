@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `0.5.6.1719`
+- Current display version in `package.json`: `0.5.6.1724`
 
 ## Project Structure
 
@@ -125,7 +125,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `0.5.6.1719`
+- Current display version: `0.5.6.1724`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -458,3 +458,9 @@ Backend deploy flow for route/schema/runtime changes:
 - Added a build-time Smart Calc version sync guardrail. Files: `scripts/sync-smartcalc-version.cjs`, `package.json`, `AGENTS.md`.
 - Changes: new `npm run sync:smartcalc-version` reads `package.json` `displayVersion` and rewrites the Smart Calc page marker plus standalone Smart Calc wrapper version/cache-buster; `npm run build` now runs the sync script before Vite so the dashboard version, Smart Calc visible version, and dedicated Smart Calc iframe query stay aligned.
 - Validation/deploy: `npm run sync:smartcalc-version` PASS; script syntax `node --check` PASS; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS and showed `Smart Calc version synced to 0.5.6.1719`; redeployed `dist/.` and standalone wrappers; deployed SHA/version greps confirmed dashboard/static Smart Calc stayed on `0.5.6.1719`.
+
+## Running Log - 2026-05-06 17:24 EDT
+
+- Added 36-month and 48-month rows to Smart Calc Equal Monthly Payments. Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `public/smartcalc/index.html`, `AGENTS.md`.
+- Changes: financing terms now include `[3, 6, 12, 15, 18, 24, 36, 48]`; WOLF-FD/Smart Calc version moved together to `0.5.6.1724` via `npm run sync:smartcalc-version`.
+- Validation/deploy: duplicate-ID check PASS; inline script `node --check` PASS; Smart Calc financing DOM smoke test PASS for 36/48 month rows; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed `dist/.` and standalone wrappers; deployed SHA/version/term greps PASS; FD health PASS (`{"ok":true,"db":1}`).
