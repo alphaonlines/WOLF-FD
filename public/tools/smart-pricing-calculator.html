@@ -85,14 +85,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="0.5.6.1724">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="0.5.6.1729">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v0.5.6.1724</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v0.5.6.1729</p>
         </header>
 
         <div class="space-y-6">
@@ -328,15 +328,26 @@
                                 </div>
                             </div>
 
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="pay-tax" name="pay-tax" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                    <label for="pay-tax" class="ml-3 block text-sm font-medium text-gray-700">Sales Tax Discount</label>
+                                </div>
+                                <div id="sales-tax-discount-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+                                    <div>
+                                        <label for="sales-tax-discount-comment" class="block text-xs font-medium text-gray-500">Comment</label>
+                                        <input type="text" id="sales-tax-discount-comment" value="Sales Tax Discount" readonly class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                    <div>
+                                        <label for="sales-tax-discount-amount" class="block text-xs font-medium text-gray-500">Adjustment Amount ($)</label>
+                                        <input type="number" id="sales-tax-discount-amount" min="0" step="0.01" readonly class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                </div>
+                                <p class="pl-7 text-xs leading-5 text-gray-500">Click once to keep the customer total out-the-door and document the tax discount automatically.</p>
+                            </div>
+
                             <p id="discount-documentation-status" class="text-xs font-medium text-amber-700"></p>
                         </fieldset>
-                    </div>
-                    <div class="border-t pt-3">
-                         <div class="flex items-center">
-                            <input id="pay-tax" name="pay-tax" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
-                            <label for="pay-tax" class="ml-3 block text-sm font-medium text-gray-700">Pay Customer's Tax (Out-the-Door Price)</label>
-                        </div>
-                        <p class="pl-7 pt-1 text-xs leading-5 text-gray-500">Policy: document the tax discount and add it to the Adjustment total with any other discounts.</p>
                     </div>
                 </div>
                  <div id="grand-total-section" class="pt-4 text-right hidden grand-total p-4 rounded-lg mt-4">
@@ -491,6 +502,9 @@ function showLicenseLockScreen(message) {
                 otherDiscountWrapper: document.getElementById('other-discount-wrapper'),
                 otherDiscountExplanationInput: document.getElementById('other-discount-explanation'),
                 otherDiscountAmountInput: document.getElementById('other-discount-amount'),
+                salesTaxDiscountWrapper: document.getElementById('sales-tax-discount-wrapper'),
+                salesTaxDiscountCommentInput: document.getElementById('sales-tax-discount-comment'),
+                salesTaxDiscountAmountInput: document.getElementById('sales-tax-discount-amount'),
                 discountDocumentationStatus: document.getElementById('discount-documentation-status'),
                 addTaxCheckbox: document.getElementById('add-tax'),
                 payTaxCheckbox: document.getElementById('pay-tax'),
@@ -612,7 +626,8 @@ function showLicenseLockScreen(message) {
                     allElements.discountCompetitionCheckbox,
                     allElements.discountManagerApprovalCheckbox,
                     allElements.discountVendorAdCheckbox,
-                    allElements.discountOtherCheckbox
+                    allElements.discountOtherCheckbox,
+                    allElements.payTaxCheckbox
                 ].filter(Boolean);
                 discountReasonToggles.forEach((el) => {
                     el.addEventListener('change', () => {
@@ -625,7 +640,8 @@ function showLicenseLockScreen(message) {
                     allElements.competitionNameInput,
                     allElements.managerApprovalNameInput,
                     allElements.vendorAdSelect,
-                    allElements.otherDiscountExplanationInput
+                    allElements.otherDiscountExplanationInput,
+                    allElements.salesTaxDiscountCommentInput
                 ].filter(Boolean).forEach((el) => {
                     el.addEventListener('input', updateSalesOrderNotes);
                     el.addEventListener('change', updateSalesOrderNotes);
@@ -865,6 +881,16 @@ function showLicenseLockScreen(message) {
             return Math.min(getDiscountReasonAmountTotal(), Math.max(0, subtotal));
         }
 
+        function updateSalesTaxDiscountFields() {
+            allElements.salesTaxDiscountWrapper?.classList.toggle('hidden', !allElements.payTaxCheckbox?.checked);
+            if (allElements.salesTaxDiscountCommentInput && allElements.payTaxCheckbox?.checked) {
+                allElements.salesTaxDiscountCommentInput.value = 'Sales Tax Discount';
+            }
+            if (allElements.salesTaxDiscountAmountInput) {
+                allElements.salesTaxDiscountAmountInput.value = allElements.payTaxCheckbox?.checked && currentTaxAmount > 0 ? currentTaxAmount.toFixed(2) : '';
+            }
+        }
+
         function getCleanDetail(value, fallback) {
             const cleanValue = (value || '').trim();
             return cleanValue || fallback;
@@ -902,14 +928,25 @@ function showLicenseLockScreen(message) {
                 entries.push({
                     label: 'Other Discount',
                     detail: getCleanDetail(allElements.otherDiscountExplanationInput?.value, '[explanation needed]'),
-                    amount: getAdjustmentAmount(allElements.otherDiscountAmountInput)
+                    amount: getAdjustmentAmount(allElements.otherDiscountAmountInput),
+                    affectsMerchandise: true
+                });
+            }
+            if (allElements.payTaxCheckbox?.checked) {
+                entries.push({
+                    label: 'Sales Tax Discount',
+                    detail: getCleanDetail(allElements.salesTaxDiscountCommentInput?.value, 'Sales Tax Discount'),
+                    amount: currentTaxAmount,
+                    affectsMerchandise: false
                 });
             }
             return entries;
         }
 
         function getDiscountReasonAmountTotal() {
-            return getDiscountReasonEntries().reduce((sum, entry) => sum + entry.amount, 0);
+            return getDiscountReasonEntries()
+                .filter((entry) => entry.affectsMerchandise !== false)
+                .reduce((sum, entry) => sum + entry.amount, 0);
         }
 
         function getDiscountReasonDetails() {
@@ -924,10 +961,11 @@ function showLicenseLockScreen(message) {
             allElements.managerApprovalWrapper?.classList.toggle('hidden', !allElements.discountManagerApprovalCheckbox?.checked);
             allElements.vendorAdWrapper?.classList.toggle('hidden', !allElements.discountVendorAdCheckbox?.checked);
             allElements.otherDiscountWrapper?.classList.toggle('hidden', !allElements.discountOtherCheckbox?.checked);
+            updateSalesTaxDiscountFields();
 
             const entries = getDiscountReasonEntries();
             const missingAmountCount = entries.filter((entry) => entry.amount <= 0).length;
-            const discountAmountTotal = getDiscountReasonAmountTotal();
+            const discountAmountTotal = entries.reduce((sum, entry) => sum + entry.amount, 0);
             if (allElements.discountDocumentationStatus) {
                 if (currentAdditionalDiscount > 0 && !entries.length) {
                     allElements.discountDocumentationStatus.textContent = 'Select at least one discount reason for the Adjustment note.';
@@ -986,10 +1024,6 @@ function showLicenseLockScreen(message) {
             if (discountReasons.length) {
                 notes.push('Discount Documentation:');
                 discountReasons.forEach((reason) => notes.push(`- ${reason}`));
-            }
-
-            if (payTaxSelected) {
-                notes.push(`Sales Tax Discount: -${formatCurrency(currentTaxAmount)}`);
             }
 
             if (currentAdjustmentTotal > 0) {
@@ -1249,6 +1283,7 @@ function showLicenseLockScreen(message) {
                     managerApprovalAmountInput, managerApprovalWrapper, discountVendorAdCheckbox,
                     vendorAdSelect, vendorAdAmountInput, vendorAdWrapper, discountOtherCheckbox,
                     otherDiscountExplanationInput, otherDiscountAmountInput, otherDiscountWrapper,
+                    salesTaxDiscountWrapper, salesTaxDiscountCommentInput, salesTaxDiscountAmountInput,
                     discountDocumentationStatus
                 } = allElements;
                 const formElements = [
@@ -1256,9 +1291,10 @@ function showLicenseLockScreen(message) {
                     marginPercentInput, retailPriceInput, longDistanceMilesInput,
                     competitionNameInput, competitionMatchAmountInput, managerApprovalNameInput,
                     managerApprovalAmountInput, vendorAdAmountInput, otherDiscountExplanationInput,
-                    otherDiscountAmountInput
+                    otherDiscountAmountInput, salesTaxDiscountAmountInput
                 ].filter(Boolean);
                 formElements.forEach(el => el.value = '');
+                if (salesTaxDiscountCommentInput) salesTaxDiscountCommentInput.value = 'Sales Tax Discount';
                 if (removalItemsInput) removalItemsInput.value = '1';
                 if (vendorSelect) vendorSelect.selectedIndex = 0;
                 if (vendorAdSelect) vendorAdSelect.selectedIndex = 0;
@@ -1292,7 +1328,8 @@ function showLicenseLockScreen(message) {
                     allElements.grandTotalSection, allElements.resetBtn, allElements.vendorInfoDiv,
                     storeLocationWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection,
                     allElements.financingBreakdown, allElements.salesNotesSection, removalWrapper,
-                    competitionMatchWrapper, managerApprovalWrapper, vendorAdWrapper, otherDiscountWrapper
+                    competitionMatchWrapper, managerApprovalWrapper, vendorAdWrapper, otherDiscountWrapper,
+                    salesTaxDiscountWrapper
                 ].filter(Boolean);
                 sectionsToHide.forEach(sec => sec.classList.add('hidden'));
                 if (discountDocumentationStatus) discountDocumentationStatus.textContent = '';

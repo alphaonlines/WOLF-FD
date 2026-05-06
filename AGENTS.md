@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `0.5.6.1724`
+- Current display version in `package.json`: `0.5.6.1729`
 
 ## Project Structure
 
@@ -125,7 +125,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `0.5.6.1724`
+- Current display version: `0.5.6.1729`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -464,3 +464,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Added 36-month and 48-month rows to Smart Calc Equal Monthly Payments. Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `public/smartcalc/index.html`, `AGENTS.md`.
 - Changes: financing terms now include `[3, 6, 12, 15, 18, 24, 36, 48]`; WOLF-FD/Smart Calc version moved together to `0.5.6.1724` via `npm run sync:smartcalc-version`.
 - Validation/deploy: duplicate-ID check PASS; inline script `node --check` PASS; Smart Calc financing DOM smoke test PASS for 36/48 month rows; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed `dist/.` and standalone wrappers; deployed SHA/version/term greps PASS; FD health PASS (`{"ok":true,"db":1}`).
+
+## Running Log - 2026-05-06 17:29 EDT
+
+- Moved Smart Calc `Pay Customer's Tax` into the Discount Reason group as `Sales Tax Discount`. Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `public/smartcalc/index.html`, `AGENTS.md`.
+- Changes: clicking Sales Tax Discount still auto-enables Add Sales Tax, keeps the customer total out-the-door, and now reveals readonly reason fields with the tax amount filled into `Adjustment Amount ($)` and `Sales Tax Discount` filled into the comment box; the Sales Tax Discount entry appears with the other discount documentation without double-counting as a merchandise discount.
+- Version/deploy: WOLF-FD/Smart Calc version moved together to `0.5.6.1729`; deployed bundle `assets/index-C5jvnFst.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
+- Validation/deploy: duplicate-ID check PASS; inline script `node --check` PASS; Smart Calc sales-tax-discount DOM smoke test PASS; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed `dist/.` and standalone wrappers; deployed SHA/version/field greps PASS; FD health PASS (`{"ok":true,"db":1}`).
