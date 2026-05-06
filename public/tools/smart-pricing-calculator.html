@@ -85,14 +85,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="0.5.6.1740">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.6.1752">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v0.5.6.1740</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.6.1752</p>
         </header>
 
         <div class="space-y-6">
@@ -257,7 +257,87 @@
                     <div class="space-y-3 border-t border-gray-200 pt-3">
                         <fieldset class="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
                             <legend class="px-1 text-sm font-semibold text-brand-brown">Discount reason(s) for Adjustment</legend>
-                            <p class="text-xs leading-5 text-gray-500">Check every reason that applies. Each selected reason must have its own adjustment amount and detail. These amounts add together as the Additional Discount / Adjustment. In Base Cost and EZ Pro Cost Code, the displayed margin recalculates using the retail price minus this total merchandise discount.</p>
+                            <p class="text-xs leading-5 text-gray-500">Check every reason that applies. Each selected reason must have its own adjustment amount and detail. Sales tax, delivery, and Pro1st discounts reduce the ticket adjustment without changing merchandise margin; merchandise discounts update the displayed margin.</p>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="pay-tax" name="pay-tax" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                    <label for="pay-tax" class="ml-3 block text-sm font-medium text-gray-700">Sales Tax</label>
+                                </div>
+                                <div id="sales-tax-discount-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+                                    <div>
+                                        <label for="sales-tax-discount-comment" class="block text-xs font-medium text-gray-500">Comment</label>
+                                        <input type="text" id="sales-tax-discount-comment" value="Sales Tax Discount" readonly class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                    <div>
+                                        <label for="sales-tax-discount-amount" class="block text-xs font-medium text-gray-500">Discount Amount ($)</label>
+                                        <input type="number" id="sales-tax-discount-amount" min="0" step="0.01" readonly class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                </div>
+                                <p class="pl-7 text-xs leading-5 text-gray-500">Click once to keep the customer total out-the-door and document the tax discount automatically.</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="discount-delivery" name="discount-delivery" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                    <label for="discount-delivery" class="ml-3 block text-sm font-medium text-gray-700">Delivery</label>
+                                </div>
+                                <div id="delivery-discount-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+                                    <div>
+                                        <label for="delivery-discount-comment" class="block text-xs font-medium text-gray-500">Comment</label>
+                                        <input type="text" id="delivery-discount-comment" value="Delivery Discount" readonly class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                    <div>
+                                        <label for="delivery-discount-amount" class="block text-xs font-medium text-gray-500">Discount Amount ($)</label>
+                                        <input type="number" id="delivery-discount-amount" min="0" step="0.01" placeholder="Full delivery amount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                </div>
+                                <p class="pl-7 text-xs leading-5 text-gray-500">Defaults to the full selected delivery charge. Edit the amount if only part of delivery is discounted.</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="discount-pro1st" name="discount-pro1st" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                    <label for="discount-pro1st" class="ml-3 block text-sm font-medium text-gray-700">Pro1st</label>
+                                </div>
+                                <div id="pro1st-discount-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+                                    <div>
+                                        <label for="pro1st-discount-comment" class="block text-xs font-medium text-gray-500">Comment</label>
+                                        <input type="text" id="pro1st-discount-comment" value="Pro1st Discount" readonly class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                    <div>
+                                        <label for="pro1st-discount-amount" class="block text-xs font-medium text-gray-500">Discount Amount ($)</label>
+                                        <input type="number" id="pro1st-discount-amount" min="0" step="0.01" placeholder="Full Pro1st amount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                </div>
+                                <p class="pl-7 text-xs leading-5 text-gray-500">Defaults to the selected Pro1st charge. Edit the amount if only part of Pro1st is discounted. If Pro1st is not selected, notes show Pro1st Declined automatically.</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="discount-advertised-price" name="discount-advertised-price" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                    <label for="discount-advertised-price" class="ml-3 block text-sm font-medium text-gray-700">Advertised Price</label>
+                                </div>
+                                <div id="advertised-price-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+                                    <div>
+                                        <label for="advertised-price-source" class="block text-xs font-medium text-gray-500">Source</label>
+                                        <select id="advertised-price-source" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                            <option value="">-- Select source --</option>
+                                            <option value="FD Website">FD Website</option>
+                                            <option value="In-store Tag">In-store Tag</option>
+                                            <option value="Facebook">Facebook</option>
+                                            <option value="Instagram">Instagram</option>
+                                            <option value="Google">Google</option>
+                                            <option value="Email">Email</option>
+                                            <option value="Other Advertisement">Other Advertisement</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="advertised-price-amount" class="block text-xs font-medium text-gray-500">Discount Amount ($)</label>
+                                        <input type="number" id="advertised-price-amount" min="0" step="0.01" placeholder="e.g., 25" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="space-y-2">
                                 <div class="flex items-center">
@@ -266,11 +346,21 @@
                                 </div>
                                 <div id="competition-match-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
                                     <div>
-                                        <label for="competition-name" class="block text-xs font-medium text-gray-500">Competitor Name</label>
-                                        <input type="text" id="competition-name" placeholder="e.g., Rooms To Go" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                        <label for="competition-name" class="block text-xs font-medium text-gray-500">Competitor</label>
+                                        <select id="competition-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                            <option value="">-- Select competitor --</option>
+                                            <option value="Rooms To Go">Rooms To Go</option>
+                                            <option value="Ashley">Ashley</option>
+                                            <option value="Wayfair">Wayfair</option>
+                                            <option value="Amazon">Amazon</option>
+                                            <option value="Big Lots">Big Lots</option>
+                                            <option value="Mattress Firm">Mattress Firm</option>
+                                            <option value="Local Competitor">Local Competitor</option>
+                                            <option value="Other Competitor">Other Competitor</option>
+                                        </select>
                                     </div>
                                     <div>
-                                        <label for="competition-match-amount" class="block text-xs font-medium text-gray-500">Adjustment Amount ($)</label>
+                                        <label for="competition-match-amount" class="block text-xs font-medium text-gray-500">Discount Amount ($)</label>
                                         <input type="number" id="competition-match-amount" min="0" step="0.01" placeholder="e.g., 25" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
                                     </div>
                                 </div>
@@ -284,10 +374,18 @@
                                 <div id="manager-approval-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
                                     <div>
                                         <label for="manager-approval-name" class="block text-xs font-medium text-gray-500">Manager Name</label>
-                                        <input type="text" id="manager-approval-name" placeholder="Type approving manager name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                        <select id="manager-approval-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                            <option value="">-- Select manager --</option>
+                                            <option value="Anthony">Anthony</option>
+                                            <option value="Manager on Duty">Manager on Duty</option>
+                                            <option value="Store Manager">Store Manager</option>
+                                            <option value="Sales Manager">Sales Manager</option>
+                                            <option value="Owner Approval">Owner Approval</option>
+                                            <option value="Other Manager">Other Manager</option>
+                                        </select>
                                     </div>
                                     <div>
-                                        <label for="manager-approval-amount" class="block text-xs font-medium text-gray-500">Adjustment Amount ($)</label>
+                                        <label for="manager-approval-amount" class="block text-xs font-medium text-gray-500">Discount Amount ($)</label>
                                         <input type="number" id="manager-approval-amount" min="0" step="0.01" placeholder="e.g., 25" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
                                     </div>
                                 </div>
@@ -300,15 +398,13 @@
                                 </div>
                                 <div id="vendor-ad-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
                                     <div>
-                                        <label for="vendor-ad-select" class="block text-xs font-medium text-gray-500">Vendor Advertisement</label>
+                                        <label for="vendor-ad-select" class="block text-xs font-medium text-gray-500">Vendor Name</label>
                                         <select id="vendor-ad-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
-                                            <option value="">-- Select advertised vendor --</option>
-                                            <option value="Nectar">Nectar</option>
-                                            <option value="Tempur-Pedic">Tempur-Pedic</option>
+                                            <option value="">-- Select vendor --</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label for="vendor-ad-amount" class="block text-xs font-medium text-gray-500">Adjustment Amount ($)</label>
+                                        <label for="vendor-ad-amount" class="block text-xs font-medium text-gray-500">Discount Amount ($)</label>
                                         <input type="number" id="vendor-ad-amount" min="0" step="0.01" placeholder="e.g., 25" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
                                     </div>
                                 </div>
@@ -322,31 +418,22 @@
                                 <div id="other-discount-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
                                     <div>
                                         <label for="other-discount-explanation" class="block text-xs font-medium text-gray-500">Explanation</label>
-                                        <input type="text" id="other-discount-explanation" placeholder="Type explanation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                        <select id="other-discount-explanation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                            <option value="">-- Select explanation --</option>
+                                            <option value="Customer goodwill">Customer goodwill</option>
+                                            <option value="Package deal">Package deal</option>
+                                            <option value="Floor model">Floor model</option>
+                                            <option value="Scratch and dent">Scratch and dent</option>
+                                            <option value="Clearance">Clearance</option>
+                                            <option value="Price correction">Price correction</option>
+                                            <option value="Other explanation">Other explanation</option>
+                                        </select>
                                     </div>
                                     <div>
-                                        <label for="other-discount-amount" class="block text-xs font-medium text-gray-500">Adjustment Amount ($)</label>
+                                        <label for="other-discount-amount" class="block text-xs font-medium text-gray-500">Discount Amount ($)</label>
                                         <input type="number" id="other-discount-amount" min="0" step="0.01" placeholder="e.g., 25" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="space-y-2">
-                                <div class="flex items-center">
-                                    <input id="pay-tax" name="pay-tax" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
-                                    <label for="pay-tax" class="ml-3 block text-sm font-medium text-gray-700">Sales Tax Discount</label>
-                                </div>
-                                <div id="sales-tax-discount-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
-                                    <div>
-                                        <label for="sales-tax-discount-comment" class="block text-xs font-medium text-gray-500">Comment</label>
-                                        <input type="text" id="sales-tax-discount-comment" value="Sales Tax Discount" readonly class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm custom-focus sm:text-sm p-2">
-                                    </div>
-                                    <div>
-                                        <label for="sales-tax-discount-amount" class="block text-xs font-medium text-gray-500">Adjustment Amount ($)</label>
-                                        <input type="number" id="sales-tax-discount-amount" min="0" step="0.01" readonly class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm custom-focus sm:text-sm p-2">
-                                    </div>
-                                </div>
-                                <p class="pl-7 text-xs leading-5 text-gray-500">Click once to keep the customer total out-the-door and document the tax discount automatically.</p>
                             </div>
 
                             <p id="discount-documentation-status" class="text-xs font-medium text-amber-700"></p>
@@ -502,6 +589,18 @@ function showLicenseLockScreen(message) {
                 vendorAdWrapper: document.getElementById('vendor-ad-wrapper'),
                 vendorAdSelect: document.getElementById('vendor-ad-select'),
                 vendorAdAmountInput: document.getElementById('vendor-ad-amount'),
+                discountDeliveryCheckbox: document.getElementById('discount-delivery'),
+                deliveryDiscountWrapper: document.getElementById('delivery-discount-wrapper'),
+                deliveryDiscountCommentInput: document.getElementById('delivery-discount-comment'),
+                deliveryDiscountAmountInput: document.getElementById('delivery-discount-amount'),
+                discountPro1stCheckbox: document.getElementById('discount-pro1st'),
+                pro1stDiscountWrapper: document.getElementById('pro1st-discount-wrapper'),
+                pro1stDiscountCommentInput: document.getElementById('pro1st-discount-comment'),
+                pro1stDiscountAmountInput: document.getElementById('pro1st-discount-amount'),
+                discountAdvertisedPriceCheckbox: document.getElementById('discount-advertised-price'),
+                advertisedPriceWrapper: document.getElementById('advertised-price-wrapper'),
+                advertisedPriceSourceSelect: document.getElementById('advertised-price-source'),
+                advertisedPriceAmountInput: document.getElementById('advertised-price-amount'),
                 discountOtherCheckbox: document.getElementById('discount-other'),
                 otherDiscountWrapper: document.getElementById('other-discount-wrapper'),
                 otherDiscountExplanationInput: document.getElementById('other-discount-explanation'),
@@ -546,6 +645,8 @@ function showLicenseLockScreen(message) {
         let currentAdjustmentTotal = 0;
         let currentPricingInputMode = '';
         let currentTargetMargin = null;
+        let deliveryDiscountAmountEdited = false;
+        let pro1stDiscountAmountEdited = false;
         let notesManuallyEdited = false;
         let lastGeneratedNotes = '';
 
@@ -556,6 +657,12 @@ function showLicenseLockScreen(message) {
                     option.value = vendor;
                     option.textContent = vendor;
                     allElements.vendorSelect.appendChild(option);
+                    if (allElements.vendorAdSelect) {
+                        const adOption = document.createElement('option');
+                        adOption.value = vendor;
+                        adOption.textContent = vendor;
+                        allElements.vendorAdSelect.appendChild(adOption);
+                    }
                 });
                 setEntryMode('base');
                 if (allElements.storeLocationSelect) allElements.storeLocationSelect.value = 'camp-greenville';
@@ -630,11 +737,20 @@ function showLicenseLockScreen(message) {
                     allElements.discountCompetitionCheckbox,
                     allElements.discountManagerApprovalCheckbox,
                     allElements.discountVendorAdCheckbox,
+                    allElements.discountDeliveryCheckbox,
+                    allElements.discountPro1stCheckbox,
+                    allElements.discountAdvertisedPriceCheckbox,
                     allElements.discountOtherCheckbox,
                     allElements.payTaxCheckbox
                 ].filter(Boolean);
                 discountReasonToggles.forEach((el) => {
                     el.addEventListener('change', () => {
+                        if (el === allElements.discountDeliveryCheckbox && el.checked) {
+                            deliveryDiscountAmountEdited = false;
+                        }
+                        if (el === allElements.discountPro1stCheckbox && el.checked) {
+                            pro1stDiscountAmountEdited = false;
+                        }
                         updateDiscountReasonControls();
                         updateGrandTotal();
                     });
@@ -644,6 +760,9 @@ function showLicenseLockScreen(message) {
                     allElements.competitionNameInput,
                     allElements.managerApprovalNameInput,
                     allElements.vendorAdSelect,
+                    allElements.deliveryDiscountCommentInput,
+                    allElements.pro1stDiscountCommentInput,
+                    allElements.advertisedPriceSourceSelect,
                     allElements.otherDiscountExplanationInput,
                     allElements.salesTaxDiscountCommentInput
                 ].filter(Boolean).forEach((el) => {
@@ -655,9 +774,20 @@ function showLicenseLockScreen(message) {
                     allElements.competitionMatchAmountInput,
                     allElements.managerApprovalAmountInput,
                     allElements.vendorAdAmountInput,
+                    allElements.deliveryDiscountAmountInput,
+                    allElements.pro1stDiscountAmountInput,
+                    allElements.advertisedPriceAmountInput,
                     allElements.otherDiscountAmountInput
                 ].filter(Boolean).forEach((el) => {
-                    el.addEventListener('input', updateGrandTotal);
+                    el.addEventListener('input', () => {
+                        if (el === allElements.deliveryDiscountAmountInput) {
+                            deliveryDiscountAmountEdited = true;
+                        }
+                        if (el === allElements.pro1stDiscountAmountInput) {
+                            pro1stDiscountAmountEdited = true;
+                        }
+                        updateGrandTotal();
+                    });
                     el.addEventListener('change', updateGrandTotal);
                 });
 
@@ -808,7 +938,7 @@ function showLicenseLockScreen(message) {
 
             function getMerchandiseDiscountForMargin() {
                 if (!currentRetailPrice || currentRetailPrice <= 0) return 0;
-                return getAdditionalDiscount(currentRetailPrice);
+                return Math.min(getMerchandiseDiscountAmount(), currentRetailPrice);
             }
 
             function updateKnownCostMarginFeedback() {
@@ -860,6 +990,21 @@ function showLicenseLockScreen(message) {
                 return miles > 25 ? (miles - 25) * 3 : 0;
             }
 
+            function getSelectedDeliveryChargeInfo() {
+                const localDelivery = getLocalDeliveryCharge();
+                const deliveryUpcharge = getDeliveryUpcharge();
+                if (allElements.addDeliveryCheckbox?.checked) {
+                    return {
+                        amount: localDelivery + deliveryUpcharge,
+                        label: deliveryUpcharge > 0 ? 'Local Delivery + Outside Upcharge' : 'Local Delivery'
+                    };
+                }
+                if (allElements.addThresholdDeliveryCheckbox?.checked) {
+                    return { amount: 75, label: 'Threshold Delivery' };
+                }
+                return { amount: 0, label: 'Delivery' };
+            }
+
             function getPro1stCharge() {
                 const pro1stTier = pro1stTiers.find(t => currentRetailPrice >= t.from && currentRetailPrice <= t.to);
                 return pro1stTier ? pro1stTier.price : 0;
@@ -903,6 +1048,30 @@ function showLicenseLockScreen(message) {
             }
         }
 
+        function updateDeliveryDiscountFields() {
+            const selected = !!allElements.discountDeliveryCheckbox?.checked;
+            allElements.deliveryDiscountWrapper?.classList.toggle('hidden', !selected);
+            if (allElements.deliveryDiscountCommentInput && selected) {
+                allElements.deliveryDiscountCommentInput.value = 'Delivery Discount';
+            }
+            if (allElements.deliveryDiscountAmountInput && selected && (!deliveryDiscountAmountEdited || !allElements.deliveryDiscountAmountInput.value)) {
+                const deliveryAmount = getSelectedDeliveryChargeInfo().amount;
+                allElements.deliveryDiscountAmountInput.value = deliveryAmount > 0 ? deliveryAmount.toFixed(2) : '';
+            }
+        }
+
+        function updatePro1stDiscountFields() {
+            const selected = !!allElements.discountPro1stCheckbox?.checked;
+            allElements.pro1stDiscountWrapper?.classList.toggle('hidden', !selected);
+            if (allElements.pro1stDiscountCommentInput && selected) {
+                allElements.pro1stDiscountCommentInput.value = 'Pro1st Discount';
+            }
+            if (allElements.pro1stDiscountAmountInput && selected && (!pro1stDiscountAmountEdited || !allElements.pro1stDiscountAmountInput.value)) {
+                const pro1stAmount = allElements.addPro1stCheckbox?.checked ? getPro1stCharge() : 0;
+                allElements.pro1stDiscountAmountInput.value = pro1stAmount > 0 ? pro1stAmount.toFixed(2) : '';
+            }
+        }
+
         function getCleanDetail(value, fallback) {
             const cleanValue = (value || '').trim();
             return cleanValue || fallback;
@@ -915,17 +1084,40 @@ function showLicenseLockScreen(message) {
 
         function getDiscountReasonEntries() {
             const entries = [];
+            if (allElements.discountDeliveryCheckbox?.checked) {
+                entries.push({
+                    label: 'Delivery Discount',
+                    detail: getCleanDetail(allElements.deliveryDiscountCommentInput?.value, 'Delivery Discount'),
+                    amount: getAdjustmentAmount(allElements.deliveryDiscountAmountInput),
+                    affectsMerchandise: false
+                });
+            }
+            if (allElements.discountPro1stCheckbox?.checked) {
+                entries.push({
+                    label: 'Pro1st Discount',
+                    detail: getCleanDetail(allElements.pro1stDiscountCommentInput?.value, 'Pro1st Discount'),
+                    amount: getAdjustmentAmount(allElements.pro1stDiscountAmountInput),
+                    affectsMerchandise: false
+                });
+            }
+            if (allElements.discountAdvertisedPriceCheckbox?.checked) {
+                entries.push({
+                    label: 'Advertised Price',
+                    detail: getCleanDetail(allElements.advertisedPriceSourceSelect?.value, '[source needed]'),
+                    amount: getAdjustmentAmount(allElements.advertisedPriceAmountInput)
+                });
+            }
             if (allElements.discountCompetitionCheckbox?.checked) {
                 entries.push({
                     label: 'Competition Match',
-                    detail: getCleanDetail(allElements.competitionNameInput?.value, '[competitor name needed]'),
+                    detail: getCleanDetail(allElements.competitionNameInput?.value, '[competitor needed]'),
                     amount: getAdjustmentAmount(allElements.competitionMatchAmountInput)
                 });
             }
             if (allElements.discountManagerApprovalCheckbox?.checked) {
                 entries.push({
                     label: 'Manager Approval',
-                    detail: getCleanDetail(allElements.managerApprovalNameInput?.value, '[manager name needed]'),
+                    detail: getCleanDetail(allElements.managerApprovalNameInput?.value, '[manager needed]'),
                     amount: getAdjustmentAmount(allElements.managerApprovalAmountInput)
                 });
             }
@@ -940,8 +1132,7 @@ function showLicenseLockScreen(message) {
                 entries.push({
                     label: 'Other Discount',
                     detail: getCleanDetail(allElements.otherDiscountExplanationInput?.value, '[explanation needed]'),
-                    amount: getAdjustmentAmount(allElements.otherDiscountAmountInput),
-                    affectsMerchandise: true
+                    amount: getAdjustmentAmount(allElements.otherDiscountAmountInput)
                 });
             }
             if (allElements.payTaxCheckbox?.checked) {
@@ -949,13 +1140,20 @@ function showLicenseLockScreen(message) {
                     label: 'Sales Tax Discount',
                     detail: getCleanDetail(allElements.salesTaxDiscountCommentInput?.value, 'Sales Tax Discount'),
                     amount: currentTaxAmount,
-                    affectsMerchandise: false
+                    affectsMerchandise: false,
+                    affectsSubtotal: false
                 });
             }
             return entries;
         }
 
         function getDiscountReasonAmountTotal() {
+            return getDiscountReasonEntries()
+                .filter((entry) => entry.affectsSubtotal !== false)
+                .reduce((sum, entry) => sum + entry.amount, 0);
+        }
+
+        function getMerchandiseDiscountAmount() {
             return getDiscountReasonEntries()
                 .filter((entry) => entry.affectsMerchandise !== false)
                 .reduce((sum, entry) => sum + entry.amount, 0);
@@ -972,7 +1170,10 @@ function showLicenseLockScreen(message) {
             allElements.competitionMatchWrapper?.classList.toggle('hidden', !allElements.discountCompetitionCheckbox?.checked);
             allElements.managerApprovalWrapper?.classList.toggle('hidden', !allElements.discountManagerApprovalCheckbox?.checked);
             allElements.vendorAdWrapper?.classList.toggle('hidden', !allElements.discountVendorAdCheckbox?.checked);
+            allElements.advertisedPriceWrapper?.classList.toggle('hidden', !allElements.discountAdvertisedPriceCheckbox?.checked);
             allElements.otherDiscountWrapper?.classList.toggle('hidden', !allElements.discountOtherCheckbox?.checked);
+            updateDeliveryDiscountFields();
+            updatePro1stDiscountFields();
             updateSalesTaxDiscountFields();
 
             const entries = getDiscountReasonEntries();
@@ -1163,17 +1364,17 @@ function showLicenseLockScreen(message) {
                 allElements.additionalRemovalDisplay.textContent = formatCurrency(additionalRemoval);
             }
 
-            if (deliverySelected) {
-                deliveryCharge = localDelivery + deliveryUpcharge;
-                deliveryLabel = deliveryUpcharge > 0 ? `Local Delivery + Outside Upcharge` : 'Local Delivery';
-            } else if (thresholdSelected) {
-                deliveryCharge = 75;
-                deliveryLabel = 'Threshold Delivery';
+            const deliveryInfo = getSelectedDeliveryChargeInfo();
+            if (deliverySelected || thresholdSelected) {
+                deliveryCharge = deliveryInfo.amount;
+                deliveryLabel = deliveryInfo.label;
             }
 
             const pro1stCharge = selectedPro1stCharge;
             currentRemovalCharge = removalCharge;
 
+            updateDeliveryDiscountFields();
+            updatePro1stDiscountFields();
             const totalBeforeDiscount = currentRetailPrice + deliveryCharge + pro1stCharge + currentRemovalCharge;
             currentAdditionalDiscount = getAdditionalDiscount(totalBeforeDiscount);
             const taxableSubtotal = Math.max(0, totalBeforeDiscount - currentAdditionalDiscount);
@@ -1292,7 +1493,11 @@ function showLicenseLockScreen(message) {
                     discountCompetitionCheckbox, competitionNameInput, competitionMatchAmountInput,
                     competitionMatchWrapper, discountManagerApprovalCheckbox, managerApprovalNameInput,
                     managerApprovalAmountInput, managerApprovalWrapper, discountVendorAdCheckbox,
-                    vendorAdSelect, vendorAdAmountInput, vendorAdWrapper, discountOtherCheckbox,
+                    vendorAdSelect, vendorAdAmountInput, vendorAdWrapper, discountDeliveryCheckbox,
+                    deliveryDiscountWrapper, deliveryDiscountCommentInput, deliveryDiscountAmountInput,
+                    discountPro1stCheckbox, pro1stDiscountWrapper, pro1stDiscountCommentInput,
+                    pro1stDiscountAmountInput, discountAdvertisedPriceCheckbox, advertisedPriceWrapper,
+                    advertisedPriceSourceSelect, advertisedPriceAmountInput, discountOtherCheckbox,
                     otherDiscountExplanationInput, otherDiscountAmountInput, otherDiscountWrapper,
                     salesTaxDiscountWrapper, salesTaxDiscountCommentInput, salesTaxDiscountAmountInput,
                     discountDocumentationStatus
@@ -1302,9 +1507,13 @@ function showLicenseLockScreen(message) {
                     marginPercentInput, retailPriceInput, longDistanceMilesInput,
                     competitionNameInput, competitionMatchAmountInput, managerApprovalNameInput,
                     managerApprovalAmountInput, vendorAdAmountInput, otherDiscountExplanationInput,
-                    otherDiscountAmountInput, salesTaxDiscountAmountInput, removalDescriptionInput
+                    otherDiscountAmountInput, salesTaxDiscountAmountInput, removalDescriptionInput,
+                    deliveryDiscountAmountInput, pro1stDiscountAmountInput, advertisedPriceSourceSelect,
+                    advertisedPriceAmountInput
                 ].filter(Boolean);
                 formElements.forEach(el => el.value = '');
+                if (deliveryDiscountCommentInput) deliveryDiscountCommentInput.value = 'Delivery Discount';
+                if (pro1stDiscountCommentInput) pro1stDiscountCommentInput.value = 'Pro1st Discount';
                 if (salesTaxDiscountCommentInput) salesTaxDiscountCommentInput.value = 'Sales Tax Discount';
                 if (removalItemsInput) removalItemsInput.value = '1';
                 if (vendorSelect) vendorSelect.selectedIndex = 0;
@@ -1321,6 +1530,8 @@ function showLicenseLockScreen(message) {
                 currentAdjustmentTotal = 0;
                 currentPricingInputMode = '';
                 currentTargetMargin = null;
+                deliveryDiscountAmountEdited = false;
+                pro1stDiscountAmountEdited = false;
                 notesManuallyEdited = false;
                 lastGeneratedNotes = '';
 
@@ -1328,7 +1539,8 @@ function showLicenseLockScreen(message) {
                     addDeliveryCheckbox, addThresholdDeliveryCheckbox, addPro1stCheckbox,
                     addTaxCheckbox, addLongDistanceCheckbox, payTaxCheckbox, showFinancingCheckbox,
                     addRemovalCheckbox, discountCompetitionCheckbox, discountManagerApprovalCheckbox,
-                    discountVendorAdCheckbox, discountOtherCheckbox
+                    discountVendorAdCheckbox, discountDeliveryCheckbox, discountPro1stCheckbox,
+                    discountAdvertisedPriceCheckbox, discountOtherCheckbox
                 ].filter(Boolean).forEach(el => {
                     el.checked = false;
                     el.disabled = false;
@@ -1343,7 +1555,8 @@ function showLicenseLockScreen(message) {
                     allElements.grandTotalSection, allElements.resetBtn, allElements.vendorInfoDiv,
                     storeLocationWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection,
                     allElements.financingBreakdown, allElements.salesNotesSection, removalWrapper,
-                    competitionMatchWrapper, managerApprovalWrapper, vendorAdWrapper, otherDiscountWrapper,
+                    competitionMatchWrapper, managerApprovalWrapper, vendorAdWrapper, deliveryDiscountWrapper,
+                    pro1stDiscountWrapper, advertisedPriceWrapper, otherDiscountWrapper,
                     salesTaxDiscountWrapper
                 ].filter(Boolean);
                 sectionsToHide.forEach(sec => sec.classList.add('hidden'));
