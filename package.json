@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "sync:smartcalc-version": "node scripts/sync-smartcalc-version.cjs",
+    "build": "npm run sync:smartcalc-version && vite build",
     "test": "vitest run",
     "preview": "vite preview"
   },

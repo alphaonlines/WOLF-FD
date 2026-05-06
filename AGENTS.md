@@ -452,3 +452,9 @@ Backend deploy flow for route/schema/runtime changes:
 - Follow-up for dashboard and dedicated Smart Calc cache/version sync. Files: `components/SmartPricingCalculatorPage.tsx`, `public/smartcalc/index.html`, `public/tools/smart-pricing-calculator.html`, `package.json`, `AGENTS.md`.
 - Changes: dashboard Smart Calc iframe and Open full page URL now append `?v=${APP_VERSION}`; standalone Smart Calc wrapper shows `v0.5.6.1719` and loads the calculator with `?v=0.5.6.1719`; Smart Calc visible/data marker and WOLF-FD `displayVersion` are both `0.5.6.1719` so they are updated together.
 - Validation/deploy: duplicate-ID check PASS; inline script extraction PASS; stale-version grep checked; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS; deployed `dist/.` to `/srv/www/wolf.discount/fd/`; copied standalone wrapper to `/srv/www/wolf.discount/smartcalc/index.html` and `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`; deployed bundle and standalone wrapper grep confirmed `0.5.6.1719`.
+
+## Running Log - 2026-05-06 17:23 EDT
+
+- Added a build-time Smart Calc version sync guardrail. Files: `scripts/sync-smartcalc-version.cjs`, `package.json`, `AGENTS.md`.
+- Changes: new `npm run sync:smartcalc-version` reads `package.json` `displayVersion` and rewrites the Smart Calc page marker plus standalone Smart Calc wrapper version/cache-buster; `npm run build` now runs the sync script before Vite so the dashboard version, Smart Calc visible version, and dedicated Smart Calc iframe query stay aligned.
+- Validation/deploy: `npm run sync:smartcalc-version` PASS; script syntax `node --check` PASS; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS and showed `Smart Calc version synced to 0.5.6.1719`; redeployed `dist/.` and standalone wrappers; deployed SHA/version greps confirmed dashboard/static Smart Calc stayed on `0.5.6.1719`.
