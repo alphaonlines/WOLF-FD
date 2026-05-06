@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `1.5.6.1759`
+- Current display version in `package.json`: `1.5.6.1801`
 
 ## Project Structure
 
@@ -125,7 +125,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `1.5.6.1759`
+- Current display version: `1.5.6.1801`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -506,3 +506,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Changes: Manager Approval now offers `JT`, `LM`, `LU`, `KS`, `BL`, `MS`, `SD`, `CS`, and `Other`; old generic manager labels were removed.
 - Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.6.1759`; deployed bundle `assets/index-e8zyNj8d.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
 - Validation/deploy: Smart Calc DOM smoke PASS for manager initials/Other dropdown, notes output, duplicate IDs, inline syntax, and version sync; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed SHA/version/manager-option greps PASS; FD health PASS (`{"ok":true,"db":1}`).
+
+## Running Log - 2026-05-06 18:01 EDT
+
+- Fixed Smart Calc discount-adjusted margin recalculation. Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `public/smartcalc/index.html`, `AGENTS.md`.
+- Changes: margin now recalculates from all selected non-tax adjustment discounts, including Delivery and Pro1st discounts, not only merchandise-labeled discounts; display copy now says margin reflects selected non-tax discounts and shows the adjusted selling price used for the margin.
+- Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.6.1801`; deployed bundle `assets/index-BNMVwc7J.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
+- Validation/deploy: Smart Calc DOM smoke PASS for margin recalculation with an auto-filled Delivery discount and edited discount amount; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed SHA/version/margin-copy greps PASS; FD health PASS (`{"ok":true,"db":1}`).
