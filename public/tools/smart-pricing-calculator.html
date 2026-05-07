@@ -99,14 +99,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.7.1748">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.7.1752">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.7.1748</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.7.1752</p>
             <button id="top-reset-btn" type="button" class="mt-4 inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
         </header>
 
@@ -1666,39 +1666,47 @@ function showLicenseLockScreen(message) {
                     return;
                 }
 
-                const chargeRows = [{ label: 'Merchandise', amount: currentRetailPrice }];
+                const merchandiseRows = [{ label: 'Merchandise Total', amount: currentRetailPrice }];
+                const deliveryFeeRows = [];
+                const additionalRemoval = getAdditionalRemovalCharge();
                 if (allElements.addThresholdDeliveryCheckbox?.checked) {
-                    chargeRows.push({ label: 'Threshold Delivery', amount: 75 });
+                    deliveryFeeRows.push({ label: 'Threshold Delivery', amount: 75 });
                 }
                 if (allElements.addDeliveryCheckbox?.checked) {
                     const localDelivery = getLocalDeliveryCharge();
                     const upcharge = getDeliveryUpcharge();
-                    if (localDelivery > 0) chargeRows.push({ label: 'Local Delivery', amount: localDelivery });
+                    if (localDelivery > 0) deliveryFeeRows.push({ label: 'Local Delivery', amount: localDelivery });
                     if (allElements.addLongDistanceCheckbox?.checked && upcharge > 0) {
-                        chargeRows.push({ label: 'Outside Area Upcharge', amount: upcharge });
+                        deliveryFeeRows.push({ label: 'Outside Area Upcharge (DEL_UPCHARGE)', amount: upcharge });
                     }
                 }
                 if (allElements.addPro1stCheckbox?.checked) {
-                    chargeRows.push({ label: 'Pro1st Protection', amount: getPro1stCharge() });
+                    merchandiseRows.push({ label: 'Pro1st Protection', amount: getPro1stCharge(), detail: 'Shopping cart line item' });
                 }
                 if (allElements.addRemovalCheckbox?.checked && currentRemovalCharge > 0) {
-                    chargeRows.push({ label: 'Removal Fee', amount: currentRemovalCharge });
+                    deliveryFeeRows.push({ label: 'Removal Fee', amount: 35, detail: 'Delivery fee line item' });
+                    if (additionalRemoval > 0) {
+                        merchandiseRows.push({ label: 'Non-Inventory Removal Fee', amount: additionalRemoval, detail: '$20 each additional piece' });
+                    }
                 }
 
                 const discountEntries = getDiscountReasonEntries().filter((entry) => entry.amount > 0);
                 const subtotalDiscountEntries = discountEntries.filter((entry) => entry.affectsSubtotal !== false);
                 const salesTaxDiscountEntry = discountEntries.find((entry) => entry.label === 'Sales Tax Discount');
+                const chargeRows = [...merchandiseRows, ...deliveryFeeRows];
                 const chargeSubtotal = chargeRows.reduce((sum, row) => sum + row.amount, 0);
                 const subtotalDiscountTotal = subtotalDiscountEntries.reduce((sum, entry) => sum + entry.amount, 0);
                 const removalDescription = (allElements.removalDescriptionInput?.value || '').trim();
                 const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-                const chargeRowsHtml = chargeRows.map((row) => `
+                const renderChargeRows = (rows) => rows.map((row) => `
                     <div class="row">
-                        <span>${escapeHtml(row.label)}</span>
+                        <span>${escapeHtml(row.label)}${row.detail ? `<small>${escapeHtml(row.detail)}</small>` : ''}</span>
                         <strong>${formatCurrency(row.amount)}</strong>
                     </div>
                 `).join('');
+                const merchandiseRowsHtml = renderChargeRows(merchandiseRows);
+                const deliveryFeeRowsHtml = deliveryFeeRows.length ? renderChargeRows(deliveryFeeRows) : '<p class="muted">No delivery fees selected.</p>';
                 const discountRowsHtml = subtotalDiscountEntries.length ? subtotalDiscountEntries.map((entry) => `
                     <div class="row discount">
                         <span>${escapeHtml(entry.label)}${entry.detail && entry.detail !== entry.label ? `<small>${escapeHtml(entry.detail)}</small>` : ''}</span>
@@ -1776,8 +1784,12 @@ function showLicenseLockScreen(message) {
                                 <strong>${formatCurrency(currentGrandTotal)}</strong>
                             </div>
                             <section>
-                                <h2>Included Charges</h2>
-                                ${chargeRowsHtml}
+                                <h2>Merchandise / Shopping Cart Items</h2>
+                                ${merchandiseRowsHtml}
+                            </section>
+                            <section>
+                                <h2>Delivery Fees</h2>
+                                ${deliveryFeeRowsHtml}
                             </section>
                             <section>
                                 <h2>Discounts Applied</h2>
