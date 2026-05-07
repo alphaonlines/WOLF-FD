@@ -99,14 +99,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.7.1639">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.7.1743">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.7.1639</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.7.1743</p>
             <button id="top-reset-btn" type="button" class="mt-4 inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
         </header>
 
@@ -337,6 +337,28 @@
                                     </div>
                                 </div>
                                 <p class="pl-7 text-xs leading-5 text-gray-500">Defaults to the selected Pro1st charge. Edit the amount if only part of Pro1st is discounted. If Pro1st is not selected, notes show Pro1st Declined automatically.</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="discount-percentage-off" name="discount-percentage-off" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                    <label for="discount-percentage-off" class="ml-3 block text-sm font-medium text-gray-700">Percentage Off</label>
+                                </div>
+                                <div id="percentage-off-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_140px_180px] sm:items-end">
+                                    <div>
+                                        <label for="percentage-off-reason" class="block text-xs font-medium text-gray-500">Reason</label>
+                                        <input type="text" id="percentage-off-reason" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                    <div>
+                                        <label for="percentage-off-percent" class="block text-xs font-medium text-gray-500">Percent Off (%)</label>
+                                        <input type="number" id="percentage-off-percent" min="0" max="100" step="0.01" placeholder="e.g., 10" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                    <div>
+                                        <label for="percentage-off-amount" class="block text-xs font-medium text-gray-500">Discount Amount ($)</label>
+                                        <input type="number" id="percentage-off-amount" min="0" step="0.01" readonly class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                </div>
+                                <p class="pl-7 text-xs leading-5 text-gray-500">Calculates from merchandise price only. Delivery, Pro1st, removal, sales tax, and other charges are not included in the percentage basis.</p>
                             </div>
 
                             <div class="space-y-2">
@@ -620,6 +642,11 @@ function showLicenseLockScreen(message) {
                 pro1stDiscountWrapper: document.getElementById('pro1st-discount-wrapper'),
                 pro1stDiscountCommentInput: document.getElementById('pro1st-discount-comment'),
                 pro1stDiscountAmountInput: document.getElementById('pro1st-discount-amount'),
+                discountPercentageOffCheckbox: document.getElementById('discount-percentage-off'),
+                percentageOffWrapper: document.getElementById('percentage-off-wrapper'),
+                percentageOffReasonInput: document.getElementById('percentage-off-reason'),
+                percentageOffPercentInput: document.getElementById('percentage-off-percent'),
+                percentageOffAmountInput: document.getElementById('percentage-off-amount'),
                 discountAdvertisedPriceCheckbox: document.getElementById('discount-advertised-price'),
                 advertisedPriceWrapper: document.getElementById('advertised-price-wrapper'),
                 advertisedPriceSourceSelect: document.getElementById('advertised-price-source'),
@@ -757,6 +784,7 @@ function showLicenseLockScreen(message) {
                     allElements.discountVendorAdCheckbox,
                     allElements.discountDeliveryCheckbox,
                     allElements.discountPro1stCheckbox,
+                    allElements.discountPercentageOffCheckbox,
                     allElements.discountAdvertisedPriceCheckbox,
                     allElements.discountOtherCheckbox,
                     allElements.payTaxCheckbox
@@ -780,6 +808,7 @@ function showLicenseLockScreen(message) {
                     allElements.vendorAdSelect,
                     allElements.deliveryDiscountCommentInput,
                     allElements.pro1stDiscountCommentInput,
+                    allElements.percentageOffReasonInput,
                     allElements.advertisedPriceSourceSelect,
                     allElements.otherDiscountExplanationInput,
                     allElements.salesTaxDiscountCommentInput
@@ -794,6 +823,7 @@ function showLicenseLockScreen(message) {
                     allElements.vendorAdAmountInput,
                     allElements.deliveryDiscountAmountInput,
                     allElements.pro1stDiscountAmountInput,
+                    allElements.percentageOffPercentInput,
                     allElements.advertisedPriceAmountInput,
                     allElements.otherDiscountAmountInput
                 ].filter(Boolean).forEach((el) => {
@@ -1164,6 +1194,25 @@ function showLicenseLockScreen(message) {
             return Number.isFinite(rawAmount) ? Math.max(0, rawAmount) : 0;
         }
 
+        function getPercentageOffPercent() {
+            const rawPercent = parseFloat(allElements.percentageOffPercentInput?.value || '0');
+            return Number.isFinite(rawPercent) ? Math.min(Math.max(rawPercent, 0), 100) : 0;
+        }
+
+        function getPercentageOffAmount() {
+            if (!allElements.discountPercentageOffCheckbox?.checked || currentRetailPrice <= 0) return 0;
+            return Math.round((currentRetailPrice * (getPercentageOffPercent() / 100) + Number.EPSILON) * 100) / 100;
+        }
+
+        function updatePercentageOffFields() {
+            const selected = !!allElements.discountPercentageOffCheckbox?.checked;
+            allElements.percentageOffWrapper?.classList.toggle('hidden', !selected);
+            if (allElements.percentageOffAmountInput) {
+                const amount = getPercentageOffAmount();
+                allElements.percentageOffAmountInput.value = selected && amount > 0 ? amount.toFixed(2) : '';
+            }
+        }
+
         function getDiscountReasonEntries() {
             const entries = [];
             if (allElements.discountDeliveryCheckbox?.checked) {
@@ -1180,6 +1229,15 @@ function showLicenseLockScreen(message) {
                     detail: getCleanDetail(allElements.pro1stDiscountCommentInput?.value, 'Pro1st Discount'),
                     amount: getAdjustmentAmount(allElements.pro1stDiscountAmountInput),
                     affectsMerchandise: false
+                });
+            }
+            if (allElements.discountPercentageOffCheckbox?.checked) {
+                const percent = getPercentageOffPercent();
+                entries.push({
+                    label: 'Percentage Off',
+                    detail: getCleanDetail(allElements.percentageOffReasonInput?.value, '[reason needed]'),
+                    amount: getPercentageOffAmount(),
+                    percent
                 });
             }
             if (allElements.discountAdvertisedPriceCheckbox?.checked) {
@@ -1240,6 +1298,11 @@ function showLicenseLockScreen(message) {
             return spaced ? `- ${formatCurrency(entry.amount)}` : `-${formatCurrency(entry.amount)}`;
         }
 
+        function formatPercentValue(percent) {
+            if (!Number.isFinite(percent) || percent <= 0) return '';
+            return Number.isInteger(percent) ? percent.toFixed(0) : percent.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+        }
+
         function getDiscountReasonDetails() {
             return getDiscountReasonEntries().map((entry) => {
                 const detail = entry.detail;
@@ -1248,6 +1311,11 @@ function showLicenseLockScreen(message) {
                         return `Delivery Discount ${formatDiscountNoteAmount(entry, true)}`;
                     case 'Pro1st Discount':
                         return `Pro1st Discount ${formatDiscountNoteAmount(entry, true)}`;
+                    case 'Percentage Off': {
+                        const percentText = formatPercentValue(entry.percent);
+                        const percentFragment = percentText ? `${percentText}% ` : '';
+                        return `Percentage Discount: ${detail} ${percentFragment}${formatDiscountNoteAmount(entry)}`;
+                    }
                     case 'Advertised Price':
                         return `Advertising Discount: ${detail} ${formatDiscountNoteAmount(entry)}`;
                     case 'Competition Match':
@@ -1272,6 +1340,7 @@ function showLicenseLockScreen(message) {
             allElements.vendorAdWrapper?.classList.toggle('hidden', !allElements.discountVendorAdCheckbox?.checked);
             allElements.advertisedPriceWrapper?.classList.toggle('hidden', !allElements.discountAdvertisedPriceCheckbox?.checked);
             allElements.otherDiscountWrapper?.classList.toggle('hidden', !allElements.discountOtherCheckbox?.checked);
+            updatePercentageOffFields();
             updateDeliveryDiscountFields();
             updatePro1stDiscountFields();
             updateSalesTaxDiscountFields();
@@ -1752,7 +1821,9 @@ function showLicenseLockScreen(message) {
                     vendorAdSelect, vendorAdAmountInput, vendorAdWrapper, discountDeliveryCheckbox,
                     deliveryDiscountWrapper, deliveryDiscountCommentInput, deliveryDiscountAmountInput,
                     discountPro1stCheckbox, pro1stDiscountWrapper, pro1stDiscountCommentInput,
-                    pro1stDiscountAmountInput, discountAdvertisedPriceCheckbox, advertisedPriceWrapper,
+                    pro1stDiscountAmountInput, discountPercentageOffCheckbox, percentageOffWrapper,
+                    percentageOffReasonInput, percentageOffPercentInput, percentageOffAmountInput,
+                    discountAdvertisedPriceCheckbox, advertisedPriceWrapper,
                     advertisedPriceSourceSelect, advertisedPriceAmountInput, discountOtherCheckbox,
                     otherDiscountExplanationInput, otherDiscountAmountInput, otherDiscountWrapper,
                     salesTaxDiscountWrapper, salesTaxDiscountCommentInput, salesTaxDiscountAmountInput,
@@ -1765,7 +1836,8 @@ function showLicenseLockScreen(message) {
                     competitionNameInput, competitionMatchAmountInput, managerApprovalNameInput,
                     managerApprovalAmountInput, vendorAdAmountInput, otherDiscountExplanationInput,
                     otherDiscountAmountInput, salesTaxDiscountAmountInput, removalDescriptionInput,
-                    deliveryDiscountAmountInput, pro1stDiscountAmountInput, advertisedPriceSourceSelect,
+                    deliveryDiscountAmountInput, pro1stDiscountAmountInput, percentageOffReasonInput,
+                    percentageOffPercentInput, percentageOffAmountInput, advertisedPriceSourceSelect,
                     advertisedPriceAmountInput
                 ].filter(Boolean);
                 formElements.forEach(el => el.value = '');
@@ -1797,7 +1869,7 @@ function showLicenseLockScreen(message) {
                     addTaxCheckbox, addLongDistanceCheckbox, payTaxCheckbox, showFinancingCheckbox,
                     addRemovalCheckbox, discountCompetitionCheckbox, discountManagerApprovalCheckbox,
                     discountVendorAdCheckbox, discountDeliveryCheckbox, discountPro1stCheckbox,
-                    discountAdvertisedPriceCheckbox, discountOtherCheckbox
+                    discountPercentageOffCheckbox, discountAdvertisedPriceCheckbox, discountOtherCheckbox
                 ].filter(Boolean).forEach(el => {
                     el.checked = false;
                     el.disabled = false;
@@ -1813,7 +1885,7 @@ function showLicenseLockScreen(message) {
                     storeLocationWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection,
                     allElements.financingBreakdown, allElements.salesNotesSection, removalWrapper,
                     competitionMatchWrapper, managerApprovalWrapper, vendorAdWrapper, deliveryDiscountWrapper,
-                    pro1stDiscountWrapper, advertisedPriceWrapper, otherDiscountWrapper,
+                    pro1stDiscountWrapper, percentageOffWrapper, advertisedPriceWrapper, otherDiscountWrapper,
                     salesTaxDiscountWrapper
                 ].filter(Boolean);
                 sectionsToHide.forEach(sec => sec.classList.add('hidden'));
