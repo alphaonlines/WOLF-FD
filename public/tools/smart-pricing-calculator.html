@@ -99,14 +99,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.6.1901">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.7.1619">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.6.1901</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.7.1619</p>
             <button id="top-reset-btn" type="button" class="mt-4 inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
         </header>
 
@@ -341,13 +341,12 @@
                                         <label for="advertised-price-source" class="block text-xs font-medium text-gray-500">Source</label>
                                         <select id="advertised-price-source" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
                                             <option value="">-- Select source --</option>
-                                            <option value="FD Website">FD Website</option>
-                                            <option value="In-store Tag">In-store Tag</option>
-                                            <option value="Facebook">Facebook</option>
-                                            <option value="Instagram">Instagram</option>
-                                            <option value="Google">Google</option>
-                                            <option value="Email">Email</option>
-                                            <option value="Other Advertisement">Other Advertisement</option>
+                                            <option value="Starburst">Starburst</option>
+                                            <option value="Circular">Circular</option>
+                                            <option value="Manager Special">Manager Special</option>
+                                            <option value="Social Media">Social Media</option>
+                                            <option value="Radio">Radio</option>
+                                            <option value="Newspaper">Newspaper</option>
                                         </select>
                                     </div>
                                     <div>
@@ -365,17 +364,7 @@
                                 <div id="competition-match-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
                                     <div>
                                         <label for="competition-name" class="block text-xs font-medium text-gray-500">Competitor</label>
-                                        <select id="competition-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
-                                            <option value="">-- Select competitor --</option>
-                                            <option value="Rooms To Go">Rooms To Go</option>
-                                            <option value="Ashley">Ashley</option>
-                                            <option value="Wayfair">Wayfair</option>
-                                            <option value="Amazon">Amazon</option>
-                                            <option value="Big Lots">Big Lots</option>
-                                            <option value="Mattress Firm">Mattress Firm</option>
-                                            <option value="Local Competitor">Local Competitor</option>
-                                            <option value="Other Competitor">Other Competitor</option>
-                                        </select>
+                                        <input type="text" id="competition-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
                                     </div>
                                     <div>
                                         <label for="competition-match-amount" class="block text-xs font-medium text-gray-500">Discount Amount ($)</label>
@@ -399,7 +388,7 @@
                                             <option value="LU">LU</option>
                                             <option value="KS">KS</option>
                                             <option value="BL">BL</option>
-                                            <option value="MS">MS</option>
+                                            <option value="MH">MH</option>
                                             <option value="SD">SD</option>
                                             <option value="CS">CS</option>
                                             <option value="Other">Other</option>
@@ -422,6 +411,8 @@
                                         <label for="vendor-ad-select" class="block text-xs font-medium text-gray-500">Vendor Name</label>
                                         <select id="vendor-ad-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
                                             <option value="">-- Select vendor --</option>
+                                            <option value="Nectar">Nectar</option>
+                                            <option value="Tempurpedic">Tempurpedic</option>
                                         </select>
                                     </div>
                                     <div>
@@ -439,16 +430,7 @@
                                 <div id="other-discount-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
                                     <div>
                                         <label for="other-discount-explanation" class="block text-xs font-medium text-gray-500">Explanation</label>
-                                        <select id="other-discount-explanation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
-                                            <option value="">-- Select explanation --</option>
-                                            <option value="Customer goodwill">Customer goodwill</option>
-                                            <option value="Package deal">Package deal</option>
-                                            <option value="Floor model">Floor model</option>
-                                            <option value="Scratch and dent">Scratch and dent</option>
-                                            <option value="Clearance">Clearance</option>
-                                            <option value="Price correction">Price correction</option>
-                                            <option value="Other explanation">Other explanation</option>
-                                        </select>
+                                        <input type="text" id="other-discount-explanation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
                                     </div>
                                     <div>
                                         <label for="other-discount-amount" class="block text-xs font-medium text-gray-500">Discount Amount ($)</label>
@@ -681,12 +663,6 @@ function showLicenseLockScreen(message) {
                     option.value = vendor;
                     option.textContent = vendor;
                     allElements.vendorSelect.appendChild(option);
-                    if (allElements.vendorAdSelect) {
-                        const adOption = document.createElement('option');
-                        adOption.value = vendor;
-                        adOption.textContent = vendor;
-                        allElements.vendorAdSelect.appendChild(adOption);
-                    }
                 });
                 setEntryMode('base');
                 if (allElements.storeLocationSelect) allElements.storeLocationSelect.value = 'camp-greenville';
