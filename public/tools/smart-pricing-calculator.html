@@ -99,14 +99,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.9.0609">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.9.1043">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.0609</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.1043</p>
             <button id="top-reset-btn" type="button" class="mt-4 inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
         </header>
 
@@ -309,7 +309,7 @@
                     <div class="space-y-3 border-t border-gray-200 pt-3">
                         <fieldset class="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
                             <legend class="px-1 text-sm font-semibold text-brand-brown">Discount reason(s) for Adjustment</legend>
-                            <p class="text-xs leading-5 text-gray-500">Check every reason that applies. Each selected reason must have its own adjustment amount and detail. Sales tax, delivery, and Pro1st discounts reduce the ticket adjustment without changing merchandise margin; merchandise discounts update the displayed margin.</p>
+                            <p class="text-xs leading-5 text-gray-500">Check every reason that applies. Each selected reason must have its own adjustment amount and detail. Every selected discount amount is subtracted from the merchandise total for adjusted GPM, including sales tax, delivery, and Pro1st discounts.</p>
 
                             <div class="space-y-2">
                                 <div class="flex items-center">
@@ -1141,7 +1141,7 @@ function showLicenseLockScreen(message) {
                 allElements.resultContent.innerHTML = resultHtml;
                 allElements.resultSection.className = `form-section p-4 rounded-md ${resultClass}`;
                 allElements.resultSection.classList.remove('hidden');
-                allElements.marginNote.textContent = merchandiseDiscount > 0 ? 'Adjusted GPM uses merchandise total minus eligible discounts, including Sales Tax Discount.' : '';
+                allElements.marginNote.textContent = merchandiseDiscount > 0 ? 'Adjusted GPM uses merchandise total minus every selected discount amount.' : '';
                 allElements.marginNote.className = 'text-center text-sm mt-2 font-medium';
             }
 
@@ -1315,7 +1315,7 @@ function showLicenseLockScreen(message) {
                     detail: getCleanDetail(allElements.deliveryDiscountCommentInput?.value, 'Local Delivery Discount'),
                     amount: getAdjustmentAmount(allElements.deliveryDiscountAmountInput),
                     affectsMerchandise: false,
-                    affectsGpm: false
+                    affectsGpm: true
                 });
             }
             if (allElements.discountPro1stCheckbox?.checked) {
@@ -1324,7 +1324,7 @@ function showLicenseLockScreen(message) {
                     detail: getCleanDetail(allElements.pro1stDiscountCommentInput?.value, 'Pro1st Discount'),
                     amount: getAdjustmentAmount(allElements.pro1stDiscountAmountInput),
                     affectsMerchandise: false,
-                    affectsGpm: false
+                    affectsGpm: true
                 });
             }
             if (allElements.discountPercentageOffCheckbox?.checked) {

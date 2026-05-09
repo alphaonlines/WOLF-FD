@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `1.5.6.1809`
+- Current display version in `package.json`: `1.5.9.1043`
 
 ## Project Structure
 
@@ -125,7 +125,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `1.5.6.1809`
+- Current display version: `1.5.9.1043`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -645,3 +645,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Changes: the Delivery discount reason is now labeled `Local Delivery`; its generated note reads `Local Delivery Discount`; the default adjustment amount now uses only the local delivery charge and excludes outside-area mileage, Power Base setup, assembly, and other delivery-related upcharges.
 - Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.8.2212`; deployed bundle `assets/index-Q-rZfqtC.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`; synced `/tmp/smart-pricing-preview.html`.
 - Validation/deploy: inline script `node --check` PASS; duplicate-ID check PASS; local delivery discount DOM smoke PASS with `$129.99` local delivery, `$45.00` outside-area mileage, and `$49.99` Power Base setup where the default discount stayed `129.99`; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed `/fd/` PASS (200); deployed Smart Calc PASS (200); deployed wrapper/version/local-discount greps PASS; FD health PASS (`{"ok":true,"db":1}`).
+
+## Running Log - 2026-05-09 10:49 EDT
+
+- Updated Smart Calc adjusted GPM discount basis for Local Delivery and Pro1st discounts. Files: `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `package.json`, `scripts/smartcalc-margin-discount-smoke.cjs`, `AGENTS.md`.
+- Changes: Local Delivery Discount and Pro1st Discount now count toward the adjusted GPM discount basis, so every selected discount amount subtracts from merchandise total for margin display. Updated the discount helper text and margin note to match, and added a reusable Smart Calc margin-discount smoke script plus `npm run test:smartcalc-margin-discounts`.
+- Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.9.1043`; deployed bundle `assets/index-Coic5aLM.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`; synced `/tmp/smart-pricing-preview.html`.
+- Validation/deploy: regression smoke first failed on old behavior, then PASS after the fix; inline script `node --check` PASS; duplicate-ID check PASS; `npm run test:smartcalc-margin-discounts` PASS; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed source/live SHA/version checks PASS; live browser smoke PASS for `$500.00` retail, `$120.00` total cost, `$169.99` Local Delivery Discount, and `$129.99` Pro1st Discount producing `Discounts Used for GPM: -$299.98`, `Selling Price for GPM: $200.02`, and `Adjusted GPM: 40.01%`; FD health PASS (`{"ok":true,"db":1}`).

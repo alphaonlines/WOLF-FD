@@ -2,14 +2,15 @@
   "name": "furniture-distributors-dashboard",
   "private": true,
   "version": "0.3.31",
-  "displayVersion": "1.5.9.0609",
+  "displayVersion": "1.5.9.1043",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "sync:smartcalc-version": "node scripts/sync-smartcalc-version.cjs",
     "build": "npm run sync:smartcalc-version && vite build",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:smartcalc-margin-discounts": "node scripts/smartcalc-margin-discount-smoke.cjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
