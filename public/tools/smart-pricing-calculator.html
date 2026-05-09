@@ -99,14 +99,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.9.1058">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.9.1438">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.1058</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.1438</p>
             <button id="top-reset-btn" type="button" class="mt-4 inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
         </header>
 
@@ -309,7 +309,7 @@
                     <div class="space-y-3 border-t border-gray-200 pt-3">
                         <fieldset class="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
                             <legend class="px-1 text-sm font-semibold text-brand-brown">Discount reason(s) for Adjustment</legend>
-                            <p class="text-xs leading-5 text-gray-500">Check every reason that applies. Each selected reason must have its own adjustment amount and detail. Every selected discount amount is subtracted from the merchandise total for adjusted GPM, including sales tax, delivery, and Pro1st discounts.</p>
+                            <p class="text-xs leading-5 text-gray-500">Check every reason that applies. Each selected reason must have its own adjustment amount and detail. Every selected discount amount is subtracted from the ticket selling basis for adjusted GPM, including sales tax, delivery, and Pro1st discounts.</p>
 
                             <div class="space-y-2">
                                 <div class="flex items-center">
@@ -617,7 +617,7 @@ function showLicenseLockScreen(message) {
             const costCipher = { 'D': '1', 'T': '2', 'E': '3', 'A': '4', 'M': '5', 'W': '6', 'O': '7', 'R': '8', 'K': '9', 'F': '0' };
             const deliveryTiers = [ { from: 0, to: 499.99, charge: 129.99 }, { from: 500, to: 1999.99, charge: 169.99 }, { from: 2000, to: 2999.99, charge: 199.99 }, { from: 3000, to: 4999.99, charge: 249.99 }, { from: 5000, to: 7499.99, charge: 349.99 }, { from: 7500, to: 9999.99, charge: 399.99 }, { from: 10000, to: Infinity, charge: 499.99 } ];
             const pro1stTiers = [ { from: 0, to: 499.99, price: 99.99 }, { from: 500, to: 799.99, price: 129.99 }, { from: 800, to: 1200.99, price: 169.99 }, { from: 1201, to: 2500.99, price: 249.99 }, { from: 2501, to: 3000.99, price: 299.99 }, { from: 3001, to: 3500.99, price: 349.99 }, { from: 3501, to: 5000.99, price: 499.99 }, { from: 5001, to: 7000.99, price: 699.99 }, { from: 7001, to: 10000.99, price: 999.99 }, { from: 10001, to: 15000.99, price: 1499.99 }, { from: 15001, to: 20000.99, price: 1999.99 }, { from: 20001, to: 25000.99, price: 2499.99 }, { from: 25001, to: 30000.99, price: 2999.99 }, { from: 30001, to: 35000.99, price: 3499.99 }, { from: 35001, to: 40000.99, price: 3999.99 }, { from: 40001, to: 45000.99, price: 4499.99 }, { from: 45001, to: 50000.99, price: 4999.99 } ];
-            const pro1stPlanCost = 75.54;
+            const pro1stCostTiers = [ { from: 0, to: 799.99, cost: 71.94 }, { from: 800, to: Infinity, cost: 83.94 } ];
             const taxRates = { 'camp-greenville': 0.07, 'greenville': 0.07, 'camp': 0.07, 'other': 0.0675 };
             const financingTerms = [3, 6, 12, 15, 18, 24, 36, 48]; // ADDED: Financing terms
 
@@ -1099,12 +1099,12 @@ function showLicenseLockScreen(message) {
                 return (grossProfit / priceBasis) * 100;
             }
 
-            function getMerchandiseDiscountForMargin() {
-                if (!currentRetailPrice || currentRetailPrice <= 0) return 0;
+            function getDiscountForMargin(priceBasis) {
+                if (!Number.isFinite(priceBasis) || priceBasis <= 0) return 0;
                 const selectedDiscountTotal = getDiscountReasonEntries()
                     .filter((entry) => entry.affectsGpm !== false)
                     .reduce((sum, entry) => sum + entry.amount, 0);
-                return Math.min(selectedDiscountTotal, currentRetailPrice);
+                return Math.min(selectedDiscountTotal, priceBasis);
             }
 
             function updateKnownCostMarginFeedback() {
@@ -1115,44 +1115,51 @@ function showLicenseLockScreen(message) {
                 }
 
                 const selectedPro1stCharge = allElements.addPro1stCheckbox?.checked ? getPro1stCharge() : 0;
-                const selectedPro1stCost = selectedPro1stCharge > 0 ? pro1stPlanCost : 0;
-                const productGrossProfit = currentRetailPrice - totalCost;
-                const selectedPro1stGrossProfit = selectedPro1stCharge > 0 ? selectedPro1stCharge - selectedPro1stCost : 0;
-                const marginProfitBeforeDiscount = productGrossProfit + selectedPro1stGrossProfit;
-                const startingMargin = calculateMarginPercentFromProfit(currentRetailPrice, marginProfitBeforeDiscount);
-                const merchandiseDiscount = getMerchandiseDiscountForMargin();
-                const adjustedSellingPrice = currentRetailPrice - merchandiseDiscount;
-                const adjustedMargin = merchandiseDiscount > 0 && adjustedSellingPrice > 0 ? calculateMarginPercent(totalCost, adjustedSellingPrice) : startingMargin;
+                const selectedPro1stCost = selectedPro1stCharge > 0 ? getPro1stPlanCost() : 0;
+                const ticketSellingBasis = currentRetailPrice + selectedPro1stCharge;
+                const costBasis = totalCost + selectedPro1stCost;
+                const ticketDiscount = getDiscountForMargin(ticketSellingBasis);
+                const adjustedSellingPrice = ticketSellingBasis - ticketDiscount;
+                const adjustedMargin = adjustedSellingPrice > 0 ? calculateMarginPercent(costBasis, adjustedSellingPrice) : null;
                 const marginForFeedback = adjustedMargin === null ? 0 : adjustedMargin;
                 const { resultClass } = getMarginFeedback(marginForFeedback);
-                const pro1stTicketMarginLine = selectedPro1stCharge > 0 && startingMargin !== null ? `<p class="mt-3 text-sm">Ticket margin with Pro1st: <strong>${startingMargin.toFixed(2)}%</strong></p>` : '';
+                const adjustedMarginText = adjustedMargin === null ? 'N/A' : `${adjustedMargin.toFixed(2)}%`;
+
+                const basisLines = [
+                    `<p>Merchandise Retail: <strong>${formatCurrency(currentRetailPrice)}</strong></p>`
+                ];
+                if (selectedPro1stCharge > 0) {
+                    basisLines.push(`<p>Pro1st Line: <strong>${formatCurrency(selectedPro1stCharge)}</strong></p>`);
+                }
+                basisLines.push(`<p>Selling Price Basis: <strong>${formatCurrency(ticketSellingBasis)}</strong></p>`);
+                if (ticketDiscount > 0) {
+                    basisLines.push(`<p>Discounts Used for GPM: <strong>-${formatCurrency(ticketDiscount)}</strong></p>`);
+                    basisLines.push(`<p>Adjusted Selling Price: <strong>${formatCurrency(adjustedSellingPrice)}</strong></p>`);
+                }
+                basisLines.push(`<p>Merchandise Cost: <strong>${formatCurrency(totalCost)}</strong></p>`);
+                if (selectedPro1stCharge > 0) {
+                    basisLines.push(`<p>Pro1st Cost: <strong>${formatCurrency(selectedPro1stCost)}</strong></p>`);
+                }
+                basisLines.push(`<p>Cost Basis: <strong>${formatCurrency(costBasis)}</strong></p>`);
 
                 let resultHtml = '';
                 if (currentPricingInputMode === 'target-margin') {
-                    resultHtml = `<p>To get a <strong>${currentTargetMargin}% margin</strong>, retail price is:</p><p class="text-3xl font-bold mt-2">${formatCurrency(currentRetailPrice)}</p>${pro1stTicketMarginLine}`;
+                    resultHtml = `<p>Retail price from <strong>${currentTargetMargin}% merchandise margin</strong> target:</p><p class="text-3xl font-bold mt-2">${formatCurrency(currentRetailPrice)}</p>`;
                 } else {
-                    const sellingPriceLabel = selectedPro1stCharge > 0 ? `retail price of <strong>${formatCurrency(currentRetailPrice)}</strong> and Pro1st added` : `retail price of <strong>${formatCurrency(currentRetailPrice)}</strong>`;
-                    resultHtml = `<p>With a ${sellingPriceLabel}, starting margin is:</p><p class="text-3xl font-bold mt-2">${startingMargin.toFixed(2)}%</p>`;
+                    resultHtml = `<p>Retail price:</p><p class="text-3xl font-bold mt-2">${formatCurrency(currentRetailPrice)}</p>`;
                 }
-
-                if (merchandiseDiscount > 0) {
-                    const adjustedMarginText = adjustedMargin === null ? 'N/A' : `${adjustedMargin.toFixed(2)}%`;
-                    resultHtml += `
-                        <div class="mt-3 border-t border-white/60 pt-3 text-sm">
-                            <p class="font-semibold">Adjusted GPM for discounts:</p>
-                            <p>Merchandise Total: <strong>${formatCurrency(currentRetailPrice)}</strong></p>
-                            <p>Discounts Used for GPM: <strong>-${formatCurrency(merchandiseDiscount)}</strong></p>
-                            <p>Selling Price for GPM: <strong>${formatCurrency(adjustedSellingPrice)}</strong></p>
-                            <p>Total Cost: <strong>${formatCurrency(totalCost)}</strong></p>
-                            <p class="text-3xl font-bold mt-2">Adjusted GPM: ${adjustedMarginText}</p>
-                        </div>
-                    `;
-                }
+                resultHtml += `
+                    <div class="mt-3 border-t border-white/60 pt-3 text-sm">
+                        <p class="font-semibold">Adjusted Ticket GPM:</p>
+                        <p class="text-3xl font-bold mt-2">${adjustedMarginText}</p>
+                        <div class="mt-3 space-y-1">${basisLines.join('')}</div>
+                    </div>
+                `;
 
                 allElements.resultContent.innerHTML = resultHtml;
                 allElements.resultSection.className = `form-section p-4 rounded-md ${resultClass}`;
                 allElements.resultSection.classList.remove('hidden');
-                allElements.marginNote.textContent = merchandiseDiscount > 0 ? 'Adjusted GPM uses merchandise total minus every selected discount amount.' : '';
+                allElements.marginNote.textContent = selectedPro1stCharge > 0 || ticketDiscount > 0 ? 'Adjusted Ticket GPM treats Pro1st as a normal ticket line using its plan cost tier, then subtracts selected discounts.' : '';
                 allElements.marginNote.className = 'text-center text-sm mt-2 font-medium';
             }
 
@@ -1219,6 +1226,12 @@ function showLicenseLockScreen(message) {
                 const retailPrice = Math.round((currentRetailPrice + Number.EPSILON) * 100) / 100;
                 const pro1stTier = pro1stTiers.find(t => retailPrice >= t.from && retailPrice <= t.to);
                 return pro1stTier ? pro1stTier.price : 0;
+            }
+
+            function getPro1stPlanCost() {
+                const retailPrice = Math.round((currentRetailPrice + Number.EPSILON) * 100) / 100;
+                const pro1stCostTier = pro1stCostTiers.find(t => retailPrice >= t.from && retailPrice <= t.to);
+                return pro1stCostTier ? pro1stCostTier.cost : 0;
             }
 
 

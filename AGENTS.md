@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `1.5.9.1058`
+- Current display version in `package.json`: `1.5.9.1438`
 
 ## Project Structure
 
@@ -125,7 +125,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `1.5.9.1058`
+- Current display version: `1.5.9.1438`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -659,3 +659,11 @@ Backend deploy flow for route/schema/runtime changes:
 - Changes: added a passive-disabled wheel guard for all `input[type="number"]` controls so focused price/discount/quantity fields can only be changed by typing/editing, not accidental trackpad or mouse-wheel scrolling. Added `npm run test:smartcalc-number-input-wheel` to verify wheel events are canceled without changing typed values.
 - Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.9.1058`; deployed bundle `assets/index-BlPpVrvZ.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
 - Validation/deploy: inline script `node --check` PASS; duplicate-ID check PASS; `npm run test:smartcalc-number-input-wheel` PASS; `npm run test:smartcalc-margin-discounts` PASS; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed Smart Calc/version/wheel-guard greps PASS; live browser wheel smoke PASS on `#retail-price` with value staying `500` and wheel default prevented; FD health PASS (`{"ok":true,"db":1}`).
+
+## Running Log - 2026-05-09 14:43 EDT
+- Smart Calc Pro1st margin model reworked so Pro1st is treated as a normal ticket line in the displayed Adjusted Ticket GPM instead of being added as separate profit on top of merchandise margin.
+- Pro1st plan cost basis now tiers by merchandise retail: 0-799.99 uses cost 71.94; 800.00 and up uses cost 83.94. Pro1st retail charge tiers remain unchanged.
+- Margin display now shows one Adjusted Ticket GPM with selling price basis, discount basis, adjusted selling price when applicable, merchandise cost, Pro1st cost when selected, and total cost basis.
+- Files changed: `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `scripts/smartcalc-margin-discount-smoke.cjs`, `package.json`, `AGENTS.md`.
+- Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.9.1438`; deployed bundle `assets/index-DFKiq8ns.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
+- Verification: inline HTML/script validation PASS; `npm run test:smartcalc-margin-discounts` PASS; `npm run test:smartcalc-number-input-wheel` PASS; `npm test` PASS; `npm run build` PASS; nginx Host-header token/health checks PASS; public browser smoke verified 300 retail Pro1st cost 71.94 and 800 retail Pro1st cost 83.94 with no console errors.
