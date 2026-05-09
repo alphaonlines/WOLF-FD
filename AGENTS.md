@@ -623,5 +623,18 @@ Backend deploy flow for route/schema/runtime changes:
 
 - Updated Smart Calc delivery charges from the revised 06/16/2025 delivery sheet. Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `public/smartcalc/index.html`, `AGENTS.md`.
 - Changes: added a Local Delivery category selector for Standard merchandise amount, Matt & Box/Recliner `$129.99`, Power Base `$49.99`, and Sleeper/Motion Upholstery `$169.99` minimum; retained N/C branch pickup/transfer guidance; added an Assembly Fee add-on at `$65.00`; assembly now participates in the taxable total, grand total breakdown, and customer print copy.
-- Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.7.2148`; deployed bundle `assets/index-WiZ0BD8-.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`; synced `/tmp/smart-pricing-preview.html`.
+- Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.8.2158`; deployed bundle `assets/index-WiZ0BD8-.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`; synced `/tmp/smart-pricing-preview.html`.
 - Validation/deploy: inline script `node --check` PASS; duplicate-ID check PASS; delivery tier boundary check PASS; delivery sheet DOM smoke PASS for Standard, Power Base, Matt & Box/Recliner, Sleeper/Motion minimum, and Assembly Fee; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed `/fd/` PASS (200); deployed Smart Calc PASS (200); deployed version/control greps PASS; FD health PASS (`{"ok":true,"db":1}`).
+
+## Running Log - 2026-05-08 21:58 EDT
+
+- Corrected Smart Calc version convention for May 8. Files: `package.json`, `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `AGENTS.md`.
+- Changes: corrected the current version from `1.5.7.2148` to `1.5.8.2158` so the third segment matches the May 8 date convention; no pricing logic changed.
+- Validation/deploy: `npm run sync:smartcalc-version` PASS; `npm run build` PASS with version sync output; deployed `/fd/` PASS (200); deployed Smart Calc PASS (200); deployed wrapper/version greps PASS; FD health PASS (`{"ok":true,"db":1}`).
+
+## Running Log - 2026-05-08 22:03 EDT
+
+- Corrected Smart Calc delivery sheet interpretation for Power Base and Sleeper/Motion. Files: `public/tools/smart-pricing-calculator.html`, `package.json`, `public/smartcalc/index.html`, `AGENTS.md`.
+- Changes: Power Base is now a separate `$49.99` delivery/setup upcharge that adds to Local Delivery instead of replacing it; Sleeper/Motion Upholstery now only shows the `$169.99` minimum callout when the normal local delivery charge is below that minimum, and otherwise keeps the normal amount-tier delivery charge.
+- Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.8.2203`; deployed bundle `assets/index-Cdh555eZ.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`; synced `/tmp/smart-pricing-preview.html`.
+- Validation/deploy: inline script `node --check` PASS; duplicate-ID check PASS; delivery clarification DOM smoke PASS for Power Base adding to delivery total, Sleeper/Motion minimum note visible below `$169.99`, and Sleeper/Motion note hidden above the minimum; `git diff --check` PASS; `npm test` PASS (2 files/6 tests); `npm run build` PASS with version sync output; deployed `/fd/` PASS (200); deployed Smart Calc PASS (200); deployed wrapper/version/control greps PASS; FD health PASS (`{"ok":true,"db":1}`).

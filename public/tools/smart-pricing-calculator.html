@@ -99,14 +99,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.7.2148">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.8.2203">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.7.2148</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.8.2203</p>
             <button id="top-reset-btn" type="button" class="mt-4 inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
         </header>
 
@@ -217,10 +217,19 @@
                         <select id="delivery-type" class="block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
                             <option value="standard">Standard merchandise amount</option>
                             <option value="matt-box-recliner">Matt &amp; Box or Recliner - $129.99</option>
-                            <option value="power-base">Power Base - $49.99</option>
-                            <option value="sleeper-motion">Sleeper or Motion Upholstery - $169.99 minimum</option>
+                            <option value="sleeper-motion">Sleeper or Motion Upholstery minimum check</option>
                         </select>
+                        <p id="sleeper-motion-minimum-note" class="hidden rounded-md bg-amber-50 px-3 py-2 text-xs font-medium leading-5 text-amber-900">Sleeper/Motion minimum applies: local delivery must be at least $169.99.</p>
                         <p class="text-xs leading-5 text-gray-500">Branch store pickup transfers are N/C. Customer must inspect merchandise before leaving the store.</p>
+                    </div>
+                    <div id="power-base-wrapper" class="hidden pl-7">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <input id="add-power-base-setup" name="add-power-base-setup" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                <label for="add-power-base-setup" class="ml-3 block text-sm font-medium text-gray-700">Add Power Base delivery/setup upcharge</label>
+                            </div>
+                            <span id="power-base-setup-display" class="font-medium text-gray-900">$49.99</span>
+                        </div>
                     </div>
                     <div id="long-distance-wrapper" class="hidden pl-7 space-y-1">
                          <div class="flex items-center">
@@ -628,6 +637,10 @@ function showLicenseLockScreen(message) {
                 addDeliveryCheckbox: document.getElementById('add-delivery'),
                 deliveryTypeWrapper: document.getElementById('delivery-type-wrapper'),
                 deliveryTypeSelect: document.getElementById('delivery-type'),
+                sleeperMotionMinimumNote: document.getElementById('sleeper-motion-minimum-note'),
+                powerBaseWrapper: document.getElementById('power-base-wrapper'),
+                addPowerBaseSetupCheckbox: document.getElementById('add-power-base-setup'),
+                powerBaseSetupDisplay: document.getElementById('power-base-setup-display'),
                 addThresholdDeliveryCheckbox: document.getElementById('add-threshold-delivery'),
                 thresholdDeliveryCostDisplay: document.getElementById('threshold-delivery-cost-display'),
                 longDistanceWrapper: document.getElementById('long-distance-wrapper'),
@@ -754,8 +767,10 @@ function showLicenseLockScreen(message) {
                         allElements.addThresholdDeliveryCheckbox.checked = false;
                     }
                     allElements.deliveryTypeWrapper.classList.toggle('hidden', !allElements.addDeliveryCheckbox.checked);
+                    allElements.powerBaseWrapper.classList.toggle('hidden', !allElements.addDeliveryCheckbox.checked);
                     allElements.longDistanceWrapper.classList.toggle('hidden', !allElements.addDeliveryCheckbox.checked);
                     if (!allElements.addDeliveryCheckbox.checked) {
+                        allElements.addPowerBaseSetupCheckbox.checked = false;
                         allElements.addLongDistanceCheckbox.checked = false;
                         allElements.milesInputWrapper.classList.add('hidden');
                         allElements.longDistanceMilesInput.value = '';
@@ -766,7 +781,9 @@ function showLicenseLockScreen(message) {
                     if (allElements.addThresholdDeliveryCheckbox.checked) {
                         allElements.addDeliveryCheckbox.checked = false;
                         allElements.addLongDistanceCheckbox.checked = false;
+                        allElements.addPowerBaseSetupCheckbox.checked = false;
                         allElements.deliveryTypeWrapper.classList.add('hidden');
+                        allElements.powerBaseWrapper.classList.add('hidden');
                         allElements.longDistanceWrapper.classList.add('hidden');
                         allElements.milesInputWrapper.classList.add('hidden');
                         allElements.longDistanceMilesInput.value = '';
@@ -774,6 +791,7 @@ function showLicenseLockScreen(message) {
                     updateAddonCosts();
                 });
                 allElements.deliveryTypeSelect.addEventListener('change', updateAddonCosts);
+                allElements.addPowerBaseSetupCheckbox.addEventListener('change', updateAddonCosts);
                 allElements.addLongDistanceCheckbox.addEventListener('change', () => {
                     allElements.milesInputWrapper.classList.toggle('hidden', !allElements.addLongDistanceCheckbox.checked);
                     if (!allElements.addLongDistanceCheckbox.checked) {
@@ -1121,22 +1139,28 @@ function showLicenseLockScreen(message) {
                 allElements.marginNote.className = 'text-center text-sm mt-2 font-medium';
             }
 
-            function getLocalDeliveryCharge() {
+            function getStandardLocalDeliveryCharge() {
                 const retailPrice = Math.round((currentRetailPrice + Number.EPSILON) * 100) / 100;
                 const deliveryTier = deliveryTiers.find(t => retailPrice >= t.from && retailPrice <= t.to);
-                const standardCharge = deliveryTier ? deliveryTier.charge : 0;
+                return deliveryTier ? deliveryTier.charge : 0;
+            }
+
+            function isSleeperMotionMinimumApplied() {
+                return (allElements.deliveryTypeSelect?.value || 'standard') === 'sleeper-motion' && getStandardLocalDeliveryCharge() > 0 && getStandardLocalDeliveryCharge() < 169.99;
+            }
+
+            function getLocalDeliveryCharge() {
+                const standardCharge = getStandardLocalDeliveryCharge();
                 const deliveryType = allElements.deliveryTypeSelect?.value || 'standard';
-                if (deliveryType === 'power-base') return 49.99;
                 if (deliveryType === 'matt-box-recliner') return 129.99;
-                if (deliveryType === 'sleeper-motion') return Math.max(standardCharge, 169.99);
+                if (deliveryType === 'sleeper-motion' && standardCharge > 0) return Math.max(standardCharge, 169.99);
                 return standardCharge;
             }
 
             function getLocalDeliveryLabel() {
                 const deliveryType = allElements.deliveryTypeSelect?.value || 'standard';
-                if (deliveryType === 'power-base') return 'Local Delivery - Power Base';
                 if (deliveryType === 'matt-box-recliner') return 'Local Delivery - Matt & Box/Recliner';
-                if (deliveryType === 'sleeper-motion') return 'Local Delivery - Sleeper/Motion';
+                if (deliveryType === 'sleeper-motion' && isSleeperMotionMinimumApplied()) return 'Local Delivery - Sleeper/Motion Minimum';
                 return 'Local Delivery';
             }
 
@@ -1150,14 +1174,22 @@ function showLicenseLockScreen(message) {
                 return allElements.addAssemblyCheckbox?.checked ? 65 : 0;
             }
 
+            function getPowerBaseSetupCharge() {
+                return allElements.addDeliveryCheckbox?.checked && allElements.addPowerBaseSetupCheckbox?.checked ? 49.99 : 0;
+            }
+
             function getSelectedDeliveryChargeInfo() {
                 const localDelivery = getLocalDeliveryCharge();
                 const deliveryUpcharge = getDeliveryUpcharge();
+                const powerBaseSetup = getPowerBaseSetupCharge();
                 if (allElements.addDeliveryCheckbox?.checked) {
                     const localDeliveryLabel = getLocalDeliveryLabel();
+                    const labelParts = [localDeliveryLabel];
+                    if (powerBaseSetup > 0) labelParts.push('Power Base Setup');
+                    if (deliveryUpcharge > 0) labelParts.push('Outside Upcharge');
                     return {
-                        amount: localDelivery + deliveryUpcharge,
-                        label: deliveryUpcharge > 0 ? `${localDeliveryLabel} + Outside Upcharge` : localDeliveryLabel
+                        amount: localDelivery + powerBaseSetup + deliveryUpcharge,
+                        label: labelParts.join(' + ')
                     };
                 }
                 if (allElements.addThresholdDeliveryCheckbox?.checked) {
@@ -1497,6 +1529,7 @@ function showLicenseLockScreen(message) {
             function updateAddonCosts() {
             const localDelivery = getLocalDeliveryCharge();
             const deliveryUpcharge = getDeliveryUpcharge();
+            const powerBaseSetup = getPowerBaseSetupCharge();
             const assemblyCharge = getAssemblyCharge();
             const pro1stCharge = getPro1stCharge();
             const removalCharge = getRemovalCharge();
@@ -1504,6 +1537,10 @@ function showLicenseLockScreen(message) {
 
             if (allElements.deliveryCostDisplay) {
                 allElements.deliveryCostDisplay.textContent = formatCurrency(localDelivery);
+            }
+            allElements.sleeperMotionMinimumNote?.classList.toggle('hidden', !isSleeperMotionMinimumApplied());
+            if (allElements.powerBaseSetupDisplay) {
+                allElements.powerBaseSetupDisplay.textContent = formatCurrency(powerBaseSetup || 49.99);
             }
             if (allElements.deliveryUpchargeDisplay) {
                 allElements.deliveryUpchargeDisplay.textContent = formatCurrency(deliveryUpcharge);
@@ -1552,6 +1589,7 @@ function showLicenseLockScreen(message) {
             const thresholdSelected = !!allElements.addThresholdDeliveryCheckbox?.checked;
             const localDelivery = getLocalDeliveryCharge();
             const deliveryUpcharge = getDeliveryUpcharge();
+            const powerBaseSetup = getPowerBaseSetupCharge();
             const assemblyCharge = getAssemblyCharge();
             const selectedPro1stCharge = allElements.addPro1stCheckbox?.checked ? getPro1stCharge() : 0;
             const removalCharge = getRemovalCharge();
@@ -1561,6 +1599,10 @@ function showLicenseLockScreen(message) {
 
             if (allElements.deliveryCostDisplay) {
                 allElements.deliveryCostDisplay.textContent = formatCurrency(localDelivery);
+            }
+            allElements.sleeperMotionMinimumNote?.classList.toggle('hidden', !isSleeperMotionMinimumApplied());
+            if (allElements.powerBaseSetupDisplay) {
+                allElements.powerBaseSetupDisplay.textContent = formatCurrency(powerBaseSetup || 49.99);
             }
             if (allElements.deliveryUpchargeDisplay) {
                 allElements.deliveryUpchargeDisplay.textContent = formatCurrency(deliveryUpcharge);
@@ -1729,8 +1771,10 @@ function showLicenseLockScreen(message) {
                 }
                 if (allElements.addDeliveryCheckbox?.checked) {
                     const localDelivery = getLocalDeliveryCharge();
+                    const powerBaseSetup = getPowerBaseSetupCharge();
                     const upcharge = getDeliveryUpcharge();
                     if (localDelivery > 0) deliveryFeeRows.push({ label: getLocalDeliveryLabel(), amount: localDelivery });
+                    if (powerBaseSetup > 0) deliveryFeeRows.push({ label: 'Power Base Delivery/Setup Upcharge', amount: powerBaseSetup });
                     if (allElements.addLongDistanceCheckbox?.checked && upcharge > 0) {
                         deliveryFeeRows.push({ label: 'Outside Area Upcharge (DEL_UPCHARGE)', amount: upcharge });
                     }
@@ -1889,7 +1933,8 @@ function showLicenseLockScreen(message) {
                 const {
                     baseCostInput, costCodeInput, manualRetailInput, totalCostInput,
                     marginPercentInput, retailPriceInput, vendorSelect, addDeliveryCheckbox,
-                    deliveryTypeWrapper, deliveryTypeSelect, addThresholdDeliveryCheckbox,
+                    deliveryTypeWrapper, deliveryTypeSelect, sleeperMotionMinimumNote,
+                    powerBaseWrapper, addPowerBaseSetupCheckbox, addThresholdDeliveryCheckbox,
                     addAssemblyCheckbox, addPro1stCheckbox, addTaxCheckbox,
                     addLongDistanceCheckbox, longDistanceMilesInput, storeLocationWrapper,
                     storeLocationSelect, longDistanceWrapper, milesInputWrapper, payTaxCheckbox,
@@ -1946,7 +1991,7 @@ function showLicenseLockScreen(message) {
                 lastGeneratedNotes = '';
 
                 [
-                    addDeliveryCheckbox, addThresholdDeliveryCheckbox, addAssemblyCheckbox, addPro1stCheckbox,
+                    addDeliveryCheckbox, addPowerBaseSetupCheckbox, addThresholdDeliveryCheckbox, addAssemblyCheckbox, addPro1stCheckbox,
                     addTaxCheckbox, addLongDistanceCheckbox, payTaxCheckbox, showFinancingCheckbox,
                     addRemovalCheckbox, discountCompetitionCheckbox, discountManagerApprovalCheckbox,
                     discountVendorAdCheckbox, discountDeliveryCheckbox, discountPro1stCheckbox,
@@ -1963,7 +2008,8 @@ function showLicenseLockScreen(message) {
                 const sectionsToHide = [
                     allElements.calculatorSection, allElements.resultSection, allElements.addonsSection,
                     allElements.grandTotalSection, allElements.resetBtn, allElements.vendorInfoDiv,
-                    storeLocationWrapper, deliveryTypeWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection,
+                    storeLocationWrapper, deliveryTypeWrapper, sleeperMotionMinimumNote, powerBaseWrapper,
+                    longDistanceWrapper, milesInputWrapper, allElements.financingSection,
                     allElements.financingBreakdown, allElements.salesNotesSection, removalWrapper,
                     competitionMatchWrapper, managerApprovalWrapper, vendorAdWrapper, deliveryDiscountWrapper,
                     pro1stDiscountWrapper, percentageOffWrapper, advertisedPriceWrapper, otherDiscountWrapper,
