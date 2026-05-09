@@ -78,29 +78,24 @@ function normalizedText(id) {
 
   setChecked('add-pro1st', true);
   let resultText = normalizedText('result-content');
-  assert.match(resultText, /Pro1st Line:\s*\$129\.99/, 'Pro1st retail should be included as a ticket line');
-  assert.match(resultText, /Pro1st Cost:\s*\$71\.94/, 'Pro1st 0-799.99 plan cost should be $71.94');
-  assert.match(resultText, /Cost Basis:\s*\$191\.94/, 'cost basis should include merchandise cost plus Pro1st cost');
-  assert.match(resultText, /Adjusted Ticket GPM:\s*69\.53%/, 'adding Pro1st should use line-item ticket margin math');
+  assert.match(resultText, /Adjusted Ticket GPM:\s*69\.53%/, 'adding Pro1st should use line-item ticket margin math with the 0-799.99 cost tier');
+  assert.doesNotMatch(resultText, /Merchandise Retail:|Pro1st Line:|Selling Price Basis:|Merchandise Cost:|Pro1st Cost:|Cost Basis:/, 'result box should not show detailed basis lines below adjusted ticket GPM');
 
   setChecked('discount-delivery', true);
   setChecked('discount-pro1st', true);
   assert.equal(byId('pro1st-discount-amount').value, '129.99', 'Pro1st discount should default to the selected Pro1st charge');
 
   resultText = normalizedText('result-content');
-  assert.match(resultText, /Selling Price Basis:\s*\$629\.99/, 'GPM selling basis should include Pro1st line price');
-  assert.match(resultText, /Discounts Used for GPM:\s*-\$299\.98/, 'delivery + Pro1st discounts must be included in the GPM discount basis');
-  assert.match(resultText, /Adjusted Selling Price:\s*\$330\.01/, 'adjusted selling price should subtract discounts from ticket selling basis');
-  assert.match(resultText, /Cost Basis:\s*\$191\.94/, 'adjusted ticket cost basis should still include Pro1st plan cost');
   assert.match(resultText, /Adjusted Ticket GPM:\s*41\.84%/, 'adjusted ticket GPM should use line-item Pro1st math after discounts');
+  assert.doesNotMatch(resultText, /Discounts Used for GPM:|Adjusted Selling Price:|Selling Price Basis:|Cost Basis:/, 'result box should hide GPM basis detail lines after discounts');
 
   setChecked('discount-delivery', false);
   setChecked('discount-pro1st', false);
   setValue('retail-price', '800');
   setChecked('add-pro1st', true);
   resultText = normalizedText('result-content');
-  assert.match(resultText, /Pro1st Line:\s*\$169\.99/, '800+ merchandise should use the correct Pro1st retail tier');
-  assert.match(resultText, /Pro1st Cost:\s*\$83\.94/, 'Pro1st 800+ plan cost should be $83.94');
+  assert.match(resultText, /Adjusted Ticket GPM:\s*78\.98%/, '800+ merchandise should use the correct Pro1st retail tier and $83.94 plan cost');
+  assert.doesNotMatch(resultText, /Pro1st Line:|Pro1st Cost:|Cost Basis:/, '800+ result box should still hide detailed basis lines');
 
   console.log('Smart Calc margin discount smoke PASS');
 })();

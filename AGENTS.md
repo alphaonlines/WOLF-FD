@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `1.5.9.1438`
+- Current display version in `package.json`: `1.5.9.1454`
 
 ## Project Structure
 
@@ -125,7 +125,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `1.5.9.1438`
+- Current display version: `1.5.9.1454`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -667,3 +667,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Files changed: `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `scripts/smartcalc-margin-discount-smoke.cjs`, `package.json`, `AGENTS.md`.
 - Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.9.1438`; deployed bundle `assets/index-DFKiq8ns.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
 - Verification: inline HTML/script validation PASS; `npm run test:smartcalc-margin-discounts` PASS; `npm run test:smartcalc-number-input-wheel` PASS; `npm test` PASS; `npm run build` PASS; nginx Host-header token/health checks PASS; public browser smoke verified 300 retail Pro1st cost 71.94 and 800 retail Pro1st cost 83.94 with no console errors.
+
+## Running Log - 2026-05-09 14:54 EDT
+
+- Simplified the Smart Calc calculation result box after the Pro1st line-item rework. Files: `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `scripts/smartcalc-margin-discount-smoke.cjs`, `package.json`, `AGENTS.md`.
+- Changes: the visible result box now stops after the Adjusted Ticket GPM value. Removed the detailed basis lines below it, including merchandise retail, Pro1st line, selling price basis, discount basis, adjusted selling price, merchandise cost, Pro1st cost, cost basis, and the explanatory Pro1st line-item note. Calculation logic remains unchanged: Pro1st still uses ticket-line math with cost tiers 71.94 and 83.94.
+- Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.9.1454`; deployed bundle `assets/index-Dulkt0md.js`; synced standalone wrappers at `/srv/www/wolf.discount/smartcalc/index.html`, `/srv/www/wolf.discount/furnituredistributors/smartcalc/index.html`, and `/srv/www/wolf.discount/fd/smartcalc/index.html`.
+- Verification: inline HTML/script validation PASS; `npm run test:smartcalc-margin-discounts` PASS; `npm run test:smartcalc-number-input-wheel` PASS; `npm test` PASS; `npm run build` PASS; nginx Host-header token/health checks PASS; public browser smoke verified the result box hides all detailed basis lines and margin note while keeping Adjusted Ticket GPM at 41.84 percent for discounted Pro1st and 78.98 percent for the 800-plus tier.

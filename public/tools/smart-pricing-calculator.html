@@ -99,14 +99,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.9.1438">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.9.1454">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.1438</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.1454</p>
             <button id="top-reset-btn" type="button" class="mt-4 inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
         </header>
 
@@ -1125,23 +1125,6 @@ function showLicenseLockScreen(message) {
                 const { resultClass } = getMarginFeedback(marginForFeedback);
                 const adjustedMarginText = adjustedMargin === null ? 'N/A' : `${adjustedMargin.toFixed(2)}%`;
 
-                const basisLines = [
-                    `<p>Merchandise Retail: <strong>${formatCurrency(currentRetailPrice)}</strong></p>`
-                ];
-                if (selectedPro1stCharge > 0) {
-                    basisLines.push(`<p>Pro1st Line: <strong>${formatCurrency(selectedPro1stCharge)}</strong></p>`);
-                }
-                basisLines.push(`<p>Selling Price Basis: <strong>${formatCurrency(ticketSellingBasis)}</strong></p>`);
-                if (ticketDiscount > 0) {
-                    basisLines.push(`<p>Discounts Used for GPM: <strong>-${formatCurrency(ticketDiscount)}</strong></p>`);
-                    basisLines.push(`<p>Adjusted Selling Price: <strong>${formatCurrency(adjustedSellingPrice)}</strong></p>`);
-                }
-                basisLines.push(`<p>Merchandise Cost: <strong>${formatCurrency(totalCost)}</strong></p>`);
-                if (selectedPro1stCharge > 0) {
-                    basisLines.push(`<p>Pro1st Cost: <strong>${formatCurrency(selectedPro1stCost)}</strong></p>`);
-                }
-                basisLines.push(`<p>Cost Basis: <strong>${formatCurrency(costBasis)}</strong></p>`);
-
                 let resultHtml = '';
                 if (currentPricingInputMode === 'target-margin') {
                     resultHtml = `<p>Retail price from <strong>${currentTargetMargin}% merchandise margin</strong> target:</p><p class="text-3xl font-bold mt-2">${formatCurrency(currentRetailPrice)}</p>`;
@@ -1152,14 +1135,13 @@ function showLicenseLockScreen(message) {
                     <div class="mt-3 border-t border-white/60 pt-3 text-sm">
                         <p class="font-semibold">Adjusted Ticket GPM:</p>
                         <p class="text-3xl font-bold mt-2">${adjustedMarginText}</p>
-                        <div class="mt-3 space-y-1">${basisLines.join('')}</div>
                     </div>
                 `;
 
                 allElements.resultContent.innerHTML = resultHtml;
                 allElements.resultSection.className = `form-section p-4 rounded-md ${resultClass}`;
                 allElements.resultSection.classList.remove('hidden');
-                allElements.marginNote.textContent = selectedPro1stCharge > 0 || ticketDiscount > 0 ? 'Adjusted Ticket GPM treats Pro1st as a normal ticket line using its plan cost tier, then subtracts selected discounts.' : '';
+                allElements.marginNote.textContent = '';
                 allElements.marginNote.className = 'text-center text-sm mt-2 font-medium';
             }
 
