@@ -78,6 +78,8 @@ const UPS_ACTIVE_CUSTOMER_JSON_SQL = `
         'id', ac.id,
         'queue_entry_id', ac.queue_entry_id,
         'customer', ac.customer,
+        'phone', ac.phone,
+        'email', ac.email,
         'customer_type', ac.customer_type,
         'customer_details', ac.customer_details,
         'city', ac.city,
@@ -295,6 +297,8 @@ function mapUpsQueueRow(row: any) {
           id: String(entry?.id ?? ""),
           queue_entry_id: String(entry?.queue_entry_id ?? ""),
           customer: String(entry?.customer ?? ""),
+          phone: entry?.phone ? String(entry.phone) : null,
+          email: entry?.email ? String(entry.email) : null,
           customer_type: entry?.customer_type ? String(entry.customer_type) : null,
           customer_details: entry?.customer_details ? String(entry.customer_details) : null,
           city: entry?.city ? String(entry.city) : null,
@@ -1275,6 +1279,8 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
         h.store,
         h.rep,
         h.customer,
+        h.phone,
+        h.email,
         h.city,
         h.customer_type,
         h.customer_details,
@@ -1398,6 +1404,10 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
     if (!customer) return res.status(400).json({ error: "customer is required" });
     const customerType = parseUpsQueueCustomerType(req.body?.customer_type) ?? "Regular Up";
     const customerDetails = typeof req.body?.customer_details === "string" ? req.body.customer_details.trim() : "";
+    const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : "";
+    const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
+    const city = typeof req.body?.city === "string" ? req.body.city.trim() : "";
+    const wantsNeeds = typeof req.body?.wants_needs === "string" ? req.body.wants_needs.trim() : "";
 
     const row = await pool.query(`SELECT rep_user_id, store, rep, status, queue_position FROM crm_ups_queue WHERE id = $1 LIMIT 1`, [id]);
     if (!row.rows.length) return res.status(404).json({ error: "not found" });
@@ -1420,16 +1430,16 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       await client.query(
         `
         INSERT INTO crm_ups_history (
-          id, queue_entry_id, store, rep, rep_user_id, customer, customer_type, customer_details,
+          id, queue_entry_id, store, rep, rep_user_id, customer, phone, email, customer_type, customer_details,
           city, wants_needs, did_purchase, purchase_amount, objection_note,
           started_at, completed_at, weather_location, weather_summary, weather_temp_f, weather_precip_pct,
           weather_wind_mph, weather_fetched_at, weather_source, ended_reason, counts_as_up, is_door_traffic,
           created_at, updated_at
         )
         VALUES (
-          $1, $2, $3, $4, $5::bigint, $6, $7, $8,
-          '', '', NULL, NULL, '',
-          now(), NULL, $9, $10, $11, $12, $13, $14, $15, 'completed', TRUE, TRUE, now(), now()
+          $1, $2, $3, $4, $5::bigint, $6, $7, $8, $9, $10,
+          $11, $12, NULL, NULL, '',
+          now(), NULL, $13, $14, $15, $16, $17, $18, $19, 'completed', TRUE, TRUE, now(), now()
         )
       `,
         [
@@ -1439,8 +1449,12 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
           rep,
           row.rows[0].rep_user_id ?? null,
           customer,
+          phone,
+          email,
           customerType,
           customerDetails,
+          city,
+          wantsNeeds,
           weather?.locationLabel || null,
           weather?.summary || null,
           weather?.temperatureF ?? null,
@@ -1460,6 +1474,8 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
           rep,
           rep_user_id,
           customer,
+          phone,
+          email,
           customer_type,
           customer_details,
           city,
@@ -1471,7 +1487,7 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
           created_at,
           updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6::bigint, $7, $8, $9, '', '', NULL, NULL, '', now(), now(), now())
+        VALUES ($1, $2, $3, $4, $5, $6::bigint, $7, $8, $9, $10, $11, $12, $13, NULL, NULL, '', now(), now(), now())
       `,
         [
           activeCustomerId,
@@ -1481,8 +1497,12 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
           rep,
           row.rows[0].rep_user_id ?? null,
           customer,
+          phone,
+          email,
           customerType,
           customerDetails,
+          city,
+          wantsNeeds,
         ]
       );
       await client.query(
@@ -1565,6 +1585,22 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       fields.push(`customer = $${values.length}`);
     }
 
+    if (req.body?.phone !== undefined) {
+      if (typeof req.body.phone !== "string") {
+        return res.status(400).json({ error: "invalid phone" });
+      }
+      values.push(req.body.phone.trim());
+      fields.push(`phone = $${values.length}`);
+    }
+
+    if (req.body?.email !== undefined) {
+      if (typeof req.body.email !== "string") {
+        return res.status(400).json({ error: "invalid email" });
+      }
+      values.push(req.body.email.trim());
+      fields.push(`email = $${values.length}`);
+    }
+
     if (req.body?.customer_type !== undefined) {
       const customerType = parseUpsQueueCustomerType(req.body.customer_type);
       if (!customerType) return res.status(400).json({ error: "invalid customer_type" });
@@ -1642,6 +1678,14 @@ export function registerCrmRoutes(app: Express, pool: Pool) {
       if (req.body?.customer !== undefined) {
         historyValues.push(req.body.customer.trim());
         historyFields.push(`customer = $${historyValues.length}`);
+      }
+      if (req.body?.phone !== undefined) {
+        historyValues.push(req.body.phone.trim());
+        historyFields.push(`phone = $${historyValues.length}`);
+      }
+      if (req.body?.email !== undefined) {
+        historyValues.push(req.body.email.trim());
+        historyFields.push(`email = $${historyValues.length}`);
       }
       if (req.body?.customer_type !== undefined) {
         const customerType = parseUpsQueueCustomerType(req.body.customer_type);

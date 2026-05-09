@@ -103,6 +103,8 @@ export interface CRMUpsActiveCustomer {
   id: string;
   queueEntryId: string;
   customer: string;
+  phone: string | null;
+  email: string | null;
   customerType: UpsQueueCustomerType | null;
   customerDetails: string | null;
   city: string | null;
@@ -120,6 +122,8 @@ export interface CRMUpsHistoryEntry {
   store: string;
   rep: string;
   customer: string;
+  phone: string | null;
+  email: string | null;
   city: string | null;
   customerType: UpsQueueCustomerType | null;
   customerDetails: string | null;

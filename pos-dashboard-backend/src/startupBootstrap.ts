@@ -425,6 +425,8 @@ async function ensureCrmSchema(pool: Pool) {
       rep              TEXT NOT NULL DEFAULT '',
       rep_user_id      BIGINT NULL,
       customer         TEXT NOT NULL DEFAULT '',
+      phone            TEXT NOT NULL DEFAULT '',
+      email            TEXT NOT NULL DEFAULT '',
       customer_type    TEXT NULL,
       customer_details TEXT NOT NULL DEFAULT '',
       started_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -438,6 +440,8 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS rep TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS rep_user_id BIGINT;`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS customer TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS phone TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS email TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS customer_type TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS customer_details TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ADD COLUMN IF NOT EXISTS city TEXT;`);
@@ -451,6 +455,8 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN store SET DEFAULT 'FD7';`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN rep SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN customer SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN phone SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN email SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN customer_details SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN city SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_active_customers ALTER COLUMN wants_needs SET DEFAULT '';`);
@@ -470,6 +476,8 @@ async function ensureCrmSchema(pool: Pool) {
       rep,
       rep_user_id,
       customer,
+      phone,
+      email,
       customer_type,
       customer_details,
       started_at,
@@ -484,6 +492,8 @@ async function ensureCrmSchema(pool: Pool) {
       q.rep,
       q.rep_user_id,
       q.current_customer,
+      '',
+      '',
       q.current_customer_type,
       COALESCE(q.current_customer_details, ''),
       COALESCE(q.started_at, now()),
@@ -516,6 +526,8 @@ async function ensureCrmSchema(pool: Pool) {
       rep                         TEXT NOT NULL DEFAULT '',
       rep_user_id                 BIGINT NULL,
       customer                    TEXT NOT NULL DEFAULT '',
+      phone                       TEXT NOT NULL DEFAULT '',
+      email                       TEXT NOT NULL DEFAULT '',
       customer_type               TEXT NULL,
       customer_details            TEXT NOT NULL DEFAULT '',
       city                        TEXT NOT NULL DEFAULT '',
@@ -544,6 +556,8 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS rep TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS rep_user_id BIGINT;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS customer TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS phone TEXT;`);
+  await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS email TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS customer_type TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS customer_details TEXT;`);
   await pool.query(`ALTER TABLE crm_ups_history ADD COLUMN IF NOT EXISTS city TEXT;`);
@@ -568,6 +582,8 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN store SET DEFAULT 'FD7';`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN rep SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN customer SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN phone SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN email SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN customer_details SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN city SET DEFAULT '';`);
   await pool.query(`ALTER TABLE crm_ups_history ALTER COLUMN wants_needs SET DEFAULT '';`);

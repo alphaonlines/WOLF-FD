@@ -81,6 +81,26 @@ type CustomerDraft = {
   objectionNote: string;
 };
 
+type StartCustomerDraft = {
+  customer: string;
+  phone: string;
+  email: string;
+  city: string;
+  wantsNeeds: string;
+  details: string;
+  customerType: UpsQueueCustomerType;
+};
+
+const buildStartCustomerDraft = (): StartCustomerDraft => ({
+  customer: "",
+  phone: "",
+  email: "",
+  city: "",
+  wantsNeeds: "",
+  details: "",
+  customerType: "Regular Up",
+});
+
 const CHANNEL_OPTIONS: CRMLeadChannel[] = ["Phone", "SMS", "Webchat", "Facebook", "Instagram"];
 const STAGE_OPTIONS: CRMLeadStage[] = ["New", "Contacted", "Appointment", "Quoted", "Won", "Lost"];
 
@@ -193,7 +213,8 @@ const openUpsPrintWindow = (rows: CRMUpsHistoryEntry[], selectedStore: string, r
   const bodyRows = rows.length
     ? rows
         .map((row) => {
-          const wantsNeeds = row.wantsNeeds || row.customerDetails || "";
+          const wantsNeeds = row.wantsNeeds || "";
+          const details = row.customerDetails || "";
           const didPurchase =
             row.didPurchase === null ? "" : row.didPurchase ? "Yes" : "No";
           return `
@@ -203,8 +224,11 @@ const openUpsPrintWindow = (rows: CRMUpsHistoryEntry[], selectedStore: string, r
               <td>${escapePrintHtml(formatTime(row.completedAt) || "")}</td>
               <td>${escapePrintHtml(buildWeatherLabel(row))}</td>
               <td>${escapePrintHtml(row.customer || "")}</td>
+              <td>${escapePrintHtml(row.phone || "")}</td>
+              <td>${escapePrintHtml(row.email || "")}</td>
               <td>${escapePrintHtml(row.city || "")}</td>
               <td>${escapePrintHtml(wantsNeeds)}</td>
+              <td>${escapePrintHtml(details)}</td>
               <td>${escapePrintHtml(didPurchase)}</td>
               <td>${escapePrintHtml(formatCurrency(row.purchaseAmount))}</td>
               <td>${escapePrintHtml(row.objectionNote || "")}</td>
@@ -212,7 +236,7 @@ const openUpsPrintWindow = (rows: CRMUpsHistoryEntry[], selectedStore: string, r
           `;
         })
         .join("")
-    : `<tr><td colspan="10" class="empty">No UPS entries found for this day.</td></tr>`;
+    : `<tr><td colspan="13" class="empty">No UPS entries found for this day.</td></tr>`;
 
   printWindow.document.open();
   printWindow.document.write(`<!DOCTYPE html>
@@ -243,8 +267,11 @@ const openUpsPrintWindow = (rows: CRMUpsHistoryEntry[], selectedStore: string, r
             <th>Time Out</th>
             <th>Weather</th>
             <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
             <th>City</th>
             <th>Wants / Needs</th>
+            <th>Details / Notes</th>
             <th>Did They Purchase</th>
             <th>How Much</th>
             <th>Objection Note</th>
@@ -317,7 +344,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
   const [saving, setSaving] = useState<null | "customer" | "queue">(null);
   const [joinBusy, setJoinBusy] = useState(false);
   const [selectedSalespersonName, setSelectedSalespersonName] = useState("");
-  const [startDrafts, setStartDrafts] = useState<Record<string, { customer: string; customerType: UpsQueueCustomerType }>>({});
+  const [startDrafts, setStartDrafts] = useState<Record<string, StartCustomerDraft>>({});
   const [draft, setDraft] = useState<CustomerDraft>(() => buildDraft(authUser, DEFAULT_STORE_CODE));
   const [customerSearchFieldValues, setCustomerSearchFieldValues] = useState<CustomerSearchFieldValues>({});
   const [customerSearch, setCustomerSearch] = useState<{ fields: CustomerSearchField[]; query: string }>({
@@ -488,6 +515,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       owner: selectedQueueItem.rep || current.owner,
       ownerUserId: selectedQueueItem.repUserId || current.ownerUserId,
       ...splitName(activeCustomer.customer || combineName(current.firstName, current.lastName)),
+      phone: activeCustomer.phone || current.phone,
+      email: activeCustomer.email || current.email,
       visualDescription: activeCustomer.customerDetails || current.visualDescription,
       notes: current.notes || activeCustomer.customerDetails || "",
       city: activeCustomer.city || current.city,
@@ -576,6 +605,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       owner: item.rep || baseDraft.owner,
       ownerUserId: item.repUserId || baseDraft.ownerUserId,
       ...splitName(preferredActiveCustomer.customer || ""),
+      phone: preferredActiveCustomer.phone || "",
+      email: preferredActiveCustomer.email || "",
       visualDescription: preferredActiveCustomer.customerDetails || "",
       city: preferredActiveCustomer.city || "",
       wantsNeeds: preferredActiveCustomer.wantsNeeds || "",
@@ -587,7 +618,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       objectionNote: preferredActiveCustomer.objectionNote || "",
     });
     resetCustomerLookup();
-    loadCustomerProfile(preferredActiveCustomer.customer || "", undefined);
+    loadCustomerProfile(preferredActiveCustomer.customer || "", preferredActiveCustomer.phone || undefined);
   };
 
   useEffect(() => {
@@ -767,9 +798,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
   };
 
   const handleStartCustomer = async (item: CRMUpsQueueItem) => {
-    const startDraft = startDrafts[item.id];
-    if (!startDraft?.customer?.trim()) {
-      setErrorMessage("Add a customer label first.");
+    const startDraft = startDrafts[item.id] || buildStartCustomerDraft();
+    if (!startDraft.customer.trim()) {
+      setErrorMessage("Add a customer name first.");
       return;
     }
     setSaving("queue");
@@ -779,7 +810,11 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       const row = await startCrmUpsQueueCustomerInApi(item.id, {
         customer: startDraft.customer.trim(),
         customerType: startDraft.customerType,
-        details: startDraft.customer.trim(),
+        details: startDraft.details.trim(),
+        phone: startDraft.phone.trim(),
+        email: startDraft.email.trim(),
+        city: startDraft.city.trim(),
+        wantsNeeds: startDraft.wantsNeeds.trim(),
       });
       const latestActiveCustomer = row.activeCustomers[0] || null;
       setQueue((current) =>
@@ -792,7 +827,11 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
         queueId: row.id,
         activeCustomerId: latestActiveCustomer?.id || null,
         ...splitName(latestActiveCustomer?.customer || combineName(current.firstName, current.lastName)),
+        phone: latestActiveCustomer?.phone || current.phone,
+        email: latestActiveCustomer?.email || current.email,
         visualDescription: latestActiveCustomer?.customerDetails || current.visualDescription,
+        city: latestActiveCustomer?.city || current.city,
+        wantsNeeds: latestActiveCustomer?.wantsNeeds || current.wantsNeeds,
         store: row.store || current.store,
         owner: row.rep || current.owner,
         ownerUserId: row.repUserId || current.ownerUserId,
@@ -800,9 +839,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       setSelectedQueueId(row.id);
       setStartDrafts((current) => ({
         ...current,
-        [item.id]: { customer: "", customerType: "Regular Up" },
+        [item.id]: buildStartCustomerDraft(),
       }));
-      loadCustomerProfile(startDraft.customer.trim());
+      loadCustomerProfile(startDraft.customer.trim(), startDraft.phone.trim() || undefined);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to start customer.");
     } finally {
@@ -818,21 +857,24 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
     try {
       if (draft.queueId === item.id && draft.activeCustomerId === activeCustomerId) {
         const customerName = combineName(draft.firstName, draft.lastName);
-        const payload: { customer?: string; details?: string } = {};
-        if (customerName) payload.customer = customerName;
-        if (draft.visualDescription.trim() !== (activeCustomer?.customerDetails || "")) {
-          payload.details = draft.visualDescription.trim();
-        }
-        if (payload.customer !== undefined || payload.details !== undefined) {
-          await updateCrmUpsQueueCustomerInApi(item.id, activeCustomerId, payload);
-        }
+        await updateCrmUpsQueueCustomerInApi(item.id, activeCustomerId, {
+          customer: customerName || undefined,
+          phone: draft.phone.trim(),
+          email: draft.email.trim(),
+          details: draft.visualDescription.trim(),
+          city: draft.city.trim(),
+          wantsNeeds: draft.wantsNeeds.trim(),
+          didPurchase: draft.didPurchase ?? undefined,
+          purchaseAmount: draft.purchaseAmount.trim() ? Number(draft.purchaseAmount) : null,
+          objectionNote: draft.objectionNote.trim(),
+        });
       }
       const rows = await completeCrmUpsQueueCustomerInApi(item.id, activeCustomerId);
       setQueue([...rows].sort((a, b) => a.queuePosition - b.queuePosition));
       setDraft(buildDraft(authUser, defaultDraftStore));
       setStartDrafts((current) => ({
         ...current,
-        [item.id]: { customer: "", customerType: "Regular Up" },
+        [item.id]: buildStartCustomerDraft(),
       }));
       setStatusMessage("Up completed and saved to history.");
     } catch (error) {
@@ -851,7 +893,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       setDraft(buildDraft(authUser, defaultDraftStore));
       setStartDrafts((current) => ({
         ...current,
-        [item.id]: { customer: "", customerType: "Regular Up" },
+        [item.id]: buildStartCustomerDraft(),
       }));
       setStatusMessage("Active up removed. Door traffic was kept for future reporting.");
     } catch (error) {
@@ -900,6 +942,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
       if (draft.queueId && draft.activeCustomerId) {
         const row = await updateCrmUpsQueueCustomerInApi(draft.queueId, draft.activeCustomerId, {
           customer: fullName || undefined,
+          phone: draft.phone.trim(),
+          email: draft.email.trim(),
           customerType: undefined,
           details: queueDetails,
           city: draft.city.trim(),
@@ -1005,6 +1049,87 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
     `https://www.gimmethebest.net/furnituredistributors/online/sale_rec_502.asp?saleid=${saleId.padStart(5, "0")}&type=1`;
   const itemsLink = (saleId: string) =>
     `https://www.gimmethebest.net/furnituredistributors/finance/deliverieddetail.asp?saleid=${saleId}`;
+
+  const renderStartCustomerForm = (item: CRMUpsQueueItem, customerPlaceholder: string, buttonLabel: string) => {
+    const startDraft = startDrafts[item.id] || buildStartCustomerDraft();
+    const updateStartDraft = (patch: Partial<StartCustomerDraft>) =>
+      setStartDrafts((current) => ({
+        ...current,
+        [item.id]: { ...startDraft, ...patch },
+      }));
+    const handleEnter = (event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        void handleStartCustomer(item);
+      }
+    };
+
+    return (
+      <div className="space-y-2">
+        <div className="grid gap-2 md:grid-cols-[1.4fr_1fr_1fr_150px]">
+          <input
+            value={startDraft.customer}
+            onChange={(event) => updateStartDraft({ customer: event.target.value })}
+            onKeyDown={handleEnter}
+            placeholder={customerPlaceholder}
+            className={subtleInputClassName}
+          />
+          <input
+            value={startDraft.phone}
+            onChange={(event) => updateStartDraft({ phone: event.target.value })}
+            onKeyDown={handleEnter}
+            placeholder="Phone"
+            className={subtleInputClassName}
+          />
+          <input
+            value={startDraft.email}
+            onChange={(event) => updateStartDraft({ email: event.target.value })}
+            onKeyDown={handleEnter}
+            placeholder="Email"
+            className={subtleInputClassName}
+          />
+          <select
+            value={startDraft.customerType}
+            onChange={(event) => updateStartDraft({ customerType: event.target.value as UpsQueueCustomerType })}
+            className={subtleInputClassName}
+          >
+            <option value="Regular Up">New Opportunity</option>
+            <option value="B-Back">B-Back</option>
+          </select>
+        </div>
+        <div className="grid gap-2 md:grid-cols-[1fr_1.4fr_auto]">
+          <input
+            value={startDraft.city}
+            onChange={(event) => updateStartDraft({ city: event.target.value })}
+            onKeyDown={handleEnter}
+            placeholder="City"
+            className={subtleInputClassName}
+          />
+          <input
+            value={startDraft.wantsNeeds}
+            onChange={(event) => updateStartDraft({ wantsNeeds: event.target.value })}
+            onKeyDown={handleEnter}
+            placeholder="Interested in / wants-needs"
+            className={subtleInputClassName}
+          />
+          <button
+            onClick={() => void handleStartCustomer(item)}
+            disabled={saving === "queue"}
+            className={startButtonClassName}
+          >
+            {buttonLabel}
+          </button>
+        </div>
+        <textarea
+          value={startDraft.details}
+          onChange={(event) => updateStartDraft({ details: event.target.value })}
+          rows={2}
+          placeholder="Notes / visual description / outcome details"
+          className={subtleInputClassName}
+        />
+      </div>
+    );
+  };
 
   return (
     <div className="px-4 pt-2 sm:px-6">
@@ -1128,7 +1253,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
               {queue.length ? (
                 queue.map((item) => {
                   const isSelected = selectedQueueItem?.id === item.id;
-                  const startDraft = startDrafts[item.id] || { customer: "", customerType: "Regular Up" as UpsQueueCustomerType };
                   const canManageRow = true;
                   const isNextOpportunity = item.id === nextOpportunityId;
                   const sameStatusItems = queue.filter((entry) => entry.status === item.status);
@@ -1137,6 +1261,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                   const canMoveDown = isManager && item.status !== "working" && sameStatusIndex >= 0 && sameStatusIndex < sameStatusItems.length - 1;
                   const weatherSnapshot = formatWeatherSnapshot(item);
                   const liveWeather = formatLiveWeather(item);
+                  const primaryActiveCustomer = item.activeCustomers[0] || null;
+                  const contactSummary = [primaryActiveCustomer?.phone, primaryActiveCustomer?.email].filter(Boolean).join(" · ");
+                  const interestSummary = primaryActiveCustomer?.wantsNeeds || primaryActiveCustomer?.customerDetails || item.currentCustomerDetails || "";
                   return (
                     <div key={item.id} className={`${isSelected ? (isDarkMode ? "bg-slate-900/80" : "bg-sky-50/80") : isDarkMode ? "hover:bg-slate-900/60" : ""}`}>
                       <button
@@ -1168,8 +1295,8 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                           <div className="mt-1 truncate text-sm text-slate-400">
                             {item.status === "working"
                               ? item.activeCustomerCount > 1
-                                ? `${item.activeCustomerCount} active customers · latest ${item.currentCustomer || "Unnamed customer"}${item.currentCustomerDetails ? ` · ${item.currentCustomerDetails}` : ""}`
-                                : `${item.currentCustomer || "Unnamed customer"}${item.currentCustomerDetails ? ` · ${item.currentCustomerDetails}` : ""}`
+                                ? `${item.activeCustomerCount} active customers · latest ${item.currentCustomer || "Unnamed customer"}${interestSummary ? ` · ${interestSummary}` : ""}${contactSummary ? ` · ${contactSummary}` : ""}`
+                                : `${item.currentCustomer || "Unnamed customer"}${interestSummary ? ` · ${interestSummary}` : ""}${contactSummary ? ` · ${contactSummary}` : ""}`
                               : item.status === "on_break"
                                 ? "Unavailable and skipped until returned to queue."
                               : `Checked in ${formatTime(item.checkedInAt) || ""}`}
@@ -1216,48 +1343,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                                   </button>
                                 </div>
                               ) : null}
-                              <div className="grid gap-2 md:grid-cols-[1.8fr_150px_auto]">
-                                <input
-                                  value={startDraft.customer}
-                                  onChange={(event) =>
-                                    setStartDrafts((current) => ({
-                                      ...current,
-                                      [item.id]: { ...startDraft, customer: event.target.value },
-                                    }))
-                                  }
-                                  onKeyDown={(event) => {
-                                    if (event.key === "Enter") {
-                                      event.preventDefault();
-                                      void handleStartCustomer(item);
-                                    }
-                                  }}
-                                  placeholder="Customer / opportunity notes"
-                                  className={subtleInputClassName}
-                                />
-                                <select
-                                  value={startDraft.customerType}
-                                  onChange={(event) =>
-                                    setStartDrafts((current) => ({
-                                      ...current,
-                                      [item.id]: {
-                                        ...startDraft,
-                                        customerType: event.target.value as UpsQueueCustomerType,
-                                      },
-                                    }))
-                                  }
-                                  className={subtleInputClassName}
-                                >
-                                  <option value="Regular Up">New Opportunity</option>
-                                  <option value="B-Back">B-Back</option>
-                                </select>
-                                <button
-                                  onClick={() => void handleStartCustomer(item)}
-                                  disabled={saving === "queue"}
-                                  className={startButtonClassName}
-                                >
-                                  Start
-                                </button>
-                              </div>
+                              {renderStartCustomerForm(item, "Customer name", "Start")}
                             </div>
                           ) : item.status === "on_break" ? (
                             <div className="space-y-2">
@@ -1303,48 +1389,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                                   Weather snapshot: {weatherSnapshot}
                                 </div>
                               ) : null}
-                              <div className="grid gap-2 md:grid-cols-[1.8fr_150px_auto]">
-                                <input
-                                  value={startDraft.customer}
-                                  onChange={(event) =>
-                                    setStartDrafts((current) => ({
-                                      ...current,
-                                      [item.id]: { ...startDraft, customer: event.target.value },
-                                    }))
-                                  }
-                                  onKeyDown={(event) => {
-                                    if (event.key === "Enter") {
-                                      event.preventDefault();
-                                      void handleStartCustomer(item);
-                                    }
-                                  }}
-                                  placeholder="Add another customer / opportunity notes"
-                                  className={subtleInputClassName}
-                                />
-                                <select
-                                  value={startDraft.customerType}
-                                  onChange={(event) =>
-                                    setStartDrafts((current) => ({
-                                      ...current,
-                                      [item.id]: {
-                                        ...startDraft,
-                                        customerType: event.target.value as UpsQueueCustomerType,
-                                      },
-                                    }))
-                                  }
-                                  className={subtleInputClassName}
-                                >
-                                  <option value="Regular Up">New Opportunity</option>
-                                  <option value="B-Back">B-Back</option>
-                                </select>
-                                <button
-                                  onClick={() => void handleStartCustomer(item)}
-                                  disabled={saving === "queue"}
-                                  className={startButtonClassName}
-                                >
-                                  Add Customer
-                                </button>
-                              </div>
+                              {renderStartCustomerForm(item, "Add another customer name", "Add Customer")}
                               <div className="space-y-2">
                                 {item.activeCustomers.map((activeCustomer, index) => (
                                   <div
@@ -1381,6 +1426,16 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                                         <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                           {activeCustomer.customerDetails || "No extra notes yet."}
                                         </div>
+                                        {[activeCustomer.phone, activeCustomer.email, activeCustomer.city].filter(Boolean).length ? (
+                                          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                            {[activeCustomer.phone, activeCustomer.email, activeCustomer.city].filter(Boolean).join(" · ")}
+                                          </div>
+                                        ) : null}
+                                        {activeCustomer.wantsNeeds ? (
+                                          <div className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+                                            Interested: {activeCustomer.wantsNeeds}
+                                          </div>
+                                        ) : null}
                                       </div>
                                       <div className="text-right text-[11px] text-slate-400 dark:text-slate-500">
                                         <div>Customer {index + 1}</div>
@@ -1475,8 +1530,9 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
                               {/* Quick edit fields */}
                               <div className="pt-1 space-y-2 border-t border-slate-100 dark:border-slate-800">
                                 <div className={`text-[11px] uppercase tracking-[0.14em] font-medium ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Quick Edit</div>
-                                <div className="grid gap-2 sm:grid-cols-2">
+                                <div className="grid gap-2 sm:grid-cols-3">
                                   <input value={draft.phone} onChange={(e) => updateDraftFromInput("phone", e.target.value)} placeholder="Phone" className={subtleInputClassName} />
+                                  <input value={draft.email} onChange={(e) => updateDraftFromInput("email", e.target.value)} placeholder="Email" className={subtleInputClassName} />
                                   <input value={draft.city} onChange={(e) => updateDraft("city", e.target.value)} placeholder="City" className={subtleInputClassName} />
                                 </div>
                                 <input value={draft.interest} onChange={(e) => updateDraftFromInput("interest", e.target.value)} placeholder="Interest" className={subtleInputClassName} />

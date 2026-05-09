@@ -87,6 +87,8 @@ type ApiUpsActiveCustomerRow = {
   id: string;
   queue_entry_id?: string | null;
   customer?: string | null;
+  phone?: string | null;
+  email?: string | null;
   customer_type?: string | null;
   customer_details?: string | null;
   city?: string | null;
@@ -104,6 +106,8 @@ type ApiUpsHistoryRow = {
   store?: string | null;
   rep?: string | null;
   customer?: string | null;
+  phone?: string | null;
+  email?: string | null;
   city?: string | null;
   customer_type?: string | null;
   customer_details?: string | null;
@@ -236,6 +240,8 @@ const mapUpsActiveCustomer = (row: ApiUpsActiveCustomerRow): CRMUpsActiveCustome
   id: String(row.id ?? ""),
   queueEntryId: row.queue_entry_id === null || row.queue_entry_id === undefined ? "" : String(row.queue_entry_id),
   customer: String(row.customer ?? ""),
+  phone: row.phone === null || row.phone === undefined ? null : String(row.phone),
+  email: row.email === null || row.email === undefined ? null : String(row.email),
   customerType:
     row.customer_type === null || row.customer_type === undefined
       ? null
@@ -260,6 +266,8 @@ const mapUpsHistory = (row: ApiUpsHistoryRow): CRMUpsHistoryEntry => ({
   store: String(row.store ?? "FD7"),
   rep: String(row.rep ?? ""),
   customer: String(row.customer ?? ""),
+  phone: row.phone === null || row.phone === undefined ? null : String(row.phone),
+  email: row.email === null || row.email === undefined ? null : String(row.email),
   city: row.city === null || row.city === undefined ? null : String(row.city),
   customerType:
     row.customer_type === null || row.customer_type === undefined
@@ -479,7 +487,15 @@ export async function joinCrmUpsQueueInApi(
 
 export async function startCrmUpsQueueCustomerInApi(
   id: string,
-  payload: { customer: string; customerType: "Regular Up" | "B-Back"; details?: string }
+  payload: {
+    customer: string;
+    customerType: "Regular Up" | "B-Back";
+    details?: string;
+    phone?: string;
+    email?: string;
+    city?: string;
+    wantsNeeds?: string;
+  }
 ): Promise<CRMUpsQueueItem> {
   const json = await fetchJson(`/api/crm/ups-queue/${encodeURIComponent(id)}/start`, {
     method: "POST",
@@ -488,6 +504,10 @@ export async function startCrmUpsQueueCustomerInApi(
       customer: payload.customer,
       customer_type: payload.customerType,
       customer_details: payload.details || "",
+      phone: payload.phone || "",
+      email: payload.email || "",
+      city: payload.city || "",
+      wants_needs: payload.wantsNeeds || "",
     }),
   });
   return mapUpsQueue((json as any)?.row as ApiUpsQueueRow);
@@ -498,6 +518,8 @@ export async function updateCrmUpsQueueCustomerInApi(
   activeCustomerId: string,
   payload: {
     customer?: string;
+    phone?: string;
+    email?: string;
     customerType?: "Regular Up" | "B-Back";
     details?: string;
     city?: string;
@@ -509,6 +531,8 @@ export async function updateCrmUpsQueueCustomerInApi(
 ): Promise<CRMUpsQueueItem> {
   const body: Record<string, string> = {};
   if (payload.customer !== undefined) body.customer = payload.customer;
+  if (payload.phone !== undefined) body.phone = payload.phone;
+  if (payload.email !== undefined) body.email = payload.email;
   if (payload.customerType !== undefined) body.customer_type = payload.customerType;
   if (payload.details !== undefined) body.customer_details = payload.details;
   if (payload.city !== undefined) body.city = payload.city;
