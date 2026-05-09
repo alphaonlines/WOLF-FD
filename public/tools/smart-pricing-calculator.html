@@ -99,14 +99,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.7.2138">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.7.2148">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.7.2138</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.7.2148</p>
             <button id="top-reset-btn" type="button" class="mt-4 inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
         </header>
 
@@ -204,7 +204,7 @@
                         <span id="threshold-delivery-cost-display" class="font-medium text-gray-900">$75.00</span>
                     </div>
                     <p class="pl-7 text-xs leading-5 text-gray-500">Policy: warehouse product only, max 2 items. Floor merchandise does not qualify. Exceptions need manager approval by name.</p>
-                     <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <input id="add-delivery" name="add-delivery" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
                             <label for="add-delivery" class="ml-3 block text-sm font-medium text-gray-700">Add Local Delivery (within 25 miles)</label>
@@ -212,6 +212,16 @@
                         <span id="delivery-cost-display" class="font-medium text-gray-900"></span>
                     </div>
                     <p class="pl-7 text-xs leading-5 text-gray-500">Policy: enter the full delivery charge on the ticket. If discounted, put the discount in Adjustment and document it in notes.</p>
+                    <div id="delivery-type-wrapper" class="hidden pl-7 space-y-1">
+                        <label for="delivery-type" class="block text-sm font-medium text-gray-600">Delivery Category</label>
+                        <select id="delivery-type" class="block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                            <option value="standard">Standard merchandise amount</option>
+                            <option value="matt-box-recliner">Matt &amp; Box or Recliner - $129.99</option>
+                            <option value="power-base">Power Base - $49.99</option>
+                            <option value="sleeper-motion">Sleeper or Motion Upholstery - $169.99 minimum</option>
+                        </select>
+                        <p class="text-xs leading-5 text-gray-500">Branch store pickup transfers are N/C. Customer must inspect merchandise before leaving the store.</p>
+                    </div>
                     <div id="long-distance-wrapper" class="hidden pl-7 space-y-1">
                          <div class="flex items-center">
                              <input id="add-long-distance" name="add-long-distance" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
@@ -227,6 +237,13 @@
                              <p class="text-xs leading-5 text-gray-500">Policy: any miles over 25 miles from closest store @ $3/mile.</p>
                          </div>
                      </div>
+                     <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="add-assembly" name="add-assembly" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                            <label for="add-assembly" class="ml-3 block text-sm font-medium text-gray-700">Add Assembly Fee</label>
+                        </div>
+                        <span id="assembly-cost-display" class="font-medium text-gray-900">$65.00</span>
+                    </div>
                      <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <input id="add-pro1st" name="add-pro1st" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
@@ -609,12 +626,16 @@ function showLicenseLockScreen(message) {
                 marginPercentInput: document.getElementById('margin-percent'),
                 retailPriceInput: document.getElementById('retail-price'),
                 addDeliveryCheckbox: document.getElementById('add-delivery'),
+                deliveryTypeWrapper: document.getElementById('delivery-type-wrapper'),
+                deliveryTypeSelect: document.getElementById('delivery-type'),
                 addThresholdDeliveryCheckbox: document.getElementById('add-threshold-delivery'),
                 thresholdDeliveryCostDisplay: document.getElementById('threshold-delivery-cost-display'),
                 longDistanceWrapper: document.getElementById('long-distance-wrapper'),
                 addLongDistanceCheckbox: document.getElementById('add-long-distance'),
                 milesInputWrapper: document.getElementById('miles-input-wrapper'),
                 longDistanceMilesInput: document.getElementById('long-distance-miles'),
+                addAssemblyCheckbox: document.getElementById('add-assembly'),
+                assemblyCostDisplay: document.getElementById('assembly-cost-display'),
                 addPro1stCheckbox: document.getElementById('add-pro1st'),
                 addRemovalCheckbox: document.getElementById('add-removal'),
                 removalWrapper: document.getElementById('removal-wrapper'),
@@ -732,6 +753,7 @@ function showLicenseLockScreen(message) {
                     if (allElements.addDeliveryCheckbox.checked) {
                         allElements.addThresholdDeliveryCheckbox.checked = false;
                     }
+                    allElements.deliveryTypeWrapper.classList.toggle('hidden', !allElements.addDeliveryCheckbox.checked);
                     allElements.longDistanceWrapper.classList.toggle('hidden', !allElements.addDeliveryCheckbox.checked);
                     if (!allElements.addDeliveryCheckbox.checked) {
                         allElements.addLongDistanceCheckbox.checked = false;
@@ -744,12 +766,14 @@ function showLicenseLockScreen(message) {
                     if (allElements.addThresholdDeliveryCheckbox.checked) {
                         allElements.addDeliveryCheckbox.checked = false;
                         allElements.addLongDistanceCheckbox.checked = false;
+                        allElements.deliveryTypeWrapper.classList.add('hidden');
                         allElements.longDistanceWrapper.classList.add('hidden');
                         allElements.milesInputWrapper.classList.add('hidden');
                         allElements.longDistanceMilesInput.value = '';
                     }
                     updateAddonCosts();
                 });
+                allElements.deliveryTypeSelect.addEventListener('change', updateAddonCosts);
                 allElements.addLongDistanceCheckbox.addEventListener('change', () => {
                     allElements.milesInputWrapper.classList.toggle('hidden', !allElements.addLongDistanceCheckbox.checked);
                     if (!allElements.addLongDistanceCheckbox.checked) {
@@ -758,6 +782,7 @@ function showLicenseLockScreen(message) {
                     updateAddonCosts();
                 });
                 allElements.longDistanceMilesInput.addEventListener('input', updateAddonCosts);
+                allElements.addAssemblyCheckbox.addEventListener('change', updateAddonCosts);
                 allElements.addPro1stCheckbox.addEventListener('change', updateAddonCosts);
                 allElements.addTaxCheckbox.addEventListener('change', () => {
                     if (!allElements.addTaxCheckbox.checked && allElements.payTaxCheckbox.checked) {
@@ -1099,7 +1124,20 @@ function showLicenseLockScreen(message) {
             function getLocalDeliveryCharge() {
                 const retailPrice = Math.round((currentRetailPrice + Number.EPSILON) * 100) / 100;
                 const deliveryTier = deliveryTiers.find(t => retailPrice >= t.from && retailPrice <= t.to);
-                return deliveryTier ? deliveryTier.charge : 0;
+                const standardCharge = deliveryTier ? deliveryTier.charge : 0;
+                const deliveryType = allElements.deliveryTypeSelect?.value || 'standard';
+                if (deliveryType === 'power-base') return 49.99;
+                if (deliveryType === 'matt-box-recliner') return 129.99;
+                if (deliveryType === 'sleeper-motion') return Math.max(standardCharge, 169.99);
+                return standardCharge;
+            }
+
+            function getLocalDeliveryLabel() {
+                const deliveryType = allElements.deliveryTypeSelect?.value || 'standard';
+                if (deliveryType === 'power-base') return 'Local Delivery - Power Base';
+                if (deliveryType === 'matt-box-recliner') return 'Local Delivery - Matt & Box/Recliner';
+                if (deliveryType === 'sleeper-motion') return 'Local Delivery - Sleeper/Motion';
+                return 'Local Delivery';
             }
 
             function getDeliveryUpcharge() {
@@ -1108,13 +1146,18 @@ function showLicenseLockScreen(message) {
                 return miles > 25 ? (miles - 25) * 3 : 0;
             }
 
+            function getAssemblyCharge() {
+                return allElements.addAssemblyCheckbox?.checked ? 65 : 0;
+            }
+
             function getSelectedDeliveryChargeInfo() {
                 const localDelivery = getLocalDeliveryCharge();
                 const deliveryUpcharge = getDeliveryUpcharge();
                 if (allElements.addDeliveryCheckbox?.checked) {
+                    const localDeliveryLabel = getLocalDeliveryLabel();
                     return {
                         amount: localDelivery + deliveryUpcharge,
-                        label: deliveryUpcharge > 0 ? 'Local Delivery + Outside Upcharge' : 'Local Delivery'
+                        label: deliveryUpcharge > 0 ? `${localDeliveryLabel} + Outside Upcharge` : localDeliveryLabel
                     };
                 }
                 if (allElements.addThresholdDeliveryCheckbox?.checked) {
@@ -1454,6 +1497,7 @@ function showLicenseLockScreen(message) {
             function updateAddonCosts() {
             const localDelivery = getLocalDeliveryCharge();
             const deliveryUpcharge = getDeliveryUpcharge();
+            const assemblyCharge = getAssemblyCharge();
             const pro1stCharge = getPro1stCharge();
             const removalCharge = getRemovalCharge();
             const additionalRemoval = getAdditionalRemovalCharge();
@@ -1466,6 +1510,9 @@ function showLicenseLockScreen(message) {
             }
             if (allElements.thresholdDeliveryCostDisplay) {
                 allElements.thresholdDeliveryCostDisplay.textContent = formatCurrency(75);
+            }
+            if (allElements.assemblyCostDisplay) {
+                allElements.assemblyCostDisplay.textContent = formatCurrency(assemblyCharge || 65);
             }
             if (allElements.pro1stCostDisplay) {
                 allElements.pro1stCostDisplay.textContent = formatCurrency(pro1stCharge);
@@ -1505,6 +1552,7 @@ function showLicenseLockScreen(message) {
             const thresholdSelected = !!allElements.addThresholdDeliveryCheckbox?.checked;
             const localDelivery = getLocalDeliveryCharge();
             const deliveryUpcharge = getDeliveryUpcharge();
+            const assemblyCharge = getAssemblyCharge();
             const selectedPro1stCharge = allElements.addPro1stCheckbox?.checked ? getPro1stCharge() : 0;
             const removalCharge = getRemovalCharge();
             const additionalRemoval = getAdditionalRemovalCharge();
@@ -1519,6 +1567,9 @@ function showLicenseLockScreen(message) {
             }
             if (allElements.thresholdDeliveryCostDisplay) {
                 allElements.thresholdDeliveryCostDisplay.textContent = formatCurrency(75);
+            }
+            if (allElements.assemblyCostDisplay) {
+                allElements.assemblyCostDisplay.textContent = formatCurrency(assemblyCharge || 65);
             }
             if (allElements.pro1stCostDisplay) {
                 allElements.pro1stCostDisplay.textContent = formatCurrency(getPro1stCharge());
@@ -1544,7 +1595,7 @@ function showLicenseLockScreen(message) {
 
             updateDeliveryDiscountFields();
             updatePro1stDiscountFields();
-            const totalBeforeDiscount = currentRetailPrice + deliveryCharge + pro1stCharge + currentRemovalCharge;
+            const totalBeforeDiscount = currentRetailPrice + deliveryCharge + assemblyCharge + pro1stCharge + currentRemovalCharge;
             currentAdditionalDiscount = getAdditionalDiscount(totalBeforeDiscount);
             const taxableSubtotal = Math.max(0, totalBeforeDiscount - currentAdditionalDiscount);
             currentTotalBeforeTax = taxableSubtotal;
@@ -1594,6 +1645,9 @@ function showLicenseLockScreen(message) {
 
             if (deliveryCharge > 0) {
                 breakdownLines.push(`<p class="text-sm">${deliveryLabel}: <span class="font-semibold">${formatCurrency(deliveryCharge)}</span></p>`);
+            }
+            if (assemblyCharge > 0) {
+                breakdownLines.push(`<p class="text-sm">Assembly Fee: <span class="font-semibold">${formatCurrency(assemblyCharge)}</span></p>`);
             }
             if (pro1stCharge > 0) {
                 breakdownLines.push(`<p class="text-sm">Pro1st: <span class="font-semibold">${formatCurrency(pro1stCharge)}</span></p>`);
@@ -1676,10 +1730,13 @@ function showLicenseLockScreen(message) {
                 if (allElements.addDeliveryCheckbox?.checked) {
                     const localDelivery = getLocalDeliveryCharge();
                     const upcharge = getDeliveryUpcharge();
-                    if (localDelivery > 0) deliveryFeeRows.push({ label: 'Local Delivery', amount: localDelivery });
+                    if (localDelivery > 0) deliveryFeeRows.push({ label: getLocalDeliveryLabel(), amount: localDelivery });
                     if (allElements.addLongDistanceCheckbox?.checked && upcharge > 0) {
                         deliveryFeeRows.push({ label: 'Outside Area Upcharge (DEL_UPCHARGE)', amount: upcharge });
                     }
+                }
+                if (allElements.addAssemblyCheckbox?.checked) {
+                    deliveryFeeRows.push({ label: 'Assembly Fee', amount: 65 });
                 }
                 if (allElements.addPro1stCheckbox?.checked) {
                     merchandiseRows.push({ label: 'Pro1st Protection', amount: getPro1stCharge(), detail: 'Shopping cart line item' });
@@ -1832,7 +1889,8 @@ function showLicenseLockScreen(message) {
                 const {
                     baseCostInput, costCodeInput, manualRetailInput, totalCostInput,
                     marginPercentInput, retailPriceInput, vendorSelect, addDeliveryCheckbox,
-                    addThresholdDeliveryCheckbox, addPro1stCheckbox, addTaxCheckbox,
+                    deliveryTypeWrapper, deliveryTypeSelect, addThresholdDeliveryCheckbox,
+                    addAssemblyCheckbox, addPro1stCheckbox, addTaxCheckbox,
                     addLongDistanceCheckbox, longDistanceMilesInput, storeLocationWrapper,
                     storeLocationSelect, longDistanceWrapper, milesInputWrapper, payTaxCheckbox,
                     showFinancingCheckbox, addRemovalCheckbox, removalWrapper, removalItemsInput,
@@ -1868,6 +1926,7 @@ function showLicenseLockScreen(message) {
                 if (salesTaxDiscountCommentInput) salesTaxDiscountCommentInput.value = 'Sales Tax Discount';
                 if (removalItemsInput) removalItemsInput.value = '1';
                 if (vendorSelect) vendorSelect.selectedIndex = 0;
+                if (deliveryTypeSelect) deliveryTypeSelect.selectedIndex = 0;
                 if (vendorAdSelect) vendorAdSelect.selectedIndex = 0;
                 if (storeLocationSelect) storeLocationSelect.value = 'camp-greenville';
 
@@ -1887,7 +1946,7 @@ function showLicenseLockScreen(message) {
                 lastGeneratedNotes = '';
 
                 [
-                    addDeliveryCheckbox, addThresholdDeliveryCheckbox, addPro1stCheckbox,
+                    addDeliveryCheckbox, addThresholdDeliveryCheckbox, addAssemblyCheckbox, addPro1stCheckbox,
                     addTaxCheckbox, addLongDistanceCheckbox, payTaxCheckbox, showFinancingCheckbox,
                     addRemovalCheckbox, discountCompetitionCheckbox, discountManagerApprovalCheckbox,
                     discountVendorAdCheckbox, discountDeliveryCheckbox, discountPro1stCheckbox,
@@ -1904,7 +1963,7 @@ function showLicenseLockScreen(message) {
                 const sectionsToHide = [
                     allElements.calculatorSection, allElements.resultSection, allElements.addonsSection,
                     allElements.grandTotalSection, allElements.resetBtn, allElements.vendorInfoDiv,
-                    storeLocationWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection,
+                    storeLocationWrapper, deliveryTypeWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection,
                     allElements.financingBreakdown, allElements.salesNotesSection, removalWrapper,
                     competitionMatchWrapper, managerApprovalWrapper, vendorAdWrapper, deliveryDiscountWrapper,
                     pro1stDiscountWrapper, percentageOffWrapper, advertisedPriceWrapper, otherDiscountWrapper,
