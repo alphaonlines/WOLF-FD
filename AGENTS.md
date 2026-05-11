@@ -681,3 +681,11 @@ Backend deploy flow for route/schema/runtime changes:
 - Changes: UPS active/history rows now store `phone` and `email` directly alongside customer name, city, wants/needs, notes/details, purchase result, purchase amount, and objection note. The start-customer form exposes customer name, phone, email, city, interested-in/wants-needs, notes/details, and customer type. Active cards show contact/interests at a glance, Save Customer syncs edits back to the UPS row, and the daily UPS print sheet includes Phone, Email, and Details / Notes columns.
 - Version/deploy: WOLF-FD/Smart Calc version moved together to `1.5.9.1455`; deployed bundle `assets/index-BVdH1P4v.js`; backend `pos-api` restarted after build so startup bootstrap added `crm_ups_active_customers.phone/email` and `crm_ups_history.phone/email`.
 - Verification: `git diff --check` PASS; root `npm test` PASS (3 files/10 tests); backend `npm test` PASS (4 files/15 tests); root `npm run build` PASS; backend `npm run build` PASS; schema verification confirmed all four UPS phone/email columns exist; live `/fd/` PASS (200); FD health PASS (`{"ok":true,"db":1}`); deployed bundle grep PASS for Phone, Email, and Interested in / wants-needs; browser loaded the live sign-in page with no console errors.
+
+## Running Log - 2026-05-11 19:29 EDT
+
+- Backfilled EZPro/WOLF-FD upload coverage for the next 10 missing item-report dates from the dashboard coverage range: 2025-07-22 through 2025-07-31.
+- Initial gap query before this run showed sales missing 0, item missing 411, union missing 411 from 2024-06-01 through 2026-05-11; the selected latest 10 gaps were item-only gaps.
+- Ran `/home/alphahs/.hermes/scripts/ezpro_wolf_fd_reports.py --dates 2025-07-22,2025-07-23,2025-07-24,2025-07-25,2025-07-26,2025-07-27,2025-07-28,2025-07-29,2025-07-30,2025-07-31 --wait-lock`; sales and item/top-items reports were run sequentially and imported as matched pairs.
+- Result: `complete ok=10 failed=0`. Item rows imported by date: 2025-07-22=35, 2025-07-23=31, 2025-07-24=31, 2025-07-25=47, 2025-07-26=21, 2025-07-27=2, 2025-07-28=26, 2025-07-29=33, 2025-07-30=20, 2025-07-31=30.
+- Verification after cleanup: missing sales count 0, missing item count 401, union missing 401; next latest gap begins at 2025-07-21. Temporary helper scripts were removed and no secrets/customer row details were printed.
