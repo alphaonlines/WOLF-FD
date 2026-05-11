@@ -689,3 +689,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Ran `/home/alphahs/.hermes/scripts/ezpro_wolf_fd_reports.py --dates 2025-07-22,2025-07-23,2025-07-24,2025-07-25,2025-07-26,2025-07-27,2025-07-28,2025-07-29,2025-07-30,2025-07-31 --wait-lock`; sales and item/top-items reports were run sequentially and imported as matched pairs.
 - Result: `complete ok=10 failed=0`. Item rows imported by date: 2025-07-22=35, 2025-07-23=31, 2025-07-24=31, 2025-07-25=47, 2025-07-26=21, 2025-07-27=2, 2025-07-28=26, 2025-07-29=33, 2025-07-30=20, 2025-07-31=30.
 - Verification after cleanup: missing sales count 0, missing item count 401, union missing 401; next latest gap begins at 2025-07-21. Temporary helper scripts were removed and no secrets/customer row details were printed.
+
+## Running Log - 2026-05-11 19:42 EDT
+
+- Backfilled the next 20 EZPro/WOLF-FD upload coverage gaps from the dashboard coverage range: 2025-07-02 through 2025-07-21. The selected gaps were item-report gaps; sales missing count was already 0 before this run.
+- Ran `/home/alphahs/.hermes/scripts/ezpro_wolf_fd_reports.py --dates 2025-07-02,2025-07-03,2025-07-04,2025-07-05,2025-07-06,2025-07-07,2025-07-08,2025-07-09,2025-07-10,2025-07-11,2025-07-12,2025-07-13,2025-07-14,2025-07-15,2025-07-16,2025-07-17,2025-07-18,2025-07-19,2025-07-20,2025-07-21 --wait-lock`; reports ran sequentially and imported as matched pairs where EZPro returned data.
+- Result: `complete ok=20 failed=0`. EZPro returned no sales results for 2025-07-06 and 2025-07-13, so zero-row sales/items coverage markers were written for those dates without customer rows.
+- Verification: imported/covered totals for the chunk were 233 sales rows and 643 item rows; WOLF-FD coverage now shows missing sales count 0, missing item count 381, union missing count 381. Next latest gap begins at 2025-07-01. Temporary helper script was removed and no secrets/customer row details were printed.
