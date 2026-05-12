@@ -750,3 +750,12 @@ Backend deploy flow for route/schema/runtime changes:
 - Validation: HTML parser PASS, duplicate ID check PASS, inline script node --check PASS, git diff --check PASS, `npm run test:smartcalc-margin-discounts` PASS, `npm run test:smartcalc-number-input-wheel` PASS, `npm run build` PASS.
 - Deployment: copied rebuilt `dist/` to `/srv/www/wolf.discount/fd/` and updated the furnituredistributors `/smartcalc/` wrapper.
 - Browser verification: standard covered value 500 on retail 800 showed protected value 500.00, retail charge 129.99, plan cost 59.95, Adjusted Ticket GPM 80.65%, and coverage notes. Power base qty 2 showed protected/retail value 299.98, plan cost 63.90, Adjusted Ticket GPM 83.28%, and power-base notes. No console errors.
+
+## Recent Changes (2026-05-12 16:19 EDT)
+- Removed the visible Plan Cost card and plan-cost wording from the Smart Calc Pro1st/Protection options area while preserving the internal protection cost math used for Adjusted Ticket GPM.
+- Kept visible Pro1st option summaries to Protected Value Used and Retail Charge only; power-base helper text now shows only the retail charge per base.
+- Bumped visible Smart Calc version from 1.5.9.1458 to 1.5.9.1459 and synced the standalone wrapper cache-bust URL.
+- Files changed: `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `scripts/smartcalc-margin-discount-smoke.cjs`, `package.json`, `AGENTS.md`.
+- Validation: HTML parser PASS, duplicate ID check PASS, inline script node --check PASS, git diff --check PASS, `npm run test:smartcalc-margin-discounts` PASS, `npm run test:smartcalc-number-input-wheel` PASS, `npm run build` PASS.
+- Deployment: copied rebuilt `dist/` to `/srv/www/wolf.discount/fd/` and updated the furnituredistributors `/smartcalc/` wrapper.
+- Verification: live source and wrapper no longer contain `Plan Cost` or `pro1st-plan-cost-display`; live source/wrapper show version 1.5.9.1459; API health passed (`{"ok":true,"db":1}`). Browser check passed: power base qty 2 showed Protected Value Used/Retail Charge `$299.98`, no Plan Cost text/id, Adjusted Ticket GPM `83.28%`, and no console errors.

@@ -99,14 +99,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.9.1458">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.9.1459">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.1458</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.1459</p>
             <button id="top-reset-btn" type="button" class="mt-4 inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
         </header>
 
@@ -275,14 +275,14 @@
                         <div id="pro1st-covered-value-wrapper">
                             <label for="pro1st-covered-value" class="block text-sm font-medium text-gray-600">Covered Dollar Value ($)</label>
                             <input type="text" id="pro1st-covered-value" inputmode="decimal" placeholder="Defaults to merchandise total if blank" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
-                            <p class="mt-1 text-xs leading-5 text-gray-500">Use this when Pro1st covers only part of the ticket. This value selects the protection retail tier and internal plan cost.</p>
+                            <p class="mt-1 text-xs leading-5 text-gray-500">Use this when Pro1st covers only part of the ticket. This value selects the protection retail tier.</p>
                         </div>
                         <div id="pro1st-power-base-wrapper" class="hidden">
                             <label for="pro1st-power-base-quantity" class="block text-sm font-medium text-gray-600">Power Bases Covered</label>
                             <input type="number" id="pro1st-power-base-quantity" min="1" step="1" value="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
-                            <p class="mt-1 text-xs leading-5 text-gray-500">Power base protection is $149.99 retail and $31.95 cost per power base.</p>
+                            <p class="mt-1 text-xs leading-5 text-gray-500">Power base protection is $149.99 retail per power base.</p>
                         </div>
-                        <div class="grid gap-2 text-sm text-gray-700 sm:grid-cols-3">
+                        <div class="grid gap-2 text-sm text-gray-700 sm:grid-cols-2">
                             <div class="rounded-md bg-white px-3 py-2">
                                 <span class="block text-xs uppercase tracking-wide text-gray-500">Protected Value Used</span>
                                 <span id="pro1st-protected-value-display" class="font-semibold text-gray-900">$0.00</span>
@@ -290,10 +290,6 @@
                             <div class="rounded-md bg-white px-3 py-2">
                                 <span class="block text-xs uppercase tracking-wide text-gray-500">Retail Charge</span>
                                 <span id="pro1st-plan-retail-display" class="font-semibold text-gray-900">$0.00</span>
-                            </div>
-                            <div class="rounded-md bg-white px-3 py-2">
-                                <span class="block text-xs uppercase tracking-wide text-gray-500">Plan Cost</span>
-                                <span id="pro1st-plan-cost-display" class="font-semibold text-gray-900">$0.00</span>
                             </div>
                         </div>
                     </div>
@@ -701,7 +697,6 @@ function showLicenseLockScreen(message) {
                 pro1stPowerBaseQuantityInput: document.getElementById('pro1st-power-base-quantity'),
                 pro1stProtectedValueDisplay: document.getElementById('pro1st-protected-value-display'),
                 pro1stPlanRetailDisplay: document.getElementById('pro1st-plan-retail-display'),
-                pro1stPlanCostDisplay: document.getElementById('pro1st-plan-cost-display'),
                 addRemovalCheckbox: document.getElementById('add-removal'),
                 removalWrapper: document.getElementById('removal-wrapper'),
                 removalItemsInput: document.getElementById('removal-items'),
@@ -1313,9 +1308,6 @@ function showLicenseLockScreen(message) {
                 }
                 if (allElements.pro1stPlanRetailDisplay) {
                     allElements.pro1stPlanRetailDisplay.textContent = selected ? formatCurrency(getPro1stCharge()) : formatCurrency(0);
-                }
-                if (allElements.pro1stPlanCostDisplay) {
-                    allElements.pro1stPlanCostDisplay.textContent = selected ? formatCurrency(getPro1stPlanCost()) : formatCurrency(0);
                 }
             }
 

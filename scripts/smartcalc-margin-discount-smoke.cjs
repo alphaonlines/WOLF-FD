@@ -109,7 +109,8 @@ function normalizedText(id) {
   resultText = normalizedText('result-content');
   assert.match(resultText, /Adjusted Ticket GPM:\s*83\.28%/, 'two power bases should use $149.99 retail and $31.95 cost per base');
   assert.match(normalizedText('pro1st-plan-retail-display'), /\$299\.98/, 'two power bases should show $299.98 retail charge');
-  assert.match(normalizedText('pro1st-plan-cost-display'), /\$63\.90/, 'two power bases should show $63.90 plan cost');
+  assert.equal(document.getElementById('pro1st-plan-cost-display'), null, 'plan cost should not be shown in the Pro1st area');
+  assert.doesNotMatch(document.body.textContent, /Plan Cost/, 'Pro1st area should not label or expose plan cost');
   assert.match(byId('sales-order-notes').value, /Power Bases: 2 @ \$149\.99 = \$299\.98\./, 'power base quantity should appear in sales order notes');
 
   console.log('Smart Calc margin discount smoke PASS');
