@@ -703,3 +703,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Ran `/home/alphahs/.hermes/scripts/ezpro_wolf_fd_reports.py --dates 2025-05-13..2025-07-01 (50 comma-separated dates) --wait-lock`; reports ran sequentially, sales first and item/top-items second, then imported as matched pairs.
 - Result: `complete ok=50 failed=0`. EZPro returned report data for all 50 dates, with no zero-row/no-data marker dates in this chunk.
 - Verification: imported/covered totals for the chunk were 538 sales rows and 1,314 item rows; WOLF-FD coverage now shows missing sales count 0, missing item count 331, union missing count 331. Next latest gap begins at 2025-05-12. Temporary helper script was removed and no secrets/customer row details were printed.
+
+## Running Log - 2026-05-12 09:12 EDT
+
+- Backfilled another 50 historical EZPro/WOLF-FD upload coverage gaps from the dashboard coverage range: 2025-03-24 through 2025-05-12. A fresh gap query before the run showed missing sales count 1 and missing item/union count 332 because the current in-progress date 2026-05-12 had not reached the scheduled evening run yet; the selected historical chunk was item-only gaps.
+- Ran `/home/alphahs/.hermes/scripts/ezpro_wolf_fd_reports.py --dates 2025-03-24..2025-05-12 (50 comma-separated dates) --wait-lock`; reports ran sequentially, sales first and item/top-items second, then imported as matched pairs.
+- Result: `complete ok=50 failed=0`. EZPro returned no sales results for 2025-04-20 and 2025-05-11, so zero-row sales/items coverage markers were written for those dates without customer rows.
+- Verification: imported/covered totals for the chunk were 438 sales rows and 1,244 item rows; all 50 requested dates had coverage. WOLF-FD coverage after the run shows missing sales count 1, missing item count 282, union missing count 282. The next latest historical gap begins at 2025-03-23, while 2026-05-12 remains the normal current-day gap for the scheduled today run. Temporary helper script/output files were removed and no secrets/customer row details were printed.
