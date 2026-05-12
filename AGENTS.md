@@ -732,3 +732,11 @@ Backend deploy flow for route/schema/runtime changes:
 - Validation: HTML parser PASS, duplicate ID check PASS, inline script node --check PASS, git diff --check PASS, `npm run test:smartcalc-number-input-wheel` PASS, `npm run build` PASS.
 - Deployment: copied rebuilt `dist/` to `/srv/www/wolf.discount/fd/` and updated the furnituredistributors `/smartcalc/` wrapper.
 - Verification: live Smart Calc source contains BEDGEAR freight 20 and version 1.5.9.1456; browser selected BEDGEAR with base cost 100 and showed Total with Freight Included 120.00, Freight 20%, no console errors.
+
+## Recent Changes (2026-05-12 15:12 EDT)
+- Updated Smart Calc protection plan cost tiers per request: merchandise retail 0.00-799.99 now uses 59.95 cost, and 800.00-50000.99 now uses 69.95 cost. Protection retail charge tiers remain unchanged.
+- Bumped visible Smart Calc version from 1.5.9.1456 to 1.5.9.1457 and synced the standalone wrapper cache-bust URL.
+- Files changed: `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `scripts/smartcalc-margin-discount-smoke.cjs`, `package.json`, `AGENTS.md`.
+- Validation: HTML parser PASS, duplicate ID check PASS, inline script node --check PASS, git diff --check PASS, `npm run test:smartcalc-margin-discounts` PASS, `npm run test:smartcalc-number-input-wheel` PASS, `npm run build` PASS.
+- Deployment: copied rebuilt `dist/` to `/srv/www/wolf.discount/fd/` and updated the furnituredistributors `/smartcalc/` wrapper.
+- Verification: live source contains the new 59.95 and 69.95 protection costs and version 1.5.9.1457. Browser check passed: A AMERICA base cost 100, retail 500 with Pro1st showed Adjusted Ticket GPM 71.44%; retail 800 with Pro1st showed Adjusted Ticket GPM 80.42%; no console errors.
