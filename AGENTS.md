@@ -724,3 +724,11 @@ Backend deploy flow for route/schema/runtime changes:
 - Ran `/home/alphahs/.hermes/scripts/ezpro_wolf_fd_reports.py --dates <231 comma-separated historical dates from /tmp/wolf_fd_rest_dates.txt> --wait-lock`; reports ran sequentially, sales first and item/top-items second, then imported as matched pairs where EZPro returned data.
 - Result: `complete ok=231 failed=0`. EZPro returned no sales results for 2024-09-15, 2024-11-28, 2024-12-25, 2025-01-22, and 2025-01-23, so zero-row sales/items coverage markers were written for those dates without customer rows.
 - Verification: imported/covered totals for the historical remainder were 3,596 sales rows and 9,526 item rows; all 231 requested historical dates had coverage. WOLF-FD coverage after the run shows missing sales count 1, missing item count 1, union missing count 1, and historical remaining count 0. The only remaining gap is 2026-05-12, the normal current-day gap for the scheduled today run. Live health check passed (`{"ok":true,"db":1}`). Temporary helper script/output files were removed and no secrets/customer row details were printed.
+
+## Recent Changes (2026-05-12 15:00 EDT)
+- Updated Smart Calc Base Cost vendor list to include BEDGEAR with a 20% freight rate.
+- Bumped visible Smart Calc version from 1.5.9.1455 to 1.5.9.1456 and synced the standalone wrapper cache-bust URL.
+- Files changed: `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `package.json`, `AGENTS.md`.
+- Validation: HTML parser PASS, duplicate ID check PASS, inline script node --check PASS, git diff --check PASS, `npm run test:smartcalc-number-input-wheel` PASS, `npm run build` PASS.
+- Deployment: copied rebuilt `dist/` to `/srv/www/wolf.discount/fd/` and updated the furnituredistributors `/smartcalc/` wrapper.
+- Verification: live Smart Calc source contains BEDGEAR freight 20 and version 1.5.9.1456; browser selected BEDGEAR with base cost 100 and showed Total with Freight Included 120.00, Freight 20%, no console errors.
