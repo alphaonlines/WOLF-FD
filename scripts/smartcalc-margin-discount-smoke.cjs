@@ -97,5 +97,20 @@ function normalizedText(id) {
   assert.match(resultText, /Adjusted Ticket GPM:\s*80\.42%/, '800+ merchandise should use the correct Pro1st retail tier and $69.95 plan cost');
   assert.doesNotMatch(resultText, /Pro1st Line:|Pro1st Cost:|Cost Basis:/, '800+ result box should still hide detailed basis lines');
 
+  setValue('pro1st-covered-items', 'Sofa only');
+  setValue('pro1st-covered-value', '500');
+  resultText = normalizedText('result-content');
+  assert.match(resultText, /Adjusted Ticket GPM:\s*80\.65%/, 'covered dollar value should select the Pro1st retail/cost tier instead of full merchandise total');
+  assert.match(normalizedText('pro1st-plan-retail-display'), /\$129\.99/, 'covered value 500 should show the 500-799.99 Pro1st retail charge');
+  assert.match(byId('sales-order-notes').value, /Pro1st Coverage: Sofa only; Covered Value: \$500\.00; Plan Charge: \$129\.99\./, 'coverage item/value should appear in sales order notes');
+
+  setValue('pro1st-plan-type', 'power-base', 'change');
+  setValue('pro1st-power-base-quantity', '2');
+  resultText = normalizedText('result-content');
+  assert.match(resultText, /Adjusted Ticket GPM:\s*83\.28%/, 'two power bases should use $149.99 retail and $31.95 cost per base');
+  assert.match(normalizedText('pro1st-plan-retail-display'), /\$299\.98/, 'two power bases should show $299.98 retail charge');
+  assert.match(normalizedText('pro1st-plan-cost-display'), /\$63\.90/, 'two power bases should show $63.90 plan cost');
+  assert.match(byId('sales-order-notes').value, /Power Bases: 2 @ \$149\.99 = \$299\.98\./, 'power base quantity should appear in sales order notes');
+
   console.log('Smart Calc margin discount smoke PASS');
 })();

@@ -76,6 +76,7 @@ function assertWheelIsBlocked(id, value) {
   assertWheelIsBlocked('retail-price', '500');
   assertWheelIsBlocked('delivery-discount-amount', '169.99');
   assertWheelIsBlocked('pro1st-discount-amount', '129.99');
+  assertWheelIsBlocked('pro1st-power-base-quantity', '2');
   assertWheelIsBlocked('manager-approval-amount', '25');
 
   console.log('Smart Calc number input wheel smoke PASS');

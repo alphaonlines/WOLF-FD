@@ -740,3 +740,13 @@ Backend deploy flow for route/schema/runtime changes:
 - Validation: HTML parser PASS, duplicate ID check PASS, inline script node --check PASS, git diff --check PASS, `npm run test:smartcalc-margin-discounts` PASS, `npm run test:smartcalc-number-input-wheel` PASS, `npm run build` PASS.
 - Deployment: copied rebuilt `dist/` to `/srv/www/wolf.discount/fd/` and updated the furnituredistributors `/smartcalc/` wrapper.
 - Verification: live source contains the new 59.95 and 69.95 protection costs and version 1.5.9.1457. Browser check passed: A AMERICA base cost 100, retail 500 with Pro1st showed Adjusted Ticket GPM 71.44%; retail 800 with Pro1st showed Adjusted Ticket GPM 80.42%; no console errors.
+
+## Recent Changes (2026-05-12 15:49 EDT)
+- Updated Smart Calc Pro1st/Protection controls with a protection plan type selector: Merchandise/Base Combination/Max Elite or Power Bases.
+- Merchandise/Base Combination/Max Elite protection now supports covered-items text plus a covered-dollar-value override; if blank, it still defaults to the full merchandise retail total. The covered value drives the Pro1st retail tier and plan cost.
+- Power Base protection now supports a power-base quantity and calculates at 149.99 retail and 31.95 cost per power base.
+- Bumped visible Smart Calc version from 1.5.9.1457 to 1.5.9.1458 and synced the standalone wrapper cache-bust URL.
+- Files changed: `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `scripts/smartcalc-margin-discount-smoke.cjs`, `scripts/smartcalc-number-input-wheel-smoke.cjs`, `package.json`, `AGENTS.md`.
+- Validation: HTML parser PASS, duplicate ID check PASS, inline script node --check PASS, git diff --check PASS, `npm run test:smartcalc-margin-discounts` PASS, `npm run test:smartcalc-number-input-wheel` PASS, `npm run build` PASS.
+- Deployment: copied rebuilt `dist/` to `/srv/www/wolf.discount/fd/` and updated the furnituredistributors `/smartcalc/` wrapper.
+- Browser verification: standard covered value 500 on retail 800 showed protected value 500.00, retail charge 129.99, plan cost 59.95, Adjusted Ticket GPM 80.65%, and coverage notes. Power base qty 2 showed protected/retail value 299.98, plan cost 63.90, Adjusted Ticket GPM 83.28%, and power-base notes. No console errors.

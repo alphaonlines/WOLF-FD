@@ -99,14 +99,14 @@
         }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.9.1457">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.9.1458">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.1457</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.1458</p>
             <button id="top-reset-btn" type="button" class="mt-4 inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
         </header>
 
@@ -259,6 +259,43 @@
                             <label for="add-pro1st" class="ml-3 block text-sm font-medium text-gray-700">Add Pro1st Protection</label>
                         </div>
                         <span id="pro1st-cost-display" class="font-medium text-gray-900"></span>
+                    </div>
+                    <div id="pro1st-options-wrapper" class="hidden pl-7 space-y-3 rounded-md bg-orange-50/60 p-3">
+                        <div>
+                            <label for="pro1st-plan-type" class="block text-sm font-medium text-gray-600">Protection Plan Type</label>
+                            <select id="pro1st-plan-type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                <option value="standard">Merchandise / Base Combination / Max Elite</option>
+                                <option value="power-base">Power Bases ($149.99 retail each)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="pro1st-covered-items" class="block text-sm font-medium text-gray-600">What is covered?</label>
+                            <input type="text" id="pro1st-covered-items" placeholder="e.g., sofa, loveseat, adjustable power bases" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                        </div>
+                        <div id="pro1st-covered-value-wrapper">
+                            <label for="pro1st-covered-value" class="block text-sm font-medium text-gray-600">Covered Dollar Value ($)</label>
+                            <input type="text" id="pro1st-covered-value" inputmode="decimal" placeholder="Defaults to merchandise total if blank" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                            <p class="mt-1 text-xs leading-5 text-gray-500">Use this when Pro1st covers only part of the ticket. This value selects the protection retail tier and internal plan cost.</p>
+                        </div>
+                        <div id="pro1st-power-base-wrapper" class="hidden">
+                            <label for="pro1st-power-base-quantity" class="block text-sm font-medium text-gray-600">Power Bases Covered</label>
+                            <input type="number" id="pro1st-power-base-quantity" min="1" step="1" value="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                            <p class="mt-1 text-xs leading-5 text-gray-500">Power base protection is $149.99 retail and $31.95 cost per power base.</p>
+                        </div>
+                        <div class="grid gap-2 text-sm text-gray-700 sm:grid-cols-3">
+                            <div class="rounded-md bg-white px-3 py-2">
+                                <span class="block text-xs uppercase tracking-wide text-gray-500">Protected Value Used</span>
+                                <span id="pro1st-protected-value-display" class="font-semibold text-gray-900">$0.00</span>
+                            </div>
+                            <div class="rounded-md bg-white px-3 py-2">
+                                <span class="block text-xs uppercase tracking-wide text-gray-500">Retail Charge</span>
+                                <span id="pro1st-plan-retail-display" class="font-semibold text-gray-900">$0.00</span>
+                            </div>
+                            <div class="rounded-md bg-white px-3 py-2">
+                                <span class="block text-xs uppercase tracking-wide text-gray-500">Plan Cost</span>
+                                <span id="pro1st-plan-cost-display" class="font-semibold text-gray-900">$0.00</span>
+                            </div>
+                        </div>
                     </div>
                     <p class="pl-7 text-xs leading-5 text-gray-500">Policy: if Pro1st is discounted, enter the discount in Adjustment and document it in notes.</p>
                     <div class="space-y-3 border-t border-gray-200 pt-3">
@@ -618,6 +655,7 @@ function showLicenseLockScreen(message) {
             const deliveryTiers = [ { from: 0, to: 499.99, charge: 129.99 }, { from: 500, to: 1999.99, charge: 169.99 }, { from: 2000, to: 2999.99, charge: 199.99 }, { from: 3000, to: 4999.99, charge: 249.99 }, { from: 5000, to: 7499.99, charge: 349.99 }, { from: 7500, to: 9999.99, charge: 399.99 }, { from: 10000, to: Infinity, charge: 499.99 } ];
             const pro1stTiers = [ { from: 0, to: 499.99, price: 99.99 }, { from: 500, to: 799.99, price: 129.99 }, { from: 800, to: 1200.99, price: 169.99 }, { from: 1201, to: 2500.99, price: 249.99 }, { from: 2501, to: 3000.99, price: 299.99 }, { from: 3001, to: 3500.99, price: 349.99 }, { from: 3501, to: 5000.99, price: 499.99 }, { from: 5001, to: 7000.99, price: 699.99 }, { from: 7001, to: 10000.99, price: 999.99 }, { from: 10001, to: 15000.99, price: 1499.99 }, { from: 15001, to: 20000.99, price: 1999.99 }, { from: 20001, to: 25000.99, price: 2499.99 }, { from: 25001, to: 30000.99, price: 2999.99 }, { from: 30001, to: 35000.99, price: 3499.99 }, { from: 35001, to: 40000.99, price: 3999.99 }, { from: 40001, to: 45000.99, price: 4499.99 }, { from: 45001, to: 50000.99, price: 4999.99 } ];
             const pro1stCostTiers = [ { from: 0, to: 799.99, cost: 59.95 }, { from: 800, to: 50000.99, cost: 69.95 } ];
+            const powerBaseProtectionPlan = { retail: 149.99, cost: 31.95 };
             const taxRates = { 'camp-greenville': 0.07, 'greenville': 0.07, 'camp': 0.07, 'other': 0.0675 };
             const financingTerms = [3, 6, 12, 15, 18, 24, 36, 48]; // ADDED: Financing terms
 
@@ -654,6 +692,16 @@ function showLicenseLockScreen(message) {
                 addAssemblyCheckbox: document.getElementById('add-assembly'),
                 assemblyCostDisplay: document.getElementById('assembly-cost-display'),
                 addPro1stCheckbox: document.getElementById('add-pro1st'),
+                pro1stOptionsWrapper: document.getElementById('pro1st-options-wrapper'),
+                pro1stPlanTypeSelect: document.getElementById('pro1st-plan-type'),
+                pro1stCoveredItemsInput: document.getElementById('pro1st-covered-items'),
+                pro1stCoveredValueWrapper: document.getElementById('pro1st-covered-value-wrapper'),
+                pro1stCoveredValueInput: document.getElementById('pro1st-covered-value'),
+                pro1stPowerBaseWrapper: document.getElementById('pro1st-power-base-wrapper'),
+                pro1stPowerBaseQuantityInput: document.getElementById('pro1st-power-base-quantity'),
+                pro1stProtectedValueDisplay: document.getElementById('pro1st-protected-value-display'),
+                pro1stPlanRetailDisplay: document.getElementById('pro1st-plan-retail-display'),
+                pro1stPlanCostDisplay: document.getElementById('pro1st-plan-cost-display'),
                 addRemovalCheckbox: document.getElementById('add-removal'),
                 removalWrapper: document.getElementById('removal-wrapper'),
                 removalItemsInput: document.getElementById('removal-items'),
@@ -817,7 +865,15 @@ function showLicenseLockScreen(message) {
                 });
                 allElements.longDistanceMilesInput.addEventListener('input', updateAddonCosts);
                 allElements.addAssemblyCheckbox.addEventListener('change', updateAddonCosts);
-                allElements.addPro1stCheckbox.addEventListener('change', updateAddonCosts);
+                allElements.addPro1stCheckbox.addEventListener('change', () => {
+                    allElements.pro1stOptionsWrapper?.classList.toggle('hidden', !allElements.addPro1stCheckbox.checked);
+                    updateAddonCosts();
+                });
+                allElements.pro1stPlanTypeSelect?.addEventListener('change', updateAddonCosts);
+                allElements.pro1stCoveredValueInput?.addEventListener('input', updateAddonCosts);
+                allElements.pro1stPowerBaseQuantityInput?.addEventListener('input', updateAddonCosts);
+                allElements.pro1stPowerBaseQuantityInput?.addEventListener('change', updateAddonCosts);
+                allElements.pro1stCoveredItemsInput?.addEventListener('input', updateSalesOrderNotes);
                 allElements.addTaxCheckbox.addEventListener('change', () => {
                     if (!allElements.addTaxCheckbox.checked && allElements.payTaxCheckbox.checked) {
                         allElements.payTaxCheckbox.checked = false;
@@ -868,6 +924,7 @@ function showLicenseLockScreen(message) {
                     allElements.vendorAdSelect,
                     allElements.deliveryDiscountCommentInput,
                     allElements.pro1stDiscountCommentInput,
+                    allElements.pro1stCoveredItemsInput,
                     allElements.percentageOffReasonInput,
                     allElements.advertisedPriceSourceSelect,
                     allElements.advertisedPriceItemsInput,
@@ -1204,16 +1261,82 @@ function showLicenseLockScreen(message) {
                 return { amount: 0, label: 'Delivery' };
             }
 
+            function getPro1stPlanType() {
+                return allElements.pro1stPlanTypeSelect?.value || 'standard';
+            }
+
+            function getPro1stPowerBaseQuantity() {
+                const rawQuantity = parseInt(allElements.pro1stPowerBaseQuantityInput?.value || '1', 10);
+                return Math.max(1, Number.isFinite(rawQuantity) ? rawQuantity : 1);
+            }
+
+            function getPro1stProtectedValue() {
+                if (getPro1stPlanType() === 'power-base') {
+                    return Math.round((getPro1stPowerBaseQuantity() * powerBaseProtectionPlan.retail + Number.EPSILON) * 100) / 100;
+                }
+                const coveredValue = parseMoneyExpression(allElements.pro1stCoveredValueInput?.value || '');
+                if (Number.isFinite(coveredValue) && coveredValue > 0) {
+                    return coveredValue;
+                }
+                return currentRetailPrice;
+            }
+
             function getPro1stCharge() {
-                const retailPrice = Math.round((currentRetailPrice + Number.EPSILON) * 100) / 100;
-                const pro1stTier = pro1stTiers.find(t => retailPrice >= t.from && retailPrice <= t.to);
+                if (getPro1stPlanType() === 'power-base') {
+                    return Math.round((getPro1stPowerBaseQuantity() * powerBaseProtectionPlan.retail + Number.EPSILON) * 100) / 100;
+                }
+                const protectedValue = Math.round((getPro1stProtectedValue() + Number.EPSILON) * 100) / 100;
+                const pro1stTier = pro1stTiers.find(t => protectedValue >= t.from && protectedValue <= t.to);
                 return pro1stTier ? pro1stTier.price : 0;
             }
 
             function getPro1stPlanCost() {
-                const retailPrice = Math.round((currentRetailPrice + Number.EPSILON) * 100) / 100;
-                const pro1stCostTier = pro1stCostTiers.find(t => retailPrice >= t.from && retailPrice <= t.to);
+                if (getPro1stPlanType() === 'power-base') {
+                    return Math.round((getPro1stPowerBaseQuantity() * powerBaseProtectionPlan.cost + Number.EPSILON) * 100) / 100;
+                }
+                const protectedValue = Math.round((getPro1stProtectedValue() + Number.EPSILON) * 100) / 100;
+                const pro1stCostTier = pro1stCostTiers.find(t => protectedValue >= t.from && protectedValue <= t.to);
                 return pro1stCostTier ? pro1stCostTier.cost : 0;
+            }
+
+            function updatePro1stOptionFields() {
+                const selected = !!allElements.addPro1stCheckbox?.checked;
+                const powerBaseSelected = getPro1stPlanType() === 'power-base';
+                allElements.pro1stOptionsWrapper?.classList.toggle('hidden', !selected);
+                allElements.pro1stCoveredValueWrapper?.classList.toggle('hidden', !selected || powerBaseSelected);
+                allElements.pro1stPowerBaseWrapper?.classList.toggle('hidden', !selected || !powerBaseSelected);
+                if (selected && powerBaseSelected && allElements.pro1stPowerBaseQuantityInput && !allElements.pro1stPowerBaseQuantityInput.value) {
+                    allElements.pro1stPowerBaseQuantityInput.value = '1';
+                }
+                if (allElements.pro1stProtectedValueDisplay) {
+                    allElements.pro1stProtectedValueDisplay.textContent = selected ? formatCurrency(getPro1stProtectedValue()) : formatCurrency(0);
+                }
+                if (allElements.pro1stPlanRetailDisplay) {
+                    allElements.pro1stPlanRetailDisplay.textContent = selected ? formatCurrency(getPro1stCharge()) : formatCurrency(0);
+                }
+                if (allElements.pro1stPlanCostDisplay) {
+                    allElements.pro1stPlanCostDisplay.textContent = selected ? formatCurrency(getPro1stPlanCost()) : formatCurrency(0);
+                }
+            }
+
+            function getPro1stCoverageNote() {
+                if (!allElements.addPro1stCheckbox?.checked) return '';
+                const coveredItems = getCleanDetail(allElements.pro1stCoveredItemsInput?.value, getPro1stPlanType() === 'power-base' ? 'Power base(s)' : '[covered item(s) needed]');
+                if (getPro1stPlanType() === 'power-base') {
+                    const quantity = getPro1stPowerBaseQuantity();
+                    return `Pro1st Coverage: ${coveredItems}; Power Bases: ${quantity} @ ${formatCurrency(powerBaseProtectionPlan.retail)} = ${formatCurrency(getPro1stCharge())}.`;
+                }
+                return `Pro1st Coverage: ${coveredItems}; Covered Value: ${formatCurrency(getPro1stProtectedValue())}; Plan Charge: ${formatCurrency(getPro1stCharge())}.`;
+            }
+
+            function getPro1stCustomerCopyDetail() {
+                if (getPro1stPlanType() === 'power-base') {
+                    return `${getPro1stPowerBaseQuantity()} power base(s) @ ${formatCurrency(powerBaseProtectionPlan.retail)} each`;
+                }
+                const coveredItems = (allElements.pro1stCoveredItemsInput?.value || '').trim();
+                const parts = [`Covered value ${formatCurrency(getPro1stProtectedValue())}`];
+                if (coveredItems) parts.unshift(coveredItems);
+                return parts.join(' | ');
             }
 
 
@@ -1479,6 +1602,11 @@ function showLicenseLockScreen(message) {
                 notes.push(`Removal Details: ${removalDescription || '[what is being removed/moved?]'}`);
             }
 
+            if (pro1stSelected) {
+                const coverageNote = getPro1stCoverageNote();
+                if (coverageNote) notes.push(coverageNote);
+            }
+
             discountReasons.forEach((reason) => notes.push(reason));
 
             if (currentRetailPrice > 0 && !pro1stSelected) {
@@ -1552,6 +1680,7 @@ function showLicenseLockScreen(message) {
             const pro1stCharge = getPro1stCharge();
             const removalCharge = getRemovalCharge();
             const additionalRemoval = getAdditionalRemovalCharge();
+            updatePro1stOptionFields();
 
             if (allElements.deliveryCostDisplay) {
                 allElements.deliveryCostDisplay.textContent = formatCurrency(localDelivery);
@@ -1609,6 +1738,7 @@ function showLicenseLockScreen(message) {
             const deliveryUpcharge = getDeliveryUpcharge();
             const powerBaseSetup = getPowerBaseSetupCharge();
             const assemblyCharge = getAssemblyCharge();
+            updatePro1stOptionFields();
             const selectedPro1stCharge = allElements.addPro1stCheckbox?.checked ? getPro1stCharge() : 0;
             const removalCharge = getRemovalCharge();
             const additionalRemoval = getAdditionalRemovalCharge();
@@ -1801,7 +1931,7 @@ function showLicenseLockScreen(message) {
                     deliveryFeeRows.push({ label: 'Assembly Fee', amount: 65 });
                 }
                 if (allElements.addPro1stCheckbox?.checked) {
-                    merchandiseRows.push({ label: 'Pro1st Protection', amount: getPro1stCharge(), detail: 'Shopping cart line item' });
+                    merchandiseRows.push({ label: 'Pro1st Protection', amount: getPro1stCharge(), detail: getPro1stCustomerCopyDetail() });
                 }
                 if (allElements.addRemovalCheckbox?.checked && currentRemovalCharge > 0) {
                     deliveryFeeRows.push({ label: 'Removal Fee', amount: 35, detail: 'Delivery fee line item' });
@@ -1960,7 +2090,9 @@ function showLicenseLockScreen(message) {
                     marginPercentInput, retailPriceInput, vendorSelect, addDeliveryCheckbox,
                     deliveryTypeWrapper, deliveryTypeSelect, sleeperMotionMinimumNote,
                     powerBaseWrapper, addPowerBaseSetupCheckbox, addThresholdDeliveryCheckbox,
-                    addAssemblyCheckbox, addPro1stCheckbox, addTaxCheckbox,
+                    addAssemblyCheckbox, addPro1stCheckbox, pro1stOptionsWrapper, pro1stPlanTypeSelect,
+                    pro1stCoveredItemsInput, pro1stCoveredValueWrapper, pro1stCoveredValueInput,
+                    pro1stPowerBaseWrapper, pro1stPowerBaseQuantityInput, addTaxCheckbox,
                     addLongDistanceCheckbox, longDistanceMilesInput, storeLocationWrapper,
                     storeLocationSelect, longDistanceWrapper, milesInputWrapper, payTaxCheckbox,
                     showFinancingCheckbox, addRemovalCheckbox, removalWrapper, removalItemsInput,
@@ -1986,7 +2118,8 @@ function showLicenseLockScreen(message) {
                     competitionNameInput, competitionMatchAmountInput, managerApprovalNameInput,
                     managerApprovalAmountInput, vendorAdAmountInput, otherDiscountExplanationInput,
                     otherDiscountAmountInput, salesTaxDiscountAmountInput, removalDescriptionInput,
-                    deliveryDiscountAmountInput, pro1stDiscountAmountInput, percentageOffReasonInput,
+                    deliveryDiscountAmountInput, pro1stDiscountAmountInput, pro1stCoveredItemsInput,
+                    pro1stCoveredValueInput, percentageOffReasonInput,
                     percentageOffPercentInput, percentageOffAmountInput, advertisedPriceSourceSelect,
                     advertisedPriceItemsInput, advertisedPriceAmountInput
                 ].filter(Boolean);
@@ -1995,7 +2128,9 @@ function showLicenseLockScreen(message) {
                 if (pro1stDiscountCommentInput) pro1stDiscountCommentInput.value = 'Pro1st Discount';
                 if (salesTaxDiscountCommentInput) salesTaxDiscountCommentInput.value = 'Sales Tax Discount';
                 if (removalItemsInput) removalItemsInput.value = '1';
+                if (pro1stPowerBaseQuantityInput) pro1stPowerBaseQuantityInput.value = '1';
                 if (vendorSelect) vendorSelect.selectedIndex = 0;
+                if (pro1stPlanTypeSelect) pro1stPlanTypeSelect.value = 'standard';
                 if (deliveryTypeSelect) deliveryTypeSelect.selectedIndex = 0;
                 if (vendorAdSelect) vendorAdSelect.selectedIndex = 0;
                 if (storeLocationSelect) storeLocationSelect.value = 'camp-greenville';
@@ -2034,7 +2169,7 @@ function showLicenseLockScreen(message) {
                     allElements.calculatorSection, allElements.resultSection, allElements.addonsSection,
                     allElements.grandTotalSection, allElements.resetBtn, allElements.vendorInfoDiv,
                     storeLocationWrapper, deliveryTypeWrapper, sleeperMotionMinimumNote, powerBaseWrapper,
-                    longDistanceWrapper, milesInputWrapper, allElements.financingSection,
+                    pro1stOptionsWrapper, pro1stPowerBaseWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection,
                     allElements.financingBreakdown, allElements.salesNotesSection, removalWrapper,
                     competitionMatchWrapper, managerApprovalWrapper, vendorAdWrapper, deliveryDiscountWrapper,
                     pro1stDiscountWrapper, percentageOffWrapper, advertisedPriceWrapper, otherDiscountWrapper,
