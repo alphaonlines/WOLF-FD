@@ -2,7 +2,7 @@
   "name": "furniture-distributors-dashboard",
   "private": true,
   "version": "0.3.32",
-  "displayVersion": "1.5.9.1459",
+  "displayVersion": "1.5.9.1460",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "test": "vitest run",
     "preview": "vite preview",
     "test:smartcalc-margin-discounts": "node scripts/smartcalc-margin-discount-smoke.cjs",
-    "test:smartcalc-number-input-wheel": "node scripts/smartcalc-number-input-wheel-smoke.cjs"
+    "test:smartcalc-number-input-wheel": "node scripts/smartcalc-number-input-wheel-smoke.cjs",
+    "test:smartcalc-tutorial": "node scripts/smartcalc-tutorial-smoke.cjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

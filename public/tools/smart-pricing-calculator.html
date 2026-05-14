@@ -97,24 +97,71 @@
         .powered-footer a:hover {
             text-decoration: underline;
         }
+
+        .smartcalc-tour-overlay[aria-hidden="true"] {
+            display: none;
+        }
+        .smartcalc-tour-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .smartcalc-tour-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(17, 24, 39, 0.68);
+            backdrop-filter: blur(2px);
+        }
+        .smartcalc-tour-card {
+            position: relative;
+            z-index: 10000;
+            width: min(94vw, 430px);
+            border-radius: 1rem;
+            background: #ffffff;
+            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.36);
+            border: 1px solid rgba(240, 125, 0, 0.28);
+        }
+        .smartcalc-tour-target {
+            position: relative;
+            z-index: 10001;
+            outline: 4px solid rgba(240, 125, 0, 0.78);
+            outline-offset: 5px;
+            border-radius: 0.75rem;
+            box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.26);
+        }
+        .smartcalc-tour-no-scroll {
+            overflow: hidden;
+        }
+        @media (max-width: 640px) {
+            .smartcalc-tour-card {
+                align-self: flex-end;
+            }
+        }
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.9.1459">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.9.1460">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.1459</p>
-            <button id="top-reset-btn" type="button" class="mt-4 inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.1460</p>
+            <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+                <button id="smartcalc-tutorial-btn" type="button" class="inline-flex items-center justify-center rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown transition">Start guided tutorial</button>
+                <button id="top-reset-btn" type="button" class="inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
+            </div>
         </header>
 
         <div class="space-y-6">
             <!-- Step 1: Entry Mode Selection -->
             <div class="form-section">
                 <label class="block text-sm font-medium text-brand-brown mb-2">1. Choose your starting point</label>
-                <div class="flex rounded-md shadow-sm">
+                <div id="smartcalc-tour-entry-mode" data-tour-id="entry-mode" class="flex rounded-md shadow-sm">
                     <button id="btn-base-cost" type="button" class="entry-btn active relative inline-flex items-center justify-center w-1/3 rounded-l-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">Base Cost</button>
                     <button id="btn-ez-code" type="button" class="entry-btn relative -ml-px inline-flex items-center justify-center w-1/3 border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">EZ Pro Cost Code</button>
                     <button id="btn-tagged-price" type="button" class="entry-btn relative -ml-px inline-flex items-center justify-center w-1/3 rounded-r-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">Tagged Price</button>
@@ -594,6 +641,24 @@
         </footer>
     </div>
 
+    <div id="smartcalc-tour-overlay" class="smartcalc-tour-overlay" aria-hidden="true">
+        <div class="smartcalc-tour-backdrop" aria-hidden="true"></div>
+        <section id="smartcalc-tour-card" class="smartcalc-tour-card p-5 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="smartcalc-tour-title" aria-describedby="smartcalc-tour-body" tabindex="-1">
+            <p id="smartcalc-tour-step-count" class="text-xs font-semibold uppercase tracking-[0.18em] text-brand-orange">Step 1 of 1</p>
+            <h2 id="smartcalc-tour-title" class="mt-2 text-xl font-bold text-brand-brown">Smart Calc tutorial</h2>
+            <p id="smartcalc-tour-body" class="mt-3 text-sm leading-6 text-gray-700"></p>
+            <p id="smartcalc-tour-tip" class="mt-3 rounded-lg bg-orange-50 px-3 py-2 text-xs font-medium leading-5 text-orange-900"></p>
+            <div class="mt-5 flex flex-wrap items-center justify-between gap-2">
+                <button id="smartcalc-tour-skip" type="button" class="rounded-md px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-orange">Skip</button>
+                <div class="ml-auto flex items-center gap-2">
+                    <button id="smartcalc-tour-back" type="button" class="rounded-md border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-orange">Back</button>
+                    <button id="smartcalc-tour-next" type="button" class="rounded-md bg-brand-orange px-4 py-2 text-sm font-semibold text-white hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange">Next</button>
+                    <button id="smartcalc-tour-done" type="button" class="hidden rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown">Done</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
     <script>
 
 
@@ -787,6 +852,89 @@ function showLicenseLockScreen(message) {
         let notesManuallyEdited = false;
         let lastGeneratedNotes = '';
 
+        const SMARTCALC_TUTORIAL_STORAGE_KEY = 'fd_smartcalc_tutorial_completed_v1';
+        const SMARTCALC_TUTORIAL_MESSAGE = 'FD_SMART_CALC_START_TUTORIAL';
+        const SMARTCALC_TUTORIAL_ALLOWED_ORIGINS = new Set([
+            window.location.origin,
+            'https://furnituredistributors.wolf.discount',
+            'https://www.furnituredistributors.wolf.discount',
+            'https://wolf.discount',
+            'https://www.wolf.discount',
+            'http://localhost:5173',
+            'http://127.0.0.1:5173'
+        ]);
+        const smartCalcTutorialSteps = [
+            {
+                title: 'Welcome to Smart Calc',
+                body: 'This guided tutorial walks through the same quoting flow the sales team uses: pick a starting point, price the merchandise, add delivery/protection/tax, document discounts, then copy notes or print a customer copy.',
+                tip: 'The tutorial never overwrites an in-progress quote. If you already typed customer numbers, they stay in place.',
+                target: 'header'
+            },
+            {
+                title: 'Choose your starting point',
+                body: 'Start from Base Cost when you know vendor cost, EZ Pro Cost Code when a coded cost is printed, or Tagged Price when the selling price is already known.',
+                tip: 'Use Base Cost for most quotes. Tagged Price hides margin because the original cost is unknown.',
+                target: '#smartcalc-tour-entry-mode'
+            },
+            {
+                title: 'Enter vendor and base cost',
+                body: 'Choose the vendor, then enter one or more costs. Smart Calc adds freight and supports multiple pieces separated by plus signs, commas, or spaces.',
+                tip: 'Example format: 399 + 299, 179. Vendor notes show freight and ordering requirements.',
+                target: '#base-cost-section'
+            },
+            {
+                title: 'Set the selling goal',
+                body: 'After Smart Calc has a cost or tagged price, enter either the target margin percent or the retail price. The result box updates with the adjusted ticket GPM.',
+                tip: 'Use margin for desired profitability, or retail price when matching a tag, promo, or manager price.',
+                target: '#calculator-section'
+            },
+            {
+                title: 'Add delivery and services',
+                body: 'Turn on threshold delivery, local delivery, outside-area miles, assembly, removal, and other services that should appear on the ticket.',
+                tip: 'Delivery discounts belong in Adjustment and should be documented in notes.',
+                target: '#addons-section'
+            },
+            {
+                title: 'Add Pro1st protection',
+                body: 'Use Pro1st when the customer accepts protection. Select the plan type, covered items, and covered value when only part of the ticket is protected.',
+                tip: 'Power bases have their own plan type and quantity field.',
+                target: '#pro1st-options-wrapper'
+            },
+            {
+                title: 'Document discounts',
+                body: 'Check every discount reason that applies. Each selected reason gets its own amount and detail so the adjustment field and notes stay audit-ready.',
+                tip: 'Sales tax, delivery, Pro1st, advertised price, competition match, vendor ad, manager approval, and other discounts are tracked separately.',
+                target: '#adjustment-field-section'
+            },
+            {
+                title: 'Confirm tax and financing',
+                body: 'Tax defaults to the highest store rate. Change the location only when the ticket should use the alternate rate, and show financing when a monthly-payment view helps close the sale.',
+                tip: 'Financing is informational here; final financing approval is still confirmed at checkout.',
+                target: '#financing-section'
+            },
+            {
+                title: 'Copy sales order notes',
+                body: 'Smart Calc builds notes from the quote, coverage, delivery, discounts, and policy details. Copy them into the sales order before checkout.',
+                tip: 'If you manually edit notes, Smart Calc keeps your edits for copying.',
+                target: '#sales-notes-section'
+            },
+            {
+                title: 'Print the customer copy',
+                body: 'When the quote is ready, print the customer copy to show merchandise, delivery fees, discounts, tax, and the final total.',
+                tip: 'Use Reset / Clear Form only after the quote has been saved or you are ready to start over.',
+                target: '#reset-btn'
+            },
+            {
+                title: 'You are ready to quote',
+                body: 'That is the full Smart Calc flow. You can restart this tutorial any time from the top button or from the dashboard toolbar.',
+                tip: 'Done saves this tutorial as completed on this browser. Skip closes it without marking it complete.',
+                target: 'header'
+            }
+        ];
+        let currentTutorialStepIndex = 0;
+        let currentTutorialTarget = null;
+        let tutorialPreviousFocus = null;
+
             function initialize() {
                 const vendors = Object.keys(vendorFreightData).sort();
                 vendors.forEach(vendor => {
@@ -799,6 +947,7 @@ function showLicenseLockScreen(message) {
                 if (allElements.storeLocationSelect) allElements.storeLocationSelect.value = 'camp-greenville';
                 setupEventListeners();
                 preventNumberInputWheelChanges();
+                setupGuidedTutorial();
             }
 
             function preventNumberInputWheelChanges() {
@@ -809,6 +958,142 @@ function showLicenseLockScreen(message) {
                         }
                     }, { passive: false });
                 });
+            }
+
+
+            function setupGuidedTutorial() {
+                const tourElements = getTutorialElements();
+                if (!tourElements.overlay || !tourElements.startButton) return;
+
+                tourElements.startButton.addEventListener('click', () => startGuidedTutorial());
+                tourElements.skipButton?.addEventListener('click', () => closeGuidedTutorial(false));
+                tourElements.backButton?.addEventListener('click', showPreviousTutorialStep);
+                tourElements.nextButton?.addEventListener('click', showNextTutorialStep);
+                tourElements.doneButton?.addEventListener('click', () => closeGuidedTutorial(true));
+                window.addEventListener('keydown', (event) => {
+                    if (tourElements.overlay.getAttribute('aria-hidden') === 'true') return;
+                    if (event.key === 'Escape') closeGuidedTutorial(false);
+                    if (event.key === 'ArrowRight') showNextTutorialStep();
+                    if (event.key === 'ArrowLeft') showPreviousTutorialStep();
+                });
+                window.addEventListener('message', (event) => {
+                    if (!isAllowedTutorialOrigin(event.origin)) return;
+                    const data = event.data;
+                    const requested = data === SMARTCALC_TUTORIAL_MESSAGE || data?.type === SMARTCALC_TUTORIAL_MESSAGE;
+                    if (requested) startGuidedTutorial();
+                });
+            }
+
+            function getTutorialElements() {
+                return {
+                    overlay: document.getElementById('smartcalc-tour-overlay'),
+                    card: document.getElementById('smartcalc-tour-card'),
+                    startButton: document.getElementById('smartcalc-tutorial-btn'),
+                    title: document.getElementById('smartcalc-tour-title'),
+                    body: document.getElementById('smartcalc-tour-body'),
+                    tip: document.getElementById('smartcalc-tour-tip'),
+                    stepCount: document.getElementById('smartcalc-tour-step-count'),
+                    skipButton: document.getElementById('smartcalc-tour-skip'),
+                    backButton: document.getElementById('smartcalc-tour-back'),
+                    nextButton: document.getElementById('smartcalc-tour-next'),
+                    doneButton: document.getElementById('smartcalc-tour-done')
+                };
+            }
+
+            function isAllowedTutorialOrigin(origin) {
+                if (!origin || origin === 'null') return false;
+                if (SMARTCALC_TUTORIAL_ALLOWED_ORIGINS.has(origin)) return true;
+                try {
+                    const url = new URL(origin);
+                    return ['localhost', '127.0.0.1'].includes(url.hostname);
+                } catch (_error) {
+                    return false;
+                }
+            }
+
+            function startGuidedTutorial() {
+                tutorialPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+                currentTutorialStepIndex = 0;
+                renderGuidedTutorialStep();
+            }
+
+            function showNextTutorialStep() {
+                if (currentTutorialStepIndex >= smartCalcTutorialSteps.length - 1) {
+                    closeGuidedTutorial(true);
+                    return;
+                }
+                currentTutorialStepIndex += 1;
+                renderGuidedTutorialStep();
+            }
+
+            function showPreviousTutorialStep() {
+                if (currentTutorialStepIndex <= 0) return;
+                currentTutorialStepIndex -= 1;
+                renderGuidedTutorialStep();
+            }
+
+            function closeGuidedTutorial(markComplete) {
+                const tourElements = getTutorialElements();
+                clearTutorialTarget();
+                tourElements.overlay?.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('smartcalc-tour-no-scroll');
+                if (markComplete) {
+                    try { window.localStorage.setItem(SMARTCALC_TUTORIAL_STORAGE_KEY, 'true'); } catch (_error) {}
+                }
+                if (tutorialPreviousFocus && typeof tutorialPreviousFocus.focus === 'function') {
+                    tutorialPreviousFocus.focus({ preventScroll: true });
+                }
+            }
+
+            function renderGuidedTutorialStep() {
+                const tourElements = getTutorialElements();
+                const step = smartCalcTutorialSteps[currentTutorialStepIndex];
+                if (!tourElements.overlay || !step) return;
+
+                tourElements.title.textContent = step.title;
+                tourElements.body.textContent = step.body;
+                tourElements.tip.textContent = step.tip || '';
+                tourElements.tip.classList.toggle('hidden', !step.tip);
+                tourElements.stepCount.textContent = `Step ${currentTutorialStepIndex + 1} of ${smartCalcTutorialSteps.length}`;
+                tourElements.backButton.disabled = currentTutorialStepIndex === 0;
+                tourElements.backButton.classList.toggle('opacity-50', currentTutorialStepIndex === 0);
+                tourElements.backButton.classList.toggle('cursor-not-allowed', currentTutorialStepIndex === 0);
+                const isLastStep = currentTutorialStepIndex === smartCalcTutorialSteps.length - 1;
+                tourElements.nextButton.classList.toggle('hidden', isLastStep);
+                tourElements.doneButton.classList.toggle('hidden', !isLastStep);
+                tourElements.overlay.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('smartcalc-tour-no-scroll');
+                highlightTutorialTarget(step.target);
+                tourElements.card?.focus?.({ preventScroll: true });
+            }
+
+            function highlightTutorialTarget(targetSelector) {
+                clearTutorialTarget();
+                const target = resolveTutorialTarget(targetSelector);
+                if (!target || !isTutorialTargetVisible(target)) return;
+                currentTutorialTarget = target;
+                currentTutorialTarget.classList.add('smartcalc-tour-target');
+                currentTutorialTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            }
+
+            function resolveTutorialTarget(targetSelector) {
+                if (!targetSelector) return null;
+                if (targetSelector === 'header') return document.querySelector('header');
+                return document.querySelector(targetSelector);
+            }
+
+            function isTutorialTargetVisible(element) {
+                if (!element) return false;
+                const rect = element.getBoundingClientRect();
+                return !element.classList.contains('hidden') && rect.width > 0 && rect.height > 0;
+            }
+
+            function clearTutorialTarget() {
+                if (currentTutorialTarget) {
+                    currentTutorialTarget.classList.remove('smartcalc-tour-target');
+                    currentTutorialTarget = null;
+                }
+                document.querySelectorAll('.smartcalc-tour-target').forEach((element) => element.classList.remove('smartcalc-tour-target'));
             }
 
             function setupEventListeners() {

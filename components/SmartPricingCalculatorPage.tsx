@@ -1,5 +1,5 @@
 import React from "react";
-import { Calculator, ExternalLink } from "lucide-react";
+import { Calculator, ExternalLink, HelpCircle } from "lucide-react";
 import { APP_VERSION } from "../constants";
 
 type SmartPricingCalculatorPageProps = {
@@ -8,6 +8,13 @@ type SmartPricingCalculatorPageProps = {
 
 const SmartPricingCalculatorPage: React.FC<SmartPricingCalculatorPageProps> = ({ isDarkMode }) => {
   const calculatorUrl = `${import.meta.env.BASE_URL}tools/smart-pricing-calculator.html?v=${encodeURIComponent(APP_VERSION)}`;
+  const calculatorFrameRef = React.useRef<HTMLIFrameElement | null>(null);
+  const startTutorial = () => {
+    calculatorFrameRef.current?.contentWindow?.postMessage(
+      { type: "FD_SMART_CALC_START_TUTORIAL" },
+      window.location.origin,
+    );
+  };
   const mutedClassName = isDarkMode ? "text-slate-400" : "text-slate-600";
   const headingClassName = isDarkMode ? "text-white" : "text-slate-950";
   const iconClassName = isDarkMode
@@ -36,17 +43,29 @@ const SmartPricingCalculatorPage: React.FC<SmartPricingCalculatorPageProps> = ({
               <p className={`text-xs ${mutedClassName}`}>Cost, margin, delivery, tax, protection, and financing.</p>
             </div>
           </div>
-          <a
-            href={calculatorUrl}
-            target="_blank"
-            rel="noreferrer"
-            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${actionClassName}`}
-          >
-            <ExternalLink size={14} />
-            Open full page
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              id="smartcalc-parent-tutorial-btn"
+              type="button"
+              onClick={startTutorial}
+              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${actionClassName}`}
+            >
+              <HelpCircle size={14} />
+              Start guided tutorial
+            </button>
+            <a
+              href={calculatorUrl}
+              target="_blank"
+              rel="noreferrer"
+              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${actionClassName}`}
+            >
+              <ExternalLink size={14} />
+              Open full page
+            </a>
+          </div>
         </div>
         <iframe
+          ref={calculatorFrameRef}
           title="Smart Calc"
           src={calculatorUrl}
           className="min-h-0 w-full flex-1 border-0"
