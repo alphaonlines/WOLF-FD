@@ -17,6 +17,27 @@ virtualConsole.on('jsdomError', (error) => {
 });
 virtualConsole.on('error', (message) => jsErrors.push(new Error(String(message))));
 
+function makeRect(left, top, width, height) {
+  return {
+    x: left,
+    y: top,
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+    toJSON() {
+      return this;
+    },
+  };
+}
+
+function numericStyle(value, fallback) {
+  const parsed = Number.parseFloat(String(value || ''));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 const dom = new JSDOM(html, {
   runScripts: 'dangerously',
   pretendToBeVisual: true,
@@ -26,12 +47,35 @@ const dom = new JSDOM(html, {
     window.tailwind = {};
     window.alert = () => {};
     window.open = () => null;
+    Object.defineProperty(window, 'innerWidth', { value: 375, writable: true, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 667, writable: true, configurable: true });
     window.HTMLElement.prototype.scrollIntoView = () => {};
     window.HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
       if (this.classList?.contains('hidden')) {
-        return { top: 0, right: 0, bottom: 0, left: 0, width: 0, height: 0, x: 0, y: 0 };
+        return makeRect(0, 0, 0, 0);
       }
-      return { top: 0, right: 240, bottom: 48, left: 0, width: 240, height: 48, x: 0, y: 0 };
+      if (this.id === 'smartcalc-tour-card') {
+        const width = numericStyle(this.style.width, Math.min(430, window.innerWidth - 32));
+        const height = numericStyle(this.style.maxHeight, 328);
+        const fallbackLeft = (window.innerWidth - width) / 2;
+        const fallbackTop = (window.innerHeight - height) / 2;
+        return makeRect(
+          numericStyle(this.style.left, fallbackLeft),
+          numericStyle(this.style.top, fallbackTop),
+          width,
+          Math.min(height, window.innerHeight - 32),
+        );
+      }
+      if (this.id === 'base-cost-section') {
+        return makeRect(32, 221.5, 311, 223);
+      }
+      if (this.id === 'smartcalc-tour-entry-mode') {
+        return makeRect(32, 161, 311, 52);
+      }
+      if (this.tagName === 'HEADER') {
+        return makeRect(16, 20, 343, 132);
+      }
+      return makeRect(32, 120, 240, 48);
     };
   },
 });
@@ -47,6 +91,10 @@ function waitForReady() {
     }
     document.addEventListener('DOMContentLoaded', () => window.setTimeout(resolve, 0), { once: true });
   });
+}
+
+function settle() {
+  return new Promise((resolve) => window.setTimeout(resolve, 25));
 }
 
 function byId(id) {
@@ -74,26 +122,52 @@ function closeOverlay() {
   assert.equal(overlay.getAttribute('aria-hidden'), 'true', 'tutorial overlay should close');
 }
 
+function intersectionArea(a, b) {
+  const x = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+  const y = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+  return x * y;
+}
+
+function assertCardDoesNotCoverTarget(card, target) {
+  const cardRect = card.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+  assert.equal(
+    intersectionArea(cardRect, targetRect),
+    0,
+    `tutorial card should not cover highlighted target; card=${JSON.stringify(cardRect)} target=${JSON.stringify(targetRect)}`,
+  );
+  assert.ok(cardRect.left >= 0, 'tutorial card should stay inside the left viewport edge');
+  assert.ok(cardRect.right <= window.innerWidth, 'tutorial card should stay inside the right viewport edge');
+  assert.ok(cardRect.top >= 0, 'tutorial card should stay inside the top viewport edge');
+  assert.ok(cardRect.bottom <= window.innerHeight, 'tutorial card should stay inside the bottom viewport edge');
+}
+
 (async () => {
   await waitForReady();
   assert.equal(jsErrors.length, 0, jsErrors.map((error) => error.message).join('\n'));
 
   assert.match(pageSource, /FD_SMART_CALC_START_TUTORIAL/, 'React wrapper should send the tutorial start postMessage');
-  assert.match(pageSource, /\(test\) tutorial|Restart tutorial/, 'React wrapper should expose a tutorial toolbar action');
+  assert.match(pageSource, /Restart tutorial|Start guided tutorial/, 'React wrapper should expose a production tutorial toolbar action');
 
   assert.equal(window.localStorage.getItem('fd_smartcalc_tutorial_completed_v1'), null, 'completion flag should start empty');
   assert.equal(byId('smartcalc-tour-overlay').getAttribute('aria-hidden'), 'true', 'tutorial overlay should be hidden by default');
 
   const startButton = byId('smartcalc-tutorial-btn');
-  assert.match(startButton.textContent, /tutorial/i, 'standalone calculator should expose a tutorial start button');
+  assert.match(startButton.textContent, /start guided tutorial|restart tutorial/i, 'standalone calculator should expose a production tutorial start button');
+
+  const botbot = byId('smartcalc-tour-botbot');
+  assert.match(botbot.getAttribute('aria-label') || '', /BotBot/i, 'tutorial card should include the BotBot assistant identity');
 
   setValue('base-cost', '499');
   startButton.click();
+  await settle();
   let overlay = activeOverlay();
   assert.match(overlay.textContent, /Welcome to Smart Calc/i, 'first tutorial step should welcome the employee');
+  assert.match(overlay.textContent, /BotBot says/i, 'tutorial copy should be presented as BotBot guidance');
   assert.equal(byId('base-cost').value, '499', 'starting the tutorial must not overwrite an in-progress quote');
 
   byId('smartcalc-tour-next').click();
+  await settle();
   overlay = activeOverlay();
   assert.match(overlay.textContent, /starting point/i, 'second step should explain the starting point choice');
   assert.ok(
@@ -101,12 +175,24 @@ function closeOverlay() {
     'entry-mode tour target should be highlighted on the matching step',
   );
 
+  byId('smartcalc-tour-next').click();
+  await settle();
+  overlay = activeOverlay();
+  assert.match(overlay.textContent, /vendor and base cost/i, 'third step should explain vendor and base cost');
+  assert.ok(
+    byId('base-cost-section').classList.contains('smartcalc-tour-target'),
+    'base-cost tour target should be highlighted on the matching step',
+  );
+  assertCardDoesNotCoverTarget(byId('smartcalc-tour-card'), byId('base-cost-section'));
+
   closeOverlay();
   assert.equal(window.localStorage.getItem('fd_smartcalc_tutorial_completed_v1'), null, 'skipping should not mark tutorial completed');
 
   startButton.click();
+  await settle();
   for (let guard = 0; guard < 40 && byId('smartcalc-tour-done').classList.contains('hidden'); guard += 1) {
     byId('smartcalc-tour-next').click();
+    await settle();
   }
   assert.equal(byId('smartcalc-tour-done').classList.contains('hidden'), false, 'tutorial should eventually show Done');
   byId('smartcalc-tour-done').click();
@@ -118,12 +204,14 @@ function closeOverlay() {
     origin: 'https://evil.example',
     data: { type: 'FD_SMART_CALC_START_TUTORIAL' },
   }));
+  await settle();
   assert.equal(byId('smartcalc-tour-overlay').getAttribute('aria-hidden'), 'true', 'wrong-origin postMessage must be ignored');
 
   window.dispatchEvent(new window.MessageEvent('message', {
     origin: 'https://furnituredistributors.wolf.discount',
     data: { type: 'FD_SMART_CALC_START_TUTORIAL' },
   }));
+  await settle();
   overlay = activeOverlay();
   assert.match(overlay.textContent, /Welcome to Smart Calc/i, 'allowed-origin postMessage should start the tutorial');
 

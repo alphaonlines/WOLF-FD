@@ -105,40 +105,73 @@
             position: fixed;
             inset: 0;
             z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 1rem;
         }
         .smartcalc-tour-backdrop {
             position: absolute;
             inset: 0;
-            background: rgba(17, 24, 39, 0.68);
-            backdrop-filter: blur(2px);
+            background: rgba(15, 23, 42, 0.78);
+            backdrop-filter: blur(3px);
         }
         .smartcalc-tour-card {
-            position: relative;
-            z-index: 10000;
+            position: fixed;
+            z-index: 10002;
             width: min(94vw, 430px);
-            border-radius: 1rem;
-            background: #ffffff;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+            border-radius: 1.5rem;
+            background: rgba(255, 255, 255, 0.97);
             box-shadow: 0 24px 80px rgba(15, 23, 42, 0.36);
-            border: 1px solid rgba(240, 125, 0, 0.28);
+            border: 1px solid rgba(56, 189, 248, 0.22);
+        }
+        .smartcalc-botbot-orb {
+            position: relative;
+            display: inline-flex;
+            height: 3rem;
+            width: 3rem;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            color: #ffffff;
+            background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 52%, #6366f1 100%);
+            box-shadow: 0 16px 32px rgba(14, 165, 233, 0.32);
+            outline: 2px solid rgba(125, 211, 252, 0.72);
+        }
+        .smartcalc-botbot-orb::before {
+            content: '';
+            position: absolute;
+            inset: -0.35rem;
+            border-radius: inherit;
+            background: rgba(14, 165, 233, 0.18);
+            animation: smartcalc-botbot-pulse 2.6s ease-in-out infinite;
+            z-index: -1;
+        }
+        .smartcalc-botbot-label {
+            color: #0284c7;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
         }
         .smartcalc-tour-target {
             position: relative;
             z-index: 10001;
-            outline: 4px solid rgba(240, 125, 0, 0.78);
+            outline: 4px solid rgba(56, 189, 248, 0.9);
             outline-offset: 5px;
             border-radius: 0.75rem;
-            box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.26);
+            box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.36), 0 0 0 8px rgba(56, 189, 248, 0.16);
         }
         .smartcalc-tour-no-scroll {
             overflow: hidden;
         }
+        @keyframes smartcalc-botbot-pulse {
+            0%, 100% { transform: scale(0.96); opacity: 0.32; }
+            50% { transform: scale(1.12); opacity: 0.12; }
+        }
         @media (max-width: 640px) {
             .smartcalc-tour-card {
-                align-self: flex-end;
+                width: calc(100vw - 2rem);
             }
         }
     </style>
@@ -152,7 +185,7 @@
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
             <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.9.1462</p>
             <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
-                <button id="smartcalc-tutorial-btn" type="button" class="inline-flex items-center justify-center rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown transition">(test) tutorial</button>
+                <button id="smartcalc-tutorial-btn" type="button" class="inline-flex items-center justify-center rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown transition">Start guided tutorial</button>
                 <button id="top-reset-btn" type="button" class="inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
             </div>
         </header>
@@ -644,16 +677,29 @@
     <div id="smartcalc-tour-overlay" class="smartcalc-tour-overlay" aria-hidden="true">
         <div class="smartcalc-tour-backdrop" aria-hidden="true"></div>
         <section id="smartcalc-tour-card" class="smartcalc-tour-card p-5 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="smartcalc-tour-title" aria-describedby="smartcalc-tour-body" tabindex="-1">
-            <p id="smartcalc-tour-step-count" class="text-xs font-semibold uppercase tracking-[0.18em] text-brand-orange">Step 1 of 1</p>
-            <h2 id="smartcalc-tour-title" class="mt-2 text-xl font-bold text-brand-brown">Smart Calc tutorial</h2>
-            <p id="smartcalc-tour-body" class="mt-3 text-sm leading-6 text-gray-700"></p>
-            <p id="smartcalc-tour-tip" class="mt-3 rounded-lg bg-orange-50 px-3 py-2 text-xs font-medium leading-5 text-orange-900"></p>
+            <div class="flex items-start gap-3">
+                <div id="smartcalc-tour-botbot" class="smartcalc-botbot-orb" role="img" aria-label="BotBot assistant">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 8V4H8" />
+                        <rect x="4" y="8" width="16" height="12" rx="4" />
+                        <path d="M9 13h.01" />
+                        <path d="M15 13h.01" />
+                        <path d="M9.5 17h5" />
+                    </svg>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p id="smartcalc-tour-step-count" class="smartcalc-botbot-label">BotBot says • Step 1 of 1</p>
+                    <h2 id="smartcalc-tour-title" class="mt-1 text-xl font-bold leading-tight text-brand-brown">Smart Calc tutorial</h2>
+                </div>
+            </div>
+            <p id="smartcalc-tour-body" class="mt-4 text-sm font-medium leading-6 text-gray-700"></p>
+            <p id="smartcalc-tour-tip" class="mt-3 rounded-2xl bg-sky-50 px-4 py-3 text-xs font-medium leading-5 text-slate-700"></p>
             <div class="mt-5 flex flex-wrap items-center justify-between gap-2">
-                <button id="smartcalc-tour-skip" type="button" class="rounded-md px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-orange">Skip</button>
-                <div class="ml-auto flex items-center gap-2">
-                    <button id="smartcalc-tour-back" type="button" class="rounded-md border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-orange">Back</button>
-                    <button id="smartcalc-tour-next" type="button" class="rounded-md bg-brand-orange px-4 py-2 text-sm font-semibold text-white hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange">Next</button>
-                    <button id="smartcalc-tour-done" type="button" class="hidden rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown">Done</button>
+                <button id="smartcalc-tour-skip" type="button" class="rounded-full px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-400">Skip</button>
+                <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
+                    <button id="smartcalc-tour-back" type="button" class="rounded-full border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-400">Back</button>
+                    <button id="smartcalc-tour-next" type="button" class="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-400">Next</button>
+                    <button id="smartcalc-tour-done" type="button" class="hidden rounded-full bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown">Done</button>
                 </div>
             </div>
         </section>
@@ -916,7 +962,7 @@ function showLicenseLockScreen(message) {
                 title: 'Copy sales order notes',
                 body: 'Smart Calc builds notes from the quote, coverage, delivery, discounts, and policy details. Copy them into the sales order before checkout.',
                 tip: 'If you manually edit notes, Smart Calc keeps your edits for copying.',
-                target: '#sales-notes-section'
+                target: '#copy-sales-notes'
             },
             {
                 title: 'Print the customer copy',
@@ -976,6 +1022,8 @@ function showLicenseLockScreen(message) {
                     if (event.key === 'ArrowRight') showNextTutorialStep();
                     if (event.key === 'ArrowLeft') showPreviousTutorialStep();
                 });
+                window.addEventListener('resize', repositionGuidedTutorialCardIfOpen);
+                window.addEventListener('scroll', repositionGuidedTutorialCardIfOpen, { passive: true });
                 window.addEventListener('message', (event) => {
                     if (!isAllowedTutorialOrigin(event.origin)) return;
                     const data = event.data;
@@ -1036,6 +1084,9 @@ function showLicenseLockScreen(message) {
                 const tourElements = getTutorialElements();
                 clearTutorialTarget();
                 tourElements.overlay?.setAttribute('aria-hidden', 'true');
+                if (tourElements.card) {
+                    tourElements.card.removeAttribute('style');
+                }
                 document.body.classList.remove('smartcalc-tour-no-scroll');
                 if (markComplete) {
                     try { window.localStorage.setItem(SMARTCALC_TUTORIAL_STORAGE_KEY, 'true'); } catch (_error) {}
@@ -1054,7 +1105,7 @@ function showLicenseLockScreen(message) {
                 tourElements.body.textContent = step.body;
                 tourElements.tip.textContent = step.tip || '';
                 tourElements.tip.classList.toggle('hidden', !step.tip);
-                tourElements.stepCount.textContent = `Step ${currentTutorialStepIndex + 1} of ${smartCalcTutorialSteps.length}`;
+                tourElements.stepCount.textContent = `BotBot says • Step ${currentTutorialStepIndex + 1} of ${smartCalcTutorialSteps.length}`;
                 tourElements.backButton.disabled = currentTutorialStepIndex === 0;
                 tourElements.backButton.classList.toggle('opacity-50', currentTutorialStepIndex === 0);
                 tourElements.backButton.classList.toggle('cursor-not-allowed', currentTutorialStepIndex === 0);
@@ -1062,18 +1113,97 @@ function showLicenseLockScreen(message) {
                 tourElements.nextButton.classList.toggle('hidden', isLastStep);
                 tourElements.doneButton.classList.toggle('hidden', !isLastStep);
                 tourElements.overlay.setAttribute('aria-hidden', 'false');
+                const target = highlightTutorialTarget(step.target);
                 document.body.classList.add('smartcalc-tour-no-scroll');
-                highlightTutorialTarget(step.target);
-                tourElements.card?.focus?.({ preventScroll: true });
+                positionGuidedTutorialCard(target);
+                window.requestAnimationFrame(() => {
+                    positionGuidedTutorialCard(currentTutorialTarget);
+                    tourElements.card?.focus?.({ preventScroll: true });
+                });
+            }
+
+            function clampTutorialValue(value, min, max) {
+                const safeMax = Math.max(min, max);
+                return Math.min(Math.max(value, min), safeMax);
+            }
+
+            function getTutorialCardSize(card, margin) {
+                const viewportWidth = Math.max(window.innerWidth || document.documentElement.clientWidth || 0, 320);
+                const viewportHeight = Math.max(window.innerHeight || document.documentElement.clientHeight || 0, 320);
+                const width = Math.min(430, Math.max(240, viewportWidth - margin * 2));
+                card.style.width = `${width}px`;
+                card.style.maxHeight = `${Math.max(140, viewportHeight - margin * 2)}px`;
+                const measuredHeight = card.getBoundingClientRect().height || card.offsetHeight || 320;
+                const height = Math.min(Math.max(140, Math.ceil(measuredHeight)), Math.max(140, viewportHeight - margin * 2));
+                return { width, height, viewportWidth, viewportHeight };
+            }
+
+            function positionGuidedTutorialCard(target) {
+                const tourElements = getTutorialElements();
+                const card = tourElements.card;
+                if (!card) return;
+
+                const margin = (window.innerWidth || 0) < 640 ? 16 : 24;
+                const size = getTutorialCardSize(card, margin);
+                const targetRect = target && isTutorialTargetVisible(target) ? target.getBoundingClientRect() : null;
+
+                let maxHeight = size.height;
+                let left = clampTutorialValue(size.viewportWidth - size.width - margin, margin, size.viewportWidth - size.width - margin);
+                let top = clampTutorialValue(size.viewportHeight - size.height - margin, margin, size.viewportHeight - size.height - margin);
+
+                if (targetRect) {
+                    const rightSpace = size.viewportWidth - targetRect.right - margin;
+                    const leftSpace = targetRect.left - margin;
+                    const canUseRight = rightSpace >= size.width;
+                    const canUseLeft = leftSpace >= size.width;
+
+                    if (canUseRight || canUseLeft) {
+                        left = canUseRight
+                            ? targetRect.right + margin
+                            : targetRect.left - size.width - margin;
+                        top = clampTutorialValue(
+                            targetRect.top + targetRect.height / 2 - size.height / 2,
+                            margin,
+                            size.viewportHeight - size.height - margin
+                        );
+                    } else {
+                        const spaceAbove = targetRect.top - margin * 2;
+                        const spaceBelow = size.viewportHeight - targetRect.bottom - margin * 2;
+                        const placeBelow = spaceBelow >= spaceAbove;
+                        const availableSpace = Math.max(placeBelow ? spaceBelow : spaceAbove, 96);
+                        maxHeight = Math.min(size.height, Math.floor(availableSpace));
+                        left = clampTutorialValue(
+                            targetRect.left + targetRect.width / 2 - size.width / 2,
+                            margin,
+                            size.viewportWidth - size.width - margin
+                        );
+                        top = placeBelow
+                            ? targetRect.bottom + margin
+                            : targetRect.top - margin - maxHeight;
+                        top = clampTutorialValue(top, margin, size.viewportHeight - maxHeight - margin);
+                    }
+                }
+
+                card.style.left = `${Math.round(left)}px`;
+                card.style.top = `${Math.round(top)}px`;
+                card.style.maxHeight = `${Math.max(96, Math.round(maxHeight))}px`;
+            }
+
+            function repositionGuidedTutorialCardIfOpen() {
+                const tourElements = getTutorialElements();
+                if (tourElements.overlay?.getAttribute('aria-hidden') === 'false') {
+                    positionGuidedTutorialCard(currentTutorialTarget);
+                }
             }
 
             function highlightTutorialTarget(targetSelector) {
                 clearTutorialTarget();
                 const target = resolveTutorialTarget(targetSelector);
-                if (!target || !isTutorialTargetVisible(target)) return;
+                if (!target || !isTutorialTargetVisible(target)) return null;
                 currentTutorialTarget = target;
                 currentTutorialTarget.classList.add('smartcalc-tour-target');
-                currentTutorialTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+                currentTutorialTarget.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+                return currentTutorialTarget;
             }
 
             function resolveTutorialTarget(targetSelector) {
