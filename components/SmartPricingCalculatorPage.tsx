@@ -51,7 +51,7 @@ const SmartPricingCalculatorPage: React.FC<SmartPricingCalculatorPageProps> = ({
               className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${actionClassName}`}
             >
               <HelpCircle size={14} />
-              Start guided tutorial
+              (test) tutorial
             </button>
             <a
               href={calculatorUrl}

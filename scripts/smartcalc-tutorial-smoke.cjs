@@ -79,7 +79,7 @@ function closeOverlay() {
   assert.equal(jsErrors.length, 0, jsErrors.map((error) => error.message).join('\n'));
 
   assert.match(pageSource, /FD_SMART_CALC_START_TUTORIAL/, 'React wrapper should send the tutorial start postMessage');
-  assert.match(pageSource, /Start guided tutorial|Restart tutorial/, 'React wrapper should expose a tutorial toolbar action');
+  assert.match(pageSource, /\(test\) tutorial|Restart tutorial/, 'React wrapper should expose a tutorial toolbar action');
 
   assert.equal(window.localStorage.getItem('fd_smartcalc_tutorial_completed_v1'), null, 'completion flag should start empty');
   assert.equal(byId('smartcalc-tour-overlay').getAttribute('aria-hidden'), 'true', 'tutorial overlay should be hidden by default');
