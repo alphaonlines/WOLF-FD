@@ -23,7 +23,7 @@ This file is the shared working memory for `/home/alphahs/WOLF-FD`. Keep it curr
 - Live URL: `https://furnituredistributors.wolf.discount/fd/`
 - Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
 - Current branch: `botbot-tutorial-revive`
-- Current display version in `package.json`: `1.5.9.1454`
+- Current display version in `package.json`: `1.5.14.1921`
 
 ## Project Structure
 
@@ -117,7 +117,7 @@ Backend deploy flow for route/schema/runtime changes:
 - Use 2-space indentation and follow surrounding file style.
 - `PascalCase` for components, `camelCase` for functions/variables, `SCREAMING_SNAKE_CASE` for constants.
 - Prefer small focused route modules and typed service APIs.
-- Bump only `displayVersion` in `package.json` when shipping visible live UI changes; `constants.ts` exports it as `APP_VERSION` for every UI label.
+- Bump only `displayVersion` in `package.json` when shipping visible live UI changes; `constants.ts` exports it as `APP_VERSION` for every UI label. Use Anthony's live deploy date/time convention: `1.<month>.<day>.<HHMM>` in local military time, e.g. May 14 at 19:24 -> `1.5.14.1924`, not a simple increment.
 - Do not hand-edit deployed assets under `/srv/www/...`; always rebuild and sync from `dist/`.
 - Keep this file useful: summarize patterns, current topology, and meaningful milestones rather than dumping every exploratory command forever.
 
@@ -125,7 +125,7 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `1.5.9.1454`
+- Current display version: `1.5.14.1921`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -156,6 +156,11 @@ Backend deploy flow for route/schema/runtime changes:
 6. Sticky tabs collapse into header on scroll (App.tsx + nav layout)
 
 ## Running Log
+
+- 2026-05-14 19:21 EDT — Corrected Smart Calc version convention for BotBot tutorial deploy.
+  - Files: `package.json`, `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `AGENTS.md`.
+  - Changes: corrected `displayVersion` to `1.5.14.1921` using Anthony's live date/time convention (`1.<month>.<day>.<HHMM>`) and documented the rule for future agents.
+  - Validation/deploy: sync/build/test/deploy to be run in this pass.
 
 - 2026-05-05 19:17 EDT — Kept Smart Calc wide but returned it to a single-column flow.
   - Files: `public/tools/smart-pricing-calculator.html`, `AGENTS.md`.
