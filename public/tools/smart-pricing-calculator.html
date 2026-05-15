@@ -110,80 +110,255 @@
         .smartcalc-tour-backdrop {
             position: absolute;
             inset: 0;
-            background: rgba(15, 23, 42, 0.78);
-            backdrop-filter: blur(3px);
+            background:
+                radial-gradient(circle at 20% 15%, rgba(56, 189, 248, 0.16), transparent 34%),
+                radial-gradient(circle at 82% 18%, rgba(249, 115, 22, 0.18), transparent 32%),
+                rgba(15, 23, 42, 0.66);
+            backdrop-filter: blur(3px) saturate(1.04);
         }
         .smartcalc-tour-card {
             position: fixed;
             z-index: 10002;
-            width: min(94vw, 430px);
-            max-height: calc(100vh - 2rem);
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            width: min(92vw, 560px);
+            max-height: calc(100dvh - 2rem);
+            overflow: hidden;
+            border-radius: 1.4rem;
+            color: #1f2937;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.97)),
+                radial-gradient(circle at 16% 0%, rgba(14, 165, 233, 0.18), transparent 34%);
+            box-shadow: 0 28px 90px rgba(15, 23, 42, 0.48), 0 2px 0 rgba(255, 255, 255, 0.8) inset;
+            border: 1px solid rgba(148, 163, 184, 0.48);
+            border-top: 4px solid #f97316;
+        }
+        .smartcalc-tour-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            border-radius: inherit;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.76) inset;
+        }
+        .smartcalc-tour-progress {
+            height: 0.38rem;
+            overflow: hidden;
+            background: #e2e8f0;
+        }
+        .smartcalc-tour-progress span {
+            display: block;
+            height: 100%;
+            width: 0%;
+            border-radius: 9999px;
+            background: linear-gradient(90deg, #f97316, #fb923c, #0ea5e9);
+            box-shadow: 0 0 18px rgba(249, 115, 22, 0.45);
+            transition: width 180ms ease;
+        }
+        .smartcalc-tour-inner {
             overflow-y: auto;
-            border-radius: 1.5rem;
-            background: rgba(255, 255, 255, 0.97);
-            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.36);
-            border: 1px solid rgba(56, 189, 248, 0.22);
+            padding: 1.25rem;
+        }
+        .smartcalc-tour-header {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.95rem;
+            align-items: start;
         }
         .smartcalc-botbot-orb {
             position: relative;
             display: inline-flex;
-            height: 3rem;
-            width: 3rem;
+            height: 3.35rem;
+            width: 3.35rem;
             flex-shrink: 0;
             align-items: center;
             justify-content: center;
-            border-radius: 9999px;
+            border-radius: 1.05rem;
             color: #ffffff;
-            background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 52%, #6366f1 100%);
-            box-shadow: 0 16px 32px rgba(14, 165, 233, 0.32);
-            outline: 2px solid rgba(125, 211, 252, 0.72);
+            background: linear-gradient(135deg, #0f172a 0%, #0369a1 52%, #f97316 100%);
+            box-shadow: 0 16px 34px rgba(2, 132, 199, 0.30), 0 0 0 6px rgba(14, 165, 233, 0.13);
+            outline: 1px solid rgba(255, 255, 255, 0.58);
         }
         .smartcalc-botbot-orb::before {
             content: '';
             position: absolute;
-            inset: -0.35rem;
-            border-radius: inherit;
-            background: rgba(14, 165, 233, 0.18);
-            animation: smartcalc-botbot-pulse 2.6s ease-in-out infinite;
+            inset: -0.45rem;
+            border-radius: 1.25rem;
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.20), rgba(249, 115, 22, 0.14));
+            animation: smartcalc-botbot-pulse 2.8s ease-in-out infinite;
             z-index: -1;
         }
         .smartcalc-botbot-label {
-            color: #0284c7;
-            font-size: 0.68rem;
-            font-weight: 800;
-            letter-spacing: 0.22em;
+            display: inline-flex;
+            width: fit-content;
+            align-items: center;
+            gap: 0.45rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(14, 165, 233, 0.26);
+            background: rgba(224, 242, 254, 0.72);
+            color: #0369a1;
+            font-size: 0.66rem;
+            font-weight: 900;
+            letter-spacing: 0.18em;
+            line-height: 1;
+            padding: 0.43rem 0.6rem;
             text-transform: uppercase;
+        }
+        .smartcalc-botbot-label::before {
+            content: '';
+            width: 0.45rem;
+            height: 0.45rem;
+            border-radius: 9999px;
+            background: #f97316;
+            box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.14);
+        }
+        .smartcalc-tour-copy {
+            margin-top: 1rem;
+            display: grid;
+            gap: 0.75rem;
+        }
+        .smartcalc-tour-body {
+            margin: 0;
+            color: #334155;
+            font-size: 0.98rem;
+            font-weight: 600;
+            line-height: 1.65;
+        }
+        .smartcalc-tour-tip {
+            margin: 0;
+            border: 1px solid rgba(249, 115, 22, 0.20);
+            border-left: 4px solid #f97316;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, rgba(255, 247, 237, 0.96), rgba(240, 249, 255, 0.92));
+            color: #334155;
+            font-size: 0.84rem;
+            font-weight: 700;
+            line-height: 1.55;
+            padding: 0.9rem 1rem;
+        }
+        .smartcalc-tour-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            border-top: 1px solid rgba(148, 163, 184, 0.24);
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(255, 255, 255, 0.98));
+            padding: 0.95rem 1.25rem 1.1rem;
+        }
+        .smartcalc-tour-secondary-actions {
+            margin-left: auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        .smartcalc-tour-button {
+            min-height: 2.55rem;
+            border-radius: 9999px;
+            padding: 0.65rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 800;
+            transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
+        }
+        .smartcalc-tour-button:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+        .smartcalc-tour-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        .smartcalc-tour-button-muted {
+            color: #64748b;
+        }
+        .smartcalc-tour-button-muted:hover:not(:disabled) {
+            background: #f1f5f9;
+            color: #334155;
+        }
+        .smartcalc-tour-button-outline {
+            border: 1px solid rgba(148, 163, 184, 0.60);
+            color: #334155;
+            background: rgba(255, 255, 255, 0.74);
+        }
+        .smartcalc-tour-button-outline:hover:not(:disabled) {
+            border-color: rgba(14, 165, 233, 0.55);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.10);
+        }
+        .smartcalc-tour-button-primary {
+            color: #ffffff;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            box-shadow: 0 12px 26px rgba(249, 115, 22, 0.28);
+        }
+        .smartcalc-tour-button-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #fb923c, #f97316);
+            box-shadow: 0 16px 30px rgba(249, 115, 22, 0.34);
+        }
+        .smartcalc-tour-button-done {
+            color: #ffffff;
+            background: linear-gradient(135deg, #3a2f28, #1f2937);
+            box-shadow: 0 12px 26px rgba(31, 41, 55, 0.25);
         }
         .smartcalc-tour-target {
             position: relative;
-            z-index: 10001;
-            outline: 4px solid rgba(56, 189, 248, 0.9);
-            outline-offset: 5px;
+            z-index: 9998;
+            outline: 3px solid rgba(249, 115, 22, 0.92);
+            outline-offset: 6px;
             border-radius: 0.75rem;
-            box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.36), 0 0 0 8px rgba(56, 189, 248, 0.16);
+            box-shadow: 0 0 0 8px rgba(249, 115, 22, 0.16), 0 18px 44px rgba(15, 23, 42, 0.20);
         }
         .smartcalc-tour-no-scroll {
             overflow: hidden;
         }
         @keyframes smartcalc-botbot-pulse {
-            0%, 100% { transform: scale(0.96); opacity: 0.32; }
-            50% { transform: scale(1.12); opacity: 0.12; }
+            0%, 100% { transform: scale(0.96); opacity: 0.45; }
+            50% { transform: scale(1.10); opacity: 0.16; }
+        }
+        @media (min-width: 641px) {
+            .smartcalc-tour-inner {
+                padding: 1.45rem;
+            }
         }
         @media (max-width: 640px) {
             .smartcalc-tour-card {
-                width: calc(100vw - 2rem);
+                width: calc(100vw - 1.5rem);
+                max-height: calc(100dvh - 1.5rem);
+                border-radius: 1.15rem;
+            }
+            .smartcalc-tour-inner {
+                padding: 1rem;
+            }
+            .smartcalc-tour-header {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            .smartcalc-botbot-orb {
+                height: 3rem;
+                width: 3rem;
+                border-radius: 0.95rem;
+            }
+            .smartcalc-tour-actions,
+            .smartcalc-tour-secondary-actions {
+                align-items: stretch;
+                flex-direction: column;
+                width: 100%;
+            }
+            .smartcalc-tour-actions {
+                padding: 0.8rem 1rem 1rem;
+            }
+            .smartcalc-tour-button {
+                width: 100%;
             }
         }
+
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.14.1921">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.15.1225">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.14.1921</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.15.1225</p>
             <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <button id="smartcalc-tutorial-btn" type="button" class="inline-flex items-center justify-center rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown transition">Start guided tutorial</button>
                 <button id="top-reset-btn" type="button" class="inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
@@ -676,31 +851,37 @@
 
     <div id="smartcalc-tour-overlay" class="smartcalc-tour-overlay" aria-hidden="true">
         <div class="smartcalc-tour-backdrop" aria-hidden="true"></div>
-        <section id="smartcalc-tour-card" class="smartcalc-tour-card p-5 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="smartcalc-tour-title" aria-describedby="smartcalc-tour-body" tabindex="-1">
-            <div class="flex items-start gap-3">
-                <div id="smartcalc-tour-botbot" class="smartcalc-botbot-orb" role="img" aria-label="BotBot assistant">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 8V4H8" />
-                        <rect x="4" y="8" width="16" height="12" rx="4" />
-                        <path d="M9 13h.01" />
-                        <path d="M15 13h.01" />
-                        <path d="M9.5 17h5" />
-                    </svg>
+        <section id="smartcalc-tour-card" class="smartcalc-tour-card" role="dialog" aria-modal="true" aria-labelledby="smartcalc-tour-title" aria-describedby="smartcalc-tour-body" tabindex="-1">
+            <div class="smartcalc-tour-progress" aria-hidden="true"><span id="smartcalc-tour-progress-bar"></span></div>
+            <div class="smartcalc-tour-inner">
+                <div class="smartcalc-tour-header">
+                    <div id="smartcalc-tour-botbot" class="smartcalc-botbot-orb" role="img" aria-label="BotBot assistant">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 8V4H8" />
+                            <rect x="4" y="8" width="16" height="12" rx="4" />
+                            <path d="M9 13h.01" />
+                            <path d="M15 13h.01" />
+                            <path d="M9.5 17h5" />
+                        </svg>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p id="smartcalc-tour-step-count" class="smartcalc-botbot-label">BotBot says • Step 1 of 1</p>
+                        <h2 id="smartcalc-tour-title" class="mt-3 text-2xl font-black leading-tight text-brand-brown">Smart Calc tutorial</h2>
+                    </div>
                 </div>
-                <div class="min-w-0 flex-1">
-                    <p id="smartcalc-tour-step-count" class="smartcalc-botbot-label">BotBot says • Step 1 of 1</p>
-                    <h2 id="smartcalc-tour-title" class="mt-1 text-xl font-bold leading-tight text-brand-brown">Smart Calc tutorial</h2>
+                <div class="smartcalc-tour-copy">
+                    <p id="smartcalc-tour-body" class="smartcalc-tour-body"></p>
+                    <p id="smartcalc-tour-tip" class="smartcalc-tour-tip"></p>
                 </div>
             </div>
-            <p id="smartcalc-tour-body" class="mt-4 text-sm font-medium leading-6 text-gray-700"></p>
-            <p id="smartcalc-tour-tip" class="mt-3 rounded-2xl bg-sky-50 px-4 py-3 text-xs font-medium leading-5 text-slate-700"></p>
-            <div class="mt-5 flex flex-wrap items-center justify-between gap-2">
-                <button id="smartcalc-tour-skip" type="button" class="rounded-full px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-400">Skip</button>
-                <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
-                    <button id="smartcalc-tour-back" type="button" class="rounded-full border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-400">Back</button>
-                    <button id="smartcalc-tour-next" type="button" class="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-400">Next</button>
-                    <button id="smartcalc-tour-done" type="button" class="hidden rounded-full bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown">Done</button>
+            <div class="smartcalc-tour-actions">
+                <button id="smartcalc-tour-skip" type="button" class="smartcalc-tour-button smartcalc-tour-button-muted focus:outline-none focus:ring-2 focus:ring-sky-400">Skip tutorial</button>
+                <div class="smartcalc-tour-secondary-actions">
+                    <button id="smartcalc-tour-back" type="button" class="smartcalc-tour-button smartcalc-tour-button-outline focus:outline-none focus:ring-2 focus:ring-sky-400">Back</button>
+                    <button id="smartcalc-tour-next" type="button" class="smartcalc-tour-button smartcalc-tour-button-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-400">Next</button>
+                    <button id="smartcalc-tour-done" type="button" class="smartcalc-tour-button smartcalc-tour-button-done hidden focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown">Done</button>
                 </div>
+            </div>
             </div>
         </section>
     </div>
@@ -1041,6 +1222,7 @@ function showLicenseLockScreen(message) {
                     body: document.getElementById('smartcalc-tour-body'),
                     tip: document.getElementById('smartcalc-tour-tip'),
                     stepCount: document.getElementById('smartcalc-tour-step-count'),
+                    progressBar: document.getElementById('smartcalc-tour-progress-bar'),
                     skipButton: document.getElementById('smartcalc-tour-skip'),
                     backButton: document.getElementById('smartcalc-tour-back'),
                     nextButton: document.getElementById('smartcalc-tour-next'),
@@ -1106,6 +1288,10 @@ function showLicenseLockScreen(message) {
                 tourElements.tip.textContent = step.tip || '';
                 tourElements.tip.classList.toggle('hidden', !step.tip);
                 tourElements.stepCount.textContent = `BotBot says • Step ${currentTutorialStepIndex + 1} of ${smartCalcTutorialSteps.length}`;
+                if (tourElements.progressBar) {
+                    const progressPercent = ((currentTutorialStepIndex + 1) / smartCalcTutorialSteps.length) * 100;
+                    tourElements.progressBar.style.width = `${progressPercent}%`;
+                }
                 tourElements.backButton.disabled = currentTutorialStepIndex === 0;
                 tourElements.backButton.classList.toggle('opacity-50', currentTutorialStepIndex === 0);
                 tourElements.backButton.classList.toggle('cursor-not-allowed', currentTutorialStepIndex === 0);
@@ -1130,12 +1316,13 @@ function showLicenseLockScreen(message) {
             function getTutorialCardSize(card, margin) {
                 const viewportWidth = Math.max(window.innerWidth || document.documentElement.clientWidth || 0, 320);
                 const viewportHeight = Math.max(window.innerHeight || document.documentElement.clientHeight || 0, 320);
-                const width = Math.min(430, Math.max(240, viewportWidth - margin * 2));
+                const width = Math.min(560, Math.max(280, viewportWidth - margin * 2));
+                const maxHeight = Math.max(240, viewportHeight - margin * 2);
                 card.style.width = `${width}px`;
-                card.style.maxHeight = `${Math.max(140, viewportHeight - margin * 2)}px`;
-                const measuredHeight = card.getBoundingClientRect().height || card.offsetHeight || 320;
-                const height = Math.min(Math.max(140, Math.ceil(measuredHeight)), Math.max(140, viewportHeight - margin * 2));
-                return { width, height, viewportWidth, viewportHeight };
+                card.style.maxHeight = `${maxHeight}px`;
+                const measuredHeight = card.getBoundingClientRect().height || card.offsetHeight || 360;
+                const height = Math.min(Math.max(240, Math.ceil(measuredHeight)), maxHeight);
+                return { width, height, maxHeight, viewportWidth, viewportHeight };
             }
 
             function positionGuidedTutorialCard(target) {
@@ -1143,15 +1330,16 @@ function showLicenseLockScreen(message) {
                 const card = tourElements.card;
                 if (!card) return;
 
-                const margin = (window.innerWidth || 0) < 640 ? 16 : 24;
+                const margin = (window.innerWidth || 0) < 640 ? 12 : 24;
                 const size = getTutorialCardSize(card, margin);
                 const targetRect = target && isTutorialTargetVisible(target) ? target.getBoundingClientRect() : null;
 
-                let maxHeight = size.height;
-                let left = clampTutorialValue(size.viewportWidth - size.width - margin, margin, size.viewportWidth - size.width - margin);
-                let top = clampTutorialValue(size.viewportHeight - size.height - margin, margin, size.viewportHeight - size.height - margin);
+                let left = Math.round((size.viewportWidth - size.width) / 2);
+                let top = Math.round((size.viewportHeight - size.height) / 2);
+                let maxHeight = size.maxHeight;
+                let cardHeight = size.height;
 
-                if (targetRect) {
+                if (targetRect && size.viewportWidth >= 1080) {
                     const rightSpace = size.viewportWidth - targetRect.right - margin;
                     const leftSpace = targetRect.left - margin;
                     const canUseRight = rightSpace >= size.width;
@@ -1162,31 +1350,32 @@ function showLicenseLockScreen(message) {
                             ? targetRect.right + margin
                             : targetRect.left - size.width - margin;
                         top = clampTutorialValue(
-                            targetRect.top + targetRect.height / 2 - size.height / 2,
+                            targetRect.top + targetRect.height / 2 - cardHeight / 2,
                             margin,
-                            size.viewportHeight - size.height - margin
+                            size.viewportHeight - cardHeight - margin
                         );
-                    } else {
-                        const spaceAbove = targetRect.top - margin * 2;
-                        const spaceBelow = size.viewportHeight - targetRect.bottom - margin * 2;
-                        const placeBelow = spaceBelow >= spaceAbove;
-                        const availableSpace = Math.max(placeBelow ? spaceBelow : spaceAbove, 96);
-                        maxHeight = Math.min(size.height, Math.floor(availableSpace));
-                        left = clampTutorialValue(
-                            targetRect.left + targetRect.width / 2 - size.width / 2,
-                            margin,
-                            size.viewportWidth - size.width - margin
-                        );
+                    }
+                } else if (targetRect) {
+                    const gap = margin;
+                    const spaceAbove = Math.max(0, targetRect.top - margin - gap);
+                    const spaceBelow = Math.max(0, size.viewportHeight - targetRect.bottom - margin - gap);
+                    const placeBelow = spaceBelow >= spaceAbove;
+                    const availableSpace = placeBelow ? spaceBelow : spaceAbove;
+
+                    if (availableSpace > 0) {
+                        maxHeight = Math.min(maxHeight, availableSpace);
+                        cardHeight = Math.min(cardHeight, maxHeight);
                         top = placeBelow
-                            ? targetRect.bottom + margin
-                            : targetRect.top - margin - maxHeight;
-                        top = clampTutorialValue(top, margin, size.viewportHeight - maxHeight - margin);
+                            ? targetRect.bottom + gap
+                            : targetRect.top - gap - cardHeight;
                     }
                 }
 
+                left = clampTutorialValue(left, margin, size.viewportWidth - size.width - margin);
+                top = clampTutorialValue(top, margin, size.viewportHeight - cardHeight - margin);
                 card.style.left = `${Math.round(left)}px`;
                 card.style.top = `${Math.round(top)}px`;
-                card.style.maxHeight = `${Math.max(96, Math.round(maxHeight))}px`;
+                card.style.maxHeight = `${Math.round(maxHeight)}px`;
             }
 
             function repositionGuidedTutorialCardIfOpen() {

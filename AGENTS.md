@@ -157,6 +157,11 @@ Backend deploy flow for route/schema/runtime changes:
 
 ## Running Log
 
+- 2026-05-15 12:25 EDT — Fixed Smart Calc tutorial mobile overlay placement after local smoke-test failure.
+  - Files: `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `package.json`, `AGENTS.md`.
+  - Changes: tutorial card now chooses above/below placement on narrow viewports and caps its max height to the available space so it does not cover the highlighted Smart Calc target; bumped/synced Smart Calc display version to `1.5.15.1225`.
+  - Commands/tests: `npm run test:smartcalc-tutorial` initially failed on card/target overlap; after fix `npm run test:smartcalc-tutorial`, `npm run test:smartcalc-margin-discounts`, `npm run test:smartcalc-number-input-wheel`, `npm test`, and `npm run build` passed. Build kept existing Vite warnings about deprecated esbuild options, mixed botbotApi import style, and large chunk size.
+
 - 2026-05-14 19:21 EDT — Corrected Smart Calc version convention for BotBot tutorial deploy.
   - Files: `package.json`, `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `AGENTS.md`.
   - Changes: corrected `displayVersion` to `1.5.14.1921` using Anthony's live date/time convention (`1.<month>.<day>.<HHMM>`) and documented the rule for future agents.
