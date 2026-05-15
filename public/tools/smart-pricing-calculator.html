@@ -444,14 +444,14 @@
 
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.15.1333">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.15.1427">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.15.1333</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.15.1427</p>
             <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <button id="smartcalc-tutorial-btn" type="button" class="inline-flex items-center justify-center rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown transition">Start guided tutorial</button>
                 <button id="top-reset-btn" type="button" class="inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
@@ -688,7 +688,7 @@
                         </div>
                     </div>
                     <div class="space-y-3 border-t border-gray-200 pt-3">
-                        <fieldset class="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
+                        <fieldset id="smartcalc-tour-discount-reasons" class="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
                             <legend class="px-1 text-sm font-semibold text-brand-brown">Discount reason(s) for Adjustment</legend>
                             <p class="text-xs leading-5 text-gray-500">Check every reason that applies. Each selected reason must have its own adjustment amount and detail. Every selected discount amount is subtracted from the ticket selling basis for adjusted GPM, including sales tax, delivery, and Pro1st discounts.</p>
 
@@ -910,6 +910,7 @@
                     </table>
                 </div>
             </div>
+            <div id="smartcalc-tour-copy-print-section" class="space-y-6">
             <div id="sales-notes-section" class="form-section hidden space-y-3 pt-4 mt-2">
                 <h3 class="text-lg font-medium text-brand-brown border-b pb-2">Sales Order Notes / Comments Helper</h3>
                 <div class="requirement-note p-3 rounded-md text-sm text-yellow-900 space-y-1">
@@ -934,6 +935,7 @@
                 </div>
             </div>
             <button id="reset-btn" type="button" class="w-full bg-brand-orange text-white font-semibold py-2 px-4 rounded-md hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition hidden mt-6">Print Customer Copy</button>
+            </div>
                 </div>
             </div>
         </div>
@@ -1245,8 +1247,8 @@ function showLicenseLockScreen(message) {
                 title: 'Document discounts',
                 body: 'Check every discount reason that applies. Each selected reason gets its own amount and detail so the adjustment field and notes stay audit-ready.',
                 tip: 'BotBot adds one small manager-approval training discount so the adjustment field and sales notes show the audit trail.',
-                target: '#adjustment-field-section',
-                fallbackTarget: '#pay-tax',
+                target: '#smartcalc-tour-discount-reasons',
+                fallbackTarget: '#addons-section',
                 demoAction: 'fill-discount-example'
             },
             {
@@ -1261,14 +1263,14 @@ function showLicenseLockScreen(message) {
                 title: 'Copy sales order notes',
                 body: 'Smart Calc builds notes from the quote, coverage, delivery, discounts, and policy details. Copy them into the sales order before checkout.',
                 tip: 'BotBot does not auto-copy to the clipboard. Copy the notes after the tutorial exits.',
-                target: '#copy-sales-notes'
+                target: '#sales-notes-section'
             },
             {
                 title: 'Print the customer copy',
                 body: 'When the quote is ready, print the customer copy to show merchandise, delivery fees, discounts, tax, and the final total.',
                 tip: 'BotBot does not open the print dialog. Print the customer copy after the tutorial exits.',
-                target: '#reset-btn',
-                fallbackTarget: '#copy-sales-notes'
+                target: '#smartcalc-tour-copy-print-section',
+                fallbackTarget: '#sales-notes-section'
             },
             {
                 title: 'You are ready to quote',

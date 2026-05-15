@@ -98,6 +98,11 @@ const dom = new JSDOM(html, {
         if (this.id === 'smartcalc-tour-entry-mode') return makeRect(120, 122, 520, 52);
         if (this.id === 'calculator-section') return makeRect(120, 430, 520, 220);
         if (this.id === 'addons-section') return makeRect(120, 520, 520, 260);
+        if (this.id === 'smartcalc-tour-discount-reasons' || this.matches?.('#addons-section fieldset')) return makeRect(120, 220, 520, 420);
+        if (this.id === 'financing-section') return makeRect(120, 260, 520, 148);
+        if (this.id === 'sales-notes-section') return makeRect(120, 200, 520, 340);
+        if (this.id === 'smartcalc-tour-copy-print-section') return makeRect(120, 180, 520, 410);
+        if (this.id === 'reset-btn') return makeRect(120, 545, 520, 44);
         if (this.tagName === 'HEADER') return makeRect(120, 24, 520, 132);
       }
       if (this.id === 'base-cost-section') {
@@ -202,6 +207,18 @@ function assertSpotlightTracksTarget(target) {
   assert.ok(spotlightRect.right >= targetRect.right, 'spotlight should end at or after target right edge');
   assert.ok(spotlightRect.bottom >= targetRect.bottom, 'spotlight should end at or after target bottom edge');
   assertCardDoesNotCoverTarget(byId('smartcalc-tour-card'), target);
+}
+
+function assertSpotlightCoversWholeArea(target, label, minWidth, minHeight) {
+  assert.ok(target, `missing full-area tutorial target for ${label}`);
+  assert.ok(
+    target.classList.contains('smartcalc-tour-target'),
+    `${label} should be the active tutorial target, not a tiny child control`,
+  );
+  const targetRect = target.getBoundingClientRect();
+  assert.ok(targetRect.width >= minWidth, `${label} target should be section-width; rect=${JSON.stringify(targetRect)}`);
+  assert.ok(targetRect.height >= minHeight, `${label} target should be section-height; rect=${JSON.stringify(targetRect)}`);
+  assertSpotlightTracksTarget(target);
 }
 
 function assertScrolledTo(idOrTag) {
@@ -325,6 +342,7 @@ function assertDesktopRightRail() {
   closeOverlay();
   assert.equal(window.localStorage.getItem('fd_smartcalc_tutorial_completed_v1'), null, 'skipping should not mark tutorial completed');
 
+  setViewport(1280, 800);
   startButton.click();
   await settle();
   for (let guard = 0; guard < 40 && !/Document discounts/i.test(byId('smartcalc-tour-title').textContent || ''); guard += 1) {
@@ -332,6 +350,8 @@ function assertDesktopRightRail() {
   }
   overlay = activeOverlay();
   assert.match(byId('smartcalc-tour-title').textContent, /Document discounts/i, 'tutorial should reach the discounts step after applying Pro1st demo');
+  const discountReasons = document.getElementById('smartcalc-tour-discount-reasons') || document.querySelector('#addons-section fieldset');
+  assertSpotlightCoversWholeArea(discountReasons, 'discount reasons', 480, 300);
   assert.equal(byId('add-pro1st').checked, true, 'Pro1st demo should check protection');
   assert.equal(byId('pro1st-options-wrapper').classList.contains('hidden'), false, 'Pro1st demo should reveal options');
   assert.equal(byId('pro1st-covered-items').value, 'sofa and loveseat', 'Pro1st demo should fill covered items');
@@ -340,6 +360,7 @@ function assertDesktopRightRail() {
   await clickNextAndSettle();
   overlay = activeOverlay();
   assert.match(overlay.textContent, /tax and financing/i, 'discount demo should advance to tax/financing');
+  assertSpotlightCoversWholeArea(byId('financing-section'), 'financing section', 480, 120);
   assert.equal(byId('discount-manager-approval').checked, true, 'discount demo should check manager approval');
   assert.equal(byId('manager-approval-wrapper').classList.contains('hidden'), false, 'discount demo should reveal manager approval detail fields');
   assert.equal(byId('manager-approval-name').value, 'Other', 'discount demo should select a fixed manager approval value');
@@ -349,8 +370,19 @@ function assertDesktopRightRail() {
   await clickNextAndSettle();
   overlay = activeOverlay();
   assert.match(overlay.textContent, /sales order notes/i, 'financing demo should advance to notes');
+  assertSpotlightCoversWholeArea(byId('sales-notes-section'), 'sales notes section', 480, 300);
   assert.equal(byId('show-financing').checked, true, 'financing demo should check the display-only financing option');
   assert.equal(byId('financing-breakdown').classList.contains('hidden'), false, 'financing demo should reveal financing breakdown');
+
+  await clickNextAndSettle();
+  overlay = activeOverlay();
+  assert.match(overlay.textContent, /print the customer copy/i, 'notes step should advance to print customer copy');
+  assertSpotlightCoversWholeArea(byId('smartcalc-tour-copy-print-section'), 'copy/print output section', 480, 360);
+
+  await clickNextAndSettle();
+  overlay = activeOverlay();
+  assert.match(overlay.textContent, /ready to quote/i, 'print step should advance to the final ready-to-quote step');
+  assertSpotlightCoversWholeArea(document.querySelector('header'), 'final header section', 480, 120);
 
   assert.equal(window.__smartCalcOpenCount, 0, 'tutorial should not auto-open print/copy side-effect windows');
   for (let guard = 0; guard < 40 && byId('smartcalc-tour-overlay').getAttribute('aria-hidden') === 'false'; guard += 1) {
