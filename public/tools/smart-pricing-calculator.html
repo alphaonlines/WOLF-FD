@@ -106,19 +106,81 @@
             inset: 0;
             z-index: 9999;
             padding: 1rem;
+            pointer-events: none;
         }
-        .smartcalc-tour-backdrop {
-            position: absolute;
-            inset: 0;
+        .smartcalc-tour-dim-panel {
+            position: fixed;
+            z-index: 10000;
             background:
-                radial-gradient(circle at 20% 15%, rgba(56, 189, 248, 0.16), transparent 34%),
-                radial-gradient(circle at 82% 18%, rgba(249, 115, 22, 0.18), transparent 32%),
-                rgba(15, 23, 42, 0.66);
-            backdrop-filter: blur(3px) saturate(1.04);
+                radial-gradient(circle at 18% 18%, rgba(56, 189, 248, 0.10), transparent 34%),
+                radial-gradient(circle at 82% 24%, rgba(249, 115, 22, 0.12), transparent 32%),
+                rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(2.5px) saturate(1.04);
+            pointer-events: auto;
+            transition: left 220ms ease, top 220ms ease, width 220ms ease, height 220ms ease, opacity 160ms ease;
+        }
+        .smartcalc-tour-dim-panel[aria-hidden="true"],
+        .smartcalc-tour-spotlight[aria-hidden="true"],
+        .smartcalc-tour-botbot-pointer[aria-hidden="true"] {
+            display: none;
+        }
+        .smartcalc-tour-spotlight {
+            position: fixed;
+            z-index: 10001;
+            border: 3px solid rgba(249, 115, 22, 0.96);
+            border-radius: 1.1rem;
+            background: linear-gradient(135deg, rgba(255, 247, 237, 0.10), rgba(224, 242, 254, 0.10));
+            box-shadow:
+                0 0 0 9999px rgba(15, 23, 42, 0.02),
+                0 0 0 9px rgba(249, 115, 22, 0.17),
+                0 0 34px rgba(14, 165, 233, 0.34),
+                0 22px 54px rgba(15, 23, 42, 0.20);
+            pointer-events: auto;
+            transition: left 240ms ease, top 240ms ease, width 240ms ease, height 240ms ease, border-radius 240ms ease, opacity 160ms ease;
+            animation: smartcalc-spotlight-pulse 1.9s ease-in-out infinite;
+        }
+        .smartcalc-tour-spotlight.smartcalc-tour-spotlight-clickable {
+            cursor: pointer;
+        }
+        .smartcalc-tour-spotlight::after {
+            content: 'Look here';
+            position: absolute;
+            left: 50%;
+            top: -0.9rem;
+            transform: translate(-50%, -100%);
+            border-radius: 9999px;
+            background: linear-gradient(135deg, #f97316, #0ea5e9);
+            color: #ffffff;
+            font-size: 0.68rem;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            line-height: 1;
+            padding: 0.45rem 0.65rem;
+            text-transform: uppercase;
+            white-space: nowrap;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.28);
+        }
+        .smartcalc-tour-botbot-pointer {
+            position: fixed;
+            z-index: 10002;
+            display: inline-flex;
+            height: 3rem;
+            width: 3rem;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(255, 255, 255, 0.82);
+            border-radius: 1rem;
+            color: #ffffff;
+            background: linear-gradient(135deg, #0f172a 0%, #0369a1 52%, #f97316 100%);
+            box-shadow: 0 14px 32px rgba(2, 132, 199, 0.34), 0 0 0 6px rgba(14, 165, 233, 0.18);
+            pointer-events: none;
+            transition: left 260ms ease, top 260ms ease, transform 260ms ease;
+            animation: smartcalc-botbot-hover 2.4s ease-in-out infinite;
         }
         .smartcalc-tour-card {
             position: fixed;
-            z-index: 10002;
+            z-index: 10003;
+            pointer-events: auto;
             display: grid;
             grid-template-rows: auto minmax(0, 1fr) auto;
             width: min(92vw, 560px);
@@ -312,6 +374,34 @@
             0%, 100% { transform: scale(0.96); opacity: 0.45; }
             50% { transform: scale(1.10); opacity: 0.16; }
         }
+        @keyframes smartcalc-spotlight-pulse {
+            0%, 100% {
+                box-shadow:
+                    0 0 0 9999px rgba(15, 23, 42, 0.02),
+                    0 0 0 7px rgba(249, 115, 22, 0.15),
+                    0 0 26px rgba(14, 165, 233, 0.30),
+                    0 22px 54px rgba(15, 23, 42, 0.20);
+            }
+            50% {
+                box-shadow:
+                    0 0 0 9999px rgba(15, 23, 42, 0.02),
+                    0 0 0 14px rgba(249, 115, 22, 0.23),
+                    0 0 44px rgba(14, 165, 233, 0.46),
+                    0 22px 54px rgba(15, 23, 42, 0.20);
+            }
+        }
+        @keyframes smartcalc-botbot-hover {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-6px) rotate(2deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .smartcalc-tour-spotlight,
+            .smartcalc-tour-botbot-pointer,
+            .smartcalc-botbot-orb::before {
+                animation: none;
+                transition: none;
+            }
+        }
         @media (min-width: 641px) {
             .smartcalc-tour-inner {
                 padding: 1.45rem;
@@ -351,14 +441,14 @@
 
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.15.1225">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.15.1255">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.15.1225</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.15.1255</p>
             <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <button id="smartcalc-tutorial-btn" type="button" class="inline-flex items-center justify-center rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown transition">Start guided tutorial</button>
                 <button id="top-reset-btn" type="button" class="inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
@@ -850,7 +940,20 @@
     </div>
 
     <div id="smartcalc-tour-overlay" class="smartcalc-tour-overlay" aria-hidden="true">
-        <div class="smartcalc-tour-backdrop" aria-hidden="true"></div>
+        <div id="smartcalc-tour-dim-top" class="smartcalc-tour-dim-panel" aria-hidden="true"></div>
+        <div id="smartcalc-tour-dim-left" class="smartcalc-tour-dim-panel" aria-hidden="true"></div>
+        <div id="smartcalc-tour-dim-right" class="smartcalc-tour-dim-panel" aria-hidden="true"></div>
+        <div id="smartcalc-tour-dim-bottom" class="smartcalc-tour-dim-panel" aria-hidden="true"></div>
+        <button id="smartcalc-tour-spotlight" class="smartcalc-tour-spotlight" type="button" aria-hidden="true" aria-label="Continue tutorial from highlighted section"></button>
+        <div id="smartcalc-tour-botbot-pointer" class="smartcalc-tour-botbot-pointer" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 8V4H8" />
+                <rect x="4" y="8" width="16" height="12" rx="4" />
+                <path d="M9 13h.01" />
+                <path d="M15 13h.01" />
+                <path d="M9.5 17h5" />
+            </svg>
+        </div>
         <section id="smartcalc-tour-card" class="smartcalc-tour-card" role="dialog" aria-modal="true" aria-labelledby="smartcalc-tour-title" aria-describedby="smartcalc-tour-body" tabindex="-1">
             <div class="smartcalc-tour-progress" aria-hidden="true"><span id="smartcalc-tour-progress-bar"></span></div>
             <div class="smartcalc-tour-inner">
@@ -1094,8 +1197,9 @@ function showLicenseLockScreen(message) {
             {
                 title: 'Welcome to Smart Calc',
                 body: 'This guided tutorial walks through the same quoting flow the sales team uses: pick a starting point, price the merchandise, add delivery/protection/tax, document discounts, then copy notes or print a customer copy.',
-                tip: 'The tutorial never overwrites an in-progress quote. If you already typed customer numbers, they stay in place.',
-                target: 'header'
+                tip: 'The tutorial never overwrites an in-progress quote. If you already typed customer numbers, they stay in place. Click the highlighted area or press Next.',
+                target: 'header',
+                clickTargetToAdvance: true
             },
             {
                 title: 'Choose your starting point',
@@ -1112,32 +1216,37 @@ function showLicenseLockScreen(message) {
             {
                 title: 'Set the selling goal',
                 body: 'After Smart Calc has a cost or tagged price, enter either the target margin percent or the retail price. The result box updates with the adjusted ticket GPM.',
-                tip: 'Use margin for desired profitability, or retail price when matching a tag, promo, or manager price.',
-                target: '#calculator-section'
+                tip: 'Use margin for desired profitability, or retail price when matching a tag, promo, or manager price. If the quote has not started yet, BotBot points back to the cost inputs first.',
+                target: '#calculator-section',
+                fallbackTarget: '#base-cost-section'
             },
             {
                 title: 'Add delivery and services',
                 body: 'Turn on threshold delivery, local delivery, outside-area miles, assembly, removal, and other services that should appear on the ticket.',
-                tip: 'Delivery discounts belong in Adjustment and should be documented in notes.',
-                target: '#addons-section'
+                tip: 'Delivery discounts belong in Adjustment and should be documented in notes. This section wakes up after a quote starts.',
+                target: '#addons-section',
+                fallbackTarget: '#base-cost-section'
             },
             {
                 title: 'Add Pro1st protection',
                 body: 'Use Pro1st when the customer accepts protection. Select the plan type, covered items, and covered value when only part of the ticket is protected.',
-                tip: 'Power bases have their own plan type and quantity field.',
-                target: '#pro1st-options-wrapper'
+                tip: 'Power bases have their own plan type and quantity field. BotBot highlights the visible Pro1st checkbox first so the tutorial does not ghost-click a real quote.',
+                target: '#pro1st-options-wrapper',
+                fallbackTarget: '#add-pro1st'
             },
             {
                 title: 'Document discounts',
                 body: 'Check every discount reason that applies. Each selected reason gets its own amount and detail so the adjustment field and notes stay audit-ready.',
-                tip: 'Sales tax, delivery, Pro1st, advertised price, competition match, vendor ad, manager approval, and other discounts are tracked separately.',
-                target: '#adjustment-field-section'
+                tip: 'Sales tax, delivery, Pro1st, advertised price, competition match, vendor ad, manager approval, and other discounts are tracked separately. The copy-only adjustment box appears after a discount exists.',
+                target: '#adjustment-field-section',
+                fallbackTarget: '#pay-tax'
             },
             {
                 title: 'Confirm tax and financing',
                 body: 'Tax defaults to the highest store rate. Change the location only when the ticket should use the alternate rate, and show financing when a monthly-payment view helps close the sale.',
-                tip: 'Financing is informational here; final financing approval is still confirmed at checkout.',
-                target: '#financing-section'
+                tip: 'Financing is informational here; final financing approval is still confirmed at checkout. If financing is hidden, the tax selector is the safe visible control.',
+                target: '#financing-section',
+                fallbackTarget: '#add-tax'
             },
             {
                 title: 'Copy sales order notes',
@@ -1148,8 +1257,9 @@ function showLicenseLockScreen(message) {
             {
                 title: 'Print the customer copy',
                 body: 'When the quote is ready, print the customer copy to show merchandise, delivery fees, discounts, tax, and the final total.',
-                tip: 'Use Reset / Clear Form only after the quote has been saved or you are ready to start over.',
-                target: '#reset-btn'
+                tip: 'Use Reset / Clear Form only after the quote has been saved or you are ready to start over. The print button appears after Smart Calc has enough quote data.',
+                target: '#reset-btn',
+                fallbackTarget: '#copy-sales-notes'
             },
             {
                 title: 'You are ready to quote',
@@ -1197,6 +1307,7 @@ function showLicenseLockScreen(message) {
                 tourElements.backButton?.addEventListener('click', showPreviousTutorialStep);
                 tourElements.nextButton?.addEventListener('click', showNextTutorialStep);
                 tourElements.doneButton?.addEventListener('click', () => closeGuidedTutorial(true));
+                tourElements.spotlight?.addEventListener('click', handleTutorialSpotlightClick);
                 window.addEventListener('keydown', (event) => {
                     if (tourElements.overlay.getAttribute('aria-hidden') === 'true') return;
                     if (event.key === 'Escape') closeGuidedTutorial(false);
@@ -1218,6 +1329,14 @@ function showLicenseLockScreen(message) {
                     overlay: document.getElementById('smartcalc-tour-overlay'),
                     card: document.getElementById('smartcalc-tour-card'),
                     startButton: document.getElementById('smartcalc-tutorial-btn'),
+                    spotlight: document.getElementById('smartcalc-tour-spotlight'),
+                    botbotPointer: document.getElementById('smartcalc-tour-botbot-pointer'),
+                    dimPanels: {
+                        top: document.getElementById('smartcalc-tour-dim-top'),
+                        left: document.getElementById('smartcalc-tour-dim-left'),
+                        right: document.getElementById('smartcalc-tour-dim-right'),
+                        bottom: document.getElementById('smartcalc-tour-dim-bottom')
+                    },
                     title: document.getElementById('smartcalc-tour-title'),
                     body: document.getElementById('smartcalc-tour-body'),
                     tip: document.getElementById('smartcalc-tour-tip'),
@@ -1262,6 +1381,14 @@ function showLicenseLockScreen(message) {
                 renderGuidedTutorialStep();
             }
 
+            function handleTutorialSpotlightClick(event) {
+                event?.preventDefault?.();
+                const step = smartCalcTutorialSteps[currentTutorialStepIndex];
+                if (step?.clickTargetToAdvance) {
+                    showNextTutorialStep();
+                }
+            }
+
             function closeGuidedTutorial(markComplete) {
                 const tourElements = getTutorialElements();
                 clearTutorialTarget();
@@ -1299,11 +1426,13 @@ function showLicenseLockScreen(message) {
                 tourElements.nextButton.classList.toggle('hidden', isLastStep);
                 tourElements.doneButton.classList.toggle('hidden', !isLastStep);
                 tourElements.overlay.setAttribute('aria-hidden', 'false');
-                const target = highlightTutorialTarget(step.target);
+                const target = highlightTutorialTarget(step);
                 document.body.classList.add('smartcalc-tour-no-scroll');
                 positionGuidedTutorialCard(target);
+                renderTutorialSpotlight(target, step);
                 window.requestAnimationFrame(() => {
                     positionGuidedTutorialCard(currentTutorialTarget);
+                    renderTutorialSpotlight(currentTutorialTarget, smartCalcTutorialSteps[currentTutorialStepIndex]);
                     tourElements.card?.focus?.({ preventScroll: true });
                 });
             }
@@ -1381,38 +1510,194 @@ function showLicenseLockScreen(message) {
             function repositionGuidedTutorialCardIfOpen() {
                 const tourElements = getTutorialElements();
                 if (tourElements.overlay?.getAttribute('aria-hidden') === 'false') {
+                    const step = smartCalcTutorialSteps[currentTutorialStepIndex];
                     positionGuidedTutorialCard(currentTutorialTarget);
+                    renderTutorialSpotlight(currentTutorialTarget, step);
                 }
             }
 
-            function highlightTutorialTarget(targetSelector) {
-                clearTutorialTarget();
-                const target = resolveTutorialTarget(targetSelector);
+            function getTutorialViewport() {
+                return {
+                    width: Math.max(window.innerWidth || document.documentElement.clientWidth || 0, 320),
+                    height: Math.max(window.innerHeight || document.documentElement.clientHeight || 0, 320)
+                };
+            }
+
+            function getTutorialTargetRect(target) {
                 if (!target || !isTutorialTargetVisible(target)) return null;
+                const rect = target.getBoundingClientRect();
+                return {
+                    left: rect.left,
+                    top: rect.top,
+                    right: rect.right,
+                    bottom: rect.bottom,
+                    width: rect.width,
+                    height: rect.height
+                };
+            }
+
+            function buildTutorialSpotlightRect(targetRect, targetSelector) {
+                const viewport = getTutorialViewport();
+                const margin = viewport.width < 640 ? 8 : 16;
+                const padding = viewport.width < 640 ? 10 : 16;
+                const isSmallControl = targetSelector && /button|btn|input|checkbox|#add-|#copy-|#pay-tax|#add-tax/i.test(targetSelector);
+                const minimumWidth = isSmallControl ? 54 : 80;
+                const minimumHeight = isSmallControl ? 44 : 52;
+                let width = Math.max(targetRect.width + padding * 2, minimumWidth);
+                let height = Math.max(targetRect.height + padding * 2, minimumHeight);
+                const maxWidth = Math.max(minimumWidth, viewport.width - margin * 2);
+                const maxHeight = Math.max(minimumHeight, viewport.height - margin * 2);
+
+                if (width > maxWidth) width = maxWidth;
+                if (height > maxHeight) height = maxHeight;
+
+                let left = targetRect.left - (width - targetRect.width) / 2;
+                let top = targetRect.top - (height - targetRect.height) / 2;
+
+                left = clampTutorialValue(left, margin, viewport.width - width - margin);
+                top = clampTutorialValue(top, margin, viewport.height - height - margin);
+
+                return {
+                    left,
+                    top,
+                    width,
+                    height,
+                    right: left + width,
+                    bottom: top + height,
+                    borderRadius: isSmallControl || height <= 72 ? 999 : 18
+                };
+            }
+
+            function renderTutorialSpotlight(target, step) {
+                const tourElements = getTutorialElements();
+                const targetRect = getTutorialTargetRect(target);
+                if (!targetRect || !tourElements.spotlight) {
+                    clearTutorialSpotlight();
+                    return;
+                }
+
+                const targetSelector = step?.spotlightTarget || step?.target || '';
+                const spotlightRect = buildTutorialSpotlightRect(targetRect, targetSelector);
+                const viewport = getTutorialViewport();
+                const setPanelRect = (panel, left, top, width, height) => {
+                    if (!panel) return;
+                    panel.setAttribute('aria-hidden', 'false');
+                    panel.style.left = `${Math.round(Math.max(0, left))}px`;
+                    panel.style.top = `${Math.round(Math.max(0, top))}px`;
+                    panel.style.width = `${Math.round(Math.max(0, width))}px`;
+                    panel.style.height = `${Math.round(Math.max(0, height))}px`;
+                };
+
+                setPanelRect(tourElements.dimPanels?.top, 0, 0, viewport.width, spotlightRect.top);
+                setPanelRect(tourElements.dimPanels?.left, 0, spotlightRect.top, spotlightRect.left, spotlightRect.height);
+                setPanelRect(tourElements.dimPanels?.right, spotlightRect.right, spotlightRect.top, viewport.width - spotlightRect.right, spotlightRect.height);
+                setPanelRect(tourElements.dimPanels?.bottom, 0, spotlightRect.bottom, viewport.width, viewport.height - spotlightRect.bottom);
+
+                tourElements.spotlight.setAttribute('aria-hidden', 'false');
+                tourElements.spotlight.classList.toggle('smartcalc-tour-spotlight-clickable', Boolean(step?.clickTargetToAdvance));
+                tourElements.spotlight.style.left = `${Math.round(spotlightRect.left)}px`;
+                tourElements.spotlight.style.top = `${Math.round(spotlightRect.top)}px`;
+                tourElements.spotlight.style.width = `${Math.round(spotlightRect.width)}px`;
+                tourElements.spotlight.style.height = `${Math.round(spotlightRect.height)}px`;
+                tourElements.spotlight.style.borderRadius = `${spotlightRect.borderRadius}px`;
+                tourElements.spotlight.disabled = !step?.clickTargetToAdvance;
+                tourElements.spotlight.setAttribute('aria-label', step?.clickTargetToAdvance ? 'Continue tutorial from highlighted section' : 'Highlighted tutorial section');
+
+                positionBotBotPointer(spotlightRect);
+            }
+
+            function positionBotBotPointer(spotlightRect) {
+                const tourElements = getTutorialElements();
+                const pointer = tourElements.botbotPointer;
+                if (!pointer || !spotlightRect) return;
+                const viewport = getTutorialViewport();
+                const pointerSize = 48;
+                const gap = 12;
+                const left = clampTutorialValue(spotlightRect.right - pointerSize * 0.72, 8, viewport.width - pointerSize - 8);
+                const top = clampTutorialValue(spotlightRect.top - pointerSize - gap, 8, viewport.height - pointerSize - 8);
+                pointer.setAttribute('aria-hidden', 'false');
+                pointer.style.left = `${Math.round(left)}px`;
+                pointer.style.top = `${Math.round(top)}px`;
+                pointer.style.width = `${pointerSize}px`;
+                pointer.style.height = `${pointerSize}px`;
+            }
+
+            function clearTutorialSpotlight() {
+                const tourElements = getTutorialElements();
+                Object.values(tourElements.dimPanels || {}).forEach((panel) => {
+                    if (!panel) return;
+                    panel.setAttribute('aria-hidden', 'true');
+                    panel.removeAttribute('style');
+                });
+                if (tourElements.spotlight) {
+                    tourElements.spotlight.setAttribute('aria-hidden', 'true');
+                    tourElements.spotlight.classList.remove('smartcalc-tour-spotlight-clickable');
+                    tourElements.spotlight.removeAttribute('style');
+                    tourElements.spotlight.disabled = true;
+                }
+                if (tourElements.botbotPointer) {
+                    tourElements.botbotPointer.setAttribute('aria-hidden', 'true');
+                    tourElements.botbotPointer.removeAttribute('style');
+                }
+            }
+
+            function highlightTutorialTarget(stepOrSelector) {
+                clearTutorialTarget(false);
+                const target = resolveTutorialTarget(stepOrSelector);
+                if (!target || !isTutorialTargetVisible(target)) {
+                    clearTutorialSpotlight();
+                    return null;
+                }
                 currentTutorialTarget = target;
                 currentTutorialTarget.classList.add('smartcalc-tour-target');
                 currentTutorialTarget.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
                 return currentTutorialTarget;
             }
 
-            function resolveTutorialTarget(targetSelector) {
-                if (!targetSelector) return null;
-                if (targetSelector === 'header') return document.querySelector('header');
-                return document.querySelector(targetSelector);
+            function resolveTutorialTarget(stepOrSelector) {
+                const selectors = [];
+                if (typeof stepOrSelector === 'string') {
+                    selectors.push(stepOrSelector);
+                } else if (stepOrSelector) {
+                    if (stepOrSelector.spotlightTarget) selectors.push(stepOrSelector.spotlightTarget);
+                    if (stepOrSelector.target) selectors.push(stepOrSelector.target);
+                    if (stepOrSelector.fallbackTarget) selectors.push(stepOrSelector.fallbackTarget);
+                }
+
+                const candidates = selectors
+                    .filter(Boolean)
+                    .map((selector) => ({ selector, element: getTutorialTargetCandidate(selector) }))
+                    .filter((candidate) => candidate.element);
+                const visibleCandidate = candidates.find((candidate) => isTutorialTargetVisible(candidate.element));
+                if (visibleCandidate) return visibleCandidate.element;
+                return candidates[0]?.element || null;
+            }
+
+            function getTutorialTargetCandidate(selector) {
+                if (!selector) return null;
+                if (selector === 'header') return document.querySelector('header');
+                return document.querySelector(selector);
             }
 
             function isTutorialTargetVisible(element) {
                 if (!element) return false;
+                if (element.closest?.('.hidden')) return false;
                 const rect = element.getBoundingClientRect();
-                return !element.classList.contains('hidden') && rect.width > 0 && rect.height > 0;
+                if (rect.width <= 0 || rect.height <= 0) return false;
+                if (window.getComputedStyle) {
+                    const style = window.getComputedStyle(element);
+                    if (style.display === 'none' || style.visibility === 'hidden') return false;
+                }
+                return true;
             }
 
-            function clearTutorialTarget() {
+            function clearTutorialTarget(clearSpotlight = true) {
                 if (currentTutorialTarget) {
                     currentTutorialTarget.classList.remove('smartcalc-tour-target');
                     currentTutorialTarget = null;
                 }
                 document.querySelectorAll('.smartcalc-tour-target').forEach((element) => element.classList.remove('smartcalc-tour-target'));
+                if (clearSpotlight) clearTutorialSpotlight();
             }
 
             function setupEventListeners() {
