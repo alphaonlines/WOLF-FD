@@ -444,14 +444,14 @@
 
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.15.1427">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.15.1512">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.15.1427</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.15.1512</p>
             <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <button id="smartcalc-tutorial-btn" type="button" class="inline-flex items-center justify-center rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown transition">Start guided tutorial</button>
                 <button id="top-reset-btn" type="button" class="inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
@@ -1238,17 +1238,19 @@ function showLicenseLockScreen(message) {
             {
                 title: 'Add Pro1st protection',
                 body: 'Use Pro1st when the customer accepts protection. Select the plan type, covered items, and covered value when only part of the ticket is protected.',
-                tip: 'BotBot checks Pro1st, fills sofa and loveseat, and uses 899 as the covered value for this training quote.',
+                tip: 'BotBot has opened Pro1st for the example, fills sofa and loveseat, and uses 899 as the covered value for this training quote.',
                 target: '#pro1st-options-wrapper',
                 fallbackTarget: '#add-pro1st',
+                prepareAction: 'reveal-pro1st-example',
                 demoAction: 'toggle-pro1st-example'
             },
             {
                 title: 'Document discounts',
                 body: 'Check every discount reason that applies. Each selected reason gets its own amount and detail so the adjustment field and notes stay audit-ready.',
-                tip: 'BotBot adds one small manager-approval training discount so the adjustment field and sales notes show the audit trail.',
+                tip: 'BotBot has opened one small manager-approval training discount so the adjustment field and sales notes show the audit trail.',
                 target: '#smartcalc-tour-discount-reasons',
                 fallbackTarget: '#addons-section',
+                prepareAction: 'reveal-discount-example',
                 demoAction: 'fill-discount-example'
             },
             {
@@ -1426,6 +1428,36 @@ function showLicenseLockScreen(message) {
                 dispatchTutorialEvent(element, 'change');
             }
 
+            function applyTutorialPro1stExample() {
+                selectTutorialDemoValue(allElements.pro1stPlanTypeSelect, 'standard');
+                setTutorialCheckbox(allElements.addPro1stCheckbox, true);
+                setTutorialDemoValue(allElements.pro1stCoveredItemsInput, 'sofa and loveseat');
+                setTutorialDemoValue(allElements.pro1stCoveredValueInput, '899');
+                updatePro1stOptionFields();
+                updateAddonCosts();
+            }
+
+            function applyTutorialDiscountExample() {
+                setTutorialCheckbox(allElements.discountManagerApprovalCheckbox, true);
+                selectTutorialDemoValue(allElements.managerApprovalNameInput, 'Other');
+                setTutorialDemoValue(allElements.managerApprovalAmountInput, '25');
+                updateDiscountReasonControls();
+                updateGrandTotal();
+            }
+
+            function prepareTutorialStep(step) {
+                switch (step?.prepareAction) {
+                    case 'reveal-pro1st-example':
+                        applyTutorialPro1stExample();
+                        break;
+                    case 'reveal-discount-example':
+                        applyTutorialDiscountExample();
+                        break;
+                    default:
+                        break;
+                }
+            }
+
             function applyTutorialDemoAction(step) {
                 switch (step?.demoAction) {
                     case 'choose-base-cost':
@@ -1446,15 +1478,10 @@ function showLicenseLockScreen(message) {
                         setTutorialCheckbox(allElements.addDeliveryCheckbox, true);
                         break;
                     case 'toggle-pro1st-example':
-                        selectTutorialDemoValue(allElements.pro1stPlanTypeSelect, 'standard');
-                        setTutorialCheckbox(allElements.addPro1stCheckbox, true);
-                        setTutorialDemoValue(allElements.pro1stCoveredItemsInput, 'sofa and loveseat');
-                        setTutorialDemoValue(allElements.pro1stCoveredValueInput, '899');
+                        applyTutorialPro1stExample();
                         break;
                     case 'fill-discount-example':
-                        setTutorialCheckbox(allElements.discountManagerApprovalCheckbox, true);
-                        selectTutorialDemoValue(allElements.managerApprovalNameInput, 'Other');
-                        setTutorialDemoValue(allElements.managerApprovalAmountInput, '25');
+                        applyTutorialDiscountExample();
                         break;
                     case 'toggle-financing-example':
                         setTutorialCheckbox(allElements.showFinancingCheckbox, true);
@@ -1504,6 +1531,7 @@ function showLicenseLockScreen(message) {
                 tourElements.doneButton.classList.add('hidden');
                 tourElements.doneButton.setAttribute('aria-hidden', 'true');
                 tourElements.overlay.setAttribute('aria-hidden', 'false');
+                prepareTutorialStep(step);
                 const target = highlightTutorialTarget(step);
                 document.body.classList.add('smartcalc-tour-no-scroll');
                 positionGuidedTutorialCard(target);

@@ -98,7 +98,10 @@ const dom = new JSDOM(html, {
         if (this.id === 'smartcalc-tour-entry-mode') return makeRect(120, 122, 520, 52);
         if (this.id === 'calculator-section') return makeRect(120, 430, 520, 220);
         if (this.id === 'addons-section') return makeRect(120, 520, 520, 260);
+        if (this.id === 'add-pro1st') return makeRect(126, 606, 16, 16);
+        if (this.id === 'pro1st-options-wrapper') return makeRect(120, 634, 520, 178);
         if (this.id === 'smartcalc-tour-discount-reasons' || this.matches?.('#addons-section fieldset')) return makeRect(120, 220, 520, 420);
+        if (this.id === 'manager-approval-wrapper') return makeRect(150, 360, 490, 96);
         if (this.id === 'financing-section') return makeRect(120, 260, 520, 148);
         if (this.id === 'sales-notes-section') return makeRect(120, 200, 520, 340);
         if (this.id === 'smartcalc-tour-copy-print-section') return makeRect(120, 180, 520, 410);
@@ -110,6 +113,21 @@ const dom = new JSDOM(html, {
       }
       if (this.id === 'smartcalc-tour-entry-mode') {
         return makeRect(32, 161, 311, 52);
+      }
+      if (this.id === 'addons-section') {
+        return makeRect(32, 120, 311, 520);
+      }
+      if (this.id === 'add-pro1st') {
+        return makeRect(38, 286, 16, 16);
+      }
+      if (this.id === 'pro1st-options-wrapper') {
+        return makeRect(32, 312, 311, 190);
+      }
+      if (this.id === 'smartcalc-tour-discount-reasons' || this.matches?.('#addons-section fieldset')) {
+        return makeRect(32, 190, 311, 420);
+      }
+      if (this.id === 'manager-approval-wrapper') {
+        return makeRect(52, 322, 291, 96);
       }
       if (this.tagName === 'HEADER') {
         return makeRect(16, 20, 343, 132);
@@ -234,6 +252,26 @@ function assertOnlyTutorialNavIsClickable() {
   assert.equal(byId('smartcalc-tour-next').classList.contains('hidden'), false, 'Next should remain the visible forward/completion control');
 }
 
+function activeTutorialTarget() {
+  return document.querySelector('.smartcalc-tour-target');
+}
+
+function getSpotlightRectSnapshot() {
+  const rect = byId('smartcalc-tour-spotlight').getBoundingClientRect();
+  return { width: rect.width, height: rect.height, left: rect.left, top: rect.top };
+}
+
+function assertSpotlightSizeStable(before, after, label, tolerance = 2) {
+  assert.ok(
+    Math.abs(before.width - after.width) <= tolerance,
+    `${label} spotlight width should not change between first pass and backtrack; before=${JSON.stringify(before)} after=${JSON.stringify(after)}`,
+  );
+  assert.ok(
+    Math.abs(before.height - after.height) <= tolerance,
+    `${label} spotlight height should not change between first pass and backtrack; before=${JSON.stringify(before)} after=${JSON.stringify(after)}`,
+  );
+}
+
 async function clickNextAndSettle() {
   byId('smartcalc-tour-next').click();
   await settle();
@@ -334,10 +372,28 @@ function assertDesktopRightRail() {
   assert.match(overlay.textContent, /Pro1st protection/i, 'leaving delivery/services should advance to Pro1st');
   assert.equal(byId('add-delivery').checked, true, 'delivery demo should check local delivery');
   assert.equal(byId('delivery-type-wrapper').classList.contains('hidden'), false, 'delivery demo should reveal delivery details');
-  assert.ok(
-    byId('add-pro1st').classList.contains('smartcalc-tour-target'),
-    'hidden Pro1st option details should fall back to the visible Pro1st checkbox row before BotBot checks it',
-  );
+  assert.equal(byId('add-pro1st').checked, true, 'Pro1st prepare action should check protection before first-pass spotlight measurement');
+  assert.equal(byId('pro1st-options-wrapper').classList.contains('hidden'), false, 'Pro1st prepare action should reveal options before first-pass spotlight measurement');
+  assert.equal(activeTutorialTarget()?.id, 'pro1st-options-wrapper', 'Pro1st first-pass spotlight should target the full options wrapper, not the tiny checkbox');
+  assertSpotlightCoversWholeArea(byId('pro1st-options-wrapper'), 'Pro1st options first pass', 280, 150);
+  const firstPassPro1stSpotlight = getSpotlightRectSnapshot();
+
+  await clickNextAndSettle();
+  overlay = activeOverlay();
+  assert.match(overlay.textContent, /Document discounts/i, 'leaving Pro1st should advance to discounts');
+  assert.equal(activeTutorialTarget()?.id, 'smartcalc-tour-discount-reasons', 'discount first-pass spotlight should target the full discount reason fieldset');
+  assert.equal(byId('manager-approval-wrapper').classList.contains('hidden'), false, 'discount prepare action should reveal the manager approval details before first-pass spotlight measurement');
+  assertSpotlightCoversWholeArea(byId('smartcalc-tour-discount-reasons'), 'discount reasons first pass', 280, 300);
+  const firstPassDiscountSpotlight = getSpotlightRectSnapshot();
+
+  byId('smartcalc-tour-back').click();
+  await settle();
+  assert.equal(activeTutorialTarget()?.id, 'pro1st-options-wrapper', 'Back to Pro1st should keep the full Pro1st options wrapper as the target');
+  assertSpotlightSizeStable(firstPassPro1stSpotlight, getSpotlightRectSnapshot(), 'Pro1st');
+
+  await clickNextAndSettle();
+  assert.equal(activeTutorialTarget()?.id, 'smartcalc-tour-discount-reasons', 'Forward to discounts again should keep the full discount reason fieldset as the target');
+  assertSpotlightSizeStable(firstPassDiscountSpotlight, getSpotlightRectSnapshot(), 'discount reasons');
 
   closeOverlay();
   assert.equal(window.localStorage.getItem('fd_smartcalc_tutorial_completed_v1'), null, 'skipping should not mark tutorial completed');
