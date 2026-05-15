@@ -106,7 +106,7 @@
             inset: 0;
             z-index: 9999;
             padding: 1rem;
-            pointer-events: none;
+            pointer-events: auto;
         }
         .smartcalc-tour-dim-panel {
             position: fixed;
@@ -367,6 +367,9 @@
             border-radius: 0.75rem;
             box-shadow: 0 0 0 8px rgba(249, 115, 22, 0.16), 0 18px 44px rgba(15, 23, 42, 0.20);
         }
+        .smartcalc-tour-no-scroll .smartcalc-tour-target {
+            pointer-events: none;
+        }
         .smartcalc-tour-no-scroll {
             overflow: hidden;
         }
@@ -441,14 +444,14 @@
 
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.15.1255">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.15.1333">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.15.1255</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.15.1333</p>
             <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <button id="smartcalc-tutorial-btn" type="button" class="inline-flex items-center justify-center rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown transition">Start guided tutorial</button>
                 <button id="top-reset-btn" type="button" class="inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
@@ -1197,74 +1200,80 @@ function showLicenseLockScreen(message) {
             {
                 title: 'Welcome to Smart Calc',
                 body: 'This guided tutorial walks through the same quoting flow the sales team uses: pick a starting point, price the merchandise, add delivery/protection/tax, document discounts, then copy notes or print a customer copy.',
-                tip: 'The tutorial never overwrites an in-progress quote. If you already typed customer numbers, they stay in place. Click the highlighted area or press Next.',
-                target: 'header',
-                clickTargetToAdvance: true
+                tip: 'Training mode drives the form with fixed example values so every employee gets the same clean walkthrough. Use Next, Back, or Skip tutorial only.',
+                target: 'header'
             },
             {
                 title: 'Choose your starting point',
                 body: 'Start from Base Cost when you know vendor cost, EZ Pro Cost Code when a coded cost is printed, or Tagged Price when the selling price is already known.',
-                tip: 'Use Base Cost for most quotes. Tagged Price hides margin because the original cost is unknown.',
-                target: '#smartcalc-tour-entry-mode'
+                tip: 'BotBot selects Base Cost for this demo. The highlighted calculator controls are visual-only while the tutorial is open.',
+                target: '#smartcalc-tour-entry-mode',
+                demoAction: 'choose-base-cost'
             },
             {
                 title: 'Enter vendor and base cost',
                 body: 'Choose the vendor, then enter one or more costs. Smart Calc adds freight and supports multiple pieces separated by plus signs, commas, or spaces.',
-                tip: 'Example format: 399 + 299, 179. Vendor notes show freight and ordering requirements.',
-                target: '#base-cost-section'
+                tip: 'BotBot will overwrite the demo form with ASHLEY and 399 + 299, 179, then Smart Calc calculates freight through the normal input events.',
+                target: '#base-cost-section',
+                demoAction: 'fill-base-cost-example'
             },
             {
                 title: 'Set the selling goal',
                 body: 'After Smart Calc has a cost or tagged price, enter either the target margin percent or the retail price. The result box updates with the adjusted ticket GPM.',
-                tip: 'Use margin for desired profitability, or retail price when matching a tag, promo, or manager price. If the quote has not started yet, BotBot points back to the cost inputs first.',
+                tip: 'BotBot uses a 55% margin target so the add-ons, totals, and notes sections wake up without manual typing.',
                 target: '#calculator-section',
-                fallbackTarget: '#base-cost-section'
+                fallbackTarget: '#base-cost-section',
+                demoAction: 'fill-margin-example'
             },
             {
                 title: 'Add delivery and services',
                 body: 'Turn on threshold delivery, local delivery, outside-area miles, assembly, removal, and other services that should appear on the ticket.',
-                tip: 'Delivery discounts belong in Adjustment and should be documented in notes. This section wakes up after a quote starts.',
+                tip: 'BotBot checks local delivery for the example. Real users can change services after the tutorial exits.',
                 target: '#addons-section',
-                fallbackTarget: '#base-cost-section'
+                fallbackTarget: '#base-cost-section',
+                demoAction: 'toggle-delivery-example'
             },
             {
                 title: 'Add Pro1st protection',
                 body: 'Use Pro1st when the customer accepts protection. Select the plan type, covered items, and covered value when only part of the ticket is protected.',
-                tip: 'Power bases have their own plan type and quantity field. BotBot highlights the visible Pro1st checkbox first so the tutorial does not ghost-click a real quote.',
+                tip: 'BotBot checks Pro1st, fills sofa and loveseat, and uses 899 as the covered value for this training quote.',
                 target: '#pro1st-options-wrapper',
-                fallbackTarget: '#add-pro1st'
+                fallbackTarget: '#add-pro1st',
+                demoAction: 'toggle-pro1st-example'
             },
             {
                 title: 'Document discounts',
                 body: 'Check every discount reason that applies. Each selected reason gets its own amount and detail so the adjustment field and notes stay audit-ready.',
-                tip: 'Sales tax, delivery, Pro1st, advertised price, competition match, vendor ad, manager approval, and other discounts are tracked separately. The copy-only adjustment box appears after a discount exists.',
+                tip: 'BotBot adds one small manager-approval training discount so the adjustment field and sales notes show the audit trail.',
                 target: '#adjustment-field-section',
-                fallbackTarget: '#pay-tax'
+                fallbackTarget: '#pay-tax',
+                demoAction: 'fill-discount-example'
             },
             {
                 title: 'Confirm tax and financing',
                 body: 'Tax defaults to the highest store rate. Change the location only when the ticket should use the alternate rate, and show financing when a monthly-payment view helps close the sale.',
-                tip: 'Financing is informational here; final financing approval is still confirmed at checkout. If financing is hidden, the tax selector is the safe visible control.',
+                tip: 'BotBot turns on the display-only financing view. Final financing approval is still confirmed at checkout.',
                 target: '#financing-section',
-                fallbackTarget: '#add-tax'
+                fallbackTarget: '#add-tax',
+                demoAction: 'toggle-financing-example'
             },
             {
                 title: 'Copy sales order notes',
                 body: 'Smart Calc builds notes from the quote, coverage, delivery, discounts, and policy details. Copy them into the sales order before checkout.',
-                tip: 'If you manually edit notes, Smart Calc keeps your edits for copying.',
+                tip: 'BotBot does not auto-copy to the clipboard. Copy the notes after the tutorial exits.',
                 target: '#copy-sales-notes'
             },
             {
                 title: 'Print the customer copy',
                 body: 'When the quote is ready, print the customer copy to show merchandise, delivery fees, discounts, tax, and the final total.',
-                tip: 'Use Reset / Clear Form only after the quote has been saved or you are ready to start over. The print button appears after Smart Calc has enough quote data.',
+                tip: 'BotBot does not open the print dialog. Print the customer copy after the tutorial exits.',
                 target: '#reset-btn',
                 fallbackTarget: '#copy-sales-notes'
             },
             {
                 title: 'You are ready to quote',
                 body: 'That is the full Smart Calc flow. You can restart this tutorial any time from the top button or from the dashboard toolbar.',
-                tip: 'Done saves this tutorial as completed on this browser. Skip closes it without marking it complete.',
+                tip: 'Press Next to save this tutorial as completed on this browser. Skip closes it without marking it complete.',
                 target: 'header'
             }
         ];
@@ -1367,10 +1376,16 @@ function showLicenseLockScreen(message) {
             }
 
             function showNextTutorialStep() {
+                advanceGuidedTutorial();
+            }
+
+            function advanceGuidedTutorial() {
+                const step = smartCalcTutorialSteps[currentTutorialStepIndex];
                 if (currentTutorialStepIndex >= smartCalcTutorialSteps.length - 1) {
                     closeGuidedTutorial(true);
                     return;
                 }
+                applyTutorialDemoAction(step);
                 currentTutorialStepIndex += 1;
                 renderGuidedTutorialStep();
             }
@@ -1383,9 +1398,67 @@ function showLicenseLockScreen(message) {
 
             function handleTutorialSpotlightClick(event) {
                 event?.preventDefault?.();
-                const step = smartCalcTutorialSteps[currentTutorialStepIndex];
-                if (step?.clickTargetToAdvance) {
-                    showNextTutorialStep();
+                event?.stopPropagation?.();
+            }
+
+            function dispatchTutorialEvent(element, eventName) {
+                if (!element || !eventName) return;
+                element.dispatchEvent(new Event(eventName, { bubbles: true }));
+            }
+
+            function setTutorialDemoValue(element, value, eventName = 'input') {
+                if (!element) return;
+                element.value = value;
+                element.dataset.smartcalcTourDemoValue = value;
+                dispatchTutorialEvent(element, eventName);
+            }
+
+            function selectTutorialDemoValue(element, value) {
+                setTutorialDemoValue(element, value, 'change');
+            }
+
+            function setTutorialCheckbox(element, checked = true) {
+                if (!element) return;
+                element.checked = Boolean(checked);
+                element.dataset.smartcalcTourDemoValue = element.checked ? 'checked' : 'unchecked';
+                dispatchTutorialEvent(element, 'change');
+            }
+
+            function applyTutorialDemoAction(step) {
+                switch (step?.demoAction) {
+                    case 'choose-base-cost':
+                        allElements.baseCostBtn?.click();
+                        break;
+                    case 'fill-base-cost-example':
+                        allElements.baseCostBtn?.click();
+                        if (allElements.costCodeInput) allElements.costCodeInput.value = '';
+                        if (allElements.manualRetailInput) allElements.manualRetailInput.value = '';
+                        selectTutorialDemoValue(allElements.vendorSelect, 'ASHLEY');
+                        setTutorialDemoValue(allElements.baseCostInput, '399 + 299, 179');
+                        break;
+                    case 'fill-margin-example':
+                        if (allElements.retailPriceInput) allElements.retailPriceInput.value = '';
+                        setTutorialDemoValue(allElements.marginPercentInput, '55');
+                        break;
+                    case 'toggle-delivery-example':
+                        setTutorialCheckbox(allElements.addDeliveryCheckbox, true);
+                        break;
+                    case 'toggle-pro1st-example':
+                        selectTutorialDemoValue(allElements.pro1stPlanTypeSelect, 'standard');
+                        setTutorialCheckbox(allElements.addPro1stCheckbox, true);
+                        setTutorialDemoValue(allElements.pro1stCoveredItemsInput, 'sofa and loveseat');
+                        setTutorialDemoValue(allElements.pro1stCoveredValueInput, '899');
+                        break;
+                    case 'fill-discount-example':
+                        setTutorialCheckbox(allElements.discountManagerApprovalCheckbox, true);
+                        selectTutorialDemoValue(allElements.managerApprovalNameInput, 'Other');
+                        setTutorialDemoValue(allElements.managerApprovalAmountInput, '25');
+                        break;
+                    case 'toggle-financing-example':
+                        setTutorialCheckbox(allElements.showFinancingCheckbox, true);
+                        break;
+                    default:
+                        break;
                 }
             }
 
@@ -1423,8 +1496,11 @@ function showLicenseLockScreen(message) {
                 tourElements.backButton.classList.toggle('opacity-50', currentTutorialStepIndex === 0);
                 tourElements.backButton.classList.toggle('cursor-not-allowed', currentTutorialStepIndex === 0);
                 const isLastStep = currentTutorialStepIndex === smartCalcTutorialSteps.length - 1;
-                tourElements.nextButton.classList.toggle('hidden', isLastStep);
-                tourElements.doneButton.classList.toggle('hidden', !isLastStep);
+                tourElements.nextButton.classList.remove('hidden');
+                tourElements.nextButton.textContent = 'Next';
+                tourElements.nextButton.setAttribute('aria-label', isLastStep ? 'Finish tutorial' : 'Next tutorial step');
+                tourElements.doneButton.classList.add('hidden');
+                tourElements.doneButton.setAttribute('aria-hidden', 'true');
                 tourElements.overlay.setAttribute('aria-hidden', 'false');
                 const target = highlightTutorialTarget(step);
                 document.body.classList.add('smartcalc-tour-no-scroll');
@@ -1445,13 +1521,27 @@ function showLicenseLockScreen(message) {
             function getTutorialCardSize(card, margin) {
                 const viewportWidth = Math.max(window.innerWidth || document.documentElement.clientWidth || 0, 320);
                 const viewportHeight = Math.max(window.innerHeight || document.documentElement.clientHeight || 0, 320);
-                const width = Math.min(560, Math.max(280, viewportWidth - margin * 2));
+                const isDesktopRail = viewportWidth >= 1024;
+                const width = isDesktopRail
+                    ? Math.min(380, Math.max(340, Math.round(viewportWidth * 0.28)))
+                    : Math.min(560, Math.max(280, viewportWidth - margin * 2));
                 const maxHeight = Math.max(240, viewportHeight - margin * 2);
                 card.style.width = `${width}px`;
                 card.style.maxHeight = `${maxHeight}px`;
+                if (isDesktopRail) {
+                    card.style.height = `${maxHeight}px`;
+                } else {
+                    card.style.removeProperty('height');
+                }
                 const measuredHeight = card.getBoundingClientRect().height || card.offsetHeight || 360;
-                const height = Math.min(Math.max(240, Math.ceil(measuredHeight)), maxHeight);
-                return { width, height, maxHeight, viewportWidth, viewportHeight };
+                const height = isDesktopRail ? maxHeight : Math.min(Math.max(240, Math.ceil(measuredHeight)), maxHeight);
+                return { width, height, maxHeight, viewportWidth, viewportHeight, isDesktopRail };
+            }
+
+            function rectsOverlap(a, b) {
+                if (!a || !b) return false;
+                return Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+                    * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)) > 0;
             }
 
             function positionGuidedTutorialCard(target) {
@@ -1468,21 +1558,36 @@ function showLicenseLockScreen(message) {
                 let maxHeight = size.maxHeight;
                 let cardHeight = size.height;
 
-                if (targetRect && size.viewportWidth >= 1080) {
-                    const rightSpace = size.viewportWidth - targetRect.right - margin;
-                    const leftSpace = targetRect.left - margin;
-                    const canUseRight = rightSpace >= size.width;
-                    const canUseLeft = leftSpace >= size.width;
-
-                    if (canUseRight || canUseLeft) {
-                        left = canUseRight
-                            ? targetRect.right + margin
-                            : targetRect.left - size.width - margin;
-                        top = clampTutorialValue(
-                            targetRect.top + targetRect.height / 2 - cardHeight / 2,
-                            margin,
-                            size.viewportHeight - cardHeight - margin
-                        );
+                if (size.isDesktopRail) {
+                    left = size.viewportWidth - size.width - margin;
+                    top = margin;
+                    const rightRailRect = {
+                        left,
+                        top,
+                        right: left + size.width,
+                        bottom: top + cardHeight,
+                        width: size.width,
+                        height: cardHeight
+                    };
+                    if (targetRect && rectsOverlap(rightRailRect, targetRect)) {
+                        const leftCandidate = margin;
+                        const leftRailRect = {
+                            left: leftCandidate,
+                            top,
+                            right: leftCandidate + size.width,
+                            bottom: top + cardHeight,
+                            width: size.width,
+                            height: cardHeight
+                        };
+                        if (!rectsOverlap(leftRailRect, targetRect)) {
+                            left = leftCandidate;
+                        } else {
+                            top = clampTutorialValue(
+                                targetRect.bottom + margin,
+                                margin,
+                                size.viewportHeight - cardHeight - margin
+                            );
+                        }
                     }
                 } else if (targetRect) {
                     const gap = margin;
@@ -1505,6 +1610,7 @@ function showLicenseLockScreen(message) {
                 card.style.left = `${Math.round(left)}px`;
                 card.style.top = `${Math.round(top)}px`;
                 card.style.maxHeight = `${Math.round(maxHeight)}px`;
+                if (size.isDesktopRail) card.style.height = `${Math.round(maxHeight)}px`;
             }
 
             function repositionGuidedTutorialCardIfOpen() {
@@ -1594,14 +1700,14 @@ function showLicenseLockScreen(message) {
                 setPanelRect(tourElements.dimPanels?.bottom, 0, spotlightRect.bottom, viewport.width, viewport.height - spotlightRect.bottom);
 
                 tourElements.spotlight.setAttribute('aria-hidden', 'false');
-                tourElements.spotlight.classList.toggle('smartcalc-tour-spotlight-clickable', Boolean(step?.clickTargetToAdvance));
+                tourElements.spotlight.classList.remove('smartcalc-tour-spotlight-clickable');
                 tourElements.spotlight.style.left = `${Math.round(spotlightRect.left)}px`;
                 tourElements.spotlight.style.top = `${Math.round(spotlightRect.top)}px`;
                 tourElements.spotlight.style.width = `${Math.round(spotlightRect.width)}px`;
                 tourElements.spotlight.style.height = `${Math.round(spotlightRect.height)}px`;
                 tourElements.spotlight.style.borderRadius = `${spotlightRect.borderRadius}px`;
-                tourElements.spotlight.disabled = !step?.clickTargetToAdvance;
-                tourElements.spotlight.setAttribute('aria-label', step?.clickTargetToAdvance ? 'Continue tutorial from highlighted section' : 'Highlighted tutorial section');
+                tourElements.spotlight.disabled = true;
+                tourElements.spotlight.setAttribute('aria-label', 'Highlighted tutorial section');
 
                 positionBotBotPointer(spotlightRect);
             }

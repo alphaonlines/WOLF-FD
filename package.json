@@ -1,8 +1,8 @@
 {
   "name": "furniture-distributors-dashboard",
   "private": true,
-  "version": "0.5.15.1255",
-  "displayVersion": "1.5.15.1255",
+  "version": "0.5.15.1333",
+  "displayVersion": "1.5.15.1333",
   "type": "module",
   "scripts": {
     "dev": "vite",

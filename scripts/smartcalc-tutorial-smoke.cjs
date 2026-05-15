@@ -46,10 +46,21 @@ const dom = new JSDOM(html, {
   beforeParse(window) {
     window.tailwind = {};
     window.alert = () => {};
-    window.open = () => null;
+    window.__smartCalcOpenCount = 0;
+    window.open = () => {
+      window.__smartCalcOpenCount += 1;
+      return null;
+    };
+    window.__smartCalcScrollLog = [];
     Object.defineProperty(window, 'innerWidth', { value: 375, writable: true, configurable: true });
     Object.defineProperty(window, 'innerHeight', { value: 667, writable: true, configurable: true });
-    window.HTMLElement.prototype.scrollIntoView = () => {};
+    window.HTMLElement.prototype.scrollIntoView = function scrollIntoView(options) {
+      window.__smartCalcScrollLog.push({
+        id: this.id || '',
+        tag: this.tagName,
+        options: options || {},
+      });
+    };
     window.HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
       if (this.classList?.contains('hidden')) {
         return makeRect(0, 0, 0, 0);
@@ -82,6 +93,13 @@ const dom = new JSDOM(html, {
           numericStyle(this.style.height, 44),
         );
       }
+      if (window.innerWidth >= 1080) {
+        if (this.id === 'base-cost-section') return makeRect(120, 190, 520, 224);
+        if (this.id === 'smartcalc-tour-entry-mode') return makeRect(120, 122, 520, 52);
+        if (this.id === 'calculator-section') return makeRect(120, 430, 520, 220);
+        if (this.id === 'addons-section') return makeRect(120, 520, 520, 260);
+        if (this.tagName === 'HEADER') return makeRect(120, 24, 520, 132);
+      }
       if (this.id === 'base-cost-section') {
         return makeRect(32, 221.5, 311, 223);
       }
@@ -110,7 +128,7 @@ function waitForReady() {
 }
 
 function settle() {
-  return new Promise((resolve) => window.setTimeout(resolve, 25));
+  return new Promise((resolve) => window.setTimeout(resolve, 35));
 }
 
 function byId(id) {
@@ -124,6 +142,12 @@ function setValue(id, value, eventName = 'input') {
   element.value = value;
   element.dispatchEvent(new window.Event(eventName, { bubbles: true }));
   return element;
+}
+
+function setViewport(width, height) {
+  window.innerWidth = width;
+  window.innerHeight = height;
+  window.dispatchEvent(new window.Event('resize'));
 }
 
 function activeOverlay() {
@@ -180,6 +204,34 @@ function assertSpotlightTracksTarget(target) {
   assertCardDoesNotCoverTarget(byId('smartcalc-tour-card'), target);
 }
 
+function assertScrolledTo(idOrTag) {
+  const found = window.__smartCalcScrollLog.some((entry) => entry.id === idOrTag || entry.tag === idOrTag);
+  assert.ok(found, `tutorial should scroll ${idOrTag} into view; log=${JSON.stringify(window.__smartCalcScrollLog)}`);
+}
+
+function assertOnlyTutorialNavIsClickable() {
+  const overlay = activeOverlay();
+  assert.equal(window.getComputedStyle(overlay).pointerEvents, 'auto', 'tutorial overlay should intercept page clicks while open');
+  assert.equal(byId('smartcalc-tour-spotlight').classList.contains('smartcalc-tour-spotlight-clickable'), false, 'spotlight should be visual-only, not an extra advance target');
+  assert.equal(byId('smartcalc-tour-done').classList.contains('hidden'), true, 'Done should stay hidden so the only controls are Next, Back, and Skip tutorial');
+  assert.equal(byId('smartcalc-tour-next').classList.contains('hidden'), false, 'Next should remain the visible forward/completion control');
+}
+
+async function clickNextAndSettle() {
+  byId('smartcalc-tour-next').click();
+  await settle();
+  assertOnlyTutorialNavIsClickable();
+}
+
+function assertDesktopRightRail() {
+  const card = byId('smartcalc-tour-card');
+  const rect = card.getBoundingClientRect();
+  assert.ok(rect.width >= 340 && rect.width <= 390, `desktop tutorial card should use right-rail width, got ${rect.width}`);
+  assert.ok(rect.right >= window.innerWidth - 28, `desktop tutorial card should dock to the right rail, rect=${JSON.stringify(rect)}`);
+  assert.ok(rect.top <= 28, `desktop tutorial card should start near the top rail, rect=${JSON.stringify(rect)}`);
+  assert.ok(rect.height >= window.innerHeight - 64, `desktop tutorial card should be tall, rect=${JSON.stringify(rect)}`);
+}
+
 (async () => {
   await waitForReady();
   assert.equal(jsErrors.length, 0, jsErrors.map((error) => error.message).join('\n'));
@@ -196,63 +248,117 @@ function assertSpotlightTracksTarget(target) {
   const botbot = byId('smartcalc-tour-botbot');
   assert.match(botbot.getAttribute('aria-label') || '', /BotBot/i, 'tutorial card should include the BotBot assistant identity');
 
+  setViewport(1280, 800);
+  startButton.click();
+  await settle();
+  let overlay = activeOverlay();
+  assert.match(overlay.textContent, /Welcome to Smart Calc/i, 'first tutorial step should welcome the employee');
+  assertOnlyTutorialNavIsClickable();
+  assertDesktopRightRail();
+  closeOverlay();
+
+  setViewport(375, 667);
   setValue('vendor-select', 'ASHLEY', 'change');
   setValue('base-cost', '499');
   setValue('margin-percent', '45');
   startButton.click();
   await settle();
-  let overlay = activeOverlay();
+  overlay = activeOverlay();
   assert.match(overlay.textContent, /Welcome to Smart Calc/i, 'first tutorial step should welcome the employee');
   assert.match(overlay.textContent, /BotBot says/i, 'tutorial copy should be presented as BotBot guidance');
-  assert.equal(byId('base-cost').value, '499', 'starting the tutorial must not overwrite an in-progress quote');
-  assert.equal(byId('margin-percent').value, '45', 'starting the tutorial must not overwrite an in-progress margin');
+  assert.equal(byId('base-cost').value, '499', 'starting the tutorial itself should not mutate the quote before Next runs a demo action');
+  assert.equal(byId('margin-percent').value, '45', 'starting the tutorial itself should not mutate margin before Next runs a demo action');
   assertSpotlightTracksTarget(document.querySelector('header'));
+  assertScrolledTo('HEADER');
+  assertOnlyTutorialNavIsClickable();
 
   byId('smartcalc-tour-spotlight').click();
   await settle();
   overlay = activeOverlay();
-  assert.match(overlay.textContent, /starting point/i, 'clicking the safe highlighted area should advance to the second step');
+  assert.match(overlay.textContent, /Welcome to Smart Calc/i, 'clicking the highlighted area must not advance; only Next, Back, or Skip tutorial should work');
+
+  await clickNextAndSettle();
+  overlay = activeOverlay();
+  assert.match(overlay.textContent, /starting point/i, 'Next should advance to the starting point step');
   assert.ok(
     byId('smartcalc-tour-entry-mode').classList.contains('smartcalc-tour-target'),
     'entry-mode tour target should be highlighted on the matching step',
   );
   assertSpotlightTracksTarget(byId('smartcalc-tour-entry-mode'));
+  assertScrolledTo('smartcalc-tour-entry-mode');
 
-  byId('smartcalc-tour-next').click();
-  await settle();
+  await clickNextAndSettle();
   overlay = activeOverlay();
   assert.match(overlay.textContent, /vendor and base cost/i, 'third step should explain vendor and base cost');
+  assert.ok(byId('btn-base-cost').classList.contains('active'), 'leaving the starting-point step should select Base Cost mode');
   assert.ok(
     byId('base-cost-section').classList.contains('smartcalc-tour-target'),
     'base-cost tour target should be highlighted on the matching step',
   );
   assertSpotlightTracksTarget(byId('base-cost-section'));
+  assertScrolledTo('base-cost-section');
 
-  for (let guard = 0; guard < 10 && !/Pro1st protection/i.test(activeOverlay().textContent || ''); guard += 1) {
-    byId('smartcalc-tour-next').click();
-    await settle();
-  }
+  await clickNextAndSettle();
   overlay = activeOverlay();
-  assert.match(overlay.textContent, /Pro1st protection/i, 'tutorial should reach the Pro1st step');
+  assert.match(overlay.textContent, /selling goal/i, 'leaving the cost step should advance to the selling-goal step');
+  assert.equal(byId('vendor-select').value, 'ASHLEY', 'tutorial demo should set the vendor');
+  assert.equal(byId('base-cost').value, '399 + 299, 179', 'tutorial demo should overwrite existing base cost with the fixed example');
+  assert.equal(byId('calculator-section').classList.contains('hidden'), false, 'base-cost demo should reveal calculator section');
+
+  await clickNextAndSettle();
+  overlay = activeOverlay();
+  assert.match(overlay.textContent, /delivery and services/i, 'leaving the margin step should advance to delivery/services');
+  assert.equal(byId('margin-percent').value, '55', 'tutorial demo should overwrite margin with the fixed target');
+  assert.equal(byId('result-section').classList.contains('hidden'), false, 'margin demo should reveal result section');
+  assert.equal(byId('addons-section').classList.contains('hidden'), false, 'margin demo should reveal add-ons section');
+
+  await clickNextAndSettle();
+  overlay = activeOverlay();
+  assert.match(overlay.textContent, /Pro1st protection/i, 'leaving delivery/services should advance to Pro1st');
+  assert.equal(byId('add-delivery').checked, true, 'delivery demo should check local delivery');
+  assert.equal(byId('delivery-type-wrapper').classList.contains('hidden'), false, 'delivery demo should reveal delivery details');
   assert.ok(
     byId('add-pro1st').classList.contains('smartcalc-tour-target'),
-    'hidden Pro1st option details should fall back to the visible Pro1st checkbox row',
+    'hidden Pro1st option details should fall back to the visible Pro1st checkbox row before BotBot checks it',
   );
-  assertSpotlightTracksTarget(byId('add-pro1st'));
 
   closeOverlay();
   assert.equal(window.localStorage.getItem('fd_smartcalc_tutorial_completed_v1'), null, 'skipping should not mark tutorial completed');
 
   startButton.click();
   await settle();
-  for (let guard = 0; guard < 40 && byId('smartcalc-tour-done').classList.contains('hidden'); guard += 1) {
+  for (let guard = 0; guard < 40 && !/Document discounts/i.test(byId('smartcalc-tour-title').textContent || ''); guard += 1) {
+    await clickNextAndSettle();
+  }
+  overlay = activeOverlay();
+  assert.match(byId('smartcalc-tour-title').textContent, /Document discounts/i, 'tutorial should reach the discounts step after applying Pro1st demo');
+  assert.equal(byId('add-pro1st').checked, true, 'Pro1st demo should check protection');
+  assert.equal(byId('pro1st-options-wrapper').classList.contains('hidden'), false, 'Pro1st demo should reveal options');
+  assert.equal(byId('pro1st-covered-items').value, 'sofa and loveseat', 'Pro1st demo should fill covered items');
+  assert.equal(byId('pro1st-covered-value').value, '899', 'Pro1st demo should fill covered value');
+
+  await clickNextAndSettle();
+  overlay = activeOverlay();
+  assert.match(overlay.textContent, /tax and financing/i, 'discount demo should advance to tax/financing');
+  assert.equal(byId('discount-manager-approval').checked, true, 'discount demo should check manager approval');
+  assert.equal(byId('manager-approval-wrapper').classList.contains('hidden'), false, 'discount demo should reveal manager approval detail fields');
+  assert.equal(byId('manager-approval-name').value, 'Other', 'discount demo should select a fixed manager approval value');
+  assert.equal(byId('manager-approval-amount').value, '25', 'discount demo should fill a small fixed adjustment amount');
+  assert.equal(byId('adjustment-field-section').classList.contains('hidden'), false, 'discount demo should reveal adjustment copy field');
+
+  await clickNextAndSettle();
+  overlay = activeOverlay();
+  assert.match(overlay.textContent, /sales order notes/i, 'financing demo should advance to notes');
+  assert.equal(byId('show-financing').checked, true, 'financing demo should check the display-only financing option');
+  assert.equal(byId('financing-breakdown').classList.contains('hidden'), false, 'financing demo should reveal financing breakdown');
+
+  assert.equal(window.__smartCalcOpenCount, 0, 'tutorial should not auto-open print/copy side-effect windows');
+  for (let guard = 0; guard < 40 && byId('smartcalc-tour-overlay').getAttribute('aria-hidden') === 'false'; guard += 1) {
     byId('smartcalc-tour-next').click();
     await settle();
   }
-  assert.equal(byId('smartcalc-tour-done').classList.contains('hidden'), false, 'tutorial should eventually show Done');
-  byId('smartcalc-tour-done').click();
-  assert.equal(byId('smartcalc-tour-overlay').getAttribute('aria-hidden'), 'true', 'Done should close the tutorial');
-  assert.equal(window.localStorage.getItem('fd_smartcalc_tutorial_completed_v1'), 'true', 'Done should persist completion');
+  assert.equal(byId('smartcalc-tour-overlay').getAttribute('aria-hidden'), 'true', 'final Next should close the tutorial');
+  assert.equal(window.localStorage.getItem('fd_smartcalc_tutorial_completed_v1'), 'true', 'final Next should persist completion');
 
   window.localStorage.removeItem('fd_smartcalc_tutorial_completed_v1');
   window.dispatchEvent(new window.MessageEvent('message', {
@@ -269,6 +375,7 @@ function assertSpotlightTracksTarget(target) {
   await settle();
   overlay = activeOverlay();
   assert.match(overlay.textContent, /Welcome to Smart Calc/i, 'allowed-origin postMessage should start the tutorial');
+  assertOnlyTutorialNavIsClickable();
 
   console.log('Smart Calc tutorial smoke PASS');
 })();
