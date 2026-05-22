@@ -2,17 +2,19 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: wolffd-postgres
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: salesapp
-      POSTGRES_PASSWORD: dev_password_change_me
-      POSTGRES_DB: salesdb
+      POSTGRES_DB: ${PGDATABASE:-salesdb}
+      POSTGRES_USER: ${PGUSER:-salesapp}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-dev_password_change_me}
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./pos-dashboard-backend/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U salesapp -d salesdb"]
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-salesapp} -d ${PGDATABASE:-salesdb}"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -26,14 +28,16 @@ services:
       dockerfile: Dockerfile.backend
       target: runner
     container_name: wolffd-backend
+    env_file:
+      - .env
     environment:
       PGHOST: postgres
-      PGPORT: 5432
-      PGDATABASE: salesdb
-      PGUSER: salesapp
-      PGPASSWORD: dev_password_change_me
-      PORT: 5057
-      NODE_ENV: production
+      PGPORT: ${PGPORT:-5432}
+      PGDATABASE: ${PGDATABASE:-salesdb}
+      PGUSER: ${PGUSER:-salesapp}
+      PGPASSWORD: ${PGPASSWORD:-dev_password_change_me}
+      PORT: ${PORT:-5057}
+      NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "5057:5057"
     volumes:
@@ -54,6 +58,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        VITE_POS_API_BASE_URL: ${VITE_POS_API_BASE_URL:-/fd/api}
     container_name: wolffd-frontend
     ports:
       - "8080:80"

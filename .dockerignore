@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+.DS_Store
+.vscode
+.idea
+.git
+.gitignore
+.env
+dist
+dist-ssr
+pos-dashboard-backend/node_modules
+pos-dashboard-backend/dist
+pos-dashboard-backend/incoming
+pos-dashboard-backend/processed

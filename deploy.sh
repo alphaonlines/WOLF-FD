@@ -4,7 +4,20 @@
 
 set -e
 
+ensure_env_file() {
+    if [ ! -f .env ]; then
+        if [ -f .env.example ]; then
+            cp .env.example .env
+            echo "⚙️  Created .env from .env.example"
+            return
+        fi
+    fi
+}
+
 echo "🚀 Starting WOLF FD Dashboard deployment..."
+
+# Ensure build-time vars are present for frontend image
+ensure_env_file
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
@@ -12,36 +25,42 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
-# Check if docker-compose is available
-if ! command -v docker-compose > /dev/null 2&1; then
-    echo "❌ docker-compose is not installed. Please install it first."
-    exit 1
+# Check compose availability
+if ! command -v docker-compose > /dev/null 2>&1; then
+    # docker compose is preferred in modern Docker installs
+    if ! command -v docker > /dev/null 2>&1; then
+        echo "❌ docker is not installed. Please install Docker Desktop first."
+        exit 1
+    fi
 fi
 
-echo "✅ Docker and docker-compose are available"
-
-# Build and start services
-if [ "$1" = "rebuild" ]; then
-    echo "📦 Rebuilding Docker images..."
-    docker-compose build --no-cache
+if command -v docker-compose > /dev/null 2>&1; then
+    COMPOSE_CMD="docker-compose"
 else
-    echo "📦 Building Docker images..."
-    docker-compose build
+    COMPOSE_CMD="docker compose"
+fi
+
+echo "✅ Docker is available via $COMPOSE_CMD"
+
+echo "📦 Building Docker images..."
+if [ "$1" = "rebuild" ]; then
+    $COMPOSE_CMD build --no-cache
+else
+    $COMPOSE_CMD build
 fi
 
 echo "🔧 Starting services..."
-docker-compose up -d
+$COMPOSE_CMD up -d
 
 echo "⏳ Waiting for services to be ready..."
 sleep 10
 
-# Check service health
 echo "📊 Checking service health..."
-docker-compose ps
+$COMPOSE_CMD ps
 
 echo "📋 Health checks:"
-docker-compose exec backend wget --no-verbose --tries=1 --spider http://localhost:5057/health || echo "⚠️  Backend health check failed"
-docker-compose exec postgres pg_isready -U salesapp -d salesdb || echo "⚠️  Database health check failed"
+$COMPOSE_CMD exec backend wget --no-verbose --tries=1 --spider http://localhost:5057/health || echo "⚠️  Backend health check failed"
+$COMPOSE_CMD exec postgres pg_isready -U ${PGUSER:-salesapp} -d ${PGDATABASE:-salesdb} || echo "⚠️  Database health check failed"
 
 echo ""
 echo "✅ Deployment completed!"
@@ -49,19 +68,18 @@ echo ""
 echo "🌐 Access your dashboard:"
 echo "  Frontend: http://localhost:8080"
 echo "  Backend API: http://localhost:5057"
-echo "  Database: localhost:5432"
+echo "  Database: localhost:5433"
 echo ""
 echo "📋 Useful commands:"
-echo "  View logs: docker-compose logs -f"
-echo "  Stop services: docker-compose down"
+echo "  View logs: $COMPOSE_CMD logs -f"
+echo "  Stop services: $COMPOSE_CMD down"
 echo "  Rebuild: ./deploy.sh rebuild"
-echo "  Status: docker-compose ps"
+echo "  Status: $COMPOSE_CMD ps"
 echo ""
 echo "🔧 Import data when ready:"
-echo "  docker-compose exec backend npm run import-data"
+echo "  $COMPOSE_CMD exec backend npm run import-data"
 echo ""
 echo "🔒 Security notes:"
-echo "  - Change default passwords in production"
+echo "  - Change default passwords in .env"
 echo "  - Use environment variables for sensitive data"
-echo "  - Consider adding SSL/HTTPS in production"
-echo ""
+echo "  - Use HTTPS in production"

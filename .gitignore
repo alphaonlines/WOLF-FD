@@ -40,3 +40,7 @@ pos-dashboard-backend/src/*.d.ts.map
 *.njsproj
 *.sln
 *.sw?
+
+# Local envs
+.env
+.env.production.local
