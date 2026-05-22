@@ -30,6 +30,11 @@
 - Keep model execution local on `MSILaptop`; do not add hosted LLM fallback without explicit direction.
 - Do not deploy over live `/ai` without final confirmation.
 
+## Agent Coordination
+
+- Cross-agent project tracking, handoff, backup, and restore workflow: `AGENT_PROJECT_GAME_PLAN.md`.
+- Detailed repo history and running-task notes remain in `AGENTS.md`.
+
 ## Maintenance Rule
 
 Keep detailed history and running-task notes in `AGENTS.md`; keep this file as a compact pointer for agents that look for `@agents.md`.
