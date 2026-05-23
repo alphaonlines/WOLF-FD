@@ -1,0 +1,46 @@
+{
+  "schema": "wolf.homepage.assets.v1",
+  "source": "kanban t_179dbeb0",
+  "canonical_public_paths": {
+    "dashboard_signup_video": "/assets/videos/wolf-dashboard-signup.mp4",
+    "favicon_svg": "/assets/brand/wolf-favicon.svg",
+    "og_card_svg": "/assets/brand/wolf-og-card.svg",
+    "robots": "/robots.txt",
+    "sitemap": "/sitemap.xml"
+  },
+  "legacy_staging_sources": {
+    "homepage_html": "/home/alphahs2/wolf_discount_work/wolf.discount.index.html",
+    "staging_video": "/home/alphahs2/wolf_discount_work/assets/videos/wolf-dashboard-signup.mp4"
+  },
+  "cache_policy_notes": [
+    "Keep /assets/videos/wolf-dashboard-signup.mp4 stable for the existing root homepage reference.",
+    "New brand/meta assets live under /assets/brand/ so old /fd assets and existing cached video URLs are not disturbed.",
+    "Production cutover should copy public/ contents to the root static web directory only after visual review."
+  ],
+  "files": {
+    "public/assets/videos/wolf-dashboard-signup.mp4": {
+      "bytes": 1884860,
+      "sha256": "f8eb87f9cb0eefb61158d4d388b51fcf9b1bcd8e614ca6b6dd2c06afb16ec671"
+    },
+    "public/assets/brand/wolf-favicon.svg": {
+      "bytes": 390,
+      "sha256": "7f190f3d2ce9efa44ed4f42ac68593f9fc0b0a6dad0f2680a985b4dedddadd74"
+    },
+    "public/assets/brand/wolf-og-card.svg": {
+      "bytes": 1652,
+      "sha256": "70d7330a86320ad81dfe064818265036f8cbe0eea848ffb96e7dbf44d6176607"
+    },
+    "public/robots.txt": {
+      "bytes": 67,
+      "sha256": "0ece56e5af9b09f2da6a2cea0446eb904e66b34866df537f57c96455d57c39b2"
+    },
+    "public/sitemap.xml": {
+      "bytes": 375,
+      "sha256": "04295eb76d4d0074f12aba41557b6caf5cf786e536815665aea1386e304383b1"
+    },
+    "website-content/homepage.content.json": {
+      "bytes": 2730,
+      "sha256": "cca418e5fb03b846a3fb655ce1ec0192a39a5d3c360df3bdc601be5d0b513201"
+    }
+  }
+}

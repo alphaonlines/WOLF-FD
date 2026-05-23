@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="WOLF Enterprise preview card">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#08111f"/>
+      <stop offset=".58" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <radialGradient id="pulse" cx="78%" cy="22%" r="55%">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#pulse)"/>
+  <g transform="translate(72 74)">
+    <rect width="1056" height="482" rx="42" fill="#020617" opacity=".62" stroke="#38bdf8" stroke-opacity=".32"/>
+    <text x="64" y="144" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="78" font-weight="800">WOLF Enterprise</text>
+    <text x="66" y="220" fill="#93c5fd" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="700">Work Online, Live Free</text>
+    <text x="66" y="304" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="34">Retail systems, AI operations, community initiatives,</text>
+    <text x="66" y="350" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="34">and dashboard-ready business infrastructure.</text>
+    <g transform="translate(66 404)">
+      <rect width="254" height="56" rx="18" fill="#38bdf8"/>
+      <text x="28" y="38" fill="#03121f" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="800">wolf.discount</text>
+    </g>
+  </g>
+</svg>

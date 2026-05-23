@@ -1,0 +1,96 @@
+{
+  "schema": "wolf.homepage.content.v1",
+  "brand": {
+    "name": "WOLF",
+    "parent": "WOLF Enterprise",
+    "promise": "Work Online, Live Free",
+    "positioning": "A practical operating layer for retail, AI-assisted work, community projects, and owned digital infrastructure."
+  },
+  "seo": {
+    "title": "WOLF | Retail, AI, Community, and New Releases",
+    "description": "WOLF brings together retail systems, AI operations, community initiatives, WOLF Dashboard sign-ups, and new releases under one clear homepage.",
+    "canonical": "https://wolf.discount/",
+    "robots": "index,follow",
+    "openGraph": {
+      "title": "WOLF Enterprise",
+      "description": "Explore WOLF brands, dashboard-ready business systems, AI workflows, and community projects.",
+      "type": "website",
+      "url": "https://wolf.discount/",
+      "image": "https://wolf.discount/assets/brand/wolf-og-card.svg"
+    }
+  },
+  "assets": {
+    "dashboardSignupVideo": "/assets/videos/wolf-dashboard-signup.mp4",
+    "favicon": "/assets/brand/wolf-favicon.svg",
+    "ogCard": "/assets/brand/wolf-og-card.svg"
+  },
+  "primaryNavigation": [
+    {
+      "label": "Home",
+      "href": "#home"
+    },
+    {
+      "label": "Dashboard Signup",
+      "href": "#dashboard-signup"
+    },
+    {
+      "label": "Destinations",
+      "href": "#destinations"
+    },
+    {
+      "label": "New Release",
+      "href": "#album"
+    },
+    {
+      "label": "Contact",
+      "href": "#contact"
+    }
+  ],
+  "callsToAction": [
+    {
+      "label": "Open Furniture Distributors Dashboard",
+      "href": "https://furnituredistributors.wolf.discount/fd/",
+      "priority": "primary"
+    },
+    {
+      "label": "Start a WOLF build",
+      "href": "mailto:info@alphaonlines.org",
+      "priority": "secondary"
+    }
+  ],
+  "destinations": [
+    {
+      "label": "Furniture Distributors",
+      "href": "https://furnituredistributors.net/"
+    },
+    {
+      "label": "FD Dashboard",
+      "href": "https://furnituredistributors.wolf.discount/fd/"
+    },
+    {
+      "label": "AI Guest",
+      "href": "/ai-guest/"
+    },
+    {
+      "label": "Learn More",
+      "href": "/learn-more/"
+    },
+    {
+      "label": "Reflect to Profect",
+      "href": "https://reflecttoprofect.com/"
+    },
+    {
+      "label": "Tailgate Treasures",
+      "href": "https://tailgatetreasures.shop/"
+    },
+    {
+      "label": "Omega Organics",
+      "href": "https://wolf.discount/omega-organics/"
+    }
+  ],
+  "routeConstraints": [
+    "Do not change /fd/ or /fd/api/ route behavior from this content layer.",
+    "Root homepage assets should live under /assets/brand and /assets/videos.",
+    "Keep old dashboard-signup video URL stable for graceful browser/CDN cache reuse."
+  ]
+}
