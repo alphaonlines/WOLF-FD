@@ -770,3 +770,8 @@ Backend deploy flow for route/schema/runtime changes:
 - Validation: HTML parser PASS, duplicate ID check PASS, inline script node --check PASS, git diff --check PASS, `npm run test:smartcalc-margin-discounts` PASS, `npm run test:smartcalc-number-input-wheel` PASS, `npm run build` PASS.
 - Deployment: copied rebuilt `dist/` to `/srv/www/wolf.discount/fd/` and updated the furnituredistributors `/smartcalc/` wrapper.
 - Verification: live source and wrapper no longer contain `Plan Cost` or `pro1st-plan-cost-display`; live source/wrapper show version 1.5.9.1459; API health passed (`{"ok":true,"db":1}`). Browser check passed: power base qty 2 showed Protected Value Used/Retail Charge `$299.98`, no Plan Cost text/id, Adjusted Ticket GPM `83.28%`, and no console errors.
+
+- 2026-05-22 23:25 EDT — Wired wolf.discount/ai into the shared BotBot token ledger.
+  - Files: /home/alphahs/WOLF-FD/pos-dashboard-backend/src/routes/botbotRoutes.ts, /home/alphahs/WOLF-FD/pos-dashboard-backend/src/runtimeConfig.ts, /home/alphahs/wolfbot-playground/server.js, /home/alphahs/wolfbot-playground/public/workspace.{html,css}, /home/alphahs/wolfbot-playground/public/workspace-app.js, /home/alphahs/wolfbot-playground/package.json
+  - Changes: added authenticated external usage-status endpoint for the WOLF FD ledger, returned updated usage after /ai token sync, surfaced the ledger in the private WolfBot workspace UI, and bumped WolfBot AI to 0.5.22.2319.
+  - Commands/tests: pos-dashboard-backend npm ci + npm run build; wolfbot node --check server.js; node --check public/workspace-app.js; npm test; pm2 restart pos-api; pm2 restart wolfbot-ai; verified /api/botbot/external/usage-status, /ai/workspace.html, /ai/workspace-app.js, /fd/api/health, and authenticated /ai/api/status.

@@ -476,6 +476,83 @@ const normalizeExternalUserKey = (value: unknown) =>
     .toLowerCase()
     .slice(0, 160);
 
+async function findExternalBotBotUser(pool: Pool, userKey: string) {
+  const userResult = await pool.query(
+    `SELECT u.id, u.name, u.email,
+            COALESCE(role_rows.roles, ARRAY[]::text[]) AS roles
+     FROM users u
+     LEFT JOIN (
+       SELECT ur.user_id,
+              COALESCE(ARRAY_AGG(DISTINCT r.role_key) FILTER (WHERE r.role_key IS NOT NULL), ARRAY[]::text[]) AS roles
+       FROM user_roles ur
+       JOIN roles r ON r.id = ur.role_id
+       GROUP BY ur.user_id
+     ) role_rows ON role_rows.user_id = u.id
+     WHERE (lower(u.email) = $1
+        OR lower(split_part(u.email, '@', 1)) = $1
+        OR lower(u.name) = $1)
+       AND u.active = TRUE
+       AND COALESCE(u.access_status, 'approved') = 'approved'
+     ORDER BY
+       CASE
+         WHEN lower(u.email) = $1 THEN 1
+         WHEN lower(split_part(u.email, '@', 1)) = $1 THEN 2
+         ELSE 3
+       END,
+       u.id ASC
+     LIMIT 1`,
+    [userKey]
+  );
+  return userResult.rows[0] ?? null;
+}
+
+async function buildExternalBotBotUsage(pool: Pool, userRow: any) {
+  const user: BotBotAuthUser = {
+    id: String(userRow.id),
+    name: String(userRow.name || ""),
+    roles: Array.isArray(userRow.roles) ? userRow.roles.map((role: unknown) => String(role)) : [],
+  };
+  const result = await pool.query(
+    `SELECT m.model_key, m.display_name, m.provider, m.free_token_quota AS quota,
+            CASE WHEN m.provider IN ('wolfbot', 'ollama') THEN 'local' ELSE m.model_key END AS billing_model_key,
+            COALESCE(l.tokens_used, 0) AS tokens_used,
+            COALESCE(l.tokens_purchased, 0) AS tokens_purchased
+     FROM botbot_model_config m
+     LEFT JOIN botbot_token_ledger l
+       ON l.model_key = CASE WHEN m.provider IN ('wolfbot', 'ollama') THEN 'local' ELSE m.model_key END
+      AND l.user_id = $1
+     WHERE m.enabled = TRUE
+     ORDER BY m.sort_order ASC`,
+    [Number(userRow.id)]
+  );
+  const usage = [];
+  for (const row of result.rows) {
+    const access = await resolveModelAccess(
+      pool,
+      user,
+      String(row.model_key),
+      String(row.provider ?? ""),
+      parseQuota(row.quota, 0)
+    );
+    if (!access.allowed) continue;
+    const tokensUsed = parseInt(row.tokens_used, 10) || 0;
+    const tokensPurchased = parseInt(row.tokens_purchased, 10) || 0;
+    const quota = access.tokenQuota + tokensPurchased;
+    usage.push({
+      modelKey: String(row.model_key),
+      billingModelKey: String(row.billing_model_key),
+      displayName: String(row.display_name ?? row.model_key),
+      provider: String(row.provider ?? ""),
+      tokensUsed,
+      quota,
+      quotaRemaining: Math.max(0, quota - tokensUsed),
+      pctUsed: quota > 0 ? Math.min(100, Math.round((tokensUsed / quota) * 100)) : 0,
+      accessSource: access.source,
+    });
+  }
+  return usage;
+}
+
 const clipPromptText = (value: unknown, maxLength: number) =>
   typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 
@@ -698,23 +775,8 @@ export function registerBotBotRoutes({
       return res.status(400).json({ ok: false, error: "externalUserKey required" });
     }
 
-    const userResult = await pool.query(
-      `SELECT id, name, email
-       FROM users
-       WHERE lower(email) = $1
-          OR lower(split_part(email, '@', 1)) = $1
-          OR lower(name) = $1
-       ORDER BY
-         CASE
-           WHEN lower(email) = $1 THEN 1
-           WHEN lower(split_part(email, '@', 1)) = $1 THEN 2
-           ELSE 3
-         END,
-         id ASC
-       LIMIT 1`,
-      [userKey]
-    );
-    if (!userResult.rows.length) {
+    const userRow = await findExternalBotBotUser(pool, userKey);
+    if (!userRow) {
       return res.status(404).json({ ok: false, error: "user_not_found" });
     }
 
@@ -736,12 +798,12 @@ export function registerBotBotRoutes({
          DO UPDATE SET
            tokens_used = botbot_token_ledger.tokens_used + EXCLUDED.tokens_used,
            updated_at = now()`,
-        [Number(userResult.rows[0].id), ledgerModelKey, totalTokens]
+        [Number(userRow.id), ledgerModelKey, totalTokens]
       );
     }
 
     await logBotBotUsageEvent(pool, {
-      userId: Number(userResult.rows[0].id),
+      userId: Number(userRow.id),
       conversationId: null,
       messageId: null,
       modelKey,
@@ -755,12 +817,39 @@ export function registerBotBotRoutes({
       responseMs,
     });
 
+    const usage = await buildExternalBotBotUsage(pool, userRow);
+
     return res.json({
       ok: true,
-      userId: Number(userResult.rows[0].id),
+      userId: Number(userRow.id),
       modelKey,
       billingModelKey: ledgerModelKey,
       tokensRecorded: totalTokens,
+      usage,
+    });
+  });
+
+  app.post("/api/botbot/external/usage-status", async (req, res) => {
+    const headerToken = String(req.headers["x-botbot-ledger-token"] || "");
+    if (!BOTBOT_LEDGER_TOKEN || headerToken !== BOTBOT_LEDGER_TOKEN) {
+      return res.status(401).json({ ok: false, error: "unauthorized" });
+    }
+
+    const userKey = normalizeExternalUserKey(req.body?.externalUserKey || req.body?.username || req.body?.email);
+    if (!userKey) {
+      return res.status(400).json({ ok: false, error: "externalUserKey required" });
+    }
+
+    const userRow = await findExternalBotBotUser(pool, userKey);
+    if (!userRow) {
+      return res.status(404).json({ ok: false, error: "user_not_found" });
+    }
+
+    const usage = await buildExternalBotBotUsage(pool, userRow);
+    return res.json({
+      ok: true,
+      userId: Number(userRow.id),
+      usage,
     });
   });
 
