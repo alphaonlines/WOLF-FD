@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { CheckSquare, CalendarClock, Compass, Link2, MessageSquare, UserCheck, Users } from "lucide-react";
+import { CheckSquare, CalendarClock, Compass, Link2, MessageSquare, Mic, UserCheck, Users } from "lucide-react";
 import type { AuthUser } from "../types";
 import { TaskStatus } from "../types";
 import { useBotBotContext } from "./botbot/BotBotContext";
@@ -9,6 +9,7 @@ import MessageBoard from "./MessageBoard";
 import TaskManager from "./TaskManager";
 import { createTask } from "../services/tasksService";
 import MeetingRoom from "./MeetingRoom";
+import DenRecorder from "./DenRecorder";
 import { DEFAULT_STORE_CODE, normalizeStoreCode, type StoreCode } from "../storeLocations";
 
 type WolfdenWorkspaceProps = {
@@ -23,7 +24,7 @@ type WolfdenWorkspaceProps = {
   enableTourAutoStart?: boolean;
 };
 
-export type WolfdenSubTab = "ups" | "crm" | "board" | "meeting" | "tasks";
+export type WolfdenSubTab = "ups" | "crm" | "board" | "meeting" | "recorder" | "tasks";
 
 const QUICKLINKS_URL = "https://sites.google.com/view/fdserver/home";
 
@@ -66,6 +67,16 @@ const WOLFDEN_TOUR_STEPS: BotBotTutorialStep[] = [
     advanceWhen: {
       type: "state",
       check: (state) => state.subTab === "meeting",
+    },
+  },
+  {
+    id: "den-recorder",
+    highlightId: "den-tab-recorder",
+    title: "Record Den sessions",
+    message: "Recorder captures planning rambles, meetings, and webinar audio so the transcript and follow-up can live with DEN.",
+    advanceWhen: {
+      type: "state",
+      check: (state) => state.subTab === "recorder",
     },
   },
   {
@@ -204,6 +215,9 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
         <button data-tour-id="den-tab-meeting" className={tabBtn(subTab === "meeting")} onClick={() => setSubTab("meeting")}>
           <CalendarClock size={15} /> Meeting Room
         </button>
+        <button data-tour-id="den-tab-recorder" className={tabBtn(subTab === "recorder")} onClick={() => setSubTab("recorder")}>
+          <Mic size={15} /> Recorder
+        </button>
         <button data-tour-id="den-tab-tasks" className={tabBtn(subTab === "tasks")} onClick={() => setSubTab("tasks")}>
           <CheckSquare size={15} /> Tasks
         </button>
@@ -243,6 +257,7 @@ const WolfdenWorkspace: React.FC<WolfdenWorkspaceProps> = ({
         {subTab === "crm" && <CRMWorkspace authUser={authUser} isDarkMode={isDarkMode} view="customers" selectedStore={selectedStore} onStoreChange={setSelectedStore} />}
         {subTab === "board" && <MessageBoard authUser={authUser} onMessageSent={handleMessageSent} />}
         {subTab === "meeting" && <MeetingRoom isDarkMode={isDarkMode} authUser={authUser} />}
+        {subTab === "recorder" && <DenRecorder isDarkMode={isDarkMode} authUser={authUser} />}
         {subTab === "tasks" && (
           <div className="h-full overflow-auto px-5 py-5 lg:px-7 lg:py-7">
             <TaskManager selectedStore={selectedStore} />

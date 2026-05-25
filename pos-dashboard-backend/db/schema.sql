@@ -1011,3 +1011,38 @@ ALTER TABLE user_permissions ALTER COLUMN updated_at SET DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_permissions_key ON user_permissions(permission_key);
+
+CREATE TABLE IF NOT EXISTS den_recordings (
+  id              UUID PRIMARY KEY,
+  owner_user_id   BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title           TEXT NOT NULL,
+  source_type     TEXT NOT NULL DEFAULT 'mic',
+  status          TEXT NOT NULL DEFAULT 'created',
+  duration_sec    INTEGER NOT NULL DEFAULT 0,
+  audio_path      TEXT,
+  mime_type       TEXT,
+  file_size_bytes BIGINT NOT NULL DEFAULT 0,
+  transcript_text TEXT NOT NULL DEFAULT '',
+  summary_json    JSONB NOT NULL DEFAULT '{}'::jsonb,
+  notes           TEXT NOT NULL DEFAULT '',
+  model_provider  TEXT,
+  model_name      TEXT,
+  error_message   TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  finished_at     TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_den_recordings_owner_created ON den_recordings(owner_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_den_recordings_status ON den_recordings(status);
+
+CREATE TABLE IF NOT EXISTS den_recording_events (
+  id            BIGSERIAL PRIMARY KEY,
+  recording_id  UUID NOT NULL REFERENCES den_recordings(id) ON DELETE CASCADE,
+  event_type    TEXT NOT NULL,
+  message       TEXT NOT NULL DEFAULT '',
+  meta_json     JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_den_recording_events_recording_id ON den_recording_events(recording_id, created_at ASC);

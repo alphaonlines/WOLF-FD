@@ -26,6 +26,7 @@ import {
   Share2,
   FolderSearch,
   MapPin,
+  Mic,
 } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import WorkAdvertising from './components/WorkAdvertising';
@@ -989,6 +990,7 @@ const App: React.FC = () => {
                 if (tab === 'WOLFDEN_CRM' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('crm');
                 if (tab === 'WOLFDEN_BOARD' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('board');
                 if (tab === 'WOLFDEN_MEETING' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('meeting');
+                if (tab === 'WOLFDEN_RECORDER' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('recorder');
                 if (tab === 'WOLFDEN_TASKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.WOLFDEN)) openWolfdenSubTab('tasks');
                 if (tab === 'WOLFDEN_QUICKLINKS') window.open('https://sites.google.com/view/fdserver/home', '_blank', 'noopener,noreferrer');
                 if (tab === 'PULSE_SALES' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.PULSE)) openPulseSubTab('sales');
@@ -1457,6 +1459,12 @@ const App: React.FC = () => {
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedWolfdenSubTab === 'meeting' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Calendar size={13} className="inline mr-1.5" />Meeting</button>
+                <button
+                  data-tour-id="den-tab-recorder"
+                  onClick={() => openWolfdenSubTab('recorder')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedWolfdenSubTab === 'recorder' ? (isDarkMode ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><Mic size={13} className="inline mr-1.5" />Recorder</button>
                 <button
                   data-tour-id="den-tab-tasks"
                   onClick={() => openWolfdenSubTab('tasks')}

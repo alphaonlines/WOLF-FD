@@ -25,6 +25,7 @@ import { registerManufacturerPricebookRoutes } from "./routes/manufacturerPriceb
 import { registerObjectionVotesRoutes } from "./routes/objectionVotesRoutes";
 import { registerCustomObjectionsRoutes } from "./routes/customObjectionsRoutes";
 import { registerBotBotRoutes } from "./routes/botbotRoutes";
+import { registerDenRecordingRoutes } from "./routes/denRecordingRoutes";
 import {
   type AuthUserView,
   buildAuthUser,
@@ -57,6 +58,7 @@ type RegisterAllRoutesDeps = {
   pythonBin: string;
   execFileAsync: ExecFileAsyncLike;
   socialUploadsDir: string;
+  denRecordingsDir: string;
   socialPublicBaseUrl: string;
   runSocialDueJobsOnce: (maxJobs?: number) => Promise<number>;
   authCookieName: string;
@@ -93,6 +95,7 @@ export function registerAllRoutes({
   pythonBin,
   execFileAsync,
   socialUploadsDir,
+  denRecordingsDir,
   socialPublicBaseUrl,
   runSocialDueJobsOnce,
   authCookieName,
@@ -196,6 +199,11 @@ export function registerAllRoutes({
   });
   registerTrackingRoutes({ app, pool });
   registerBotBotRoutes({ app, pool, requireOwner });
+  registerDenRecordingRoutes({
+    app,
+    pool,
+    recordingsDir: denRecordingsDir,
+  });
   registerSystemRoutes({
     app,
     pool,
