@@ -42,6 +42,14 @@ export const SOCIAL_SCHEDULER_INTERVAL_MS = Math.max(
   Number(envString("SOCIAL_SCHEDULER_INTERVAL_MS", "60000")) || 60000,
   15000
 );
+export const DEN_RECORDINGS_DIR =
+  envString("DEN_RECORDINGS_DIR", "/srv/wolf-den-recordings") || "/srv/wolf-den-recordings";
+export const MEETILY_WHISPER_BASE_URL =
+  envString("MEETILY_WHISPER_BASE_URL", "http://127.0.0.1:8178") || "http://127.0.0.1:8178";
+export const DEN_RECORDING_TRANSCRIPTION_ENABLED =
+  (envString("DEN_RECORDING_TRANSCRIPTION_ENABLED", "true") || "true").toLowerCase() !== "false";
+export const DEN_RECORDING_SUMMARY_ENABLED =
+  (envString("DEN_RECORDING_SUMMARY_ENABLED", "true") || "true").toLowerCase() !== "false";
 
 export type OllamaNodeKey = "msi-5070ti" | "alphabs" | "alphabs1" | "alphahs";
 

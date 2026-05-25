@@ -29,6 +29,7 @@ import {
   SOCIAL_PUBLIC_BASE_URL,
   SOCIAL_SCHEDULER_ENABLED,
   SOCIAL_SCHEDULER_INTERVAL_MS,
+  DEN_RECORDINGS_DIR,
 } from "./runtimeConfig";
 import { registerAllRoutes } from "./routeWiring";
 import { createSocialPublisher } from "./socialPublishing";
@@ -74,6 +75,8 @@ const boardUploadsDir = path.resolve(__dirname, "..", "board-uploads");
 fs.mkdirSync(boardUploadsDir, { recursive: true });
 const socialUploadsDir = path.resolve(__dirname, "..", "social-uploads");
 fs.mkdirSync(socialUploadsDir, { recursive: true });
+const denRecordingsDir = path.resolve(DEN_RECORDINGS_DIR);
+fs.mkdirSync(denRecordingsDir, { recursive: true });
 const execFileAsync = promisify(execFile);
 const importerPath = path.resolve(__dirname, "..", "importer", "import_pos_xlsx.py");
 const pythonBin = PYTHON_BIN;
@@ -96,6 +99,7 @@ const { setUserRolesByKeys } = registerAllRoutes({
   pythonBin,
   execFileAsync,
   socialUploadsDir,
+  denRecordingsDir,
   socialPublicBaseUrl: SOCIAL_PUBLIC_BASE_URL,
   runSocialDueJobsOnce: (maxJobs?: number) => socialPublisher.runDueJobsOnce(maxJobs),
   authCookieName: AUTH_COOKIE_NAME,
