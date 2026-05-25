@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WOLFbot Pricing · BotBot AI Tokens</title>
+  <meta name="description" content="WOLFbot BotBot token pricing, Stripe top-ups, paid AI model lanes, and capped free access." />
+  <link rel="canonical" href="https://wolf.discount/WOLFbot/pricing/" />
+  <meta property="og:title" content="WOLFbot Pricing · BotBot AI Tokens" />
+  <meta property="og:description" content="Buy BotBot tokens once, then spend them across WOLFbot AI lanes. Higher-power lanes use more tokens; budget lanes last longer." />
+  <meta property="og:url" content="https://wolf.discount/WOLFbot/pricing/" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06111f;
+      --panel: rgba(15, 23, 42, 0.82);
+      --panel-2: rgba(2, 6, 23, 0.78);
+      --line: rgba(148, 163, 184, 0.22);
+      --text: #e5f0ff;
+      --muted: #9fb0c7;
+      --green: #34d399;
+      --green-2: #10b981;
+      --amber: #f59e0b;
+      --blue: #60a5fa;
+      --shadow: 0 24px 80px rgba(0,0,0,.35);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 8%, rgba(16,185,129,.22), transparent 32rem),
+        radial-gradient(circle at 84% 18%, rgba(96,165,250,.20), transparent 30rem),
+        linear-gradient(135deg, #020617 0%, var(--bg) 48%, #0f172a 100%);
+      color: var(--text);
+    }
+    a { color: inherit; }
+    .wrap { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+    .nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: .02em; }
+    .mark { display:grid; place-items:center; width: 42px; height: 42px; border-radius: 14px; background: linear-gradient(135deg, var(--green), var(--blue)); color:#03111d; font-weight: 900; box-shadow: var(--shadow); }
+    .pill { display: inline-flex; align-items:center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; color: var(--muted); background: rgba(15,23,42,.55); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; }
+    .hero { padding: 54px 0 28px; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: 28px; align-items: stretch; }
+    h1 { margin: 0; font-size: clamp(42px, 6vw, 78px); line-height: .94; letter-spacing: -.055em; }
+    h2 { margin: 0; font-size: clamp(26px, 3vw, 38px); letter-spacing: -.035em; }
+    h3 { margin: 0; font-size: 18px; }
+    p { color: var(--muted); line-height: 1.7; }
+    .lead { font-size: 18px; max-width: 720px; }
+    .panel { border: 1px solid var(--line); background: var(--panel); border-radius: 28px; box-shadow: var(--shadow); backdrop-filter: blur(18px); }
+    .hero-card { padding: 28px; display: grid; gap: 16px; }
+    .hero-card strong { color: var(--text); }
+    .formula { border-radius: 22px; background: rgba(16,185,129,.10); border:1px solid rgba(52,211,153,.28); padding: 18px; }
+    .formula .big { font-size: 34px; font-weight: 900; color: var(--green); letter-spacing: -.04em; }
+    .cta-row { display:flex; flex-wrap:wrap; gap: 12px; margin-top: 24px; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; min-height: 46px; padding: 0 18px; border-radius: 16px; text-decoration:none; font-weight:800; border:1px solid transparent; }
+    .btn-primary { background: var(--green); color:#04111d; }
+    .btn-secondary { border-color: var(--line); color: var(--text); background: rgba(15,23,42,.72); }
+    .section { padding: 34px 0; }
+    .grid-3 { display:grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .pack { padding: 24px; position: relative; overflow: hidden; }
+    .pack.featured { border-color: rgba(52,211,153,.5); background: linear-gradient(180deg, rgba(16,185,129,.16), rgba(15,23,42,.82)); }
+    .badge { display:inline-flex; border-radius:999px; padding: 6px 10px; background: rgba(52,211,153,.13); color: var(--green); border:1px solid rgba(52,211,153,.28); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.12em; }
+    .tokens { font-size: 46px; line-height:1; font-weight: 900; letter-spacing:-.045em; margin: 18px 0 4px; }
+    .price { color: var(--green); font-weight: 900; font-size: 20px; }
+    .note { font-size: 12px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 22px; }
+    th, td { padding: 14px 16px; text-align:left; border-bottom:1px solid var(--line); vertical-align: top; }
+    th { color: #c9d7ea; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; background: rgba(15,23,42,.92); }
+    td { color: #dce8f7; background: rgba(2,6,23,.38); }
+    tr:last-child td { border-bottom: 0; }
+    .debit { white-space: nowrap; color: var(--green); font-weight: 900; }
+    .free-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .free { padding: 18px; }
+    .warn { border:1px solid rgba(245,158,11,.32); background: rgba(245,158,11,.10); color:#fde68a; border-radius:22px; padding:18px; }
+    footer { color: var(--muted); font-size: 12px; padding: 40px 0 54px; }
+    @media (max-width: 920px) { .hero, .grid-3, .free-grid { grid-template-columns: 1fr; } h1 { font-size: 44px; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <nav class="nav" aria-label="WOLFbot pricing navigation">
+      <div class="brand"><div class="mark">W</div><div>WOLFbot Pricing</div></div>
+      <span class="pill">BotBot AI Tokens · v1.5.23.0013</span>
+    </nav>
+
+    <section class="hero">
+      <div>
+        <span class="pill">Stripe top-ups for WOLF FD</span>
+        <h1>Buy BotBot tokens. Use them where the work is.</h1>
+        <p class="lead">BotBot tokens are WOLFbot dashboard credits. Buy a pack, pick the AI lane that fits the job, and WOLFbot deducts tokens based on the lane used and the amount of AI text processed.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://furnituredistributors.wolf.discount/fd/" target="_blank" rel="noopener">Open WOLF FD Dashboard</a>
+          <a class="btn btn-secondary" href="#model-meter">See token usage</a>
+        </div>
+      </div>
+      <aside class="panel hero-card">
+        <div class="formula">
+          <div class="big">$1 = 10,000 BotBot tokens</div>
+          <p>Simple public pricing. Bigger packs just give teams more room to run longer prompts, heavier analysis, product work, sales coaching, and back-office drafting.</p>
+        </div>
+        <p><strong>Simple version:</strong> lighter AI lanes use fewer BotBot tokens. Stronger AI lanes use more BotBot tokens.</p>
+        <p><strong>Free version:</strong> free access is capped so one busy account cannot drain shared capacity for everyone else. Tiny pipe, everybody wants water.</p>
+      </aside>
+    </section>
+
+    <section class="section" aria-labelledby="packs-heading">
+      <h2 id="packs-heading">Token packs</h2>
+      <p>Buy BotBot tokens through Stripe Checkout from inside the WOLF FD dashboard. The server owns the pack list, so the browser cannot spoof token amounts.</p>
+      <div class="grid-3">
+        <article class="panel pack">
+          <span class="badge">Starter</span>
+          <div class="tokens">10,000</div>
+          <div class="price">$1</div>
+          <p>Entry refill for quick dashboard questions and one-off AI assists.</p>
+          <p class="note">Good for light, occasional use.</p>
+        </article>
+        <article class="panel pack">
+          <span class="badge">Small team</span>
+          <div class="tokens">50,000</div>
+          <div class="price">$5</div>
+          <p>Small team refill for regular questions, summaries, and sales coaching.</p>
+          <p class="note">Good for active weekly use.</p>
+        </article>
+        <article class="panel pack">
+          <span class="badge">Daily</span>
+          <div class="tokens">100,000</div>
+          <div class="price">$10</div>
+          <p>Daily-use pack for heavier prompting without jumping straight to manager volume.</p>
+          <p class="note">Good for frequent individual use.</p>
+        </article>
+        <article class="panel pack featured">
+          <span class="badge">Team</span>
+          <div class="tokens">250,000</div>
+          <div class="price">$25</div>
+          <p>Practical team refill for steady sales-floor and back-office BotBot use.</p>
+          <p class="note">Good for active team operations.</p>
+        </article>
+        <article class="panel pack">
+          <span class="badge">Ops</span>
+          <div class="tokens">500,000</div>
+          <div class="price">$50</div>
+          <p>Operations pack for longer research, catalog work, and repeated drafts.</p>
+          <p class="note">Good for manager workflows.</p>
+        </article>
+        <article class="panel pack">
+          <span class="badge">Department</span>
+          <div class="tokens">1,000,000</div>
+          <div class="price">$100</div>
+          <p>Department refill for shared usage across multiple employees and heavier context.</p>
+          <p class="note">Good for sustained team use.</p>
+        </article>
+        <article class="panel pack">
+          <span class="badge">Max</span>
+          <div class="tokens">2,500,000</div>
+          <div class="price">$250</div>
+          <p>Heavy refill for high-volume WOLFbot operations and manager workflows.</p>
+          <p class="note">Good for high-throughput AI work.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="model-meter" aria-labelledby="meter-heading">
+      <h2 id="meter-heading">How paid token usage works</h2>
+      <p>Every AI answer uses model tokens behind the scenes. WOLFbot converts that usage into BotBot token debits. The dashboard can show the selected lane before you send, so there are no mystery drains.</p>
+      <div class="panel" style="overflow:auto">
+        <table>
+          <thead>
+            <tr><th>AI lane</th><th>Best use</th><th>BotBot debit / 1K AI tokens</th><th>10,000-token starter approx.</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Budget</td><td>Quick answers, simple rewrites, short summaries</td><td class="debit">2 tokens</td><td>~5,000,000 AI tokens</td></tr>
+            <tr><td>Efficient</td><td>Everyday business assistant work</td><td class="debit">3-6 tokens</td><td>~1,660,000-3,330,000 AI tokens</td></tr>
+            <tr><td>Advanced</td><td>Longer analysis, coding help, deeper reasoning</td><td class="debit">15-27 tokens</td><td>~370,000-660,000 AI tokens</td></tr>
+            <tr><td>Flagship</td><td>Highest-power reasoning for hard prompts</td><td class="debit">53 tokens</td><td>~188,000 AI tokens</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Actual use depends on prompt length, response length, attachments/context, and selected AI lane. Long prompts are not air; they are cargo.</p>
+    </section>
+
+    <section class="section" aria-labelledby="free-heading">
+      <h2 id="free-heading">Free AI lane</h2>
+      <p>WOLFbot can include a limited free lane for lightweight prompts. Free access is not unlimited and may pause when daily capacity is used.</p>
+      <div class="free-grid">
+        <article class="panel free"><span class="badge">Free</span><h3>Quick questions</h3><p>Short answers and lightweight drafting when the shared free lane is available.</p></article>
+        <article class="panel free"><span class="badge">Free</span><h3>Basic help</h3><p>Simple summaries, small edits, and low-stakes assistant work.</p></article>
+        <article class="panel free"><span class="badge">Free</span><h3>Capped use</h3><p>Daily prompt limits keep the lane usable for more than one person.</p></article>
+      </div>
+      <p class="warn">If the free lane is full, use a paid lane or wait for capacity to reset. That is not a bug. That is a small doorway with a line outside.</p>
+    </section>
+
+    <footer>
+      WOLFbot pricing page · Built for https://wolf.discount/WOLFbot/pricing/ · Customer pricing snapshot May 23, 2026 · Version 1.5.23.0013
+    </footer>
+  </main>
+</body>
+</html>

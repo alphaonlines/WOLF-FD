@@ -29,6 +29,12 @@ import {
   SOCIAL_PUBLIC_BASE_URL,
   SOCIAL_SCHEDULER_ENABLED,
   SOCIAL_SCHEDULER_INTERVAL_MS,
+  STRIPE_TOPUP_WEBHOOK_PATH,
+  STRIPE_WEBHOOK_SECRET,
+  STRIPE_API_KEY,
+  BOTBOT_STRIPE_PUBLIC_BASE_URL,
+  BOTBOT_STRIPE_DEFAULT_MODEL_KEY,
+  BOTBOT_LEDGER_TOKEN,
   DEN_RECORDINGS_DIR,
 } from "./runtimeConfig";
 import { registerAllRoutes } from "./routeWiring";
@@ -46,7 +52,13 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json({ limit: "25mb" }));
+app.use(express.json({
+  limit: "25mb",
+  type: (req) => {
+    const url = typeof req.url === "string" ? req.url : "";
+    return !url.startsWith(STRIPE_TOPUP_WEBHOOK_PATH);
+  },
+}));
 app.use((req, res, next) => {
   if (!DASHBOARD_LOCKED) {
     next();
@@ -110,6 +122,12 @@ const { setUserRolesByKeys } = registerAllRoutes({
   hashPassword,
   sha256Hex,
   createSessionToken,
+  stripeTopupWebhookPath: STRIPE_TOPUP_WEBHOOK_PATH,
+  stripeWebhookSecret: STRIPE_WEBHOOK_SECRET,
+  stripeApiKey: STRIPE_API_KEY,
+  botbotStripePublicBaseUrl: BOTBOT_STRIPE_PUBLIC_BASE_URL,
+  botbotStripeDefaultModelKey: BOTBOT_STRIPE_DEFAULT_MODEL_KEY,
+  botbotLedgerToken: BOTBOT_LEDGER_TOKEN,
 });
 
 const port = PORT;

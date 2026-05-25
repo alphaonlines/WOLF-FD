@@ -1653,6 +1653,126 @@ async function ensureBotBotSchema(pool: Pool) {
       sort_order = EXCLUDED.sort_order,
       updated_at = now();
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS stripe_topup_events (
+      id BIGSERIAL PRIMARY KEY,
+      stripe_event_id TEXT NOT NULL,
+      stripe_checkout_session_id TEXT NOT NULL,
+      event_type TEXT NOT NULL DEFAULT 'checkout.session.completed',
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      customer_email TEXT NOT NULL DEFAULT '',
+      pack_id TEXT NOT NULL DEFAULT '',
+      model_key TEXT NOT NULL DEFAULT 'local',
+      tokens BIGINT NOT NULL DEFAULT 0,
+      amount_total INTEGER NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'usd',
+      raw_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+      status TEXT NOT NULL DEFAULT 'received',
+      last_error TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      processed_at TIMESTAMPTZ
+    );
+  `);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS stripe_event_id TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS stripe_checkout_session_id TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS event_type TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS user_id BIGINT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS customer_email TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS pack_id TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS model_key TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS tokens BIGINT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS amount_total INTEGER;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS currency TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS raw_payload JSONB;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS status TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS last_error TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS processed_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN customer_email SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN event_type SET DEFAULT 'checkout.session.completed';`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN pack_id SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN model_key SET DEFAULT 'local';`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN tokens SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN amount_total SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN currency SET DEFAULT 'usd';`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN raw_payload SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN status SET DEFAULT 'received';`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_stripe_topup_events_event_id ON stripe_topup_events(stripe_event_id);`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_stripe_topup_events_session_id ON stripe_topup_events(stripe_checkout_session_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_stripe_topup_events_user ON stripe_topup_events(user_id, created_at DESC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_stripe_topup_events_status ON stripe_topup_events(status);`);
+
+}
+
+
+async function ensureDenRecordingSchema(pool: Pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS den_recordings (
+      id              UUID PRIMARY KEY,
+      owner_user_id   BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title           TEXT NOT NULL,
+      source_type     TEXT NOT NULL DEFAULT 'mic',
+      status          TEXT NOT NULL DEFAULT 'created',
+      duration_sec    INTEGER NOT NULL DEFAULT 0,
+      audio_path      TEXT,
+      mime_type       TEXT,
+      file_size_bytes BIGINT NOT NULL DEFAULT 0,
+      transcript_text TEXT NOT NULL DEFAULT '',
+      summary_json    JSONB NOT NULL DEFAULT '{}'::jsonb,
+      notes           TEXT NOT NULL DEFAULT '',
+      model_provider  TEXT,
+      model_name      TEXT,
+      error_message   TEXT,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+      finished_at     TIMESTAMPTZ
+    );
+  `);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS owner_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS title TEXT;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS source_type TEXT;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS status TEXT;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS duration_sec INTEGER;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS audio_path TEXT;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS mime_type TEXT;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS file_size_bytes BIGINT;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS transcript_text TEXT;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS summary_json JSONB;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS notes TEXT;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS model_provider TEXT;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS model_name TEXT;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS error_message TEXT;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE den_recordings ADD COLUMN IF NOT EXISTS finished_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE den_recordings ALTER COLUMN source_type SET DEFAULT 'mic';`);
+  await pool.query(`ALTER TABLE den_recordings ALTER COLUMN status SET DEFAULT 'created';`);
+  await pool.query(`ALTER TABLE den_recordings ALTER COLUMN duration_sec SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE den_recordings ALTER COLUMN file_size_bytes SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE den_recordings ALTER COLUMN transcript_text SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE den_recordings ALTER COLUMN summary_json SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE den_recordings ALTER COLUMN notes SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE den_recordings ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE den_recordings ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_den_recordings_owner_created ON den_recordings(owner_user_id, created_at DESC);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_den_recordings_status ON den_recordings(status);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS den_recording_events (
+      id            BIGSERIAL PRIMARY KEY,
+      recording_id  UUID NOT NULL REFERENCES den_recordings(id) ON DELETE CASCADE,
+      event_type    TEXT NOT NULL,
+      message       TEXT NOT NULL DEFAULT '',
+      meta_json     JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_den_recording_events_recording_id ON den_recording_events(recording_id, created_at ASC);`);
 }
 
 async function ensureDenRecordingSchema(pool: Pool) {

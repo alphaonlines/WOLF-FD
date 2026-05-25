@@ -26,6 +26,8 @@ import { registerObjectionVotesRoutes } from "./routes/objectionVotesRoutes";
 import { registerCustomObjectionsRoutes } from "./routes/customObjectionsRoutes";
 import { registerBotBotRoutes } from "./routes/botbotRoutes";
 import { registerDenRecordingRoutes } from "./routes/denRecordingRoutes";
+import { registerStripeTopupRoutes } from "./routes/stripeTopupRoutes";
+import { registerGa4Routes } from "./routes/ga4Routes";
 import {
   type AuthUserView,
   buildAuthUser,
@@ -69,6 +71,12 @@ type RegisterAllRoutesDeps = {
   hashPassword: (password: string, saltHex?: string) => string;
   sha256Hex: (value: string) => string;
   createSessionToken: () => string;
+  stripeTopupWebhookPath: string;
+  stripeWebhookSecret: string;
+  stripeApiKey: string;
+  botbotStripePublicBaseUrl: string;
+  botbotStripeDefaultModelKey: string;
+  botbotLedgerToken: string;
 };
 
 const toRouteAuthUser = (user: AuthUserView | null | undefined) => {
@@ -106,6 +114,12 @@ export function registerAllRoutes({
   hashPassword,
   sha256Hex,
   createSessionToken,
+  stripeTopupWebhookPath,
+  stripeWebhookSecret,
+  stripeApiKey,
+  botbotStripePublicBaseUrl,
+  botbotStripeDefaultModelKey,
+  botbotLedgerToken,
 }: RegisterAllRoutesDeps) {
   registerPublicSocialRoutes({
     app,
@@ -204,6 +218,16 @@ export function registerAllRoutes({
     pool,
     recordingsDir: denRecordingsDir,
   });
+  registerStripeTopupRoutes({
+    app,
+    pool,
+    webhookPath: stripeTopupWebhookPath,
+    webhookSecret: stripeWebhookSecret,
+    secretKey: stripeApiKey,
+    publicBaseUrl: botbotStripePublicBaseUrl,
+    defaultModelKey: botbotStripeDefaultModelKey,
+    externalLedgerToken: botbotLedgerToken,
+  });
   registerSystemRoutes({
     app,
     pool,
@@ -214,5 +238,6 @@ export function registerAllRoutes({
     execFileAsync,
   });
 
+  registerGa4Routes(app);
   return { setUserRolesByKeys };
 }

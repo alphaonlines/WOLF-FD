@@ -29,6 +29,10 @@ export const PUBLIC_AUTH_PATHS = new Set([
   "/auth/google/request-access",
   "/botbot/external/usage",
   "/botbot/external/usage-status",
+  "/botbot/external/token-packs/checkout",
+  "/botbot/stripe/webhook",
+  "/api/ga4-oauth-callback",
+  "/api/ga4-oauth",
 ]);
 export const GOOGLE_WORKSPACE_CLIENT_ID = envString("GOOGLE_WORKSPACE_CLIENT_ID", "");
 export const GOOGLE_WORKSPACE_DOMAIN = (envString("GOOGLE_WORKSPACE_DOMAIN", "furnituredistributors.net") || "furnituredistributors.net").toLowerCase();
@@ -115,6 +119,15 @@ export const BOTBOT_LOCAL_AI_TOKEN =
   envString("BOTBOT_LOCAL_AI_TOKEN", "") ?? "";
 export const BOTBOT_LEDGER_TOKEN =
   envString("BOTBOT_LEDGER_TOKEN", "") ?? "";
+export const STRIPE_TOPUP_WEBHOOK_PATH = envString("STRIPE_TOPUP_WEBHOOK_PATH", "/api/botbot/stripe/webhook") ||
+  "/api/botbot/stripe/webhook";
+export const STRIPE_WEBHOOK_SECRET = envString("STRIPE_WEBHOOK_SECRET", "") || "";
+export const STRIPE_API_KEY =
+  envString("STRIPE_RESTRICTED_KEY", "") || envString("STRIPE_API_KEY", "") || envString("STRIPE_SECRET_KEY", "") || "";
+export const BOTBOT_STRIPE_PUBLIC_BASE_URL =
+  envString("BOTBOT_STRIPE_PUBLIC_BASE_URL", "https://furnituredistributors.wolf.discount/fd") ||
+  "https://furnituredistributors.wolf.discount/fd";
+export const BOTBOT_STRIPE_DEFAULT_MODEL_KEY = envString("BOTBOT_STRIPE_DEFAULT_MODEL_KEY", "local") || "local";
 export const OPENAI_API_KEY = envString("OPENAI_API_KEY", "") ?? "";
 export const OPENAI_BASE_URL =
   envString("OPENAI_BASE_URL", "https://api.openai.com/v1") ??

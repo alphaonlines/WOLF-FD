@@ -2,13 +2,13 @@
 
 ## Resume Checklist
 
-- Current branch: `botbot-tutorial-revive`.
-- Dirty/uncommitted files to inspect first: `.env.production, AGENTS.md, components/PulseWorkspace.tsx, index.html, index.tsx, index.css, postcss.config.js, tailwind.config.js, package-lock.json, pos-dashboard-backend/package.json, pos-dashboard-backend/package-lock.json, pos-dashboard-backend/src/routeWiring.ts, pos-dashboard-backend/src/runtimeConfig.ts, pos-dashboard-backend/src/server.ts, pos-dashboard-backend/src/startupBootstrap.ts, pos-dashboard-backend/src/routes/ga4Routes.ts, pos-dashboard-backend/src/routes/stripeTopupRoutes.ts, pos-dashboard-backend/src/routes/stripeTopupRoutes.test.ts`. Treat `.env.production` and backup/env files as sensitive; do not print secrets into chat or logs.
-- Latest deployed version: `displayVersion` `1.5.15.1225` in `package.json`.
-- Last deploy status: frontend deployed on 2026-05-23 after removing Tailwind CDN and fixing the Pulse Website GA4 stats request path; live HTML check confirmed no `cdn.tailwindcss.com` and a compiled `/fd/assets/*.css` link.
+- Current branch: `integration/wolf-fd-cleanup` for the cleanup merge; live source remains `/home/alphahs/WOLF-FD` until this branch is applied/deployed.
+- Dirty/uncommitted files to inspect first: after the cleanup merge, expected source repos should end clean except local-only `.env*` files and private backups. Treat `.env.production` and backup/env files as sensitive; do not print secrets into chat or logs.
+- Latest source version: `displayVersion` `1.5.24.2146` in `package.json`; deploy verification still required after the cleanup branch is applied.
+- Last deploy status: frontend deployed on 2026-05-23 after hardening the Pulse Website analytics render path; Chrome signed-in QA opened the live Website module on asset `assets/index-CWzH_huq.js` with no Pulse render error.
 - Live URLs and health checks: `https://furnituredistributors.wolf.discount/fd/`, `https://furnituredistributors.wolf.discount/fd/api/health`, and local nginx probe `curl -skS -H 'Host: furnituredistributors.wolf.discount' https://127.0.0.1/fd/api/health`.
-- Active risks/gotchas: this repo has unrelated dirty backend/Stripe/GA4/runtime changes; inspect before editing. Frontend API calls intentionally resolve through `/fd/api/api/...`; do not simplify that path without live proxy verification. Use local/LAN LLM routes only unless Anthony explicitly approves cloud inference.
-- Next recommended task: finish or review the in-progress GA4/Stripe backend work, then run backend build, frontend build, PM2 restart if backend changed, and live health checks before any deploy.
+- Active risks/gotchas: this cleanup merge combines Pulse GA4, Stripe/Shopify top-up, Den Recorder, Docker portability, and WOLFbot pricing work. Frontend API calls intentionally resolve through `/fd/api/api/...`; do not simplify that path without live proxy verification. Use local/LAN LLM routes only unless Anthony explicitly approves cloud inference.
+- Next recommended task: run full frontend/backend validation on `integration/wolf-fd-cleanup`, then fast-forward/update the live repo and deploy from a clean tree.
 
 ## Current Stack
 
@@ -42,6 +42,16 @@
 - Treat this machine as local-LLM infrastructure first. Do not add cloud model keys or hosted inference fallbacks unless Anthony explicitly changes that direction.
 - WOLFbot Playground work for `https://wolf.discount/ai` lives outside this repo at `/home/alphahs/wolfbot-playground`; do not replace live `/srv/www/wolf.discount/ai-guest/` without explicit deployment confirmation.
 
+
+## Repo Cleanliness Rule
+
+- Canonical source for live FD work is `/home/alphahs/WOLF-FD` on `alphahs`; Windows copies are secondary and must sync through Git branches, not ad-hoc file edits.
+- Start every work session with `git fetch --all --prune` and `git status --short --branch` on the repo being edited. If the tree is dirty, inventory it before touching code.
+- Do not stack unrelated work in one dirty tree. Create a named branch for each feature/fix, commit coherent checkpoints, and push the branch before switching tasks.
+- End every meaningful task with one of two states: clean working tree with branch pushed, or an explicit WIP branch/patch path recorded in this handoff. No mystery dirt. Gremlins breed in untracked files.
+- Never commit `.env*`, secret backups, private vendor uploads, or generated deploy artifacts. Use `.env.example` for documented knobs and keep deployed `/srv/www/...` output generated from `dist/` only.
+- Merge multi-source work through a temporary integration branch, run frontend/backend validation there, then update the live branch from that known-good merge. Do not merge directly inside the live dirty checkout.
+
 ## Active Work Queue
 
 - Current active sprint: Tutorial fix, sidebar cleanup, module navigation polish, and recent GA4/Stripe/backend runtime work.
@@ -51,6 +61,34 @@
 - Handoff rules: update `AGENTS.md` after meaningful work; include timestamp, files changed, what changed, commands/tests, deploy status, and remaining risk or next step. Any frontend deploy log must mention built asset/version and live verification. Any backend route/runtime log must mention backend build, PM2 restart, and `/fd/api/health`.
 
 ## Recent Running Log
+
+- 2026-05-24 21:46 EDT - Consolidated dirty WOLF-FD work into a cleanup integration branch.
+  - Files: `AGENTS.md`, `package.json`, `package-lock.json`, Pulse GA4 frontend/backend files, Stripe/Shopify top-up routes, Den Recorder routes/workspace/service, Docker portability files, WOLFbot pricing page, and local planning docs.
+  - Changes: merged GitHub `botbot-tutorial-revive`, `move/docker-portable`, local `feat/den-recorder-cleanup`, and uncommitted server/local work into `integration/wolf-fd-cleanup`; added the Repo Cleanliness Rule so future work starts clean, branches by task, and never leaves mystery dirt.
+  - Commands/tests: branch merge and conflict-resolution checks run; full build/test/deploy still pending for this integration branch.
+  - Deploy: not deployed yet; apply only after frontend/backend validation passes.
+  - Remaining risk: integration branch intentionally combines several feature streams, so targeted route/UI review is required before live deploy.
+
+- 2026-05-23 09:15 EDT - Fixed Pulse Website render-boundary crash after analytics deploy.
+  - Files: `components/PulseWorkspace.tsx`, `AGENTS.md`.
+  - Changes: guarded Website analytics reads through `current?.*` and reused safe default arrays for top pages, channels, devices, cities, referrers, and daily trend data so partial/mixed GA4 responses cannot throw `undefined.map`.
+  - Commands/tests: frontend `npm run build` PASS; focused `npx tsc --noEmit | grep PulseWorkspace` returned no Pulse errors; deployed `dist/.` to `/srv/www/wolf.discount/fd/`; live `/fd/api/health` PASS; Chrome signed-in QA hard-refreshed the live app and opened Pulse > Website successfully.
+  - Deploy: live frontend asset `assets/index-CWzH_huq.js`, CSS `assets/index-DgJcr-EG.css`; backend unchanged/restart not required for this fix.
+  - Remaining risk: Chrome dev log still contains stale pre-refresh errors from old asset `assets/index-D5KdYcd9.js`; fresh page content is on `assets/index-CWzH_huq.js` with no visible Pulse error.
+
+- 2026-05-23 07:43 EDT - Added hover explanations to Pulse Website analytics.
+  - Files: `components/PulseWorkspace.tsx`, `AGENTS.md`.
+  - Changes: added reusable hover tooltip descriptions for Website date range controls, metric cards, daily trend, top pages, traffic sources, devices, top cities, and source/medium sections.
+  - Commands/tests: frontend `npm run build` PASS; focused `npx tsc --noEmit | grep PulseWorkspace` returned no Pulse errors; deployed `dist/.` to `/srv/www/wolf.discount/fd/`; public HTML probe confirmed live asset update and no Tailwind CDN.
+  - Deploy: live frontend asset `assets/index-YEZvSGAC.js`, CSS `assets/index-DgJcr-EG.css`.
+  - Remaining risk: authenticated browser QA is still needed to hover through the live Website tab inside a signed-in session.
+
+- 2026-05-23 07:41 EDT - Expanded Pulse Website analytics with date ranges and comparison.
+  - Files: `components/PulseWorkspace.tsx`, `pos-dashboard-backend/src/routes/ga4Routes.ts`, `AGENTS.md`.
+  - Changes: Website tab now supports preset/custom ranges, previous-period or custom comparison, expanded GA4 metric cards, daily trend, top pages, traffic sources, devices, cities, and source/medium tables. GA4 backend endpoint now accepts `start`, `end`, `compareStart`, and `compareEnd` query params and returns richer current/compare data with range-keyed caching.
+  - Commands/tests: backend `npm run build` PASS; frontend `npm run build` PASS; focused `npx tsc --noEmit | grep PulseWorkspace` returned no Pulse errors; `pm2 restart pos-api`; deployed `dist/.` to `/srv/www/wolf.discount/fd/`; live `/fd/api/health` PASS; ranged GA4 endpoint reached authenticated API guard (`401`) instead of missing route.
+  - Deploy: live frontend asset `assets/index-DiF8vVPF.js`, CSS `assets/index-Br9nEsvz.css`; backend `pos-api` restarted.
+  - Remaining risk: full root `tsc --noEmit` still has pre-existing unrelated project errors outside Pulse; authenticated browser QA is still needed inside an approved user session to verify real GA4 data rendering.
 
 - 2026-05-23 07:30 EDT - Reorganized the agent handoff system.
   - Files: `AGENTS.md`, `HANDOFF.md`, `docs/agent-logs/*.md`.
