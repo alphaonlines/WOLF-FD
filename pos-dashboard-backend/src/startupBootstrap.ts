@@ -1638,6 +1638,9 @@ async function ensureBotBotSchema(pool: Pool) {
       ('gemma4:e4b-it-q4_K_M', 'Gemma 4B Local', 'wolfbot', 'gemma4:e4b-it-q4_K_M', 500000, TRUE, 2),
       ('gemma4:e2b-it-q4_K_M', 'Gemma 2B Fast Local', 'wolfbot', 'gemma4:e2b-it-q4_K_M', 500000, TRUE, 3),
       ('qwen2.5-coder:7b', 'Qwen Coder 7B Local', 'wolfbot', 'qwen2.5-coder:7b', 300000, TRUE, 4),
+      ('nvidia/nemotron-3-super-120b-a12b:free', 'NVIDIA', 'openrouter', 'nvidia/nemotron-3-super-120b-a12b:free', 100000, TRUE, 10),
+      ('deepseek/deepseek-v4-flash:free', 'DeepSeek', 'openrouter', 'deepseek/deepseek-v4-flash:free', 100000, TRUE, 11),
+      ('qwen/qwen3-coder:free', 'Qwen', 'openrouter', 'qwen/qwen3-coder:free', 100000, TRUE, 12),
       ('${OPENAI_FAST_MODEL}', 'OpenAI Fast API', 'openai', '${OPENAI_FAST_MODEL}', 50000, TRUE, 20),
       ('${OPENAI_BALANCED_MODEL}', 'OpenAI Balanced API', 'openai', '${OPENAI_BALANCED_MODEL}', 25000, TRUE, 21),
       ('claude-haiku-4-5', 'Claude Haiku', 'anthropic', '', 50000, TRUE, 30),
@@ -1646,13 +1649,176 @@ async function ensureBotBotSchema(pool: Pool) {
       display_name = EXCLUDED.display_name,
       provider = EXCLUDED.provider,
       ollama_model_name = CASE
-        WHEN botbot_model_config.model_key IN ('local', 'gemma4:e4b-it-q4_K_M', 'gemma4:e2b-it-q4_K_M', 'qwen2.5-coder:7b', '${OPENAI_FAST_MODEL}', '${OPENAI_BALANCED_MODEL}') THEN EXCLUDED.ollama_model_name
+        WHEN botbot_model_config.model_key IN ('local', 'gemma4:e4b-it-q4_K_M', 'gemma4:e2b-it-q4_K_M', 'qwen2.5-coder:7b', 'nvidia/nemotron-3-super-120b-a12b:free', 'deepseek/deepseek-v4-flash:free', 'qwen/qwen3-coder:free', '${OPENAI_FAST_MODEL}', '${OPENAI_BALANCED_MODEL}') THEN EXCLUDED.ollama_model_name
         ELSE botbot_model_config.ollama_model_name
       END,
       enabled = EXCLUDED.enabled,
       sort_order = EXCLUDED.sort_order,
       updated_at = now();
   `);
+}
+
+
+async function ensureStripeTopupSchema(pool: Pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS stripe_topup_events (
+      id BIGSERIAL PRIMARY KEY,
+      stripe_event_id TEXT NOT NULL,
+      stripe_checkout_session_id TEXT NOT NULL,
+      event_type TEXT NOT NULL DEFAULT 'checkout.session.completed',
+      user_id BIGINT,
+      customer_email TEXT NOT NULL DEFAULT '',
+      pack_id TEXT NOT NULL DEFAULT '',
+      model_key TEXT NOT NULL DEFAULT 'local',
+      tokens BIGINT NOT NULL DEFAULT 0,
+      amount_total INTEGER NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'usd',
+      raw_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+      status TEXT NOT NULL DEFAULT 'received',
+      last_error TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      processed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS stripe_event_id TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS stripe_checkout_session_id TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS event_type TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS user_id BIGINT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS customer_email TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS pack_id TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS model_key TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS tokens BIGINT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS amount_total INTEGER;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS currency TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS raw_payload JSONB;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS status TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS last_error TEXT;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ADD COLUMN IF NOT EXISTS processed_at TIMESTAMPTZ;`);
+
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN customer_email SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN event_type SET DEFAULT 'checkout.session.completed';`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN pack_id SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN model_key SET DEFAULT 'local';`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN tokens SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN amount_total SET DEFAULT 0;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN currency SET DEFAULT 'usd';`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN raw_payload SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN status SET DEFAULT 'received';`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE stripe_topup_events ALTER COLUMN processed_at SET DEFAULT now();`);
+
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_stripe_topup_events_event_id ON stripe_topup_events(stripe_event_id)`);
+  await pool.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_stripe_topup_events_session_id ON stripe_topup_events(stripe_checkout_session_id)`
+  );
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_stripe_topup_events_user ON stripe_topup_events(user_id, created_at DESC)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_stripe_topup_events_status ON stripe_topup_events(status)`);
+}
+
+async function ensureShopifyTopupSchema(pool: Pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS shopify_topup_order_events (
+      id BIGSERIAL PRIMARY KEY,
+      source_shop TEXT NOT NULL DEFAULT '',
+      shop_order_id TEXT NOT NULL,
+      event_topic TEXT NOT NULL DEFAULT 'orders/paid',
+      shop_order_name TEXT NOT NULL DEFAULT '',
+      customer_email TEXT NOT NULL DEFAULT '',
+      user_id BIGINT,
+      credits_by_model JSONB NOT NULL DEFAULT '{}'::jsonb,
+      raw_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+      status TEXT NOT NULL DEFAULT 'received',
+      claim_code TEXT,
+      last_error TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      processed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS source_shop TEXT;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS shop_order_id TEXT;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS event_topic TEXT;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS shop_order_name TEXT;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS customer_email TEXT;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS user_id BIGINT;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS credits_by_model JSONB;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS raw_payload JSONB;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS status TEXT;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS claim_code TEXT;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS last_error TEXT;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ADD COLUMN IF NOT EXISTS processed_at TIMESTAMPTZ;`);
+
+  await pool.query(`ALTER TABLE shopify_topup_order_events ALTER COLUMN source_shop SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ALTER COLUMN event_topic SET DEFAULT 'orders/paid';`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ALTER COLUMN shop_order_name SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ALTER COLUMN customer_email SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ALTER COLUMN status SET DEFAULT 'received';`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ALTER COLUMN credits_by_model SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ALTER COLUMN raw_payload SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE shopify_topup_order_events ALTER COLUMN processed_at SET DEFAULT now();`);
+
+  await pool.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_shopify_topup_events_source_order_topic ON shopify_topup_order_events(source_shop, shop_order_id, event_topic)`
+  );
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_shopify_topup_order_events_status ON shopify_topup_order_events(status)`
+  );
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS shopify_topup_claim_codes (
+      id BIGSERIAL PRIMARY KEY,
+      claim_code TEXT NOT NULL,
+      order_event_id BIGINT NOT NULL REFERENCES shopify_topup_order_events(id) ON DELETE CASCADE,
+      email TEXT NOT NULL DEFAULT '',
+      credits_by_model JSONB NOT NULL DEFAULT '{}'::jsonb,
+      status TEXT NOT NULL DEFAULT 'pending',
+      redeemed_user_id BIGINT,
+      redeemed_at TIMESTAMPTZ,
+      raw_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ADD COLUMN IF NOT EXISTS claim_code TEXT;`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ADD COLUMN IF NOT EXISTS order_event_id BIGINT;`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ADD COLUMN IF NOT EXISTS email TEXT;`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ADD COLUMN IF NOT EXISTS credits_by_model JSONB;`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ADD COLUMN IF NOT EXISTS status TEXT;`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ADD COLUMN IF NOT EXISTS redeemed_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ADD COLUMN IF NOT EXISTS redeemed_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ADD COLUMN IF NOT EXISTS raw_payload JSONB;`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ALTER COLUMN claim_code SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ALTER COLUMN email SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ALTER COLUMN credits_by_model SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ALTER COLUMN status SET DEFAULT 'pending';`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ALTER COLUMN raw_payload SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE shopify_topup_claim_codes ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_shopify_topup_claim_codes_code ON shopify_topup_claim_codes(claim_code)`
+  );
+  await pool.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_shopify_topup_claim_codes_event ON shopify_topup_claim_codes(order_event_id)`
+  );
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_shopify_topup_claim_codes_status ON shopify_topup_claim_codes(status)`
+  );
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_shopify_topup_claim_codes_email ON shopify_topup_claim_codes(email)`
+  );
 }
 
 async function ensureDenRecordingSchema(pool: Pool) {
@@ -1730,5 +1896,7 @@ export async function runStartupBootstrap(deps: RunStartupBootstrapDeps) {
   await ensureSocialSchema(deps.pool);
   await ensureWebTrackingSchema(deps.pool);
   await ensureBotBotSchema(deps.pool);
+  await ensureStripeTopupSchema(deps.pool);
+  await ensureShopifyTopupSchema(deps.pool);
   await ensureDenRecordingSchema(deps.pool);
 }

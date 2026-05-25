@@ -157,6 +157,18 @@ Backend deploy flow for route/schema/runtime changes:
 
 ## Running Log
 
+- 2026-05-24 21:59 EDT — Wired OpenRouter free provider models into BotBot model routing for `/fd/`.
+  - Files: `pos-dashboard-backend/src/runtimeConfig.ts`, `pos-dashboard-backend/src/llmClient.ts`, `pos-dashboard-backend/src/routes/botbotRoutes.ts`, `pos-dashboard-backend/src/botbotAccess.ts`, `pos-dashboard-backend/src/startupBootstrap.ts`, `package.json`, `package-lock.json`, `AGENTS.md`.
+  - Changes: added OpenRouter-compatible chat routing, seeded the requested free models as provider-labeled choices (`NVIDIA`, `DeepSeek`, `Qwen`) using model ids `nvidia/nemotron-3-super-120b-a12b:free`, `deepseek/deepseek-v4-flash:free`, and `qwen/qwen3-coder:free`, made OpenRouter models default-allowed when configured, and expanded runtime status to report configured Ollama nodes instead of one hardcoded node.
+  - Commands/tests: local `pos-dashboard-backend npm run build` PASS; local `npm run build` PASS; remote backend build PASS; remote frontend build PASS; deployed `dist/` to `/srv/www/wolf.discount/fd/`; restarted `pos-api`; live `/fd/api/health` PASS 200; live `/fd/` serves `assets/index-CoZ4HsmA.js` and `assets/index-4oI8db-7.css`.
+  - Warning: copied existing Hermes `OPENROUTER_API_KEY` into the live backend `.env`, but direct OpenRouter `/api/v1/key` and chat smoke returned 401 `User not found`; a valid OpenRouter key is still required before those provider buttons can complete chats.
+
+- 2026-05-22 21:04 EDT — Added first-pass Shopify BotBot token top-up backend plumbing.
+  - Files: `pos-dashboard-backend/src/routes/shopifyTopupRoutes.ts`, `pos-dashboard-backend/src/routes/shopifyTopupRoutes.test.ts`, `pos-dashboard-backend/src/runtimeConfig.ts`, `pos-dashboard-backend/src/routeWiring.ts`, `pos-dashboard-backend/src/server.ts`, `pos-dashboard-backend/src/startupBootstrap.ts`, `.env.example`.
+  - Changes: added configurable Shopify paid-order webhook endpoint with HMAC verification, token-pack parsing, idempotent order event logging, automatic `botbot_token_ledger.tokens_purchased` crediting by matching customer email, pending claim-code fallback, and bootstrap schema for top-up events/claim codes.
+  - Commands/tests: `cd pos-dashboard-backend && npm ci`; `npm run -s build` PASS; `npx vitest run src/routes/shopifyTopupRoutes.test.ts` PASS (2 tests). Full `npm test` currently blocked by existing `/health` smoke test returning 500 without a reachable local Postgres DB.
+  - Deploy: not run; Shopify Admin API/MCP credentials still need a valid Admin API token or manual Shopify webhook setup.
+
 - 2026-05-15 12:25 EDT — Fixed Smart Calc tutorial mobile overlay placement after local smoke-test failure.
   - Files: `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `package.json`, `AGENTS.md`.
   - Changes: tutorial card now chooses above/below placement on narrow viewports and caps its max height to the available space so it does not cover the highlighted Smart Calc target; bumped/synced Smart Calc display version to `1.5.15.1225`.

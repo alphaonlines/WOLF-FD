@@ -19,6 +19,26 @@ export function createPoolFromEnv() {
 export const AUTH_COOKIE_NAME = "fd_session";
 export const AUTH_SESSION_DAYS = Math.max(Number(envString("AUTH_SESSION_DAYS", "14")) || 14, 1);
 export const AUTH_COOKIE_SECURE_MODE = (envString("AUTH_COOKIE_SECURE", "auto") || "auto").toLowerCase();
+export const SHOPIFY_TOPUP_WEBHOOK_PATH = envString("SHOPIFY_TOPUP_WEBHOOK_PATH", "/api/shopify/topup/webhook") ||
+  "/api/shopify/topup/webhook";
+export const SHOPIFY_TOPUP_WEBHOOK_PUBLIC_PATH = SHOPIFY_TOPUP_WEBHOOK_PATH.startsWith("/api")
+  ? SHOPIFY_TOPUP_WEBHOOK_PATH.slice(4)
+  : SHOPIFY_TOPUP_WEBHOOK_PATH;
+export const SHOPIFY_TOPUP_WEBHOOK_SECRET = envString("SHOPIFY_TOPUP_WEBHOOK_SECRET", "") || "";
+export const SHOPIFY_TOPUP_VARIANT_PACKS = envString("SHOPIFY_TOPUP_VARIANT_PACKS", "") || "";
+export const SHOPIFY_TOPUP_DEFAULT_MODEL_KEY = envString("SHOPIFY_TOPUP_DEFAULT_MODEL_KEY", "local") || "local";
+export const STRIPE_TOPUP_WEBHOOK_PATH = envString("STRIPE_TOPUP_WEBHOOK_PATH", "/api/botbot/stripe/webhook") ||
+  "/api/botbot/stripe/webhook";
+export const STRIPE_TOPUP_WEBHOOK_PUBLIC_PATH = STRIPE_TOPUP_WEBHOOK_PATH.startsWith("/api")
+  ? STRIPE_TOPUP_WEBHOOK_PATH.slice(4)
+  : STRIPE_TOPUP_WEBHOOK_PATH;
+export const STRIPE_WEBHOOK_SECRET = envString("STRIPE_WEBHOOK_SECRET", "") || "";
+export const STRIPE_API_KEY =
+  envString("STRIPE_RESTRICTED_KEY", "") || envString("STRIPE_API_KEY", "") || envString("STRIPE_SECRET_KEY", "") || "";
+export const BOTBOT_STRIPE_PUBLIC_BASE_URL =
+  envString("BOTBOT_STRIPE_PUBLIC_BASE_URL", "https://furnituredistributors.wolf.discount/fd") ||
+  "https://furnituredistributors.wolf.discount/fd";
+export const BOTBOT_STRIPE_DEFAULT_MODEL_KEY = envString("BOTBOT_STRIPE_DEFAULT_MODEL_KEY", "local") || "local";
 export const PUBLIC_AUTH_PATHS = new Set([
   "/auth/login",
   "/auth/logout",
@@ -28,6 +48,9 @@ export const PUBLIC_AUTH_PATHS = new Set([
   "/auth/google/verify-domain",
   "/auth/google/request-access",
   "/botbot/external/usage",
+  "/botbot/external/token-packs/checkout",
+  SHOPIFY_TOPUP_WEBHOOK_PUBLIC_PATH,
+  STRIPE_TOPUP_WEBHOOK_PUBLIC_PATH,
 ]);
 export const GOOGLE_WORKSPACE_CLIENT_ID = envString("GOOGLE_WORKSPACE_CLIENT_ID", "");
 export const GOOGLE_WORKSPACE_DOMAIN = (envString("GOOGLE_WORKSPACE_DOMAIN", "furnituredistributors.net") || "furnituredistributors.net").toLowerCase();
@@ -118,6 +141,10 @@ export const OPENAI_API_KEY = envString("OPENAI_API_KEY", "") ?? "";
 export const OPENAI_BASE_URL =
   envString("OPENAI_BASE_URL", "https://api.openai.com/v1") ??
   "https://api.openai.com/v1";
+export const OPENROUTER_API_KEY = envString("OPENROUTER_API_KEY", "") ?? "";
+export const OPENROUTER_BASE_URL =
+  envString("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1") ??
+  "https://openrouter.ai/api/v1";
 export const OPENAI_FAST_MODEL =
   envString("OPENAI_FAST_MODEL", "gpt-4o-mini") ?? "gpt-4o-mini";
 export const OPENAI_BALANCED_MODEL =

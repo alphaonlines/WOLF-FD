@@ -6,6 +6,8 @@ import {
   OLLAMA_BASE_URL,
   OPENAI_API_KEY,
   OPENAI_BASE_URL,
+  OPENROUTER_API_KEY,
+  OPENROUTER_BASE_URL,
 } from "./runtimeConfig";
 
 export type LLMMessage = {
@@ -142,6 +144,51 @@ export async function callOpenAI(
   const reply = String(data?.choices?.[0]?.message?.content ?? "").trim();
   if (!reply) {
     throw new Error("OpenAI returned an empty reply");
+  }
+
+  return {
+    text: reply,
+    inputTokens: Number(data?.usage?.prompt_tokens ?? 0) || 0,
+    outputTokens: Number(data?.usage?.completion_tokens ?? 0) || 0,
+  };
+}
+
+export async function callOpenRouter(
+  modelKey: string,
+  messages: LLMMessage[],
+  systemPrompt: string
+): Promise<LLMResponse> {
+  if (!OPENROUTER_API_KEY) {
+    throw new Error("openrouter_unavailable");
+  }
+
+  const baseUrl = OPENROUTER_BASE_URL.replace(/\/+$/, "");
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+      "HTTP-Referer": "https://furnituredistributors.wolf.discount/fd/",
+      "X-Title": "WOLF FD BotBot",
+    },
+    body: JSON.stringify({
+      model: modelKey,
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
+      temperature: 0.4,
+      max_tokens: 1024,
+    }),
+  });
+
+  const data = (await response.json().catch(() => ({}))) as any;
+  if (!response.ok) {
+    throw new Error(
+      `OpenRouter error: ${response.status} ${data?.error?.message ?? "request_failed"}`
+    );
+  }
+
+  const reply = String(data?.choices?.[0]?.message?.content ?? "").trim();
+  if (!reply) {
+    throw new Error("OpenRouter returned an empty reply");
   }
 
   return {

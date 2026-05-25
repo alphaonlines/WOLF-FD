@@ -150,7 +150,7 @@ export function isLocalProvider(provider: string): boolean {
 }
 
 export function defaultModelAllowed(provider: string): boolean {
-  return isLocalProvider(provider);
+  return isLocalProvider(provider) || provider === "openrouter";
 }
 
 export async function resolveModelAccess(

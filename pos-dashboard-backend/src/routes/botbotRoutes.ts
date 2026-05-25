@@ -5,6 +5,7 @@ import {
   callClaude,
   callOllama,
   callOpenAI,
+  callOpenRouter,
   type LLMMessage,
 } from "../llmClient";
 import {
@@ -23,9 +24,14 @@ import {
   BOTBOT_LOCAL_AI_URL,
   BOTBOT_ENABLED,
   BOTBOT_LEDGER_TOKEN,
+  DEFAULT_OLLAMA_NODE_KEY,
+  OLLAMA_NODE_CONFIGS,
   OLLAMA_BASE_URL,
   OLLAMA_PRIMARY_MODEL,
   OLLAMA_PRIMARY_NODE_LABEL,
+  OPENAI_API_KEY,
+  ANTHROPIC_API_KEY,
+  OPENROUTER_API_KEY,
 } from "../runtimeConfig";
 
 type BotBotRoutesDeps = {
@@ -439,6 +445,20 @@ async function fetchOllamaTags(baseUrl: string) {
   }
 }
 
+const cloudModelConfigured = (provider: string) => {
+  if (provider === "openai") return Boolean(OPENAI_API_KEY);
+  if (provider === "anthropic") return Boolean(ANTHROPIC_API_KEY);
+  if (provider === "openrouter") return Boolean(OPENROUTER_API_KEY);
+  return true;
+};
+
+const localModelAvailable = (row: any, detectedModels: Set<string>, ollamaReachable: boolean) => {
+  if (!isLocalProvider(String(row.provider ?? ""))) return true;
+  if (!ollamaReachable) return false;
+  const modelName = String(row.ollama_model_name || row.model_key || "").trim();
+  return String(row.model_key) === "local" || !modelName || detectedModels.has(modelName);
+};
+
 function checkRateLimit(userId: number): boolean {
   const now = Date.now();
   const timestamps = rateLimitMap.get(userId) ?? [];
@@ -766,6 +786,8 @@ export function registerBotBotRoutes({
 
   app.get("/api/botbot/models", async (req, res) => {
     const user = toAuthUser(getAuthUser(req)!);
+    const tagInfo = await fetchOllamaTags(OLLAMA_BASE_URL);
+    const detectedModels = new Set(tagInfo.models);
     const r = await pool.query(
       `SELECT model_key, display_name, provider, ollama_model_name, free_token_quota, sort_order
        FROM botbot_model_config
@@ -774,18 +796,21 @@ export function registerBotBotRoutes({
     );
     const models = [];
     for (const row of r.rows) {
+      const provider = String(row.provider ?? "");
+      if (!cloudModelConfigured(provider)) continue;
+      if (!localModelAvailable(row, detectedModels, tagInfo.reachable)) continue;
       const access = await resolveModelAccess(
         pool,
         user,
         String(row.model_key),
-        String(row.provider),
+        provider,
         parseQuota(row.free_token_quota, 0)
       );
       if (!access.allowed) continue;
       models.push({
         modelKey: String(row.model_key),
         displayName: String(row.display_name ?? row.model_key),
-        provider: String(row.provider ?? ""),
+        provider,
         freeTokenQuota: access.tokenQuota,
         sortOrder: Number(row.sort_order ?? 0),
         accessSource: access.source,
@@ -795,34 +820,38 @@ export function registerBotBotRoutes({
   });
 
   app.get("/api/botbot/runtime", async (req, res) => {
-    const tagInfo = await fetchOllamaTags(OLLAMA_BASE_URL);
+    const nodeStatuses = await Promise.all(
+      OLLAMA_NODE_CONFIGS.map(async (node) => {
+        const tagInfo = await fetchOllamaTags(node.baseUrl);
+        return {
+          key: node.key,
+          label: node.label,
+          host: node.host,
+          baseUrl: node.baseUrl,
+          description: node.description,
+          reachable: tagInfo.reachable,
+          models: tagInfo.models,
+          modelCount: tagInfo.models.length,
+          isDefault: node.key === DEFAULT_OLLAMA_NODE_KEY,
+          isSelected: node.key === DEFAULT_OLLAMA_NODE_KEY,
+        };
+      })
+    );
+    const primaryNode = nodeStatuses.find((node) => node.key === DEFAULT_OLLAMA_NODE_KEY) ?? nodeStatuses[0];
 
     res.json({
       runtime: {
         enabled: BOTBOT_ENABLED,
-        endpointKey: "alphaai",
-        endpointLabel: "AlphaAI model endpoint",
-        endpointUrl: OLLAMA_BASE_URL,
+        endpointKey: primaryNode?.key ?? "alphaai",
+        endpointLabel: primaryNode?.label ?? "AlphaAI model endpoint",
+        endpointUrl: primaryNode?.baseUrl ?? OLLAMA_BASE_URL,
         localAiPlatformUrl: BOTBOT_LOCAL_AI_URL,
         primaryNodeLabel: OLLAMA_PRIMARY_NODE_LABEL,
         primaryModel: OLLAMA_PRIMARY_MODEL,
-        reachable: tagInfo.reachable,
-        models: tagInfo.models,
-        modelCount: tagInfo.models.length,
-        nodes: [
-          {
-            key: "alphaai",
-            label: "AlphaAI",
-            host: OLLAMA_PRIMARY_NODE_LABEL,
-            baseUrl: OLLAMA_BASE_URL,
-            description: "Shared AI endpoint for all BotBot model choices.",
-            reachable: tagInfo.reachable,
-            models: tagInfo.models,
-            modelCount: tagInfo.models.length,
-            isDefault: true,
-            isSelected: true,
-          },
-        ],
+        reachable: Boolean(primaryNode?.reachable),
+        models: primaryNode?.models ?? [],
+        modelCount: primaryNode?.modelCount ?? 0,
+        nodes: nodeStatuses,
       },
     });
   });
@@ -1176,6 +1205,12 @@ export function registerBotBotRoutes({
           history,
           systemPrompt
         );
+      } else if (model.provider === "openrouter") {
+        llmResponse = await callOpenRouter(
+          model.ollama_model_name || conv.model_key,
+          history,
+          systemPrompt
+        );
       } else if (model.provider === "anthropic") {
         llmResponse = await callClaude(conv.model_key, history, systemPrompt);
       } else {
@@ -1193,6 +1228,14 @@ export function registerBotBotRoutes({
         errMsg =
           "OpenAI models are not configured on this server yet. Please use Local AI.";
         errorCode = "openai_not_configured";
+      } else if (err.message === "openrouter_unavailable") {
+        errMsg =
+          "OpenRouter models are not configured on this server yet. Please use Local AI.";
+        errorCode = "openrouter_not_configured";
+      } else if (err.message?.includes("OpenRouter error")) {
+        errMsg =
+          "OpenRouter rejected the model request. Check the OpenRouter API key, then try again.";
+        errorCode = "openrouter_request_failed";
       } else if (err.message?.includes("BotBot AI platform")) {
         errMsg =
           "Local AI is reachable through BotBot, but the MSI platform could not complete the request. Please try again.";
