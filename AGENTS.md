@@ -62,6 +62,13 @@
 
 ## Recent Running Log
 
+- 2026-05-24 22:00 EDT - Boxed Furniture Distributors migration assets into WOLF-FD.
+  - Files: `public/furnituredistributors/`, `scripts/manager-specials/`, `scripts/migration/`, `docs/migration/fd-server-inventory-2026-05-24.md`, `docs/plans/fd-consolidation-migration-plan.md`, `AGENTS.md`.
+  - Changes: copied the live FD marketing/Manager Specials static output into the repo, archived the legacy Manager Specials Python upload service, added safe DB verification and post-move smoke-check scripts, and documented the FD server inventory plus consolidation plan.
+  - Commands/tests: syntax checks PASS for migration shell scripts and legacy Manager Specials Python; secret-pattern scan found no matches; frontend `npm test` PASS (16 tests), backend `npm test -- --run` PASS (21 tests), frontend `npm run build` PASS with FD static pages present in `dist/furnituredistributors/`, backend `npm run build` PASS.
+  - Deploy: not deployed; this is migration packaging only.
+  - Remaining risk: Manager Specials still needs a real WOLF-FD Express route/module to remove the standalone Python `127.0.0.1:8000` service.
+
 - 2026-05-24 21:46 EDT - Consolidated dirty WOLF-FD work into a cleanup integration branch.
   - Files: `AGENTS.md`, `package.json`, `package-lock.json`, Pulse GA4 frontend/backend files, Stripe/Shopify top-up routes, Den Recorder routes/workspace/service, Docker portability files, WOLFbot pricing page, and local planning docs.
   - Changes: merged GitHub `botbot-tutorial-revive`, `move/docker-portable`, local `feat/den-recorder-cleanup`, and uncommitted server/local work into `integration/wolf-fd-cleanup`; added the Repo Cleanliness Rule so future work starts clean, branches by task, and never leaves mystery dirt.
