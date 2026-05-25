@@ -16,12 +16,17 @@
    - `cd WOLF-FD`
    - `git checkout botbot-tutorial-revive`
 2. Copy env sample values into `.env` and fill secrets:
-   - `cp .env.production .env` (then edit)
+   - `cp .env.example .env` (then edit)
+   - Never commit `.env`, tokens, DB dumps, uploads, or local recovery notes.
 3. Start the stack:
    - `./deploy.sh`
 4. Verify:
    - Frontend: `http://<host>:8080`
    - API health: `http://<host>:5057/health`
+5. Optional legacy-hosted Smart Calc sync paths:
+   - `sudo cp -r public/smartcalc/* /srv/www/wolf.discount/smartcalc/`
+   - `sudo cp -r public/smartcalc/* /srv/www/wolf.discount/furnituredistributors/smartcalc/`
+   - `sudo cp public/tools/smart-pricing-calculator.html /srv/www/wolf.discount/fd/tools/`
 
 ## Notes for Alphahs2 website cutover
 

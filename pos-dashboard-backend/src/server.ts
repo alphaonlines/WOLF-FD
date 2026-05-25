@@ -1,6 +1,11 @@
 import "dotenv/config";
 import dotenv from "dotenv";
-dotenv.config({ path: "/home/alphahs/WOLF-CENTRAL.env" });
+
+const extraEnvFile = process.env.WOLF_FD_DOTENV_FILE;
+if (extraEnvFile) {
+  dotenv.config({ path: extraEnvFile });
+}
+
 import http from "http";
 import express from "express";
 import cors from "cors";

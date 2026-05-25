@@ -1,7 +1,6 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: wolffd-postgres
     env_file:
       - .env
     environment:
@@ -9,7 +8,7 @@ services:
       POSTGRES_USER: ${PGUSER:-salesapp}
       POSTGRES_PASSWORD: ${PGPASSWORD:-dev_password_change_me}
     ports:
-      - "5433:5432"
+      - "${PGHOST_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./pos-dashboard-backend/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
@@ -22,12 +21,11 @@ services:
     restart: unless-stopped
 
   backend:
-    image: alphahs/fd-pos-api:local
+    image: wolffd-pos-api:local
     build:
       context: .
       dockerfile: Dockerfile.backend
       target: runner
-    container_name: wolffd-backend
     env_file:
       - .env
     environment:
@@ -43,11 +41,14 @@ services:
     volumes:
       - ./pos-dashboard-backend/incoming:/app/incoming
       - ./pos-dashboard-backend/processed:/app/processed
+      - ./pos-dashboard-backend/manufacturer-pricebooks/holding:/app/manufacturer-pricebooks/holding
+      - ./pos-dashboard-backend/board-uploads:/app/board-uploads
+      - ./pos-dashboard-backend/social-uploads:/app/social-uploads
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5057/health"]
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:5057/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -60,7 +61,6 @@ services:
       dockerfile: Dockerfile.frontend
       args:
         VITE_POS_API_BASE_URL: ${VITE_POS_API_BASE_URL:-/fd/api}
-    container_name: wolffd-frontend
     ports:
       - "8080:80"
     depends_on:

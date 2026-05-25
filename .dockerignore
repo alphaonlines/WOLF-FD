@@ -9,6 +9,7 @@ yarn-error.log*
 .git
 .gitignore
 .env
+.env.production
 dist
 dist-ssr
 pos-dashboard-backend/node_modules

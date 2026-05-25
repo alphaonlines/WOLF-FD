@@ -49,6 +49,73 @@ From backend folder:
 - Database connectivity uses host IP with Port **5433** to bridge Swarm and standard Docker networks.
 - For historical context, see `PROJECT_NOTES.md` and `AGENTS.md`.
 
+## Migration/host-move onboarding (reproducible)
+
+Use this as the minimum process when moving WOLF FD to a new host.
+
+### What to commit for sharing
+- Application source and runtime config: `src/`, `components/`, `services/`, `public/`, `pos-dashboard-backend/src/`, `pos-dashboard-backend/db/schema.sql`.
+- Deployment manifests: `Dockerfile.*`, `docker-compose.yml`, `deploy.sh`, `nginx.conf`.
+- Validation and migration docs: `README.md`, `MOVE_AND_HOSTING_BRIEF.md`, `.env.example`, docs/scripts used for checks.
+
+### What to keep out of git
+- Environment files: `.env`, `.env.*`, `pos-dashboard-backend/.env`, `WOLF-CENTRAL.env` and any real secrets.
+- Runtime data and generated artifacts: `dist`, `node_modules`, `pos-dashboard-backend/node_modules`, `pos-dashboard-backend/.venv`, uploaded/import files, DB dumps/backups, private keys/certs.
+- Any local host-only overrides or one-off recovery notes.
+
+### Branch / sharing process
+1. Work from a migration branch created from the current host baseline (currently `botbot-tutorial-revive`):
+   - `git checkout botbot-tutorial-revive`
+   - `git pull`
+   - `git switch -c move/<YYYYMMDD>-wolf-fd-host`
+2. Push branch and keep PRs docs+ops focused (no feature churn).
+3. Merge only after verification and sign-off, then tag if needed.
+
+### Seed a fresh environment on target host
+```bash
+# start fresh
+git clone https://github.com/alphaonlines/WOLF-FD.git
+cd WOLF-FD
+cp .env.example .env   # then fill real values
+chmod 600 .env
+
+# generate strong values if you need fresh secrets
+# generate 24+ random chars: $(openssl rand -base64 24)
+
+# required runtime values
+PGPASSWORD=<strong random password>
+AUTH_BOOTSTRAP_EMAIL=owner@example.com
+AUTH_BOOTSTRAP_PASSWORD=<one-time initial password>
+GOOGLE_WORKSPACE_CLIENT_ID=<from Google OAuth if using Workspace sign-in>
+OPENAI_API_KEY=<optional>
+```
+
+If you run backend services outside Docker compose, keep your secret store in a host-local env file path and set permissions tightly (this repo currently also documents `/home/alphahs/WOLF-CENTRAL.env` as one such host file).
+
+Validate, then deploy:
+```bash
+./deploy.sh
+
+# optional non-container artifact sync (legacy site mounts)
+npm run build
+sudo mkdir -p /srv/www/wolf.discount/fd/tools \
+  /srv/www/wolf.discount/fd/smartcalc \
+  /srv/www/wolf.discount/smartcalc \
+  /srv/www/wolf.discount/furnituredistributors/smartcalc
+sudo cp -r dist/* /srv/www/wolf.discount/fd/
+sudo cp -r public/tools/smart-pricing-calculator.html /srv/www/wolf.discount/fd/tools/
+sudo cp -r public/smartcalc/* /srv/www/wolf.discount/fd/smartcalc/
+sudo cp -r public/smartcalc/* /srv/www/wolf.discount/smartcalc/
+sudo cp -r public/smartcalc/* /srv/www/wolf.discount/furnituredistributors/smartcalc/
+
+# quick checks
+curl -fsS http://127.0.0.1:8080
+curl -fsS http://127.0.0.1:5057/health
+curl -fsS https://furnituredistributors.wolf.discount/fd/api/health
+```
+
+If any secret rotates in a migration, update only `.env`/host secret file and never paste it into git notes.
+
 ## Employee Access Rollout
 
 - Password login still exists as a temporary fallback.
@@ -94,4 +161,4 @@ Public auth endpoints used by the frontend:
 
 ## Current State Note (2026-02-06)
 
-The live nginx config routes `/fd/api/` to `127.0.0.1:5057`. The Docker `alphahs/fd-pos-api:local` container is published on host `:5057`, and no listener was found on `:5055`. This means nginx and the backend deployment are aligned on `5057`.
+The live nginx config routes `/fd/api/` to `127.0.0.1:5057`. The Docker backend is now published on host `:5057`, and no listener was found on `:5055` in this repo. This aligns nginx and container deployment on `5057`.
