@@ -28,6 +28,7 @@ export const PUBLIC_AUTH_PATHS = new Set([
   "/auth/google/verify-domain",
   "/auth/google/request-access",
   "/botbot/external/usage",
+  "/botbot/external/usage-status",
 ]);
 export const GOOGLE_WORKSPACE_CLIENT_ID = envString("GOOGLE_WORKSPACE_CLIENT_ID", "");
 export const GOOGLE_WORKSPACE_DOMAIN = (envString("GOOGLE_WORKSPACE_DOMAIN", "furnituredistributors.net") || "furnituredistributors.net").toLowerCase();
