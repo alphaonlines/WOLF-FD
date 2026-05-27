@@ -352,6 +352,33 @@ const App: React.FC = () => {
   const [requestedShopSubTab, setRequestedShopSubTab] = useState<ShopSubTab>('calculator');
   const [requestedShopSubTabToken, setRequestedShopSubTabToken] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isDesktopSidebar = () =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches;
+  const openSidebarForDesktopHover = () => {
+    if (isDesktopSidebar()) {
+      setSidebarOpen(true);
+    }
+  };
+  const collapseSidebarForDesktopHover = () => {
+    if (isDesktopSidebar()) {
+      setSidebarOpen(false);
+    }
+  };
+  const toggleSidebarFromButton = () => {
+    setSidebarOpen((current) => !current);
+  };
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return undefined;
+    const mobileQuery = window.matchMedia('(max-width: 1023px)');
+    const shouldLockScroll = sidebarOpen && mobileQuery.matches;
+    const previousOverflow = document.body.style.overflow;
+    if (shouldLockScroll) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [sidebarOpen]);
   const closeSidebarForMobile = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       setSidebarOpen(false);
@@ -1207,11 +1234,22 @@ const App: React.FC = () => {
           <button
             type="button"
             aria-label="Close navigation"
-            className="fixed inset-0 z-20 bg-slate-950/60 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-20 bg-slate-950/72 backdrop-blur-md lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
         <aside
+          id="fd-sidebar-menu"
+          aria-label="Module navigation"
+          data-sidebar-hover-collapse="enabled"
+          onMouseEnter={openSidebarForDesktopHover}
+          onMouseLeave={collapseSidebarForDesktopHover}
+          onFocus={openSidebarForDesktopHover}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+              collapseSidebarForDesktopHover();
+            }
+          }}
           className={`fixed inset-y-0 left-0 h-[100dvh] w-[min(18rem,86vw)] border-r text-white backdrop-blur-xl transition-all duration-300 ease-in-out z-30 flex flex-col lg:z-20 ${
             sidebarOpen ? 'translate-x-0 lg:w-64' : '-translate-x-full lg:translate-x-0 lg:w-20'
           } ${
@@ -1222,11 +1260,13 @@ const App: React.FC = () => {
         >
           <button
             data-tour-id="sidebar-toggle"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+            onClick={toggleSidebarFromButton}
             className={`h-24 w-full flex items-center justify-center border-b transition-colors ${
               isDarkMode ? 'border-white/6 hover:bg-white/5' : 'border-slate-200/80 hover:bg-slate-50/90'
             }`}
             aria-label="Toggle sidebar"
+            aria-controls="fd-sidebar-menu"
+            aria-expanded={sidebarOpen}
           >
             {sidebarOpen ? (
               <div className="flex items-center gap-3">
@@ -1393,7 +1433,10 @@ const App: React.FC = () => {
           </div>
         </aside>
 
-      <main className={`min-w-0 flex-1 transition-[margin] duration-300 ml-0 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'}`}>
+      <main
+        data-main-menu-dimmed={sidebarOpen ? 'true' : 'false'}
+        className={`min-w-0 flex-1 transition-[margin,filter] duration-300 ml-0 ${sidebarOpen ? 'lg:ml-64 blur-[1.5px] brightness-50 lg:blur-[1px] lg:brightness-75' : 'lg:ml-20 blur-0 brightness-100'}`}
+      >
         <header className={`min-h-20 backdrop-blur-xl sticky top-0 z-10 px-3 py-3 sm:px-4 lg:h-20 lg:px-8 lg:py-0 flex flex-wrap items-center gap-3 lg:flex-nowrap shadow-sm border-b ${
             isDarkMode
               ? 'bg-[#121b27]/78 border-slate-700/60'
@@ -1403,13 +1446,15 @@ const App: React.FC = () => {
               <button
                 type="button"
                 data-tour-id="sidebar-toggle-mobile"
-                onClick={() => setSidebarOpen(true)}
+                onClick={toggleSidebarFromButton}
                 className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border transition lg:hidden ${
                   isDarkMode
                     ? 'border-slate-700 bg-slate-900/80 text-slate-200 hover:bg-slate-800'
                     : 'border-slate-200 bg-white/80 text-slate-700 hover:bg-white'
                 }`}
-                aria-label="Open navigation"
+                aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+                aria-controls="fd-sidebar-menu"
+                aria-expanded={sidebarOpen}
               >
                 <Menu size={20} />
               </button>
