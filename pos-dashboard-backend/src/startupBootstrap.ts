@@ -651,6 +651,82 @@ async function ensureCrmSchema(pool: Pool) {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_stage_due ON crm_customers(stage, due_date, id);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_name_lower ON crm_customers((lower(name)));`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_notes_lower ON crm_customers((lower(notes)));`);
+
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_history_phone_digits10 ON crm_ups_history((right(regexp_replace(COALESCE(phone, ''), '\D', '', 'g'), 10)));`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_ups_history_email_lower ON crm_ups_history((lower(email)));`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customers_phone_digits10 ON crm_customers((right(regexp_replace(COALESCE(phone, ''), '\D', '', 'g'), 10)));`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_pos_sales_phone_digits10 ON pos_sales((right(regexp_replace(COALESCE(phone, ''), '\D', '', 'g'), 10)));`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS crm_customer_quotes (
+      id TEXT PRIMARY KEY,
+      customer_id TEXT NULL REFERENCES crm_customers(id) ON DELETE SET NULL,
+      customer_name TEXT NOT NULL DEFAULT '',
+      first_name TEXT NOT NULL DEFAULT '',
+      last_name TEXT NOT NULL DEFAULT '',
+      phone TEXT NOT NULL DEFAULT '',
+      email TEXT NOT NULL DEFAULT '',
+      store TEXT NOT NULL DEFAULT 'FD7',
+      source TEXT NOT NULL DEFAULT 'smart_calc',
+      source_context TEXT NOT NULL DEFAULT '',
+      quote_total NUMERIC NULL,
+      subtotal_before_tax NUMERIC NULL,
+      tax_amount NUMERIC NULL,
+      discount_total NUMERIC NULL,
+      quote_valid_days INTEGER NULL,
+      quote_valid_until DATE NULL,
+      sales_order_notes TEXT NOT NULL DEFAULT '',
+      quote_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_by_user_id BIGINT NULL,
+      created_by_name TEXT NOT NULL DEFAULT '',
+      created_by_email TEXT NOT NULL DEFAULT '',
+      printed_at TIMESTAMPTZ NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS id TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS customer_id TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS customer_name TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS first_name TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS last_name TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS phone TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS email TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS store TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS source TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS source_context TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS quote_total NUMERIC;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS subtotal_before_tax NUMERIC;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS tax_amount NUMERIC;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS discount_total NUMERIC;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS quote_valid_days INTEGER;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS quote_valid_until DATE;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS sales_order_notes TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS quote_snapshot JSONB;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS created_by_user_id BIGINT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS created_by_name TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS created_by_email TEXT;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS printed_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN customer_name SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN first_name SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN last_name SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN phone SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN email SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN store SET DEFAULT 'FD7';`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN source SET DEFAULT 'smart_calc';`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN source_context SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN sales_order_notes SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN quote_snapshot SET DEFAULT '{}'::jsonb;`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN created_by_name SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN created_by_email SET DEFAULT '';`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN created_at SET DEFAULT now();`);
+  await pool.query(`ALTER TABLE crm_customer_quotes ALTER COLUMN updated_at SET DEFAULT now();`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customer_quotes_customer_id ON crm_customer_quotes(customer_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customer_quotes_created_at ON crm_customer_quotes(created_at);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customer_quotes_phone_digits ON crm_customer_quotes((regexp_replace(COALESCE(phone, ''), '\D', '', 'g')));`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_customer_quotes_email_lower ON crm_customer_quotes((lower(email)));`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_name_lower ON crm_leads((lower(name)));`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_notes_lower ON crm_leads((lower(notes)));`);
   await pool.query(`

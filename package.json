@@ -1,8 +1,8 @@
 {
   "name": "furniture-distributors-dashboard",
   "private": true,
-  "version": "0.5.24.2341",
-  "displayVersion": "1.5.28.1517",
+  "version": "0.5.28.1645",
+  "displayVersion": "1.5.28.1645",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +10,7 @@
     "build": "npm run sync:smartcalc-version && vite build",
     "test": "vitest run",
     "preview": "vite preview",
+    "test:smartcalc-customer-quote": "node scripts/smartcalc-customer-quote-smoke.cjs",
     "test:smartcalc-margin-discounts": "node scripts/smartcalc-margin-discount-smoke.cjs",
     "test:smartcalc-number-input-wheel": "node scripts/smartcalc-number-input-wheel-smoke.cjs",
     "test:smartcalc-tutorial": "node scripts/smartcalc-tutorial-smoke.cjs"

@@ -6,9 +6,46 @@ type SmartPricingCalculatorPageProps = {
   isDarkMode: boolean;
 };
 
+const SMART_CALC_TOOL_URL = `${import.meta.env.BASE_URL}tools/smart-pricing-calculator.html`;
+const SMART_CALC_VERSION_MANIFEST_URL = `${import.meta.env.BASE_URL}smartcalc/version.json`;
+
+function smartCalcUrlForVersion(version: string): string {
+  return `${SMART_CALC_TOOL_URL}?v=${encodeURIComponent(version)}`;
+}
+
+function cleanManifestVersion(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
 const SmartPricingCalculatorPage: React.FC<SmartPricingCalculatorPageProps> = ({ isDarkMode }) => {
-  const calculatorUrl = `${import.meta.env.BASE_URL}tools/smart-pricing-calculator.html?v=${encodeURIComponent(APP_VERSION)}`;
+  const [calculatorUrl, setCalculatorUrl] = React.useState(() => smartCalcUrlForVersion(APP_VERSION));
   const calculatorFrameRef = React.useRef<HTMLIFrameElement | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const fallbackUrl = smartCalcUrlForVersion(APP_VERSION);
+    const manifestUrl = `${SMART_CALC_VERSION_MANIFEST_URL}?ts=${Date.now()}`;
+
+    fetch(manifestUrl, { cache: "no-store", credentials: "same-origin" })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Smart Calc manifest returned ${response.status}`);
+        return response.json() as Promise<{ version?: unknown; displayVersion?: unknown }>;
+      })
+      .then((manifest) => {
+        const runtimeVersion = cleanManifestVersion(manifest.version) ?? cleanManifestVersion(manifest.displayVersion) ?? APP_VERSION;
+        if (!cancelled) setCalculatorUrl(smartCalcUrlForVersion(runtimeVersion));
+      })
+      .catch(() => {
+        if (!cancelled) setCalculatorUrl(fallbackUrl);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const startTutorial = () => {
     calculatorFrameRef.current?.contentWindow?.postMessage(
       { type: "FD_SMART_CALC_START_TUTORIAL" },
@@ -68,6 +105,7 @@ const SmartPricingCalculatorPage: React.FC<SmartPricingCalculatorPageProps> = ({
           ref={calculatorFrameRef}
           title="Smart Calc"
           src={calculatorUrl}
+          data-smartcalc-runtime-manifest="true"
           className="min-h-0 w-full flex-1 border-0"
         />
       </section>

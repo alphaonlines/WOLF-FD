@@ -145,6 +145,7 @@ ALTER TABLE pos_sales ADD COLUMN IF NOT EXISTS sale_status TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_pos_sales_date ON pos_sales(sale_date);
 CREATE INDEX IF NOT EXISTS idx_pos_sales_salesperson ON pos_sales(salesperson);
+CREATE INDEX IF NOT EXISTS idx_pos_sales_phone_digits10 ON pos_sales((right(regexp_replace(COALESCE(phone, ''), '\\D', '', 'g'), 10)));
 
 
 CREATE INDEX IF NOT EXISTS idx_pos_sales_location ON pos_sales(location);
@@ -738,6 +739,8 @@ ALTER TABLE crm_ups_active_customers ALTER COLUMN updated_at SET DEFAULT now();
 CREATE INDEX IF NOT EXISTS idx_crm_ups_active_customers_queue_entry_id ON crm_ups_active_customers(queue_entry_id);
 CREATE INDEX IF NOT EXISTS idx_crm_ups_active_customers_history_id ON crm_ups_active_customers(history_id);
 CREATE INDEX IF NOT EXISTS idx_crm_ups_active_customers_rep_user_id ON crm_ups_active_customers(rep_user_id);
+CREATE INDEX IF NOT EXISTS idx_crm_ups_history_phone_digits10 ON crm_ups_history((right(regexp_replace(COALESCE(phone, ''), '\\D', '', 'g'), 10)));
+CREATE INDEX IF NOT EXISTS idx_crm_ups_history_email_lower ON crm_ups_history((lower(email)));
 
 CREATE TABLE IF NOT EXISTS crm_customers (
   id          TEXT PRIMARY KEY,
@@ -797,9 +800,82 @@ ALTER TABLE crm_customers ALTER COLUMN created_at SET DEFAULT now();
 ALTER TABLE crm_customers ALTER COLUMN updated_at SET DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_crm_customers_phone ON crm_customers(phone);
+CREATE INDEX IF NOT EXISTS idx_crm_customers_phone_digits10 ON crm_customers((right(regexp_replace(COALESCE(phone, ''), '\\D', '', 'g'), 10)));
 CREATE INDEX IF NOT EXISTS idx_crm_customers_email_lower ON crm_customers((lower(email)));
 CREATE INDEX IF NOT EXISTS idx_crm_customers_owner_user_id ON crm_customers(owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_stage_due ON crm_customers(stage, due_date, id);
+
+CREATE TABLE IF NOT EXISTS crm_customer_quotes (
+  id TEXT PRIMARY KEY,
+  customer_id TEXT NULL REFERENCES crm_customers(id) ON DELETE SET NULL,
+  customer_name TEXT NOT NULL DEFAULT '',
+  first_name TEXT NOT NULL DEFAULT '',
+  last_name TEXT NOT NULL DEFAULT '',
+  phone TEXT NOT NULL DEFAULT '',
+  email TEXT NOT NULL DEFAULT '',
+  store TEXT NOT NULL DEFAULT 'FD7',
+  source TEXT NOT NULL DEFAULT 'smart_calc',
+  source_context TEXT NOT NULL DEFAULT '',
+  quote_total NUMERIC NULL,
+  subtotal_before_tax NUMERIC NULL,
+  tax_amount NUMERIC NULL,
+  discount_total NUMERIC NULL,
+  quote_valid_days INTEGER NULL,
+  quote_valid_until DATE NULL,
+  sales_order_notes TEXT NOT NULL DEFAULT '',
+  quote_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_by_user_id BIGINT NULL,
+  created_by_name TEXT NOT NULL DEFAULT '',
+  created_by_email TEXT NOT NULL DEFAULT '',
+  printed_at TIMESTAMPTZ NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS id TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS customer_id TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS customer_name TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS first_name TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS last_name TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS store TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS source TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS source_context TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS quote_total NUMERIC;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS subtotal_before_tax NUMERIC;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS tax_amount NUMERIC;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS discount_total NUMERIC;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS quote_valid_days INTEGER;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS quote_valid_until DATE;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS sales_order_notes TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS quote_snapshot JSONB;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS created_by_user_id BIGINT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS created_by_name TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS created_by_email TEXT;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS printed_at TIMESTAMPTZ;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+ALTER TABLE crm_customer_quotes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
+ALTER TABLE crm_customer_quotes ALTER COLUMN customer_name SET DEFAULT '';
+ALTER TABLE crm_customer_quotes ALTER COLUMN first_name SET DEFAULT '';
+ALTER TABLE crm_customer_quotes ALTER COLUMN last_name SET DEFAULT '';
+ALTER TABLE crm_customer_quotes ALTER COLUMN phone SET DEFAULT '';
+ALTER TABLE crm_customer_quotes ALTER COLUMN email SET DEFAULT '';
+ALTER TABLE crm_customer_quotes ALTER COLUMN store SET DEFAULT 'FD7';
+ALTER TABLE crm_customer_quotes ALTER COLUMN source SET DEFAULT 'smart_calc';
+ALTER TABLE crm_customer_quotes ALTER COLUMN source_context SET DEFAULT '';
+ALTER TABLE crm_customer_quotes ALTER COLUMN sales_order_notes SET DEFAULT '';
+ALTER TABLE crm_customer_quotes ALTER COLUMN quote_snapshot SET DEFAULT '{}'::jsonb;
+ALTER TABLE crm_customer_quotes ALTER COLUMN created_by_name SET DEFAULT '';
+ALTER TABLE crm_customer_quotes ALTER COLUMN created_by_email SET DEFAULT '';
+ALTER TABLE crm_customer_quotes ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE crm_customer_quotes ALTER COLUMN updated_at SET DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_crm_customer_quotes_customer_id ON crm_customer_quotes(customer_id);
+CREATE INDEX IF NOT EXISTS idx_crm_customer_quotes_created_at ON crm_customer_quotes(created_at);
+CREATE INDEX IF NOT EXISTS idx_crm_customer_quotes_phone_digits ON crm_customer_quotes((regexp_replace(COALESCE(phone, ''), '\\D', '', 'g')));
+CREATE INDEX IF NOT EXISTS idx_crm_customer_quotes_email_lower ON crm_customer_quotes((lower(email)));
 
 CREATE TABLE IF NOT EXISTS board_posts (
   id             BIGSERIAL PRIMARY KEY,

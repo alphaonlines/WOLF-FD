@@ -10,6 +10,7 @@ import {
   SAFE_TOTAL_FINANCE_AMT,
 } from "./sqlFields";
 import { registerCrmRoutes } from "./routes/crmRoutesV2";
+import { registerCrmQuoteRoutes } from "./routes/crmQuoteRoutes";
 import { registerTaskRoutes } from "./routes/tasksRoutes";
 import { registerAdminRoutes } from "./routes/adminRoutes";
 import { registerAuthRoutes } from "./routes/authRoutes";
@@ -169,6 +170,7 @@ export function registerAllRoutes({
   registerObjectionVotesRoutes(app, pool);
   registerCustomObjectionsRoutes(app, pool);
   registerCrmRoutes(app, pool);
+  registerCrmQuoteRoutes(app, pool);
   registerBoardRoutes(app, pool, boardUploadsDir, socialPublicBaseUrl);
   registerManufacturerPricebookRoutes({
     app,

@@ -444,14 +444,14 @@
 
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.28.1517">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.28.1645">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.28.1517</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.28.1645</p>
             <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <button id="smartcalc-tutorial-btn" type="button" class="inline-flex items-center justify-center rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown transition">Start guided tutorial</button>
                 <button id="top-reset-btn" type="button" class="inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
@@ -977,6 +977,43 @@
         </footer>
     </div>
 
+    <div id="smartcalc-customer-modal" class="fixed inset-0 z-[120] hidden items-center justify-center bg-black/50 px-4 py-6" aria-hidden="true">
+        <section class="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="smartcalc-customer-modal-title" aria-describedby="smartcalc-customer-modal-description">
+            <div class="space-y-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange">Save quote before print</p>
+                <h2 id="smartcalc-customer-modal-title" class="text-2xl font-black text-brand-brown">Customer quote details</h2>
+                <p id="smartcalc-customer-modal-description" class="text-sm leading-6 text-gray-600">Capture the customer so this Smart Calc quote can be saved to CRM before the customer copy prints.</p>
+            </div>
+            <form id="smartcalc-customer-form" class="mt-5 space-y-4">
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="smartcalc-customer-first-name" class="block text-sm font-semibold text-brand-brown">First name</label>
+                        <input id="smartcalc-customer-first-name" type="text" autocomplete="given-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                    </div>
+                    <div>
+                        <label for="smartcalc-customer-last-name" class="block text-sm font-semibold text-brand-brown">Last name</label>
+                        <input id="smartcalc-customer-last-name" type="text" autocomplete="family-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                    </div>
+                    <div>
+                        <label for="smartcalc-customer-phone" class="block text-sm font-semibold text-brand-brown">Phone</label>
+                        <input id="smartcalc-customer-phone" type="tel" autocomplete="tel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2" placeholder="Customer phone">
+                    </div>
+                    <div>
+                        <label for="smartcalc-customer-email" class="block text-sm font-semibold text-brand-brown">Email</label>
+                        <input id="smartcalc-customer-email" type="email" autocomplete="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2" placeholder="Customer email">
+                    </div>
+                </div>
+                <p class="text-xs leading-5 text-gray-500">First and last name are required. Phone or email is required for CRM matching.</p>
+                <div id="smartcalc-customer-status" class="min-h-[1.25rem] rounded-md px-3 py-2 text-sm font-medium text-gray-600" aria-live="polite"></div>
+                <div class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+                    <button id="smartcalc-customer-cancel" type="button" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">Cancel</button>
+                    <button id="smartcalc-customer-print-without-save" type="button" class="hidden rounded-md border border-amber-500 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">Print without saving</button>
+                    <button id="smartcalc-customer-save-print" type="submit" class="rounded-md bg-brand-orange px-4 py-2 text-sm font-semibold text-white hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange">Save quote & print</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
     <div id="smartcalc-tour-overlay" class="smartcalc-tour-overlay" aria-hidden="true">
         <div id="smartcalc-tour-dim-top" class="smartcalc-tour-dim-panel" aria-hidden="true"></div>
         <div id="smartcalc-tour-dim-left" class="smartcalc-tour-dim-panel" aria-hidden="true"></div>
@@ -1211,7 +1248,17 @@ function showLicenseLockScreen(message) {
                 adjustmentFieldValue: document.getElementById('adjustment-field-value'),
                 copyAdjustmentFieldBtn: document.getElementById('copy-adjustment-field'),
                 copyAdjustmentStatus: document.getElementById('copy-adjustment-status'),
-                quoteValidDaysInput: document.getElementById('quote-valid-days')
+                quoteValidDaysInput: document.getElementById('quote-valid-days'),
+                customerQuoteModal: document.getElementById('smartcalc-customer-modal'),
+                customerQuoteForm: document.getElementById('smartcalc-customer-form'),
+                customerQuoteFirstNameInput: document.getElementById('smartcalc-customer-first-name'),
+                customerQuoteLastNameInput: document.getElementById('smartcalc-customer-last-name'),
+                customerQuotePhoneInput: document.getElementById('smartcalc-customer-phone'),
+                customerQuoteEmailInput: document.getElementById('smartcalc-customer-email'),
+                customerQuoteSavePrintBtn: document.getElementById('smartcalc-customer-save-print'),
+                customerQuoteCancelBtn: document.getElementById('smartcalc-customer-cancel'),
+                customerQuotePrintWithoutSaveBtn: document.getElementById('smartcalc-customer-print-without-save'),
+                customerQuoteStatus: document.getElementById('smartcalc-customer-status')
             };
 
             let currentRetailPrice = 0;
@@ -1228,6 +1275,8 @@ function showLicenseLockScreen(message) {
         let pro1stDiscountAmountEdited = false;
         let notesManuallyEdited = false;
         let lastGeneratedNotes = '';
+        let pendingCustomerQuoteSnapshot = null;
+        let customerQuoteTriggerElement = null;
 
         const SMARTCALC_TUTORIAL_STORAGE_KEY = 'fd_smartcalc_tutorial_completed_v1';
         const SMARTCALC_TUTORIAL_MESSAGE = 'FD_SMART_CALC_START_TUTORIAL';
@@ -1951,8 +2000,16 @@ function showLicenseLockScreen(message) {
                     updateGrandTotal();
                 });
                 allElements.storeLocationSelect.addEventListener('change', updateGrandTotal);
-                allElements.resetBtn.addEventListener('click', printCustomerCopy);
+                allElements.resetBtn.addEventListener('click', openCustomerCopyCapture);
                 allElements.topResetBtn.addEventListener('click', resetForm);
+                allElements.customerQuoteForm?.addEventListener('submit', handleCustomerQuoteSubmit);
+                allElements.customerQuoteCancelBtn?.addEventListener('click', closeCustomerQuoteModal);
+                allElements.customerQuotePrintWithoutSaveBtn?.addEventListener('click', printCustomerCopyWithoutSaving);
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && allElements.customerQuoteModal && !allElements.customerQuoteModal.classList.contains('hidden')) {
+                        closeCustomerQuoteModal();
+                    }
+                });
                 allElements.copySalesNotesBtn.addEventListener('click', copySalesOrderNotes);
                 allElements.copyAdjustmentFieldBtn.addEventListener('click', copyAdjustmentFieldAmount);
                 allElements.showFinancingCheckbox.addEventListener('change', updateFinancingBreakdown);
@@ -3003,7 +3060,192 @@ function showLicenseLockScreen(message) {
                 return expirationDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
             }
 
-            function printCustomerCopy() {
+            function getQuoteValidUntilIsoDate() {
+                const expirationDate = new Date();
+                expirationDate.setDate(expirationDate.getDate() + getQuoteValidDays());
+                return expirationDate.toISOString().slice(0, 10);
+            }
+
+            function roundMoney(value) {
+                const number = Number(value || 0);
+                return Number.isFinite(number) ? Number(number.toFixed(2)) : 0;
+            }
+
+            function getCustomerQuoteFields() {
+                return {
+                    first_name: (allElements.customerQuoteFirstNameInput?.value || '').trim(),
+                    last_name: (allElements.customerQuoteLastNameInput?.value || '').trim(),
+                    phone: (allElements.customerQuotePhoneInput?.value || '').trim(),
+                    email: (allElements.customerQuoteEmailInput?.value || '').trim()
+                };
+            }
+
+            function validateCustomerQuoteFields(customer) {
+                if (!customer.first_name || !customer.last_name) {
+                    return 'First and last name are required before saving this quote.';
+                }
+                if (!customer.phone && !customer.email) {
+                    return 'Phone or email is required so CRM can match this quote.';
+                }
+                return '';
+            }
+
+            function setCustomerQuoteStatus(message, tone = 'neutral') {
+                if (!allElements.customerQuoteStatus) return;
+                const toneClasses = {
+                    neutral: 'text-gray-600 bg-transparent',
+                    error: 'text-red-800 bg-red-50',
+                    warning: 'text-amber-900 bg-amber-50',
+                    success: 'text-emerald-800 bg-emerald-50'
+                };
+                allElements.customerQuoteStatus.className = `min-h-[1.25rem] rounded-md px-3 py-2 text-sm font-medium ${toneClasses[tone] || toneClasses.neutral}`;
+                allElements.customerQuoteStatus.textContent = message;
+            }
+
+            function setCustomerQuoteSaving(isSaving) {
+                if (allElements.customerQuoteSavePrintBtn) {
+                    allElements.customerQuoteSavePrintBtn.disabled = isSaving;
+                    allElements.customerQuoteSavePrintBtn.textContent = isSaving ? 'Saving quote...' : 'Save quote & print';
+                }
+            }
+
+            function buildCustomerCopyChargeSnapshot() {
+                const charges = [{ label: 'Merchandise Total', amount: roundMoney(currentRetailPrice) }];
+                if (allElements.addThresholdDeliveryCheckbox?.checked) {
+                    charges.push({ label: 'Threshold Delivery', amount: 75 });
+                }
+                if (allElements.addDeliveryCheckbox?.checked) {
+                    const localDelivery = getLocalDeliveryCharge();
+                    const powerBaseSetup = getPowerBaseSetupCharge();
+                    const upcharge = getDeliveryUpcharge();
+                    if (localDelivery > 0) charges.push({ label: getLocalDeliveryLabel(), amount: roundMoney(localDelivery) });
+                    if (powerBaseSetup > 0) charges.push({ label: 'Power Base Delivery/Setup Upcharge', amount: roundMoney(powerBaseSetup) });
+                    if (allElements.addLongDistanceCheckbox?.checked && upcharge > 0) charges.push({ label: 'Outside Area Upcharge (DEL_UPCHARGE)', amount: roundMoney(upcharge) });
+                }
+                if (allElements.addAssemblyCheckbox?.checked) charges.push({ label: 'Assembly Fee', amount: 65 });
+                if (allElements.addAshleyExpressCheckbox?.checked) charges.push({ label: 'Ashley Express Fee', amount: ASHLEY_EXPRESS_FEE });
+                if (allElements.addPro1stCheckbox?.checked) charges.push({ label: 'Pro1st Protection', amount: roundMoney(getPro1stCharge()), detail: getPro1stCustomerCopyDetail() });
+                if (allElements.addRemovalCheckbox?.checked && currentRemovalCharge > 0) {
+                    charges.push({ label: 'Removal Fee', amount: 35 });
+                    const additionalRemoval = getAdditionalRemovalCharge();
+                    if (additionalRemoval > 0) charges.push({ label: 'Non-Inventory Removal Fee', amount: roundMoney(additionalRemoval) });
+                }
+                return charges;
+            }
+
+            function buildCustomerQuotePayload() {
+                updateGrandTotal();
+                const discountEntries = getDiscountReasonEntries()
+                    .filter((entry) => entry.amount > 0)
+                    .map((entry) => ({
+                        label: entry.label,
+                        detail: entry.detail || '',
+                        amount: roundMoney(entry.amount),
+                        affects_subtotal: entry.affectsSubtotal !== false
+                    }));
+                return {
+                    store: 'FD7',
+                    source_context: 'shop-smart-calc',
+                    quote_total: roundMoney(currentGrandTotal),
+                    subtotal_before_tax: roundMoney(currentTotalBeforeTax),
+                    tax_amount: roundMoney(currentTaxAmount),
+                    discount_total: roundMoney(currentAdditionalDiscount),
+                    quote_valid_days: getQuoteValidDays(),
+                    quote_valid_until: getQuoteValidUntilIsoDate(),
+                    sales_order_notes: allElements.salesOrderNotes?.value || '',
+                    quote_snapshot: {
+                        pricing_input_mode: currentPricingInputMode,
+                        target_margin: currentTargetMargin,
+                        retail_price: roundMoney(currentRetailPrice),
+                        total_before_tax: roundMoney(currentTotalBeforeTax),
+                        discounted_subtotal: roundMoney(currentDiscountedSubtotal),
+                        adjustment_total: roundMoney(currentAdjustmentTotal),
+                        store_location: allElements.storeLocationSelect?.value || 'camp-greenville',
+                        charges: buildCustomerCopyChargeSnapshot(),
+                        discounts: discountEntries,
+                        notes: allElements.salesOrderNotes?.value || ''
+                    }
+                };
+            }
+
+            function openCustomerCopyCapture(event) {
+                updateGrandTotal();
+                if (!currentRetailPrice || currentRetailPrice <= 0 || !currentGrandTotal || currentGrandTotal <= 0) {
+                    window.alert('Enter a selling price before printing a customer copy.');
+                    return;
+                }
+                pendingCustomerQuoteSnapshot = buildCustomerQuotePayload();
+                customerQuoteTriggerElement = event?.currentTarget || document.activeElement;
+                setCustomerQuoteStatus('');
+                allElements.customerQuotePrintWithoutSaveBtn?.classList.add('hidden');
+                allElements.customerQuoteModal?.classList.remove('hidden');
+                allElements.customerQuoteModal?.classList.add('flex');
+                allElements.customerQuoteModal?.setAttribute('aria-hidden', 'false');
+                setTimeout(() => allElements.customerQuoteFirstNameInput?.focus(), 0);
+            }
+
+            function closeCustomerQuoteModal() {
+                allElements.customerQuoteModal?.classList.add('hidden');
+                allElements.customerQuoteModal?.classList.remove('flex');
+                allElements.customerQuoteModal?.setAttribute('aria-hidden', 'true');
+                setCustomerQuoteStatus('');
+                allElements.customerQuotePrintWithoutSaveBtn?.classList.add('hidden');
+                setCustomerQuoteSaving(false);
+                if (customerQuoteTriggerElement && typeof customerQuoteTriggerElement.focus === 'function') {
+                    customerQuoteTriggerElement.focus();
+                }
+            }
+
+            async function handleCustomerQuoteSubmit(event) {
+                event.preventDefault();
+                const customer = getCustomerQuoteFields();
+                const validationMessage = validateCustomerQuoteFields(customer);
+                if (validationMessage) {
+                    setCustomerQuoteStatus(validationMessage, 'error');
+                    return;
+                }
+
+                const quote = pendingCustomerQuoteSnapshot || buildCustomerQuotePayload();
+                pendingCustomerQuoteSnapshot = quote;
+                setCustomerQuoteSaving(true);
+                setCustomerQuoteStatus('Saving quote to CRM before printing...', 'neutral');
+                allElements.customerQuotePrintWithoutSaveBtn?.classList.add('hidden');
+
+                try {
+                    const response = await fetch('/fd/api/api/crm/quotes', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ customer, quote })
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Quote save failed with HTTP ${response.status}`);
+                    }
+                    const savedQuote = await response.json();
+                    closeCustomerQuoteModal();
+                    printCustomerCopy({ customer, savedQuote, quote, saved: true });
+                } catch (error) {
+                    console.warn('Smart Calc quote save failed', error);
+                    setCustomerQuoteStatus('Could not save this quote to CRM. Check your dashboard sign-in, then retry or print without saving.', 'warning');
+                    allElements.customerQuotePrintWithoutSaveBtn?.classList.remove('hidden');
+                } finally {
+                    setCustomerQuoteSaving(false);
+                }
+            }
+
+            function printCustomerCopyWithoutSaving() {
+                const customer = getCustomerQuoteFields();
+                const validationMessage = validateCustomerQuoteFields(customer);
+                if (validationMessage) {
+                    setCustomerQuoteStatus(validationMessage, 'error');
+                    return;
+                }
+                const quote = pendingCustomerQuoteSnapshot || buildCustomerQuotePayload();
+                closeCustomerQuoteModal();
+                printCustomerCopy({ customer, savedQuote: null, quote, saved: false });
+            }
+
+            function printCustomerCopy(printContext = {}) {
                 updateGrandTotal();
                 if (!currentRetailPrice || currentRetailPrice <= 0 || !currentGrandTotal || currentGrandTotal <= 0) {
                     window.alert('Enter a selling price before printing a customer copy.');
@@ -3054,6 +3296,23 @@ function showLicenseLockScreen(message) {
                 const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
                 const quoteValidDays = getQuoteValidDays();
                 const quoteExpirationDate = getQuoteExpirationDateLabel();
+                const savedQuoteRecord = printContext.savedQuote?.quote || printContext.savedQuote || {};
+                const savedCustomerRecord = printContext.savedQuote?.customer || {};
+                const customer = printContext.customer || {};
+                const quoteId = savedQuoteRecord.id || (printContext.saved ? 'Saved to CRM' : 'Not saved to CRM');
+                const customerName = [customer.first_name, customer.last_name].filter(Boolean).join(' ') || savedCustomerRecord.name || 'Not captured';
+                const customerPhone = customer.phone || savedCustomerRecord.phone || '';
+                const customerEmail = customer.email || savedCustomerRecord.email || '';
+                const savedStatusLabel = printContext.saved ? 'Saved to CRM' : 'Not saved to CRM';
+                const salesOrderNotes = (printContext.quote?.sales_order_notes || allElements.salesOrderNotes?.value || '').trim();
+                const customerRowsHtml = `
+                    <div class="row"><span>Customer:</span><strong>${escapeHtml(customerName)}</strong></div>
+                    ${customerPhone ? `<div class="row"><span>Phone:</span><strong>${escapeHtml(customerPhone)}</strong></div>` : ''}
+                    ${customerEmail ? `<div class="row"><span>Email:</span><strong>${escapeHtml(customerEmail)}</strong></div>` : ''}
+                    <div class="row"><span>Quote ID: ${escapeHtml(quoteId)}</span><strong>${escapeHtml(savedStatusLabel)}</strong></div>
+                    <div class="row"><span>CRM Status:</span><strong>${escapeHtml(savedStatusLabel)}</strong></div>
+                `;
+                const salesNotesHtml = salesOrderNotes ? `<section><h2>Sales Order Notes</h2><p>${escapeHtml(salesOrderNotes).replace(/\n/g, '<br>')}</p></section>` : '';
 
                 const renderChargeRows = (rows) => rows.map((row) => `
                     <div class="row">
@@ -3129,6 +3388,10 @@ function showLicenseLockScreen(message) {
                                 <strong>${formatCurrency(currentGrandTotal)}</strong>
                             </div>
                             <section>
+                                <h2>Customer / Quote</h2>
+                                ${customerRowsHtml}
+                            </section>
+                            <section>
                                 <h2>Merchandise / Shopping Cart Items</h2>
                                 ${merchandiseRowsHtml}
                             </section>
@@ -3149,6 +3412,7 @@ function showLicenseLockScreen(message) {
                                 <div class="row grand"><span>Total Today</span><strong>${formatCurrency(currentGrandTotal)}</strong></div>
                             </section>
                             ${orderDetailsHtml ? `<section><h2>Order Details</h2>${orderDetailsHtml}</section>` : ''}
+                            ${salesNotesHtml}
                             <div class="fine">Quote valid through ${escapeHtml(quoteExpirationDate)} (${quoteValidDays} day${quoteValidDays === 1 ? '' : 's'}). Thank you for shopping with Furniture Distributors. Final availability, delivery scheduling, and financing approval are confirmed at checkout.</div>
                         </div>
                     </body>
@@ -3205,7 +3469,9 @@ function showLicenseLockScreen(message) {
                     otherDiscountExplanationInput, otherDiscountAmountInput, otherDiscountWrapper,
                     salesTaxDiscountWrapper, salesTaxDiscountCommentInput, salesTaxDiscountAmountInput,
                     adjustmentFieldSection, adjustmentFieldValue, copyAdjustmentStatus,
-                    quoteValidDaysInput, discountDocumentationStatus
+                    quoteValidDaysInput, discountDocumentationStatus,
+                    customerQuoteFirstNameInput, customerQuoteLastNameInput,
+                    customerQuotePhoneInput, customerQuoteEmailInput
                 } = allElements;
                 const formElements = [
                     baseCostInput, costCodeInput, manualRetailInput, totalCostInput,
@@ -3217,7 +3483,8 @@ function showLicenseLockScreen(message) {
                     deliveryDiscountAmountInput, pro1stDiscountAmountInput, pro1stCoveredItemsInput,
                     pro1stCoveredValueInput, percentageOffReasonInput,
                     percentageOffPercentInput, percentageOffAmountInput, advertisedPriceSourceSelect,
-                    advertisedPriceItemsInput, advertisedPriceAmountInput
+                    advertisedPriceItemsInput, advertisedPriceAmountInput, customerQuoteFirstNameInput,
+                    customerQuoteLastNameInput, customerQuotePhoneInput, customerQuoteEmailInput
                 ].filter(Boolean);
                 formElements.forEach(el => el.value = '');
                 if (deliveryDiscountCommentInput) deliveryDiscountCommentInput.value = 'Local Delivery Discount';
@@ -3245,6 +3512,9 @@ function showLicenseLockScreen(message) {
                 pro1stDiscountAmountEdited = false;
                 notesManuallyEdited = false;
                 lastGeneratedNotes = '';
+                pendingCustomerQuoteSnapshot = null;
+                customerQuoteTriggerElement = null;
+                closeCustomerQuoteModal();
 
                 [
                     addDeliveryCheckbox, addPowerBaseSetupCheckbox, addThresholdDeliveryCheckbox, addAssemblyCheckbox, addAshleyExpressCheckbox, addPro1stCheckbox,
