@@ -125,7 +125,9 @@ Backend deploy flow for route/schema/runtime changes:
 
 **See `TODO.md` in the repo root for the full prioritized task list with checkboxes.**
 
-- Current display version: `1.5.15.1255`
+- 2026-05-28 15:17 EDT — Prepared Smart Calc update for review/deploy. Files: `public/tools/smart-pricing-calculator.html`, `public/smartcalc/index.html`, `package.json`, `.hermes/plans/2026-05-28_150448-smartcalc-updates.md`. Changes: bumped `displayVersion` to `1.5.28.1517`, added fixed $25 Ashley Express Fee, added Closeout / AS IS discount + note flow, removed Equal Monthly Payments from customer print output, moved Copy Notes under the notes textarea, added Stearns & Foster advertising vendor, and added quote-good-for days with 2-day default print expiration. Validation: `git diff --check` PASS; inline Smart Calc JS `node --check` PASS; duplicate ID/marker scan PASS; Smart Calc margin, number-wheel, and tutorial smokes PASS; `npm test` PASS for 4 frontend test files/16 tests; `npm run build` PASS with existing Vite chunk/dynamic-import warnings. Deploy: narrow static artifact deploy only to `/srv/www/wolf.discount/fd/smartcalc/index.html` and `/srv/www/wolf.discount/fd/tools/smart-pricing-calculator.html`; backup `/home/alphahs/deploy-backups/wolf.discount/smartcalc-20260528-152214`; deployed SHA256 matched local `dist/`; public curl/browser checks confirmed version `1.5.28.1517`, Ashley Express, Closeout / AS IS, Stearns & Foster, quote expiration, and no print `Payment Options` marker. No backend restart/full `dist` sync.
+
+- Current display version: `1.5.28.1517`
 - 2026-05-01 15:02 EDT — Final polish on BotBot first-run onboarding alignment and completion controls.
   - Files: `/home/alphahs/WOLF-FD/App.tsx`, `/home/alphahs/WOLF-FD/components/app/TutorialOverlay.tsx`, `/home/alphahs/WOLF-FD/package.json`, `/home/alphahs/WOLF-FD/AGENTS.md`
   - Changes: moved the BotBot intro main-content anchor to the `<main>` shell for steadier highlight geometry in step 6, updated overlay card positioning to center on large targets instead of clinging to the left edge when room is constrained, and kept final onboarding action as an always-blue `Done` finish.
@@ -782,3 +784,10 @@ Backend deploy flow for route/schema/runtime changes:
 - Validation: HTML parser PASS, duplicate ID check PASS, inline script node --check PASS, git diff --check PASS, `npm run test:smartcalc-margin-discounts` PASS, `npm run test:smartcalc-number-input-wheel` PASS, `npm run build` PASS.
 - Deployment: copied rebuilt `dist/` to `/srv/www/wolf.discount/fd/` and updated the furnituredistributors `/smartcalc/` wrapper.
 - Verification: live source and wrapper no longer contain `Plan Cost` or `pro1st-plan-cost-display`; live source/wrapper show version 1.5.9.1459; API health passed (`{"ok":true,"db":1}`). Browser check passed: power base qty 2 showed Protected Value Used/Retail Charge `$299.98`, no Plan Cost text/id, Adjusted Ticket GPM `83.28%`, and no console errors.
+
+## Running Log - 2026-05-24 23:35 EDT
+
+- Boxed the FD consolidation/migration package into Git without deploying live. Commit `9686341 chore: box FD migration assets` was pushed to `origin/integration/wolf-fd-cleanup` and `origin/botbot-tutorial-revive`.
+- Boxed assets include `public/furnituredistributors/`, `scripts/manager-specials/fd-manager-specials-upload.py`, `scripts/manager-specials/README.md`, `scripts/migration/verify-fd-database-counts.sh`, `scripts/migration/post-move-smoke-check.sh`, `docs/migration/fd-server-inventory-2026-05-24.md`, and `docs/plans/fd-consolidation-migration-plan.md`.
+- Validation completed before the boxed commit: migration shell syntax PASS, Manager Specials Python compile PASS, secret-pattern scan on boxed paths found no matches, frontend tests PASS (16), backend tests PASS (21), frontend build PASS, backend build PASS.
+- Important next handoff: GitHub commit `9686341` is the clean boxed source. The live `/home/alphahs/WOLF-FD` checkout was not updated/deployed and should be treated as potentially dirty/behind until intentionally reconciled.

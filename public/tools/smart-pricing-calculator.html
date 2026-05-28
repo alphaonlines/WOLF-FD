@@ -444,14 +444,14 @@
 
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.23.0013">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.28.1517">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.23.0013</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.28.1517</p>
             <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <button id="smartcalc-tutorial-btn" type="button" class="inline-flex items-center justify-center rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown transition">Start guided tutorial</button>
                 <button id="top-reset-btn" type="button" class="inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
@@ -600,6 +600,13 @@
                             <label for="add-assembly" class="ml-3 block text-sm font-medium text-gray-700">Add Assembly Fee</label>
                         </div>
                         <span id="assembly-cost-display" class="font-medium text-gray-900">$65.00</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="add-ashley-express" name="add-ashley-express" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                            <label for="add-ashley-express" class="ml-3 block text-sm font-medium text-gray-700">Add Ashley Express Fee</label>
+                        </div>
+                        <span id="ashley-express-fee-display" class="font-medium text-gray-900">$25.00</span>
                     </div>
                      <div class="flex items-center justify-between">
                         <div class="flex items-center">
@@ -854,6 +861,7 @@
                                             <option value="">-- Select vendor --</option>
                                             <option value="Nectar">Nectar</option>
                                             <option value="Tempurpedic">Tempurpedic</option>
+                                            <option value="Stearns &amp; Foster">Stearns &amp; Foster</option>
                                         </select>
                                     </div>
                                     <div>
@@ -861,6 +869,24 @@
                                         <input type="number" id="vendor-ad-amount" min="0" step="0.01" placeholder="e.g., 25" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
                                     </div>
                                 </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="discount-closeout-as-is" name="discount-closeout-as-is" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                    <label for="discount-closeout-as-is" class="ml-3 block text-sm font-medium text-gray-700">Closeout / AS IS</label>
+                                </div>
+                                <div id="closeout-as-is-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+                                    <div>
+                                        <label for="closeout-as-is-detail" class="block text-xs font-medium text-gray-500">Item(s) / Details</label>
+                                        <input type="text" id="closeout-as-is-detail" placeholder="e.g., floor sample sofa, closeout mattress" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                    <div>
+                                        <label for="closeout-as-is-amount" class="block text-xs font-medium text-gray-500">Discount Amount ($)</label>
+                                        <input type="number" id="closeout-as-is-amount" min="0" step="0.01" placeholder="e.g., 25" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                                    </div>
+                                </div>
+                                <p class="pl-7 text-xs leading-5 text-gray-500">Adds both a discount reason and an AS IS / closeout note for the order and printout.</p>
                             </div>
 
                             <div class="space-y-2">
@@ -918,6 +944,12 @@
                 </div>
                 <textarea id="sales-order-notes" rows="10" class="w-full rounded-md border-gray-300 bg-white shadow-sm custom-focus sm:text-sm p-3 font-mono text-xs leading-5"></textarea>
                 <p class="text-xs leading-5 text-gray-500">You can edit these comments before copying. Manual edits are preserved while calculator inputs update.</p>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex flex-wrap gap-2">
+                        <button id="copy-sales-notes" type="button" class="bg-brand-orange text-white font-semibold py-2 px-4 rounded-md hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Copy Notes</button>
+                    </div>
+                    <span id="copy-notes-status" class="text-sm font-medium text-gray-600"></span>
+                </div>
                 <div id="adjustment-field-section" class="hidden rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2">
                     <label for="adjustment-field-value" class="block text-sm font-semibold text-amber-900">Adjustment Field Amount</label>
                     <div class="flex flex-col gap-2 sm:flex-row">
@@ -927,11 +959,12 @@
                     <p class="text-xs leading-5 text-amber-900">Plain number only, with no $ or commas, for pasting into the ticket Adjustment field.</p>
                     <span id="copy-adjustment-status" class="text-sm font-medium text-amber-800"></span>
                 </div>
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div class="flex flex-wrap gap-2">
-                        <button id="copy-sales-notes" type="button" class="bg-brand-orange text-white font-semibold py-2 px-4 rounded-md hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Copy Notes</button>
-                    </div>
-                    <span id="copy-notes-status" class="text-sm font-medium text-gray-600"></span>
+            </div>
+            <div class="rounded-md border border-gray-200 bg-gray-50 p-3 space-y-2">
+                <label for="quote-valid-days" class="block text-sm font-semibold text-brand-brown">Quote good for</label>
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <input type="number" id="quote-valid-days" min="1" step="1" placeholder="2" class="block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:max-w-[140px] sm:text-sm p-2">
+                    <span class="text-sm text-gray-600">day(s). Defaults to 2 days if blank.</span>
                 </div>
             </div>
             <button id="reset-btn" type="button" class="w-full bg-brand-orange text-white font-semibold py-2 px-4 rounded-md hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition hidden mt-6">Print Customer Copy</button>
@@ -1054,6 +1087,8 @@ function showLicenseLockScreen(message) {
             const powerBaseProtectionPlan = { retail: 149.99, cost: 31.95 };
             const taxRates = { 'camp-greenville': 0.07, 'greenville': 0.07, 'camp': 0.07, 'other': 0.0675 };
             const financingTerms = [3, 6, 12, 15, 18, 24, 36, 48]; // ADDED: Financing terms
+            const ASHLEY_EXPRESS_FEE = 25;
+            const DEFAULT_QUOTE_VALID_DAYS = 2;
 
             const allElements = {
                 baseCostBtn: document.getElementById('btn-base-cost'),
@@ -1087,6 +1122,8 @@ function showLicenseLockScreen(message) {
                 longDistanceMilesInput: document.getElementById('long-distance-miles'),
                 addAssemblyCheckbox: document.getElementById('add-assembly'),
                 assemblyCostDisplay: document.getElementById('assembly-cost-display'),
+                addAshleyExpressCheckbox: document.getElementById('add-ashley-express'),
+                ashleyExpressFeeDisplay: document.getElementById('ashley-express-fee-display'),
                 addPro1stCheckbox: document.getElementById('add-pro1st'),
                 pro1stOptionsWrapper: document.getElementById('pro1st-options-wrapper'),
                 pro1stPlanTypeSelect: document.getElementById('pro1st-plan-type'),
@@ -1134,6 +1171,10 @@ function showLicenseLockScreen(message) {
                 advertisedPriceSourceSelect: document.getElementById('advertised-price-source'),
                 advertisedPriceItemsInput: document.getElementById('advertised-price-items'),
                 advertisedPriceAmountInput: document.getElementById('advertised-price-amount'),
+                discountCloseoutAsIsCheckbox: document.getElementById('discount-closeout-as-is'),
+                closeoutAsIsWrapper: document.getElementById('closeout-as-is-wrapper'),
+                closeoutAsIsDetailInput: document.getElementById('closeout-as-is-detail'),
+                closeoutAsIsAmountInput: document.getElementById('closeout-as-is-amount'),
                 discountOtherCheckbox: document.getElementById('discount-other'),
                 otherDiscountWrapper: document.getElementById('other-discount-wrapper'),
                 otherDiscountExplanationInput: document.getElementById('other-discount-explanation'),
@@ -1169,7 +1210,8 @@ function showLicenseLockScreen(message) {
                 adjustmentFieldSection: document.getElementById('adjustment-field-section'),
                 adjustmentFieldValue: document.getElementById('adjustment-field-value'),
                 copyAdjustmentFieldBtn: document.getElementById('copy-adjustment-field'),
-                copyAdjustmentStatus: document.getElementById('copy-adjustment-status')
+                copyAdjustmentStatus: document.getElementById('copy-adjustment-status'),
+                quoteValidDaysInput: document.getElementById('quote-valid-days')
             };
 
             let currentRetailPrice = 0;
@@ -1885,6 +1927,7 @@ function showLicenseLockScreen(message) {
                 });
                 allElements.longDistanceMilesInput.addEventListener('input', updateAddonCosts);
                 allElements.addAssemblyCheckbox.addEventListener('change', updateAddonCosts);
+                allElements.addAshleyExpressCheckbox?.addEventListener('change', updateAddonCosts);
                 allElements.addPro1stCheckbox.addEventListener('change', () => {
                     allElements.pro1stOptionsWrapper?.classList.toggle('hidden', !allElements.addPro1stCheckbox.checked);
                     updateAddonCosts();
@@ -1922,6 +1965,7 @@ function showLicenseLockScreen(message) {
                     allElements.discountPro1stCheckbox,
                     allElements.discountPercentageOffCheckbox,
                     allElements.discountAdvertisedPriceCheckbox,
+                    allElements.discountCloseoutAsIsCheckbox,
                     allElements.discountOtherCheckbox,
                     allElements.payTaxCheckbox
                 ].filter(Boolean);
@@ -1948,6 +1992,7 @@ function showLicenseLockScreen(message) {
                     allElements.percentageOffReasonInput,
                     allElements.advertisedPriceSourceSelect,
                     allElements.advertisedPriceItemsInput,
+                    allElements.closeoutAsIsDetailInput,
                     allElements.otherDiscountExplanationInput,
                     allElements.salesTaxDiscountCommentInput
                 ].filter(Boolean).forEach((el) => {
@@ -1963,6 +2008,7 @@ function showLicenseLockScreen(message) {
                     allElements.pro1stDiscountAmountInput,
                     allElements.percentageOffPercentInput,
                     allElements.advertisedPriceAmountInput,
+                    allElements.closeoutAsIsAmountInput,
                     allElements.otherDiscountAmountInput
                 ].filter(Boolean).forEach((el) => {
                     el.addEventListener('input', () => {
@@ -2257,6 +2303,10 @@ function showLicenseLockScreen(message) {
                 return allElements.addAssemblyCheckbox?.checked ? 65 : 0;
             }
 
+            function getAshleyExpressFee() {
+                return allElements.addAshleyExpressCheckbox?.checked ? ASHLEY_EXPRESS_FEE : 0;
+            }
+
             function getPowerBaseSetupCharge() {
                 return allElements.addDeliveryCheckbox?.checked && allElements.addPowerBaseSetupCheckbox?.checked ? 49.99 : 0;
             }
@@ -2510,6 +2560,13 @@ function showLicenseLockScreen(message) {
                     amount: getAdjustmentAmount(allElements.vendorAdAmountInput)
                 });
             }
+            if (allElements.discountCloseoutAsIsCheckbox?.checked) {
+                entries.push({
+                    label: 'Closeout / AS IS',
+                    detail: getCleanDetail(allElements.closeoutAsIsDetailInput?.value, '[item/details needed]'),
+                    amount: getAdjustmentAmount(allElements.closeoutAsIsAmountInput)
+                });
+            }
             if (allElements.discountOtherCheckbox?.checked) {
                 entries.push({
                     label: 'Other Discount',
@@ -2567,6 +2624,8 @@ function showLicenseLockScreen(message) {
                         return `Manager Discount: ${detail} ${formatDiscountNoteAmount(entry)}`;
                     case 'Vendor Advertisement':
                         return `Vendor Discount: ${detail} ${formatDiscountNoteAmount(entry)}`;
+                    case 'Closeout / AS IS':
+                        return `Closeout / AS IS Discount: ${detail} ${formatDiscountNoteAmount(entry)}. Customer acknowledges item(s) are sold Closeout / AS IS.`;
                     case 'Other Discount':
                         return `Other Discount: ${detail} ${formatDiscountNoteAmount(entry)}`;
                     case 'Sales Tax Discount':
@@ -2582,6 +2641,7 @@ function showLicenseLockScreen(message) {
             allElements.managerApprovalWrapper?.classList.toggle('hidden', !allElements.discountManagerApprovalCheckbox?.checked);
             allElements.vendorAdWrapper?.classList.toggle('hidden', !allElements.discountVendorAdCheckbox?.checked);
             allElements.advertisedPriceWrapper?.classList.toggle('hidden', !allElements.discountAdvertisedPriceCheckbox?.checked);
+            allElements.closeoutAsIsWrapper?.classList.toggle('hidden', !allElements.discountCloseoutAsIsCheckbox?.checked);
             allElements.otherDiscountWrapper?.classList.toggle('hidden', !allElements.discountOtherCheckbox?.checked);
             updatePercentageOffFields();
             updateDeliveryDiscountFields();
@@ -2694,6 +2754,7 @@ function showLicenseLockScreen(message) {
             const deliveryUpcharge = getDeliveryUpcharge();
             const powerBaseSetup = getPowerBaseSetupCharge();
             const assemblyCharge = getAssemblyCharge();
+            const ashleyExpressFee = getAshleyExpressFee();
             const pro1stCharge = getPro1stCharge();
             const removalCharge = getRemovalCharge();
             const additionalRemoval = getAdditionalRemovalCharge();
@@ -2714,6 +2775,9 @@ function showLicenseLockScreen(message) {
             }
             if (allElements.assemblyCostDisplay) {
                 allElements.assemblyCostDisplay.textContent = formatCurrency(assemblyCharge || 65);
+            }
+            if (allElements.ashleyExpressFeeDisplay) {
+                allElements.ashleyExpressFeeDisplay.textContent = formatCurrency(ashleyExpressFee || ASHLEY_EXPRESS_FEE);
             }
             if (allElements.pro1stCostDisplay) {
                 allElements.pro1stCostDisplay.textContent = formatCurrency(pro1stCharge);
@@ -2755,6 +2819,7 @@ function showLicenseLockScreen(message) {
             const deliveryUpcharge = getDeliveryUpcharge();
             const powerBaseSetup = getPowerBaseSetupCharge();
             const assemblyCharge = getAssemblyCharge();
+            const ashleyExpressFee = getAshleyExpressFee();
             updatePro1stOptionFields();
             const selectedPro1stCharge = allElements.addPro1stCheckbox?.checked ? getPro1stCharge() : 0;
             const removalCharge = getRemovalCharge();
@@ -2777,6 +2842,9 @@ function showLicenseLockScreen(message) {
             }
             if (allElements.assemblyCostDisplay) {
                 allElements.assemblyCostDisplay.textContent = formatCurrency(assemblyCharge || 65);
+            }
+            if (allElements.ashleyExpressFeeDisplay) {
+                allElements.ashleyExpressFeeDisplay.textContent = formatCurrency(ashleyExpressFee || ASHLEY_EXPRESS_FEE);
             }
             if (allElements.pro1stCostDisplay) {
                 allElements.pro1stCostDisplay.textContent = formatCurrency(getPro1stCharge());
@@ -2802,7 +2870,7 @@ function showLicenseLockScreen(message) {
 
             updateDeliveryDiscountFields();
             updatePro1stDiscountFields();
-            const totalBeforeDiscount = currentRetailPrice + deliveryCharge + assemblyCharge + pro1stCharge + currentRemovalCharge;
+            const totalBeforeDiscount = currentRetailPrice + deliveryCharge + assemblyCharge + ashleyExpressFee + pro1stCharge + currentRemovalCharge;
             currentAdditionalDiscount = getAdditionalDiscount(totalBeforeDiscount);
             const taxableSubtotal = Math.max(0, totalBeforeDiscount - currentAdditionalDiscount);
             currentTotalBeforeTax = taxableSubtotal;
@@ -2855,6 +2923,9 @@ function showLicenseLockScreen(message) {
             }
             if (assemblyCharge > 0) {
                 breakdownLines.push(`<p class="text-sm">Assembly Fee: <span class="font-semibold">${formatCurrency(assemblyCharge)}</span></p>`);
+            }
+            if (ashleyExpressFee > 0) {
+                breakdownLines.push(`<p class="text-sm">Ashley Express Fee: <span class="font-semibold">${formatCurrency(ashleyExpressFee)}</span></p>`);
             }
             if (pro1stCharge > 0) {
                 breakdownLines.push(`<p class="text-sm">Pro1st: <span class="font-semibold">${formatCurrency(pro1stCharge)}</span></p>`);
@@ -2921,6 +2992,17 @@ function showLicenseLockScreen(message) {
                     .replace(/'/g, '&#39;');
             }
 
+            function getQuoteValidDays() {
+                const rawDays = parseInt(allElements.quoteValidDaysInput?.value || '', 10);
+                return Number.isFinite(rawDays) && rawDays > 0 ? rawDays : DEFAULT_QUOTE_VALID_DAYS;
+            }
+
+            function getQuoteExpirationDateLabel() {
+                const expirationDate = new Date();
+                expirationDate.setDate(expirationDate.getDate() + getQuoteValidDays());
+                return expirationDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            }
+
             function printCustomerCopy() {
                 updateGrandTotal();
                 if (!currentRetailPrice || currentRetailPrice <= 0 || !currentGrandTotal || currentGrandTotal <= 0) {
@@ -2947,6 +3029,9 @@ function showLicenseLockScreen(message) {
                 if (allElements.addAssemblyCheckbox?.checked) {
                     deliveryFeeRows.push({ label: 'Assembly Fee', amount: 65 });
                 }
+                if (allElements.addAshleyExpressCheckbox?.checked) {
+                    deliveryFeeRows.push({ label: 'Ashley Express Fee', amount: ASHLEY_EXPRESS_FEE });
+                }
                 if (allElements.addPro1stCheckbox?.checked) {
                     merchandiseRows.push({ label: 'Pro1st Protection', amount: getPro1stCharge(), detail: getPro1stCustomerCopyDetail() });
                 }
@@ -2964,7 +3049,11 @@ function showLicenseLockScreen(message) {
                 const chargeSubtotal = chargeRows.reduce((sum, row) => sum + row.amount, 0);
                 const subtotalDiscountTotal = subtotalDiscountEntries.reduce((sum, entry) => sum + entry.amount, 0);
                 const removalDescription = (allElements.removalDescriptionInput?.value || '').trim();
+                const closeoutAsIsSelected = !!allElements.discountCloseoutAsIsCheckbox?.checked;
+                const closeoutAsIsDetail = (allElements.closeoutAsIsDetailInput?.value || '').trim();
                 const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                const quoteValidDays = getQuoteValidDays();
+                const quoteExpirationDate = getQuoteExpirationDateLabel();
 
                 const renderChargeRows = (rows) => rows.map((row) => `
                     <div class="row">
@@ -2987,19 +3076,8 @@ function showLicenseLockScreen(message) {
                     </div>
                 ` : '';
                 const removalDetailsHtml = removalDescription ? `<p><strong>Removal Details:</strong> ${escapeHtml(removalDescription)}</p>` : '';
-                const financingHtml = allElements.showFinancingCheckbox?.checked && currentGrandTotal > 0 ? `
-                    <section>
-                        <h2>Payment Options</h2>
-                        <div class="terms">
-                            ${financingTerms.map((term) => `
-                                <div>
-                                    <span>${term} months</span>
-                                    <strong>${formatCurrency(currentGrandTotal / term)}</strong>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </section>
-                ` : '';
+                const closeoutAsIsDetailsHtml = closeoutAsIsSelected ? `<p><strong>Closeout / AS IS:</strong> ${escapeHtml(closeoutAsIsDetail || 'Item sold Closeout / AS IS')}. Customer acknowledges item(s) are sold Closeout / AS IS.</p>` : '';
+                const orderDetailsHtml = [removalDetailsHtml, closeoutAsIsDetailsHtml].filter(Boolean).join('');
 
                 const printHtml = `
                     <!doctype html>
@@ -3044,7 +3122,7 @@ function showLicenseLockScreen(message) {
                                     <h1>Furniture Distributors</h1>
                                     <p style="margin:6px 0 0;">Customer Copy</p>
                                 </div>
-                                <div class="date">Prepared ${escapeHtml(today)}</div>
+                                <div class="date">Prepared ${escapeHtml(today)}<br>Quote valid through ${escapeHtml(quoteExpirationDate)}</div>
                             </header>
                             <div class="total-banner">
                                 <span>Today's Total</span>
@@ -3070,9 +3148,8 @@ function showLicenseLockScreen(message) {
                                 ${taxDiscountHtml}
                                 <div class="row grand"><span>Total Today</span><strong>${formatCurrency(currentGrandTotal)}</strong></div>
                             </section>
-                            ${financingHtml}
-                            ${removalDetailsHtml ? `<section><h2>Order Details</h2>${removalDetailsHtml}</section>` : ''}
-                            <div class="fine">Thank you for shopping with Furniture Distributors. Final availability, delivery scheduling, and financing approval are confirmed at checkout.</div>
+                            ${orderDetailsHtml ? `<section><h2>Order Details</h2>${orderDetailsHtml}</section>` : ''}
+                            <div class="fine">Quote valid through ${escapeHtml(quoteExpirationDate)} (${quoteValidDays} day${quoteValidDays === 1 ? '' : 's'}). Thank you for shopping with Furniture Distributors. Final availability, delivery scheduling, and financing approval are confirmed at checkout.</div>
                         </div>
                     </body>
                     </html>
@@ -3107,7 +3184,7 @@ function showLicenseLockScreen(message) {
                     marginPercentInput, retailPriceInput, vendorSelect, addDeliveryCheckbox,
                     deliveryTypeWrapper, deliveryTypeSelect, sleeperMotionMinimumNote,
                     powerBaseWrapper, addPowerBaseSetupCheckbox, addThresholdDeliveryCheckbox,
-                    addAssemblyCheckbox, addPro1stCheckbox, pro1stOptionsWrapper, pro1stPlanTypeSelect,
+                    addAssemblyCheckbox, addAshleyExpressCheckbox, addPro1stCheckbox, pro1stOptionsWrapper, pro1stPlanTypeSelect,
                     pro1stCoveredItemsInput, pro1stCoveredValueWrapper, pro1stCoveredValueInput,
                     pro1stPowerBaseWrapper, pro1stPowerBaseQuantityInput, addTaxCheckbox,
                     addLongDistanceCheckbox, longDistanceMilesInput, storeLocationWrapper,
@@ -3124,17 +3201,19 @@ function showLicenseLockScreen(message) {
                     percentageOffReasonInput, percentageOffPercentInput, percentageOffAmountInput,
                     discountAdvertisedPriceCheckbox, advertisedPriceWrapper,
                     advertisedPriceSourceSelect, advertisedPriceItemsInput, advertisedPriceAmountInput, discountOtherCheckbox,
+                    closeoutAsIsDetailInput, closeoutAsIsAmountInput, closeoutAsIsWrapper,
                     otherDiscountExplanationInput, otherDiscountAmountInput, otherDiscountWrapper,
                     salesTaxDiscountWrapper, salesTaxDiscountCommentInput, salesTaxDiscountAmountInput,
                     adjustmentFieldSection, adjustmentFieldValue, copyAdjustmentStatus,
-                    discountDocumentationStatus
+                    quoteValidDaysInput, discountDocumentationStatus
                 } = allElements;
                 const formElements = [
                     baseCostInput, costCodeInput, manualRetailInput, totalCostInput,
                     marginPercentInput, retailPriceInput, longDistanceMilesInput,
                     competitionNameInput, competitionMatchAmountInput, managerApprovalNameInput,
-                    managerApprovalAmountInput, vendorAdAmountInput, otherDiscountExplanationInput,
-                    otherDiscountAmountInput, salesTaxDiscountAmountInput, removalDescriptionInput,
+                    managerApprovalAmountInput, vendorAdAmountInput, closeoutAsIsDetailInput,
+                    closeoutAsIsAmountInput, otherDiscountExplanationInput, otherDiscountAmountInput,
+                    salesTaxDiscountAmountInput, removalDescriptionInput, quoteValidDaysInput,
                     deliveryDiscountAmountInput, pro1stDiscountAmountInput, pro1stCoveredItemsInput,
                     pro1stCoveredValueInput, percentageOffReasonInput,
                     percentageOffPercentInput, percentageOffAmountInput, advertisedPriceSourceSelect,
@@ -3168,11 +3247,11 @@ function showLicenseLockScreen(message) {
                 lastGeneratedNotes = '';
 
                 [
-                    addDeliveryCheckbox, addPowerBaseSetupCheckbox, addThresholdDeliveryCheckbox, addAssemblyCheckbox, addPro1stCheckbox,
+                    addDeliveryCheckbox, addPowerBaseSetupCheckbox, addThresholdDeliveryCheckbox, addAssemblyCheckbox, addAshleyExpressCheckbox, addPro1stCheckbox,
                     addTaxCheckbox, addLongDistanceCheckbox, payTaxCheckbox, showFinancingCheckbox,
                     addRemovalCheckbox, discountCompetitionCheckbox, discountManagerApprovalCheckbox,
                     discountVendorAdCheckbox, discountDeliveryCheckbox, discountPro1stCheckbox,
-                    discountPercentageOffCheckbox, discountAdvertisedPriceCheckbox, discountOtherCheckbox
+                    discountPercentageOffCheckbox, discountAdvertisedPriceCheckbox, discountCloseoutAsIsCheckbox, discountOtherCheckbox
                 ].filter(Boolean).forEach(el => {
                     el.checked = false;
                     el.disabled = false;
@@ -3189,7 +3268,7 @@ function showLicenseLockScreen(message) {
                     pro1stOptionsWrapper, pro1stPowerBaseWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection,
                     allElements.financingBreakdown, allElements.salesNotesSection, removalWrapper,
                     competitionMatchWrapper, managerApprovalWrapper, vendorAdWrapper, deliveryDiscountWrapper,
-                    pro1stDiscountWrapper, percentageOffWrapper, advertisedPriceWrapper, otherDiscountWrapper,
+                    pro1stDiscountWrapper, percentageOffWrapper, advertisedPriceWrapper, closeoutAsIsWrapper, otherDiscountWrapper,
                     salesTaxDiscountWrapper
                 ].filter(Boolean);
                 sectionsToHide.forEach(sec => sec.classList.add('hidden'));
