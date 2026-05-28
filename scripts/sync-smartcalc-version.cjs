@@ -50,4 +50,12 @@ for (const file of files) {
   fs.writeFileSync(file.path, content);
 }
 
+const manifest = {
+  version,
+  displayVersion: version,
+  source: "package.json displayVersion",
+};
+fs.writeFileSync(path.join(root, "public/smartcalc/version.json"), `${JSON.stringify(manifest, null, 2)}
+`);
+
 console.log(`Smart Calc version synced to ${version}`);
