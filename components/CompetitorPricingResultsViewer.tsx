@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Search, ArrowUpDown, ArrowUp, ArrowDown, RefreshCw, Tag, ExternalLink, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
-import type { CompetitorPricingResultRow } from '../types/competitorPricing';
+import type { CompetitorPricingCompetitorMatch, CompetitorPricingResultRow } from '../types/competitorPricing';
 import { getLatestCompetitorPricingResults } from '../services/competitorPricingLatestApi';
 
 type SortField = 'vendor' | 'sku' | 'description' | 'storePrice' | 'ashleyPrice' | 'fflPrice' | 'lowestComp' | 'diff' | 'confidence';
@@ -23,6 +23,28 @@ function fmtPrice(p: number): string {
 }
 
 const CONFIDENCE_ORDER: Record<string, number> = { high: 3, medium: 2, low: 1, none: 0 };
+
+
+const GENERIC_MATCH_TITLE_RE = /^(skip to content|view all products|read more reviews at:?|google|access to this page has been denied)$/i;
+
+function cleanMatchTitle(title: string | undefined): string {
+  const cleaned = String(title || '').replace(/\s+/g, ' ').trim();
+  if (!cleaned || GENERIC_MATCH_TITLE_RE.test(cleaned)) return '';
+  return cleaned;
+}
+
+function competitorLinkLabel(competitor: 'Ashley' | 'Furniture4Less', match: CompetitorPricingCompetitorMatch | undefined): string {
+  const title = cleanMatchTitle(match?.title);
+  if (title) return title;
+  const url = String(match?.url || '');
+  try {
+    const u = new URL(url);
+    if (/\/products?\//i.test(u.pathname)) return 'Open product page';
+    if (/\/search/i.test(u.pathname)) return 'Open search results';
+    if (/\/collections?\//i.test(u.pathname)) return 'Open collection page';
+  } catch {}
+  return `Open ${competitor} page`;
+}
 
 export default function CompetitorPricingResultsViewer({ isDarkMode = false }: Props) {
   const [results, setResults] = useState<CompetitorPricingResultRow[]>([]);
@@ -261,6 +283,10 @@ export default function CompetitorPricingResultsViewer({ isDarkMode = false }: P
                   const fConf = row.furniture4Less?.confidence || 'none';
                   const bestConf = CONFIDENCE_ORDER[aConf] >= CONFIDENCE_ORDER[fConf] ? aConf : fConf;
                   const diffColor = diff > 0 ? 'text-rose-500' : diff < 0 ? 'text-emerald-500' : muted;
+                  const ashleyUrl = row.ashley?.url || '';
+                  const fflUrl = row.furniture4Less?.url || '';
+                  const ashleyTitle = cleanMatchTitle(row.ashley?.title);
+                  const fflTitle = cleanMatchTitle(row.furniture4Less?.title);
                   return (
                     <tr key={`${row.sku}-${i}`} className={rowCls}>
                       <td className="px-3 py-3 align-top">
@@ -281,19 +307,35 @@ export default function CompetitorPricingResultsViewer({ isDarkMode = false }: P
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span className="text-[11px] font-bold uppercase tracking-wide">Ashley</span>
                               {confidenceBadge(aConf)}
-                              {aConf !== 'none' && row.ashley?.url && <a href={row.ashley.url} target="_blank" rel="noreferrer" className={linkCls}><ExternalLink size={11} /></a>}
                             </div>
                             <div className="mt-1 font-semibold">{aPrice >= 0 ? fmtPrice(aPrice) : '—'}</div>
-                            {!!row.ashley?.title && <div className={`mt-1 text-[11px] leading-4 whitespace-normal break-words ${muted}`}>{row.ashley.title}</div>}
+                            {ashleyUrl ? (
+                              <a href={ashleyUrl} target="_blank" rel="noreferrer" className={`mt-1 inline-flex max-w-full items-start gap-1 text-[11px] leading-4 whitespace-normal break-words ${linkCls}`}>
+                                <span className="min-w-0 break-words">{competitorLinkLabel('Ashley', row.ashley)}</span>
+                                <ExternalLink size={11} className="mt-0.5 shrink-0" />
+                              </a>
+                            ) : ashleyTitle ? (
+                              <div className={`mt-1 text-[11px] leading-4 whitespace-normal break-words ${muted}`}>{ashleyTitle}</div>
+                            ) : (
+                              <div className={`mt-1 text-[11px] leading-4 ${muted}`}>No competitor page found</div>
+                            )}
                           </div>
                           <div className={`rounded-xl border px-2.5 py-2 ${isDarkMode ? 'border-slate-700 bg-slate-950/40' : 'border-slate-200 bg-slate-50/70'}`}>
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span className="text-[11px] font-bold uppercase tracking-wide">Furniture4Less</span>
                               {confidenceBadge(fConf)}
-                              {fConf !== 'none' && row.furniture4Less?.url && <a href={row.furniture4Less.url} target="_blank" rel="noreferrer" className={linkCls}><ExternalLink size={11} /></a>}
                             </div>
                             <div className="mt-1 font-semibold">{fPrice >= 0 ? fmtPrice(fPrice) : '—'}</div>
-                            {!!row.furniture4Less?.title && <div className={`mt-1 text-[11px] leading-4 whitespace-normal break-words ${muted}`}>{row.furniture4Less.title}</div>}
+                            {fflUrl ? (
+                              <a href={fflUrl} target="_blank" rel="noreferrer" className={`mt-1 inline-flex max-w-full items-start gap-1 text-[11px] leading-4 whitespace-normal break-words ${linkCls}`}>
+                                <span className="min-w-0 break-words">{competitorLinkLabel('Furniture4Less', row.furniture4Less)}</span>
+                                <ExternalLink size={11} className="mt-0.5 shrink-0" />
+                              </a>
+                            ) : fflTitle ? (
+                              <div className={`mt-1 text-[11px] leading-4 whitespace-normal break-words ${muted}`}>{fflTitle}</div>
+                            ) : (
+                              <div className={`mt-1 text-[11px] leading-4 ${muted}`}>No competitor page found</div>
+                            )}
                           </div>
                         </div>
                       </td>
