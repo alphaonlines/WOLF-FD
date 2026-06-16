@@ -203,3 +203,10 @@ export async function cancelSocialPost(id: string) {
   });
   return (json?.row || null) as SocialPostRecord | null;
 }
+
+export async function deleteSocialPost(id: string) {
+  const json = await fetchJson(`/api/social/posts/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  return { ok: Boolean(json?.ok), id: String(json?.id || id) };
+}

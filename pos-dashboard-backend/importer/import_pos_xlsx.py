@@ -561,7 +561,7 @@ def is_item_export(df: pd.DataFrame) -> bool:
 
 def batch_key_from_filename(name: str) -> str | None:
     import re
-    m = re.match(r"^(sales_report|topitems_report)(\d+)\.(xlsx|xls)$", name, re.IGNORECASE)
+    m = re.match(r"^(sales_report|topitems_report)(\d+)(?:_[^.]+)?\.(xlsx|xls)$", name, re.IGNORECASE)
     if not m:
         return None
     return m.group(2)
@@ -670,7 +670,16 @@ def main():
     ap.add_argument("--include-processed", action="store_true", help="Also scan the processed folder (useful for re-imports)")
     ap.add_argument("--no-move", action="store_true", help="Do not move processed files")
     ap.add_argument("--allow-id-collisions", action="store_true", help="Allow sale_id collisions across different dates (not recommended)")
+    ap.add_argument(
+        "--date-basis",
+        choices=["delivered", "written"],
+        default="delivered",
+        help="Coverage date basis: delivered=delivery_confirmed_date, written=sale_date",
+    )
     args = ap.parse_args()
+
+    preferred_date_field = "sale_date" if args.date_basis == "written" else "delivery_confirmed_date"
+    fallback_date_field = "delivery_confirmed_date" if preferred_date_field == "sale_date" else "sale_date"
 
     incoming_dir = args.incoming
     processed_dir = args.processed
@@ -818,7 +827,7 @@ def main():
                         execute_values(cur, UPSERT_RAW, raw_rows, page_size=2000)
                         execute_values(cur, UPSERT_CLEAN, clean_rows, page_size=2000)
 
-                        coverage_field, coverage_start, coverage_end = compute_date_range(df2, "delivery_confirmed_date", "sale_date")
+                        coverage_field, coverage_start, coverage_end = compute_date_range(df2, preferred_date_field, fallback_date_field)
                         if coverage_start and coverage_end and coverage_start <= coverage_end:
                             cur.execute(
                                 UPSERT_IMPORT_COVERAGE,
@@ -834,18 +843,16 @@ def main():
                             cur.execute(
                                 """
                                 DELETE FROM pos_sale_items_raw
-                                WHERE sale_id = ANY(%s)
-                                  AND (import_batch_id IS NULL OR import_batch_id <= %s);
+                                WHERE sale_id = ANY(%s);
                                 """,
-                                (sale_ids, batch_id),
+                                (sale_ids,),
                             )
                             cur.execute(
                                 """
                                 DELETE FROM pos_sale_items
-                                WHERE sale_id = ANY(%s)
-                                  AND (import_batch_id IS NULL OR import_batch_id <= %s);
+                                WHERE sale_id = ANY(%s);
                                 """,
-                                (sale_ids, batch_id),
+                                (sale_ids,),
                             )
                         raw_df = entry_info["df"].copy()
                         raw_df.columns = [str(c).strip() for c in raw_df.columns]
@@ -869,7 +876,7 @@ def main():
                         execute_values(cur, UPSERT_ITEMS_RAW, raw_rows, page_size=2000)
                         execute_values(cur, UPSERT_ITEMS, clean_rows, page_size=2000)
 
-                        coverage_field, coverage_start, coverage_end = compute_date_range(df2, "delivery_confirmed_date", "sale_date")
+                        coverage_field, coverage_start, coverage_end = compute_date_range(df2, preferred_date_field, fallback_date_field)
                         if coverage_start and coverage_end and coverage_start <= coverage_end:
                             cur.execute(
                                 UPSERT_IMPORT_COVERAGE,

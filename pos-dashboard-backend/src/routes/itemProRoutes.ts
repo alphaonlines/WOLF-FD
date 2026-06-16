@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseDateParam, parseTextParam } from "../parsers";
+import { dateFieldForBasis, prefixedDateFieldForBasis } from "../sqlFields";
 import { buildPro1stExcludedSql, buildQualifiedPro1stSql } from "../pro1stSql";
 
 type RegisterItemProRoutesDeps = {
@@ -19,6 +20,10 @@ export function registerItemProRoutes({
   const pro1stItemSql = buildQualifiedPro1stSql();
   const aliasedPro1stItemSql = buildQualifiedPro1stSql("i.");
   const aliasedExcludedPro1stSql = buildPro1stExcludedSql("i.");
+  const requestDateFields = (req: any) => ({
+    itemDateField: dateFieldForBasis(req.query.date_basis),
+    prefixedDateField: (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias),
+  });
 
   // Best sellers (items)
   app.get("/api/items/best-sellers", async (req, res) => {
@@ -28,6 +33,7 @@ export function registerItemProRoutes({
     const sort = String(req.query.sort || "sales").toLowerCase() === "qty" ? "qty" : "sales";
     const locationQ = parseTextParam(req.query.location);
     const salespersonQ = parseTextParam(req.query.salesperson);
+    const { itemDateField } = requestDateFields(req);
 
     const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
     const sql = `
@@ -134,6 +140,7 @@ export function registerItemProRoutes({
     const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
     const locationQ = parseTextParam(req.query.location);
     const salespersonQ = parseTextParam(req.query.salesperson);
+    const { itemDateField } = requestDateFields(req);
 
     const sql = `
     SELECT
@@ -174,6 +181,7 @@ export function registerItemProRoutes({
     const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
     const locationQ = parseTextParam(req.query.location);
     const salespersonQ = parseTextParam(req.query.salesperson);
+    const { itemDateField } = requestDateFields(req);
 
     const sql = `
     SELECT
@@ -218,6 +226,7 @@ export function registerItemProRoutes({
     }
     const sort = String(req.query.sort || "sales").toLowerCase() === "qty" ? "qty" : "sales";
     const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
+    const { itemDateField } = requestDateFields(req);
 
     const sql = `
     SELECT
@@ -268,6 +277,7 @@ export function registerItemProRoutes({
     }
     const sort = String(req.query.sort || "sales").toLowerCase() === "qty" ? "qty" : "sales";
     const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
+    const { itemDateField } = requestDateFields(req);
 
     const sql = `
     SELECT
@@ -311,6 +321,7 @@ export function registerItemProRoutes({
     const end = parseDateParam(req.query.end, "2100-01-01");
     const locationQ = parseTextParam(req.query.location);
     const salespersonQ = parseTextParam(req.query.salesperson);
+    const { prefixedDateField } = requestDateFields(req);
 
     const totalSql = `
     WITH non_mattress_items AS (
@@ -424,6 +435,7 @@ export function registerItemProRoutes({
     const end = parseDateParam(req.query.end, "2100-01-01");
     const locationQ = parseTextParam(req.query.location);
     const salespersonQ = parseTextParam(req.query.salesperson);
+    const { prefixedDateField } = requestDateFields(req);
 
     const baseParams = [start, end, locationQ, salespersonQ];
 
@@ -607,6 +619,7 @@ export function registerItemProRoutes({
     const end = parseDateParam(req.query.end, "2100-01-01");
     const locationQ = parseTextParam(req.query.location);
     const salespersonQ = parseTextParam(req.query.salesperson);
+    const { prefixedDateField } = requestDateFields(req);
 
     const sql = `
     WITH people_counts AS (

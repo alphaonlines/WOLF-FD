@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Bot, X, AlertCircle } from 'lucide-react';
+import { Bot, X } from 'lucide-react';
 
 type BotBotOrbProps = {
   isExpanded: boolean;
@@ -30,7 +30,6 @@ const BotBotOrb: React.FC<BotBotOrbProps> = ({
   hasNotification,
   assistantName,
   theme,
-  isDarkMode,
   onToggle,
 }) => {
   const colors = THEME_COLORS[theme] ?? THEME_COLORS.sky;

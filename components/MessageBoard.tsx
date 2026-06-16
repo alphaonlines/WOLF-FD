@@ -3,7 +3,6 @@ import {
   AlertCircle,
   Hash,
   Lock,
-  MessageSquare,
   Paperclip,
   Pencil,
   Send,

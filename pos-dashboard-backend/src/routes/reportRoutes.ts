@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseDateParam, parseTextParam } from "../parsers";
+import { prefixedDateFieldForBasis } from "../sqlFields";
 import { buildQualifiedPro1stSql } from "../pro1stSql";
 
 type RegisterReportRoutesDeps = {
@@ -22,6 +23,7 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
     const locationQ = parseTextParam(req.query.location);
     const categoryQ = parseTextParam(req.query.category);
     const manufacturerQ = parseTextParam(req.query.manufacturer);
+    const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
 
     const baseParams = [start, end, locationQ, categoryQ, salespersonQ, manufacturerQ];
     const categoriesParams = [start, end, locationQ, salespersonQ, manufacturerQ];

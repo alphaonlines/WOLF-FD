@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseDateParam, parseTextParam } from "../parsers";
+import { dateFieldForBasis, prefixedDateFieldForBasis } from "../sqlFields";
 
 type RegisterAnalyticsRoutesDeps = {
   app: Express;
@@ -27,6 +28,8 @@ export function registerAnalyticsRoutes({
     const locationQ = parseTextParam(req.query.location);
     const categoryQ = parseTextParam(req.query.category);
     const manufacturerQ = parseTextParam(req.query.manufacturer);
+    const itemDateField = dateFieldForBasis(req.query.date_basis);
+    const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
 
     const sql = `
       WITH item_totals AS (
@@ -130,15 +133,16 @@ export function registerAnalyticsRoutes({
     const end = parseDateParam(req.query.end, "2100-01-01");
     const salespersonQ = parseTextParam(req.query.salesperson);
     const locationQ = parseTextParam(req.query.location);
+    const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
+    const itemDateField = dateFieldForBasis(req.query.date_basis);
 
     const sql = salespersonQ
       ? `
       WITH item_sales AS (
         SELECT i.sale_id, SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS item_sales
         FROM pos_sale_items i
-        JOIN pos_sales s ON s.sale_id = i.sale_id
-        WHERE ${prefixedDateField("s")} >= $1
-          AND ${prefixedDateField("s")} < $2
+        WHERE i.${itemDateField} >= $1
+          AND i.${itemDateField} < $2
         GROUP BY i.sale_id
       ),
       item_profits AS (
@@ -174,9 +178,8 @@ export function registerAnalyticsRoutes({
           SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS item_sales,
           SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS item_profit
         FROM pos_sale_items i
-        JOIN pos_sales s ON s.sale_id = i.sale_id
-        WHERE ${prefixedDateField("s")} >= $1
-          AND ${prefixedDateField("s")} < $2
+        WHERE i.${itemDateField} >= $1
+          AND i.${itemDateField} < $2
         GROUP BY i.sale_id
       )
       SELECT
@@ -203,6 +206,8 @@ export function registerAnalyticsRoutes({
     const limit = Math.min(Number(req.query.limit || 20), 100);
     const salespersonQ = parseTextParam(req.query.salesperson);
     const locationQ = parseTextParam(req.query.location);
+    const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
+    const itemDateField = dateFieldForBasis(req.query.date_basis);
 
     const sql = `
       WITH item_rollup AS (
@@ -211,9 +216,8 @@ export function registerAnalyticsRoutes({
           SUM(CASE WHEN i.total_sale_price IS NULL OR i.total_sale_price <> i.total_sale_price THEN 0 ELSE i.total_sale_price END) AS item_sales,
           SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS item_profit
         FROM pos_sale_items i
-        JOIN pos_sales s ON s.sale_id = i.sale_id
-        WHERE ${prefixedDateField("s")} >= $1
-          AND ${prefixedDateField("s")} < $2
+        WHERE i.${itemDateField} >= $1
+          AND i.${itemDateField} < $2
         GROUP BY i.sale_id
       ),
       item_profits AS (

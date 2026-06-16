@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { X, ChevronRight, RefreshCw, Send, ThumbsUp, Plus, Check, Copy } from "lucide-react";
 import { createTaskInApi } from "../../services/tasksApi";
+import { TaskStatus } from "../../types";
 import {
   fetchObjectionVotes,
   castObjectionVote,
@@ -308,7 +309,7 @@ const ObjectionsDrawer: React.FC<Props> = ({ isDarkMode }) => {
       await createTaskInApi({
         title: `Objection Suggestion: ${text}`,
         assignee: "Support",
-        status: "TODO",
+        status: TaskStatus.TODO,
         priority: "medium",
         deadline: "",
         sortIndex: 0,

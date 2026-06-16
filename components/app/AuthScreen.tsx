@@ -34,7 +34,6 @@ const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 const AuthScreen: React.FC<AuthScreenProps> = ({
   stage,
   email,
-  password,
   requestPhone,
   requestProfile,
   pending,
@@ -42,10 +41,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
   googleEnabled,
   googleClientId,
   googleHostedDomain,
-  setEmail,
-  setPassword,
   setRequestPhone,
-  onLogin,
   onBackToSignIn,
   onSubmitRequestAccess,
   onGoogleCredential,
@@ -306,40 +302,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
           <section className="relative flex items-center p-6 sm:p-8 lg:p-10">
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,6,23,0.9))]" />
             <div className="relative z-10 w-full rounded-[1.7rem] border border-slate-800/80 bg-slate-900/82 p-6 text-slate-100 shadow-xl shadow-black/30 sm:p-7">
-              {stage === "sign_in" ? (
-                <>
-                  <div className="mb-6">
-                    <div className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">WOLF FD Dashboard</div>
-                    <div className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Furniture Distributors</div>
-                    <div className="mt-2 text-xs font-medium uppercase tracking-[0.24em] text-slate-500">Work Online | Live Free</div>
-                    <h3 className="mt-4 text-xl font-semibold text-white">Employee Access</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
-                      Secure sign-in for approved Furniture Distributors employees.
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/80">Google Workspace</div>
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
-                      Sign in with your {googleHostedDomain ? `@${googleHostedDomain}` : "company"} Google account to request or access the dashboard.
-                    </p>
-                    {googleEnabled ? (
-                      <div className="mt-4 space-y-3">
-                        <div ref={googleButtonRef} className="min-h-[44px]" />
-                        {!googleScriptReady && (
-                          <div className="text-xs text-slate-500">Loading Google sign-in…</div>
-                        )}
-                        {googleScriptError && <div className="text-xs text-amber-300">{googleScriptError}</div>}
-                      </div>
-                    ) : (
-                      <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
-                        Google Workspace sign-in is not configured on this environment yet.
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : null}
-
               {stage === "request_access" ? (
                 <>
                   <div className="mb-6">

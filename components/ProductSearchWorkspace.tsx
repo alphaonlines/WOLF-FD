@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, PlayCircle, Plus, RefreshCw, Search, ShoppingCart, Trash2, UploadCloud, X } from "lucide-react";
-import { useBotBotContext } from "./botbot/BotBotContext";
+import { Calculator, ChevronDown, ChevronLeft, PlayCircle, Plus, RefreshCw, Search, ShoppingCart, Trash2, X } from "lucide-react";
 import type { ManufacturerCatalogItem, ManufacturerReferenceNote } from "../types";
 import { CANONICAL_PRODUCT_MANUFACTURERS, calcSuggestedRetail, calcFloorRetail } from "../constants/productCatalog";
 import { fetchManufacturerCatalog, fetchManufacturerReferenceNotes } from "../services/manufacturerPricelistApi";
 
 type ProductSearchWorkspaceProps = {
   isDarkMode: boolean;
-  onOpenUploadArea: () => void;
+  onOpenSmartCalc?: () => void;
 };
 
 type ProductSort = "relevance" | "manufacturer" | "category" | "item" | "price_low" | "price_high";
@@ -16,24 +15,6 @@ type CartItem = { item: ManufacturerCatalogItem; qty: number };
 type Cart = { id: string; name: string; items: CartItem[] };
 
 let nextCartId = 2;
-
-const SPLASH_JOKES = [
-  "Hold on… the warehouse guys are checking the top shelves.",
-  "Loading 5,000 pieces of furniture. Someone should've counted before we started.",
-  "Please hold. Dave is still measuring the sectionals.",
-  "Good news: we found the couch. Bad news: we sat down.",
-  "One moment — we're waiting for the recliner to stop reclining.",
-  "Fetching catalog… turns out the showroom floor is bigger than it looks.",
-  "The forklift is running. Should only be a moment.",
-  "Someone lost the scanner. We're hand-counting the recliners.",
-  "This is a lot of furniture. Like, a *lot* a lot.",
-  "Loading complete… just kidding, there's still more furniture.",
-  "Dusting off thousands of SKUs. Bear with us.",
-  "The freight elevator is slow but it gets there.",
-  "Counting ottomans. Whoever ordered this many ottomans — you know who you are.",
-  "We'd be done faster but someone keep re-staging the living room displays.",
-  "Almost there. The sectional was harder to carry than expected.",
-];
 
 const formatCurrency = (value: number | null) =>
   value === null || Number.isNaN(value) ? "—" : value.toLocaleString(undefined, { style: "currency", currency: "USD" });
@@ -54,30 +35,22 @@ const buildExternalItemSearchUrl = (sku: string) => {
   return `https://www.furnituredistributors.net/Product/SiteSearch?search=${encodeURIComponent(s)}`;
 };
 
-const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkMode, onOpenUploadArea }) => {
-  const { setPageContext } = useBotBotContext();
-  const CATALOG_FETCH_LIMIT = 5000;
+const formatInventoryTimestamp = (value?: string | null) => {
+  if (!value) return "Inventory timestamp pending";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Inventory timestamp pending";
+  return `Updated ${parsed.toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}`;
+};
 
-  // Splash screen
-  const [splashVisible, setSplashVisible] = useState(true);
-  const [splashFading, setSplashFading] = useState(false);
-  const splashJoke = useRef(SPLASH_JOKES[Math.floor(Math.random() * SPLASH_JOKES.length)]);
+const getPrimaryImageUrl = (item: ManufacturerCatalogItem) =>
+  item.ezproItemImageUrl || item.imageUrls.find((url) => url.trim()) || "";
 
-  useEffect(() => {
-    setPageContext({
-      pageName: "Product Search",
-      module: "product_search",
-      userRole: "Employee",
-      keyMetricsVisible: [],
-      suggestedActions: [],
-    });
-  }, [setPageContext]);
+const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 
-  useEffect(() => {
-    const fadeTimer = window.setTimeout(() => setSplashFading(true), 2400);
-    const hideTimer = window.setTimeout(() => setSplashVisible(false), 3000);
-    return () => { window.clearTimeout(fadeTimer); window.clearTimeout(hideTimer); };
-  }, []);
+const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkMode, onOpenSmartCalc }) => {
+  const CATALOG_FETCH_LIMIT = 1000;
+  const CATALOG_FETCH_INCREMENT = 1000;
+  const CATALOG_MAX_LIMIT = 5000;
 
   // Search filters
   const [query, setQuery] = useState("");
@@ -88,16 +61,20 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
   const [featureTag, setFeatureTag] = useState("");
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
+  const [inStockOnly, setInStockOnly] = useState(false);
   const [sortBy, setSortBy] = useState<ProductSort>("relevance");
 
   // Catalog state
   const [items, setItems] = useState<ManufacturerCatalogItem[]>([]);
   const [catalogTotal, setCatalogTotal] = useState(0);
   const [catalogHasMore, setCatalogHasMore] = useState(false);
+  const [catalogLimit, setCatalogLimit] = useState(CATALOG_FETCH_LIMIT);
   const [notes, setNotes] = useState<ManufacturerReferenceNote[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   // UI toggles
   const [showCosts, setShowCosts] = useState(false);
@@ -115,14 +92,13 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
     ? "rounded-3xl border border-slate-800 bg-slate-950 shadow-[0_14px_30px_rgba(2,6,23,0.16)]"
     : "rounded-3xl border border-slate-200/80 bg-slate-50/90 shadow-sm";
   const inputClassName = isDarkMode
-    ? "rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20"
-    : "rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-2 focus:ring-sky-200/70";
+    ? "w-full rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20"
+    : "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-2 focus:ring-sky-200/70";
   const subtleTextClassName = isDarkMode ? "text-slate-400" : "text-slate-600";
   const badgeClassName = isDarkMode
     ? "rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-200"
     : "rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-800";
   const drawerBg = isDarkMode ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200";
-
   // Cart helpers
   const activeCart = carts.find((c) => c.id === activeCartId) ?? carts[0];
   const totalCartItems = carts.reduce((sum, c) => sum + c.items.reduce((s, i) => s + i.qty, 0), 0);
@@ -185,37 +161,112 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
     return { totalCost: hasCost ? totalCost : null, totalRetail: hasRetail ? totalRetail : null, totalFloor: hasFloor ? totalFloor : null };
   };
 
+  const openSmartCalcWithCart = () => {
+    const { totalRetail, totalCost, totalFloor } = cartTotals(activeCart);
+    if (typeof window !== "undefined") {
+      if (activeCart.items.length && totalRetail !== null) {
+        const transfer = {
+          source: "product-search-cart",
+          createdAt: new Date().toISOString(),
+          cartId: activeCart.id,
+          cartName: activeCart.name,
+          merchandiseTotal: roundMoney(totalRetail),
+          floorTotal: totalFloor === null ? null : roundMoney(totalFloor),
+          costTotal: totalCost === null ? null : roundMoney(totalCost),
+          itemCount: activeCart.items.reduce((sum, cartItem) => sum + cartItem.qty, 0),
+          items: activeCart.items.map(({ item, qty }) => {
+            const retail = calcSuggestedRetail(item.basePrice, item.manufacturerSlug);
+            const floor = calcFloorRetail(item.basePrice, item.manufacturerSlug);
+            return {
+              id: item.id,
+              sku: item.sku || "",
+              manufacturer: item.manufacturer || "",
+              description: item.description || item.collectionName || item.sku || "Item",
+              qty,
+              retailPrice: retail === null ? null : roundMoney(retail),
+              retailTotal: retail === null ? null : roundMoney(retail * qty),
+              floorPrice: floor === null ? null : roundMoney(floor),
+              cost: item.basePrice === null ? null : roundMoney(item.basePrice),
+              imageUrl: getPrimaryImageUrl(item),
+            };
+          }),
+        };
+        window.localStorage.setItem("fd-smartcalc-cart-transfer", JSON.stringify(transfer));
+      } else {
+        window.localStorage.removeItem("fd-smartcalc-cart-transfer");
+      }
+    }
+    onOpenSmartCalc?.();
+  };
+
   // Data loading
-  const loadCatalog = async () => {
-    setLoading(true);
+  const loadCatalog = async (nextLimit = catalogLimit, mode: "replace" | "more" = "replace") => {
+    if (mode === "more") {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       const [catalogResult, noteRows] = await Promise.all([
-        fetchManufacturerCatalog({ manufacturer: manufacturer || undefined, category: category || undefined, color: color || undefined, query: query || undefined, limit: CATALOG_FETCH_LIMIT }),
+        fetchManufacturerCatalog({ manufacturer: manufacturer || undefined, category: category || undefined, color: color || undefined, query: query || undefined, limit: nextLimit, inStockOnly }),
         manufacturer ? fetchManufacturerReferenceNotes(manufacturer) : Promise.resolve([]),
       ]);
       const catalogRows = catalogResult.rows;
       setItems(catalogRows);
       setCatalogTotal(catalogResult.total);
       setCatalogHasMore(catalogResult.hasMore);
+      setCatalogLimit(catalogResult.limit || nextLimit);
       setNotes(noteRows);
-      if (!selectedId || !catalogRows.some((item) => item.id === selectedId)) {
-        setSelectedId(catalogRows[0]?.id ?? null);
+      if (selectedId && !catalogRows.some((item) => item.id === selectedId)) {
+        setSelectedId(null);
       }
     } catch (err: any) {
       setError(String(err?.message ?? err ?? "Unable to load product catalog"));
-      setItems([]); setCatalogTotal(0); setCatalogHasMore(false); setNotes([]); setSelectedId(null);
+      if (mode !== "more") {
+        setItems([]); setCatalogTotal(0); setCatalogHasMore(false); setNotes([]); setSelectedId(null);
+      }
     } finally {
-      setLoading(false);
+      if (mode === "more") {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
   const selectedItem = items.find((item) => item.id === selectedId) ?? null;
+  const cappedCatalogTotal = Math.min(catalogTotal || CATALOG_MAX_LIMIT, CATALOG_MAX_LIMIT);
+  const canLoadMore = catalogHasMore && catalogLimit < cappedCatalogTotal;
+  const nextBatchSize = Math.min(CATALOG_FETCH_INCREMENT, Math.max(cappedCatalogTotal - catalogLimit, 0));
+
+  const handleLoadMore = () => {
+    if (!canLoadMore || loading || loadingMore) return;
+    const nextLimit = Math.min(catalogLimit + CATALOG_FETCH_INCREMENT, cappedCatalogTotal);
+    void loadCatalog(nextLimit, "more");
+  };
 
   useEffect(() => {
-    const t = window.setTimeout(() => { void loadCatalog(); }, 220);
+    const t = window.setTimeout(() => {
+      void loadCatalog(CATALOG_FETCH_LIMIT, "replace");
+    }, 220);
     return () => window.clearTimeout(t);
-  }, [query, manufacturer, category, color]);
+  }, [query, manufacturer, category, color, inStockOnly]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node || !canLoadMore || loading || loadingMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          handleLoadMore();
+        }
+      },
+      { rootMargin: "700px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [canLoadMore, loading, loadingMore, catalogLimit, catalogTotal, query, manufacturer, category, color]);
 
   useEffect(() => {
     const targetMfr = selectedItem?.manufacturer ?? manufacturer;
@@ -301,27 +352,213 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
   }, [items, sortBy, productType, featureTag, priceMin, priceMax]);
 
   const handleSelectItem = (id: string) => {
-    setSelectedId(id);
-    setDetailOpen(true);
+    setSelectedId((current) => current === id ? null : id);
+  };
+
+  const renderSelectedItemDropdown = (detailItem: ManufacturerCatalogItem) => {
+    const itemSearchUrl = buildExternalItemSearchUrl(detailItem.sku);
+    const selectedRetail = calcSuggestedRetail(detailItem.basePrice, detailItem.manufacturerSlug);
+    const selectedFloor = calcFloorRetail(detailItem.basePrice, detailItem.manufacturerSlug);
+    const selectedCartQty = activeCart.items.find((ci) => ci.item.id === detailItem.id)?.qty ?? 0;
+    const selectedImageUrl = getPrimaryImageUrl(detailItem);
+    const selectedInventoryQty = detailItem.inventoryQtyAvailable ?? detailItem.inventoryQtyInStockDam ?? null;
+    const selectedInventoryLocations = detailItem.inventoryLocations ?? [];
+    const selectedInventoryVariants = detailItem.inventoryVariants ?? [];
+
+    return (
+      <div className={`mt-3 overflow-hidden rounded-2xl border ${isDarkMode ? "border-sky-400/30 bg-slate-950/95" : "border-sky-200 bg-white"}`}>
+        <div className={`border-b px-5 py-4 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-500">Item detail</div>
+              <h3 className={`mt-1 text-lg font-bold leading-tight ${isDarkMode ? "text-white" : "text-slate-950"}`}>
+                {detailItem.description || detailItem.collectionName || detailItem.sku}
+              </h3>
+              <div className={`mt-1 text-xs ${subtleTextClassName}`}>
+                {detailItem.manufacturer} | SKU {detailItem.sku || "-"}
+              </div>
+            </div>
+            {itemSearchUrl && (
+              <a
+                href={itemSearchUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition ${isDarkMode ? "border border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/18" : "border border-sky-300 bg-sky-100 text-sky-900 hover:bg-sky-200"}`}
+              >
+                Item Search
+              </a>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-4 p-5">
+          <div className={`flex min-h-[128px] items-center justify-center overflow-hidden rounded-2xl border ${isDarkMode ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
+            {selectedImageUrl ? (
+              <img src={selectedImageUrl} alt={detailItem.description || detailItem.sku || "Product"} className="max-h-44 w-full object-contain" />
+            ) : (
+              <div className={`px-4 text-center text-sm ${subtleTextClassName}`}>Product image will show here when image links are connected.</div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className={`rounded-2xl border px-4 py-3 ${isDarkMode ? "border-emerald-800 bg-emerald-950" : "border-emerald-200 bg-emerald-50"}`}>
+              <div className={`text-xs uppercase tracking-wide ${isDarkMode ? "text-emerald-400" : "text-emerald-700"}`}>Retail</div>
+              <div className={`mt-1 text-lg font-bold ${isDarkMode ? "text-emerald-200" : "text-emerald-900"}`}>{formatCurrency(selectedRetail)}</div>
+            </div>
+            <div className={`rounded-2xl border px-4 py-3 ${isDarkMode ? "border-orange-800 bg-orange-950" : "border-orange-200 bg-orange-50"}`}>
+              <div className={`text-xs uppercase tracking-wide ${isDarkMode ? "text-orange-400" : "text-orange-700"}`}>Floor</div>
+              <div className={`mt-1 text-lg font-bold ${isDarkMode ? "text-orange-200" : "text-orange-900"}`}>{formatCurrency(selectedFloor)}</div>
+            </div>
+            {showCosts && detailItem.basePrice !== null && (
+              <div className={`col-span-2 rounded-2xl border px-4 py-3 ${isDarkMode ? "border-sky-800 bg-sky-950" : "border-sky-200 bg-sky-50"}`}>
+                <div className={`text-xs uppercase tracking-wide ${isDarkMode ? "text-sky-400" : "text-sky-700"}`}>Cost</div>
+                <div className={`mt-1 text-base font-bold ${isDarkMode ? "text-sky-200" : "text-sky-900"}`}>{formatCurrency(detailItem.basePrice)}</div>
+              </div>
+            )}
+          </div>
+
+          <div className={`rounded-2xl border p-3 ${isDarkMode ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className={`text-xs font-semibold uppercase tracking-wide ${subtleTextClassName}`}>Add to cart</div>
+                <div className={`mt-1 text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{activeCart.name}</div>
+              </div>
+              {selectedCartQty > 0 ? (
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => updateQty(activeCart.id, detailItem.id, selectedCartQty - 1)}
+                    className={`h-9 w-9 rounded-full text-lg font-bold transition ${isDarkMode ? "bg-slate-800 text-slate-200 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>-</button>
+                  <span className={`w-8 text-center text-base font-bold ${isDarkMode ? "text-amber-300" : "text-amber-700"}`}>{selectedCartQty}</span>
+                  <button type="button" onClick={() => addToCart(detailItem)}
+                    className={`h-9 w-9 rounded-full text-lg font-bold transition ${isDarkMode ? "bg-amber-400/15 text-amber-200 hover:bg-amber-400/25" : "bg-amber-100 text-amber-800 hover:bg-amber-200"}`}>+</button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => addToCart(detailItem)}
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition ${isDarkMode ? "bg-amber-400/15 text-amber-200 hover:bg-amber-400/25" : "bg-amber-100 text-amber-900 hover:bg-amber-200"}`}>
+                  <ShoppingCart size={15} />
+                  Add
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className={`rounded-2xl border p-4 ${isDarkMode ? "border-violet-800 bg-violet-950/45" : "border-violet-200 bg-violet-50"}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className={`text-xs font-semibold uppercase tracking-wide ${isDarkMode ? "text-violet-300" : "text-violet-700"}`}>Live inventory</div>
+                <div className={`mt-1 text-xs ${subtleTextClassName}`}>{formatInventoryTimestamp(detailItem.inventoryUpdatedAt)}</div>
+              </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${detailItem.hasInventory ? (isDarkMode ? "bg-emerald-400/15 text-emerald-200" : "bg-emerald-100 text-emerald-800") : (isDarkMode ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-600")}`}>
+                {detailItem.hasInventory ? `In stock: ${selectedInventoryQty ?? 0}` : "No EZPro match"}
+              </span>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold">
+              <div className={`rounded-xl px-3 py-2 ${isDarkMode ? "bg-slate-900 text-slate-300" : "bg-white text-slate-700"}`}>Reserved: {detailItem.inventoryQtyReserved ?? 0}</div>
+              <div className={`rounded-xl px-3 py-2 ${isDarkMode ? "bg-slate-900 text-slate-300" : "bg-white text-slate-700"}`}>On order: {detailItem.inventoryQtyOnorder ?? 0}</div>
+            </div>
+            {selectedInventoryLocations.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {selectedInventoryLocations.slice(0, 10).map((loc) => (
+                  <span key={`${loc.locationName}-${loc.qty}`} className={badgeClassName}>{loc.locationName}: {loc.qty}</span>
+                ))}
+              </div>
+            )}
+            {selectedInventoryVariants.length > 0 && (
+              <div className={`mt-3 max-h-36 overflow-auto rounded-xl border text-xs ${isDarkMode ? "border-slate-800 bg-slate-950 text-slate-300" : "border-slate-200 bg-white text-slate-700"}`}>
+                {selectedInventoryVariants.slice(0, 12).map((variant, idx) => (
+                  <div key={`${variant.itemNumber}-${idx}`} className={`px-3 py-2 ${idx ? (isDarkMode ? "border-t border-slate-800" : "border-t border-slate-100") : ""}`}>
+                    <span className="font-semibold">{variant.qtyAvailable} avail</span> · {[variant.finish, variant.fabric, variant.pillow1Set, variant.pillow2Set].filter(Boolean).join(" · ") || "base variant"}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className={`rounded-2xl border px-4 py-3 ${isDarkMode ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
+            <div className={`text-xs font-semibold uppercase tracking-wide ${subtleTextClassName}`}>Description</div>
+            <div className={`mt-2 text-sm leading-6 ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>
+              {[detailItem.collectionName, detailItem.category, detailItem.productType].filter(Boolean).join(" | ") || "No description category available."}
+            </div>
+            <div className={`mt-2 text-sm leading-6 ${subtleTextClassName}`}>
+              {formatDimensions(detailItem)} | {detailItem.colorFinish || detailItem.colorFamily || "-"} | {[detailItem.material, detailItem.shape].filter(Boolean).join(" | ") || "-"}
+            </div>
+          </div>
+
+          {[...detailItem.featureTags, ...detailItem.searchKeywords].length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {[...detailItem.featureTags, ...detailItem.searchKeywords].slice(0, 10).map((tag) => (
+                <span key={tag} className={badgeClassName}>{tag}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCartSummaryPanel = () => {
+    const { totalCost, totalRetail, totalFloor } = cartTotals(activeCart);
+    return (
+      <section className={`${panelClassName} p-5`}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className={`text-xs font-semibold uppercase tracking-[0.18em] ${subtleTextClassName}`}>Cart</div>
+            <h3 className={`mt-1 text-base font-bold ${isDarkMode ? "text-white" : "text-slate-950"}`}>{activeCart.name}</h3>
+          </div>
+          <button type="button" onClick={addCart}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${isDarkMode ? "border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"}`}>
+            <Plus size={13} /> New
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {activeCart.items.length ? activeCart.items.slice(0, 5).map(({ item, qty }) => (
+            <div key={item.id} className={`flex items-center gap-3 rounded-2xl border px-3 py-2 ${isDarkMode ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
+              <div className="min-w-0 flex-1">
+                <div className={`truncate text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{item.description || item.sku}</div>
+                <div className={`text-xs ${subtleTextClassName}`}>Qty {qty} | {formatCurrency(calcSuggestedRetail(item.basePrice, item.manufacturerSlug))}</div>
+              </div>
+              <button type="button" onClick={() => removeFromCart(activeCart.id, item.id)}
+                className={`rounded-full p-1.5 transition ${isDarkMode ? "text-slate-600 hover:text-rose-400" : "text-slate-400 hover:text-rose-600"}`}>
+                <Trash2 size={13} />
+              </button>
+            </div>
+          )) : (
+            <div className={`rounded-2xl border px-4 py-5 text-center text-sm ${isDarkMode ? "border-slate-800 bg-slate-900 text-slate-400" : "border-slate-200 bg-white text-slate-500"}`}>
+              Cart is empty.
+            </div>
+          )}
+          {activeCart.items.length > 5 && (
+            <div className={`text-center text-xs ${subtleTextClassName}`}>+{activeCart.items.length - 5} more items</div>
+          )}
+        </div>
+
+        <div className={`mt-4 grid gap-2 rounded-2xl border px-4 py-3 text-sm ${isDarkMode ? "border-slate-800 bg-slate-900 text-slate-200" : "border-slate-200 bg-white text-slate-700"}`}>
+          <div className="flex justify-between"><span>Items</span><strong>{activeCart.items.reduce((s, i) => s + i.qty, 0)}</strong></div>
+          {showCosts && totalCost !== null && <div className="flex justify-between"><span>Total cost</span><strong>{formatCurrency(totalCost)}</strong></div>}
+          {totalRetail !== null && <div className="flex justify-between"><span>Total retail</span><strong>{formatCurrency(totalRetail)}</strong></div>}
+          {totalFloor !== null && <div className="flex justify-between"><span>Floor total</span><strong>{formatCurrency(totalFloor)}</strong></div>}
+        </div>
+      </section>
+    );
   };
 
   return (
     <>
       <div className="space-y-5">
         {/* Header & filters */}
-        <section className={`${panelClassName} p-5 md:p-6`}>
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <section className={`${panelClassName} p-4 md:p-5`}>
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-500">Product Search</div>
-              <h2 className={`mt-2 text-2xl font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                Search the furniture catalog
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-500">Shop search</div>
+              <h2 className={`mt-1 text-xl font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                Item lookup
               </h2>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 type="button"
                 onClick={() => setShowCosts((v) => !v)}
-                className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                   showCosts
                     ? isDarkMode ? "border border-emerald-400/40 bg-emerald-400/15 text-emerald-200" : "border border-emerald-400 bg-emerald-100 text-emerald-900"
                     : isDarkMode ? "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" : "border border-slate-300 bg-white text-slate-600 hover:bg-slate-100"
@@ -332,14 +569,14 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
               <button
                 type="button"
                 onClick={() => setCartOpen((v) => !v)}
-                className={`relative inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                className={`relative inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                   cartOpen
                     ? isDarkMode ? "border border-amber-400/40 bg-amber-400/15 text-amber-200" : "border border-amber-400 bg-amber-100 text-amber-900"
                     : isDarkMode ? "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" : "border border-slate-300 bg-white text-slate-600 hover:bg-slate-100"
                 }`}
               >
-                <ShoppingCart size={15} />
-                Carts
+                <ShoppingCart size={17} />
+                <span className="sr-only">Cart</span>
                 {totalCartItems > 0 && (
                   <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-bold ${isDarkMode ? "bg-amber-400 text-slate-900" : "bg-amber-500 text-white"}`}>
                     {totalCartItems}
@@ -348,19 +585,20 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
               </button>
               <button
                 type="button"
-                onClick={onOpenUploadArea}
-                className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                onClick={openSmartCalcWithCart}
+                className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                   isDarkMode ? "border border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/18" : "border border-sky-300 bg-sky-100 text-sky-950 hover:bg-sky-200"
                 }`}
+                title="Send this cart total to Smart Calc"
               >
-                <UploadCloud size={16} />
-                Open Upload & Mapping
+                <Calculator size={16} />
+                Smart Calc
               </button>
             </div>
           </div>
 
           {/* Filter row 1 */}
-          <div className="mt-5 grid gap-3 md:grid-cols-[2.2fr_repeat(3,minmax(0,1fr))]">
+          <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(280px,2fr)_minmax(170px,1fr)_minmax(170px,1fr)_minmax(170px,1fr)]">
             <label className="space-y-2">
               <span className={`text-xs font-semibold uppercase tracking-wide ${subtleTextClassName}`}>Search</span>
               <div className="relative">
@@ -391,8 +629,15 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
             </label>
           </div>
 
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <label className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold ${isDarkMode ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-100" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>
+              <input type="checkbox" checked={inStockOnly} onChange={(e) => setInStockOnly(e.target.checked)} className="h-4 w-4 accent-emerald-500" />
+              In stock only
+            </label>
+          </div>
+
           {/* Filter row 2 */}
-          <div className="mt-3 grid gap-3 md:grid-cols-[repeat(4,minmax(0,1fr))]">
+          <div className="mt-3 grid gap-3 lg:grid-cols-[repeat(4,minmax(150px,1fr))]">
             <label className="space-y-2">
               <span className={`text-xs font-semibold uppercase tracking-wide ${subtleTextClassName}`}>Product Type</span>
               <select value={productType} onChange={(e) => setProductType(e.target.value)} className={inputClassName}>
@@ -419,22 +664,28 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
 
           {(productType || featureTag || priceMin || priceMax) && (
             <div className="mt-3">
-              <button type="button" onClick={() => { setProductType(""); setFeatureTag(""); setPriceMin(""); setPriceMax(""); }}
+              <button type="button" onClick={() => { setProductType(""); setFeatureTag(""); setPriceMin(""); setPriceMax(""); setInStockOnly(false); }}
                 className={`inline-flex items-center gap-1.5 rounded-2xl px-4 py-2.5 text-sm font-semibold transition ${isDarkMode ? "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" : "border border-slate-300 bg-white text-slate-600 hover:bg-slate-100"}`}>
                 <X size={14} /> Clear extra filters
               </button>
             </div>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className={badgeClassName}>
               Showing {sortedItems.length.toLocaleString()} of {(catalogTotal || sortedItems.length).toLocaleString()} products
             </span>
-            {catalogHasMore && (
-              <span className={badgeClassName}>Refine search to see more than {CATALOG_FETCH_LIMIT.toLocaleString()}</span>
+            {canLoadMore && (
+              <span className={badgeClassName}>
+                Scroll or load more for the next {nextBatchSize.toLocaleString()}
+              </span>
+            )}
+            {catalogHasMore && !canLoadMore && (
+              <span className={badgeClassName}>Refine search to see past {CATALOG_MAX_LIMIT.toLocaleString()}</span>
             )}
             <span className={badgeClassName}>{new Set(sortedItems.map((i) => i.manufacturer).filter(Boolean)).size} manufacturers</span>
-            <button type="button" onClick={() => void loadCatalog()}
+            <span className={badgeClassName}>{sortedItems.filter((i) => i.hasInventory).length.toLocaleString()} exact EZPro stock matches</span>
+            <button type="button" onClick={() => void loadCatalog(catalogLimit, "replace")}
               className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition ${isDarkMode ? "border border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"}`}>
               <RefreshCw size={14} /> Refresh
             </button>
@@ -445,6 +696,7 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
           )}
         </section>
 
+        <div className="min-w-0 space-y-5">
         {/* Cart panel */}
         {cartOpen && (
           <section className={`${panelClassName} p-4 md:p-5`}>
@@ -516,6 +768,11 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
                     const { totalCost, totalRetail, totalFloor } = cartTotals(activeCart);
                     return (
                       <div className={`flex flex-wrap items-center justify-end gap-4 rounded-2xl border px-4 py-3 ${isDarkMode ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"}`}>
+                        <button type="button" onClick={openSmartCalcWithCart}
+                          className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition ${isDarkMode ? "border border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/18" : "border border-sky-300 bg-sky-100 text-sky-950 hover:bg-sky-200"}`}
+                          title="Send cart merchandise total to Smart Calc">
+                          <Calculator size={14} /> Smart Calc
+                        </button>
                         <span className={`text-sm font-semibold ${subtleTextClassName}`}>{activeCart.items.reduce((s, i) => s + i.qty, 0)} items</span>
                         {showCosts && totalCost !== null && (
                           <div className="text-right">
@@ -549,7 +806,7 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className={`text-lg font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Catalog Results</h3>
-              <p className={`text-sm ${subtleTextClassName}`}>Click any item to open the detail panel →</p>
+              <p className={`text-sm ${subtleTextClassName}`}>Click any item to open its detail dropdown.</p>
             </div>
             <label className={`flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${isDarkMode ? "border border-slate-700 bg-slate-900 text-slate-300" : "border border-slate-300 bg-white text-slate-700"}`}>
               <span>Sort</span>
@@ -572,14 +829,27 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
                 const active = item.id === selectedId;
                 const inCart = isInActiveCart(item.id);
                 const itemSearchUrl = buildExternalItemSearchUrl(item.sku);
+                const thumbnailUrl = getPrimaryImageUrl(item);
                 return (
                   <div
                     key={item.id}
                     className={`rounded-2xl border px-4 py-3 transition ${active ? (isDarkMode ? "border-sky-400/40 bg-sky-400/10" : "border-sky-300 bg-sky-100/80") : (isDarkMode ? "border-slate-800 bg-slate-950 hover:bg-slate-900" : "border-slate-200 bg-white hover:bg-slate-50")}`}
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      {/* Clickable area for detail */}
-                      <button type="button" onClick={() => handleSelectItem(item.id)} className="flex-1 min-w-0 text-left">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectItem(item.id)}
+                        className={`flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border transition ${isDarkMode ? "border-slate-800 bg-slate-900 hover:border-sky-400/40" : "border-slate-200 bg-white hover:border-sky-300"}`}
+                        title={thumbnailUrl ? "Open larger product image" : "Open item detail"}
+                      >
+                        {thumbnailUrl ? (
+                          <img src={thumbnailUrl} alt={item.description || item.sku || "Product"} className="h-full w-full object-contain" loading="lazy" />
+                        ) : (
+                          <span className={`px-2 text-center text-[11px] font-semibold ${subtleTextClassName}`}>No image</span>
+                        )}
+                      </button>
+                      {/* Clickable area for inline detail dropdown */}
+                      <button type="button" onClick={() => handleSelectItem(item.id)} className="flex-1 min-w-[220px] text-left">
                         <div className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                           {item.description || item.collectionName || item.sku}
                         </div>
@@ -588,6 +858,17 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
                         </div>
                         <div className={`mt-1 text-xs ${subtleTextClassName}`}>
                           SKU {item.sku || "—"} · {formatDimensions(item)} · {item.material || item.colorFinish || "—"}
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {item.hasInventory && (
+                            <div className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${isDarkMode ? "bg-emerald-400/15 text-emerald-200" : "bg-emerald-100 text-emerald-800"}`}>
+                              In stock: {item.inventoryQtyAvailable ?? item.inventoryQtyInStockDam ?? 0}
+                            </div>
+                          )}
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${active ? (isDarkMode ? "bg-sky-400/15 text-sky-200" : "bg-sky-100 text-sky-800") : (isDarkMode ? "bg-slate-900 text-slate-400" : "bg-slate-100 text-slate-600")}`}>
+                            {active ? "Hide detail" : "View detail"}
+                            <ChevronDown size={13} className={`transition-transform ${active ? "rotate-180" : ""}`} />
+                          </span>
                         </div>
                       </button>
                       {/* Prices + cart button */}
@@ -633,7 +914,7 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
                         )}
                       </div>
                     </div>
-                    {itemSearchUrl && (
+                    {itemSearchUrl && !active && (
                       <div className="mt-2">
                         <a href={itemSearchUrl} target="_blank" rel="noreferrer"
                           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition ${isDarkMode ? "border border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/18" : "border border-sky-300 bg-sky-100 text-sky-900 hover:bg-sky-200"}`}>
@@ -641,6 +922,7 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
                         </a>
                       </div>
                     )}
+                    {active && renderSelectedItemDropdown(item)}
                   </div>
                 );
               })
@@ -648,24 +930,48 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
               <div className={`rounded-2xl px-4 py-6 text-sm ${subtleTextClassName}`}>No products matched. Try a broader search or load a new manufacturer.</div>
             )}
           </div>
+          {!loading && (canLoadMore || loadingMore || catalogHasMore) && (
+            <div ref={loadMoreRef} className="mt-4 flex flex-col items-center justify-center gap-2 rounded-2xl px-4 py-5 text-center">
+              {canLoadMore ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                      isDarkMode
+                        ? "border border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/18"
+                        : "border border-sky-300 bg-sky-100 text-sky-950 hover:bg-sky-200"
+                    }`}
+                  >
+                    {loadingMore ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin" />
+                        Loading more...
+                      </>
+                    ) : (
+                      <>
+                        Load {nextBatchSize.toLocaleString()} more
+                      </>
+                    )}
+                  </button>
+                  <div className={`text-xs ${subtleTextClassName}`}>
+                    Auto-loads as you scroll near the bottom.
+                  </div>
+                </>
+              ) : (
+                <div className={`text-sm ${subtleTextClassName}`}>
+                  Loaded the current {CATALOG_MAX_LIMIT.toLocaleString()} item cap. Use search or filters to narrow the catalog further.
+                </div>
+              )}
+            </div>
+          )}
         </section>
+        </div>
       </div>
 
-      {/* Splash screen */}
-      {splashVisible && (
-        <div
-          className={`fixed inset-0 z-[100] flex flex-col items-center justify-center gap-6 transition-opacity duration-500 ${splashFading ? "opacity-0" : "opacity-100"} ${isDarkMode ? "bg-slate-950" : "bg-white"}`}
-        >
-          <div className="flex items-center gap-3">
-            <div className={`h-10 w-10 animate-spin rounded-full border-4 border-t-transparent ${isDarkMode ? "border-sky-400" : "border-sky-500"}`} />
-            <span className={`text-2xl font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Loading Catalog…</span>
-          </div>
-          <p className={`max-w-sm text-center text-base leading-7 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-            {splashJoke.current}
-          </p>
-        </div>
-      )}
-
+      {false && (
+        <>
       {/* Pull tab — always visible on right edge */}
       <button
         type="button"
@@ -846,6 +1152,8 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
           )}
         </div>
       </div>
+        </>
+      )}
     </>
   );
 };

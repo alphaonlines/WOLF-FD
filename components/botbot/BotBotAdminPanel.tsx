@@ -174,15 +174,6 @@ const BotBotAdminPanel: React.FC<BotBotAdminPanelProps> = ({ isDarkMode }) => {
     slow: acc.slow + point.slowResponses,
   }), { events: 0, tokens: 0, errors: 0, denied: 0, slow: 0 }), [history]);
 
-  const userOptions = useMemo(() => {
-    const seen = new Map<number, any>();
-    for (const row of usageData) {
-      const id = usageUserId(row);
-      if (id && !seen.has(id)) seen.set(id, row);
-    }
-    return [...seen.values()];
-  }, [usageData]);
-
   const loadRoleAccess = async (nextRole = roleKey) => {
     setRoleAccess(await fetchRoleAccess(nextRole));
   };

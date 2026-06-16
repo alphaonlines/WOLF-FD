@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Check, RotateCcw, Save, Loader } from 'lucide-react';
+import { Check, RotateCcw, Loader } from 'lucide-react';
 import type { BotBotRuntimeStatus, BotBotSettings, TokenUsageRow } from '../../services/botbotApi';
 import { fetchRuntimeStatus, fetchSettings, saveSettings, fetchTokenUsage } from '../../services/botbotApi';
 

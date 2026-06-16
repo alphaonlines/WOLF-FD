@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
-// Legacy module overlay retained for reference. Live tours now use the shared BotBotTutorial engine.
+// Shared module tour overlay used by WOLF dashboard guides.
 export type ModuleTourStep = {
   target?: string;
   targetSelector?: string;
@@ -121,7 +121,7 @@ const ModuleTourOverlay: React.FC<ModuleTourOverlayProps> = ({ steps, isDarkMode
   };
 
   const handlePrev = () => setCurrentStep((value) => Math.max(value - 1, 0));
-  const description = step?.description || step?.body || 'BotBot will walk you through this part of the workspace.';
+  const description = step?.description || step?.body || 'This guide will walk you through this part of the workspace.';
 
   if (!step) return null;
 
@@ -186,7 +186,7 @@ const ModuleTourOverlay: React.FC<ModuleTourOverlayProps> = ({ steps, isDarkMode
               </div>
               <div className="min-w-0 flex-1">
                 <div className={`text-xs font-semibold uppercase tracking-[0.24em] ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
-                  BotBot module guide
+                  Module guide
                 </div>
                 <h3 className="mt-1 text-lg font-bold leading-tight">
                   {step.title || `Step ${currentStep + 1}`}

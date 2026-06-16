@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import TutorialOverlay from '../app/TutorialOverlay';
+import TutorialOverlay, { type TutorialAction } from '../app/TutorialOverlay';
 import type { Tab } from '../app/tabs';
 
 type BotBotPulseSubTab = 'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews';
@@ -416,7 +416,7 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
     }
 
     if (!activeStep || isTerminalStep || !showRecoveryActions) {
-      const baseActions = [
+      const baseActions: TutorialAction[] = [
         {
           id: 'primary',
           label: primaryLabel,
@@ -438,7 +438,7 @@ const BotBotTutorial: React.FC<BotBotTutorialProps> = ({
       return baseActions;
     }
 
-    const recoveryActions = [
+    const recoveryActions: TutorialAction[] = [
       ...(showBackAction
         ? [{
             id: 'back',

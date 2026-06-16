@@ -599,6 +599,31 @@ export function registerSocialRoutes({
     res.json({ row: post });
   });
 
+  app.delete("/api/social/posts/:id", async (req, res) => {
+    const user = authUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "unauthorized" });
+    const postId = Number(req.params.id);
+    if (!Number.isFinite(postId) || postId <= 0) return res.status(400).json({ error: "invalid id" });
+
+    await pool.query(
+      `
+        DELETE FROM social_publish_jobs
+        WHERE post_id = $1
+      `,
+      [postId]
+    );
+    const result = await pool.query(
+      `
+        DELETE FROM social_posts
+        WHERE id = $1
+        RETURNING id
+      `,
+      [postId]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: "not found" });
+    res.json({ ok: true, id: String(result.rows[0].id) });
+  });
+
   app.post("/api/social/posts/:id/schedule", async (req, res) => {
     const user = authUserFromReq(req);
     if (!user) return res.status(401).json({ error: "unauthorized" });

@@ -14,6 +14,7 @@ export const MODULE_PERMISSION_KEYS = {
   PULSE: "module.pulse",
   AMP: "module.amp",
   SHOP: "module.shop",
+  TRAINING: "module.training",
 } as const;
 
 export const DASHBOARD_CARD_PERMISSION_BY_ID: Record<string, string> = {
@@ -33,6 +34,8 @@ export const DASHBOARD_CARD_PERMISSION_BY_ID: Record<string, string> = {
   "amp-bot": "card.dashboard.amp_bot",
   "shop-search": "card.dashboard.shop_search",
   "shop-pos": "card.dashboard.shop_pos",
+  "shop-calculator": "card.dashboard.shop_calculator",
+  "training-podcasts": "card.dashboard.training_podcasts",
   "update-db": "card.dashboard.update_db",
   "manager-specials": "card.dashboard.manager_specials",
   kiosks: "card.dashboard.kiosks",
@@ -83,18 +86,22 @@ export const MODULE_TO_DASHBOARD_CARD_KEYS: Record<string, string[]> = {
   ],
   [MODULE_PERMISSION_KEYS.PULSE]: [
     DASHBOARD_CARD_PERMISSION_BY_ID["pulse-sales"],
-    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-alphaos"],
     DASHBOARD_CARD_PERMISSION_BY_ID["pulse-website"],
     DASHBOARD_CARD_PERMISSION_BY_ID["pulse-social"],
-    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-reviews"],
   ],
   [MODULE_PERMISSION_KEYS.AMP]: [
     DASHBOARD_CARD_PERMISSION_BY_ID["amp-social"],
     DASHBOARD_CARD_PERMISSION_BY_ID["amp-bot"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-alphaos"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["pulse-reviews"],
   ],
   [MODULE_PERMISSION_KEYS.SHOP]: [
     DASHBOARD_CARD_PERMISSION_BY_ID["shop-search"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["shop-calculator"],
     DASHBOARD_CARD_PERMISSION_BY_ID["shop-pos"],
+  ],
+  [MODULE_PERMISSION_KEYS.TRAINING]: [
+    DASHBOARD_CARD_PERMISSION_BY_ID["training-podcasts"],
   ],
 };
 
@@ -119,6 +126,7 @@ export const ROLE_FALLBACK_PERMISSION_KEYS: Record<UserRole, string[]> = {
     MODULE_PERMISSION_KEYS.PULSE,
     MODULE_PERMISSION_KEYS.AMP,
     MODULE_PERMISSION_KEYS.SHOP,
+    MODULE_PERMISSION_KEYS.TRAINING,
     ...Object.values(DASHBOARD_CARD_PERMISSION_BY_ID),
     FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL,
   ],
@@ -131,11 +139,14 @@ export const ROLE_FALLBACK_PERMISSION_KEYS: Record<UserRole, string[]> = {
     MODULE_PERMISSION_KEYS.WOLFDEN,
     MODULE_PERMISSION_KEYS.PULSE,
     MODULE_PERMISSION_KEYS.SHOP,
+    MODULE_PERMISSION_KEYS.TRAINING,
     DASHBOARD_CARD_PERMISSION_BY_ID.tasks,
     DASHBOARD_CARD_PERMISSION_BY_ID["message-board"],
     DASHBOARD_CARD_PERMISSION_BY_ID.crm,
     DASHBOARD_CARD_PERMISSION_BY_ID["shop-search"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["shop-calculator"],
     DASHBOARD_CARD_PERMISSION_BY_ID["shop-pos"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["training-podcasts"],
   ],
   Marketing: [
     MODULE_PERMISSION_KEYS.DASHBOARD,
@@ -143,12 +154,14 @@ export const ROLE_FALLBACK_PERMISSION_KEYS: Record<UserRole, string[]> = {
     MODULE_PERMISSION_KEYS.MESSAGE_BOARD,
     MODULE_PERMISSION_KEYS.PULSE,
     MODULE_PERMISSION_KEYS.AMP,
+    MODULE_PERMISSION_KEYS.TRAINING,
     DASHBOARD_CARD_PERMISSION_BY_ID.tasks,
     DASHBOARD_CARD_PERMISSION_BY_ID["message-board"],
     DASHBOARD_CARD_PERMISSION_BY_ID["pulse-social"],
     DASHBOARD_CARD_PERMISSION_BY_ID["pulse-reviews"],
     DASHBOARD_CARD_PERMISSION_BY_ID["amp-social"],
     DASHBOARD_CARD_PERMISSION_BY_ID["amp-bot"],
+    DASHBOARD_CARD_PERMISSION_BY_ID["training-podcasts"],
   ],
   Support: [
     MODULE_PERMISSION_KEYS.DASHBOARD,
@@ -170,7 +183,10 @@ export function hasPermission(
   }
 
   const explicit = Array.isArray(explicitPermissions) ? explicitPermissions.filter(Boolean) : [];
-  if (permissionMode === "explicit") return explicit.includes(permissionKey);
+  const linkedDashboardCards = MODULE_TO_DASHBOARD_CARD_KEYS[permissionKey] || [];
+  const hasLinkedCardPermission = linkedDashboardCards.some((key) => explicit.includes(key));
+  if (permissionMode === "explicit") return explicit.includes(permissionKey) || hasLinkedCardPermission;
+  if (explicit.length > 0) return explicit.includes(permissionKey) || hasLinkedCardPermission;
 
   const fallback = new Set<string>();
   for (const role of roles) {

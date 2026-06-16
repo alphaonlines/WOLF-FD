@@ -725,6 +725,7 @@ const rowToCatalogItem = (row: NormalizedProductRow, manufacturerSlug: string, u
   cubes: row.cubes ?? null,
   weightLbs: row.weightLbs ?? null,
   basePrice: row.basePrice ? Number(row.basePrice) : null,
+  imageUrls: [],
   isSet: Boolean(row.isSet),
   setPieceCount: row.setPieceCount ?? null,
   isSwatch: Boolean(row.isSwatch),

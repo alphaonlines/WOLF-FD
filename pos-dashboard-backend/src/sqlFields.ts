@@ -33,7 +33,19 @@ export const SAFE_FINANCE_BALANCE = `
   END
 `;
 
-// Sales analytics should be booked on delivery date (when revenue is realized),
-// not original sale date.
+// Sales analytics default to delivery date (when revenue is realized), but
+// Pulse can also request written-date analytics from the original sale date.
+export type PosDateBasis = "delivered" | "written";
 export const ITEM_DATE_FIELD = "delivery_confirmed_date";
-export const prefixedDateField = (p: string) => `${p}.delivery_confirmed_date`;
+export const WRITTEN_DATE_FIELD = "sale_date";
+
+export const normalizeDateBasis = (value: unknown): PosDateBasis => {
+  return typeof value === "string" && value.trim().toLowerCase() === "written" ? "written" : "delivered";
+};
+
+export const dateFieldForBasis = (value: unknown): string => {
+  return normalizeDateBasis(value) === "written" ? WRITTEN_DATE_FIELD : ITEM_DATE_FIELD;
+};
+
+export const prefixedDateField = (p: string) => `${p}.${ITEM_DATE_FIELD}`;
+export const prefixedDateFieldForBasis = (value: unknown, p: string) => `${p}.${dateFieldForBasis(value)}`;

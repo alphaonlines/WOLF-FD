@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseDateParam, parseTextParam } from "../parsers";
+import { dateFieldForBasis, prefixedDateFieldForBasis } from "../sqlFields";
 import { buildQualifiedPro1stSql } from "../pro1stSql";
 import { registerItemProRoutes } from "./itemProRoutes";
 
@@ -36,6 +37,8 @@ export function registerSalesDetailRoutes({
     if (!salespersonQ) {
       return res.status(400).json({ error: "salesperson is required" });
     }
+    const itemDateField = dateFieldForBasis(req.query.date_basis);
+    const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
 
     const sql = `
     WITH item_totals AS (
@@ -76,7 +79,7 @@ export function registerSalesDetailRoutes({
     )
     SELECT
       p.sale_id,
-      s.delivery_confirmed_date AS sale_date,
+      ${prefixedDateField("s")} AS sale_date,
       p.salesperson,
       COALESCE(p.location, s.location) AS location,
       s.receipt_no,
@@ -219,6 +222,7 @@ export function registerSalesDetailRoutes({
     const end = parseDateParam(req.query.end, "2100-01-01");
     const salespersonQ = parseTextParam(req.query.salesperson);
     const locationQ = parseTextParam(req.query.location);
+    const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
 
     const sql = `
     SELECT

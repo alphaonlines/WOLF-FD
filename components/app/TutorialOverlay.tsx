@@ -111,7 +111,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
         maxHeight: 'min(58dvh, 430px)',
       }
     : { left: cardPosition.left, top: cardPosition.top, width: CARD_WIDTH };
-  const description = slide.description || slide.body || 'Follow the highlighted area and BotBot will walk you through this step.';
+  const description = slide.description || slide.body || 'Follow the highlighted area and this guide will walk you through this step.';
   const actionCount = actions.length;
   const shouldShowTargetPulse = Boolean(highlightedElementRect);
   const shouldPulseTarget = (isAwaitingAction || forceTargetPulse) && shouldShowTargetPulse;
@@ -156,7 +156,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
 
       {shouldShowTargetPulse && (
         <motion.div
-          key={`botbot-tutorial-target-${Math.round(highlightedElementRect?.top || 0)}-${Math.round(highlightedElementRect?.left || 0)}`}
+          key={`module-tour-target-${Math.round(highlightedElementRect?.top || 0)}-${Math.round(highlightedElementRect?.left || 0)}`}
           className="fixed rounded-2xl border-2 border-sky-300/95 bg-sky-500/20 pointer-events-none z-[211]"
           style={{
             left: (highlightedElementRect?.left || 0) - 8,

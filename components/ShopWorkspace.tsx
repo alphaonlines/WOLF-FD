@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Calculator, Receipt, Search } from "lucide-react";
-import { useBotBotContext } from "./botbot/BotBotContext";
 import ProductSearchWorkspace from "./ProductSearchWorkspace";
 import SmartPricingCalculatorPage from "./SmartPricingCalculatorPage";
 
@@ -22,21 +21,10 @@ const ShopWorkspace: React.FC<ShopWorkspaceProps> = ({
   hideTabBar = false,
 }) => {
   const [subTab, setSubTab] = useState<ShopSubTab>(requestedSubTab);
-  const { setPageContext } = useBotBotContext();
 
   useEffect(() => {
     setSubTab(requestedSubTab);
   }, [requestedSubTab, requestedSubTabToken]);
-
-  useEffect(() => {
-    setPageContext({
-      pageName: "Shop",
-      module: "shop",
-      userRole: "Employee",
-      keyMetricsVisible: [],
-      suggestedActions: [],
-    });
-  }, [setPageContext]);
 
   const divider = isDarkMode ? "border-slate-800" : "border-slate-200";
   const stickyBarClass = isDarkMode
@@ -74,7 +62,7 @@ const ShopWorkspace: React.FC<ShopWorkspaceProps> = ({
       <div className="flex-1 overflow-hidden">
         {subTab === "search" ? (
           <div className="h-full overflow-auto p-5 lg:p-7">
-            <ProductSearchWorkspace isDarkMode={isDarkMode} onOpenUploadArea={onOpenUploadArea} />
+            <ProductSearchWorkspace isDarkMode={isDarkMode} onOpenSmartCalc={() => setSubTab("calculator")} />
           </div>
         ) : subTab === "calculator" ? (
           <SmartPricingCalculatorPage isDarkMode={isDarkMode} />

@@ -1,35 +1,20 @@
+---
+Last Modified: 2026-06-07 01:37 -0400
+Modified By: Mason S. Ives / gpt-5.5
+Related Kanban: N/A
+Project: WOLF FD Dashboard
+Machine: AlphaHS
+Version: 0.6.07.0131
+---
+
 # Agent Handoff Pointer
 
-`AGENTS.md` is the canonical working guide for `/home/alphahs/WOLF-FD`. Read it first and keep it updated.
+`AGENTS.md` is the canonical WOLF-FD working guide for `/home/alphahs/WOLF-FD`.
 
-## Current Boundary
+Read it first.
 
-- This machine is to be treated as local-LLM infrastructure only.
-- Do not configure cloud LLM provider keys, hosted-model credentials, or hosted-model fallback routes here unless Anthony explicitly requests that change.
-- Prefer local/LAN runtimes such as Ollama for model availability, model selection, health checks, and token/cost tracking.
-- If an LLM feature cannot run locally, report the missing local runtime/model instead of falling back to a hosted API.
+Current critical warning: live FD was restored to static version `1.6.3.1554` after a reverted Pulse / Sales Analysis deploy. Do not deploy a frontend build unless its built asset contains `Finance Cost`, `fd-sales-analysis-card-order`, `SHOP_CALCULATOR`, `AMP_FDCONNECT`, and `AMP_KIOSKS`.
 
-## Current Operational Snapshot
+Keep detailed operating history in `AGENTS.md` and `docs/`; keep this file as a compact pointer for agents that search for `@agents.md`.
 
-- Repo: `/home/alphahs/WOLF-FD`
-- Current branch: `botbot-tutorial-revive`
-- Canonical guide: `/home/alphahs/WOLF-FD/AGENTS.md`
-- Frontend: Vite + React + TypeScript, built to `dist/`
-- Backend: Node.js + Express + TypeScript in `pos-dashboard-backend/`
-- PM2 process: `pos-api`
-- Live app: `https://furnituredistributors.wolf.discount/fd/`
-- Live API path: `https://furnituredistributors.wolf.discount/fd/api/`
-- Current display version as of this handoff: `0.5.1.2040`
-
-
-## WOLFbot Playground Coordination
-
-- `/ai` on `wolf.discount` is planned to become WOLFbot Playground.
-- Staging root: `/home/alphahs/wolfbot-playground`.
-- Reuse WOLF-FD login/session patterns for users.
-- Keep model execution local on `MSILaptop`; do not add hosted LLM fallback without explicit direction.
-- Do not deploy over live `/ai` without final confirmation.
-
-## Maintenance Rule
-
-Keep detailed history and running-task notes in `AGENTS.md`; keep this file as a compact pointer for agents that look for `@agents.md`.
+Current live note: FD Pulse organic embed deployed as version `0.6.07.0131`; public route `https://furnituredistributors.wolf.discount/fd/pulse-organic/`; PM2 service `fd-pulse-dashboard`; latest live FD asset `index-DNTUziDL.js`.

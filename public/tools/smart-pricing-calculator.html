@@ -444,18 +444,19 @@
 
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.5.28.1535">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.6.4.1616">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.5.28.1535</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.6.4.1616</p>
             <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <button id="smartcalc-tutorial-btn" type="button" class="inline-flex items-center justify-center rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown transition">Start guided tutorial</button>
                 <button id="top-reset-btn" type="button" class="inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
             </div>
+            <div id="smartcalc-cart-transfer-notice" class="mt-4 hidden rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-left text-sm font-semibold text-sky-900"></div>
         </header>
 
         <div class="space-y-6">
@@ -967,7 +968,7 @@
                     <span class="text-sm text-gray-600">day(s). Defaults to 2 days if blank.</span>
                 </div>
             </div>
-            <button id="reset-btn" type="button" class="w-full bg-brand-orange text-white font-semibold py-2 px-4 rounded-md hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition hidden mt-6">Print Customer Copy</button>
+            <button id="reset-btn" type="button" class="w-full bg-brand-orange text-white font-semibold py-2 px-4 rounded-md hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition hidden mt-6">Print Quote Copies</button>
             </div>
                 </div>
             </div>
@@ -975,6 +976,43 @@
         <footer class="powered-footer">
             Powered by: <a href="https://wolf.discount" target="_blank" rel="noopener noreferrer">WOLF.discount</a>
         </footer>
+    </div>
+
+    <div id="smartcalc-customer-modal" class="fixed inset-0 z-[120] hidden items-center justify-center bg-black/50 px-4 py-6" aria-hidden="true">
+        <section class="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="smartcalc-customer-modal-title" aria-describedby="smartcalc-customer-modal-description">
+            <div class="space-y-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange">Save quote before print</p>
+                <h2 id="smartcalc-customer-modal-title" class="text-2xl font-black text-brand-brown">Customer quote details</h2>
+                <p id="smartcalc-customer-modal-description" class="text-sm leading-6 text-gray-600">Capture the customer so this Smart Calc quote can be saved to CRM before the customer and employee copies print.</p>
+            </div>
+            <form id="smartcalc-customer-form" class="mt-5 space-y-4">
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="smartcalc-customer-first-name" class="block text-sm font-semibold text-brand-brown">First name</label>
+                        <input id="smartcalc-customer-first-name" type="text" autocomplete="given-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                    </div>
+                    <div>
+                        <label for="smartcalc-customer-last-name" class="block text-sm font-semibold text-brand-brown">Last name</label>
+                        <input id="smartcalc-customer-last-name" type="text" autocomplete="family-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                    </div>
+                    <div>
+                        <label for="smartcalc-customer-phone" class="block text-sm font-semibold text-brand-brown">Phone</label>
+                        <input id="smartcalc-customer-phone" type="tel" autocomplete="tel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2" placeholder="Customer phone">
+                    </div>
+                    <div>
+                        <label for="smartcalc-customer-email" class="block text-sm font-semibold text-brand-brown">Email</label>
+                        <input id="smartcalc-customer-email" type="email" autocomplete="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2" placeholder="Customer email">
+                    </div>
+                </div>
+                <p class="text-xs leading-5 text-gray-500">Fill this out to save the quote to CRM, or use Skip & print to print the customer and employee copies without saving.</p>
+                <div id="smartcalc-customer-status" class="min-h-[1.25rem] rounded-md px-3 py-2 text-sm font-medium text-gray-600" aria-live="polite"></div>
+                <div class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+                    <button id="smartcalc-customer-cancel" type="button" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">Cancel</button>
+                    <button id="smartcalc-customer-print-without-save" type="button" class="rounded-md border border-amber-500 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">Skip & print</button>
+                    <button id="smartcalc-customer-save-print" type="submit" class="rounded-md bg-brand-orange px-4 py-2 text-sm font-semibold text-white hover:bg-brand-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange">Save quote & print</button>
+                </div>
+            </form>
+        </section>
     </div>
 
     <div id="smartcalc-tour-overlay" class="smartcalc-tour-overlay" aria-hidden="true">
@@ -996,7 +1034,7 @@
             <div class="smartcalc-tour-progress" aria-hidden="true"><span id="smartcalc-tour-progress-bar"></span></div>
             <div class="smartcalc-tour-inner">
                 <div class="smartcalc-tour-header">
-                    <div id="smartcalc-tour-botbot" class="smartcalc-botbot-orb" role="img" aria-label="BotBot assistant">
+                    <div id="smartcalc-tour-botbot" class="smartcalc-botbot-orb" role="img" aria-label="WOLFbot assistant">
                         <svg aria-hidden="true" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 8V4H8" />
                             <rect x="4" y="8" width="16" height="12" rx="4" />
@@ -1006,7 +1044,7 @@
                         </svg>
                     </div>
                     <div class="min-w-0 flex-1">
-                        <p id="smartcalc-tour-step-count" class="smartcalc-botbot-label">BotBot says • Step 1 of 1</p>
+                        <p id="smartcalc-tour-step-count" class="smartcalc-botbot-label">WOLFbot says • Step 1 of 1</p>
                         <h2 id="smartcalc-tour-title" class="mt-3 text-2xl font-black leading-tight text-brand-brown">Smart Calc tutorial</h2>
                     </div>
                 </div>
@@ -1211,9 +1249,22 @@ function showLicenseLockScreen(message) {
                 adjustmentFieldValue: document.getElementById('adjustment-field-value'),
                 copyAdjustmentFieldBtn: document.getElementById('copy-adjustment-field'),
                 copyAdjustmentStatus: document.getElementById('copy-adjustment-status'),
-                quoteValidDaysInput: document.getElementById('quote-valid-days')
+                quoteValidDaysInput: document.getElementById('quote-valid-days'),
+                customerQuoteModal: document.getElementById('smartcalc-customer-modal'),
+                customerQuoteForm: document.getElementById('smartcalc-customer-form'),
+                customerQuoteFirstNameInput: document.getElementById('smartcalc-customer-first-name'),
+                customerQuoteLastNameInput: document.getElementById('smartcalc-customer-last-name'),
+                customerQuotePhoneInput: document.getElementById('smartcalc-customer-phone'),
+                customerQuoteEmailInput: document.getElementById('smartcalc-customer-email'),
+                customerQuoteSavePrintBtn: document.getElementById('smartcalc-customer-save-print'),
+                customerQuoteCancelBtn: document.getElementById('smartcalc-customer-cancel'),
+                customerQuotePrintWithoutSaveBtn: document.getElementById('smartcalc-customer-print-without-save'),
+                customerQuoteStatus: document.getElementById('smartcalc-customer-status'),
+                cartTransferNotice: document.getElementById('smartcalc-cart-transfer-notice')
             };
 
+            const SMART_CALC_CART_TRANSFER_KEY = 'fd-smartcalc-cart-transfer';
+            let currentCartTransfer = null;
             let currentRetailPrice = 0;
             let currentGrandTotal = 0; // MODIFIED: Keep track of grand total globally
             let currentTaxAmount = 0;
@@ -1228,6 +1279,8 @@ function showLicenseLockScreen(message) {
         let pro1stDiscountAmountEdited = false;
         let notesManuallyEdited = false;
         let lastGeneratedNotes = '';
+        let pendingCustomerQuoteSnapshot = null;
+        let customerQuoteTriggerElement = null;
 
         const SMARTCALC_TUTORIAL_STORAGE_KEY = 'fd_smartcalc_tutorial_completed_v1';
         const SMARTCALC_TUTORIAL_MESSAGE = 'FD_SMART_CALC_START_TUTORIAL';
@@ -1243,28 +1296,28 @@ function showLicenseLockScreen(message) {
         const smartCalcTutorialSteps = [
             {
                 title: 'Welcome to Smart Calc',
-                body: 'This guided tutorial walks through the same quoting flow the sales team uses: pick a starting point, price the merchandise, add delivery/protection/tax, document discounts, then copy notes or print a customer copy.',
+                body: 'This guided tutorial walks through the same quoting flow the sales team uses: pick a starting point, price the merchandise, add delivery/protection/tax, document discounts, then copy notes or print quote copies.',
                 tip: 'Training mode drives the form with fixed example values so every employee gets the same clean walkthrough. Use Next, Back, or Skip tutorial only.',
                 target: 'header'
             },
             {
                 title: 'Choose your starting point',
                 body: 'Start from Base Cost when you know vendor cost, EZ Pro Cost Code when a coded cost is printed, or Tagged Price when the selling price is already known.',
-                tip: 'BotBot selects Base Cost for this demo. The highlighted calculator controls are visual-only while the tutorial is open.',
+                tip: 'WOLFbot selects Base Cost for this demo. The highlighted calculator controls are visual-only while the tutorial is open.',
                 target: '#smartcalc-tour-entry-mode',
                 demoAction: 'choose-base-cost'
             },
             {
                 title: 'Enter vendor and base cost',
                 body: 'Choose the vendor, then enter one or more costs. Smart Calc adds freight and supports multiple pieces separated by plus signs, commas, or spaces.',
-                tip: 'BotBot will overwrite the demo form with ASHLEY and 399 + 299, 179, then Smart Calc calculates freight through the normal input events.',
+                tip: 'WOLFbot will overwrite the demo form with ASHLEY and 399 + 299, 179, then Smart Calc calculates freight through the normal input events.',
                 target: '#base-cost-section',
                 demoAction: 'fill-base-cost-example'
             },
             {
                 title: 'Set the selling goal',
                 body: 'After Smart Calc has a cost or tagged price, enter either the target margin percent or the retail price. The result box updates with the adjusted ticket GPM.',
-                tip: 'BotBot uses a 55% margin target so the add-ons, totals, and notes sections wake up without manual typing.',
+                tip: 'WOLFbot uses a 55% margin target so the add-ons, totals, and notes sections wake up without manual typing.',
                 target: '#calculator-section',
                 fallbackTarget: '#base-cost-section',
                 demoAction: 'fill-margin-example'
@@ -1272,7 +1325,7 @@ function showLicenseLockScreen(message) {
             {
                 title: 'Add delivery and services',
                 body: 'Turn on threshold delivery, local delivery, outside-area miles, assembly, removal, and other services that should appear on the ticket.',
-                tip: 'BotBot checks local delivery for the example. Real users can change services after the tutorial exits.',
+                tip: 'WOLFbot checks local delivery for the example. Real users can change services after the tutorial exits.',
                 target: '#addons-section',
                 fallbackTarget: '#base-cost-section',
                 demoAction: 'toggle-delivery-example'
@@ -1280,7 +1333,7 @@ function showLicenseLockScreen(message) {
             {
                 title: 'Add Pro1st protection',
                 body: 'Use Pro1st when the customer accepts protection. Select the plan type, covered items, and covered value when only part of the ticket is protected.',
-                tip: 'BotBot has opened Pro1st for the example, fills sofa and loveseat, and uses 899 as the covered value for this training quote.',
+                tip: 'WOLFbot has opened Pro1st for the example, fills sofa and loveseat, and uses 899 as the covered value for this training quote.',
                 target: '#pro1st-options-wrapper',
                 fallbackTarget: '#add-pro1st',
                 prepareAction: 'reveal-pro1st-example',
@@ -1289,7 +1342,7 @@ function showLicenseLockScreen(message) {
             {
                 title: 'Document discounts',
                 body: 'Check every discount reason that applies. Each selected reason gets its own amount and detail so the adjustment field and notes stay audit-ready.',
-                tip: 'BotBot has opened one small manager-approval training discount so the adjustment field and sales notes show the audit trail.',
+                tip: 'WOLFbot has opened one small manager-approval training discount so the adjustment field and sales notes show the audit trail.',
                 target: '#smartcalc-tour-discount-reasons',
                 fallbackTarget: '#addons-section',
                 prepareAction: 'reveal-discount-example',
@@ -1298,7 +1351,7 @@ function showLicenseLockScreen(message) {
             {
                 title: 'Confirm tax and financing',
                 body: 'Tax defaults to the highest store rate. Change the location only when the ticket should use the alternate rate, and show financing when a monthly-payment view helps close the sale.',
-                tip: 'BotBot turns on the display-only financing view. Final financing approval is still confirmed at checkout.',
+                tip: 'WOLFbot turns on the display-only financing view. Final financing approval is still confirmed at checkout.',
                 target: '#financing-section',
                 fallbackTarget: '#add-tax',
                 demoAction: 'toggle-financing-example'
@@ -1306,13 +1359,13 @@ function showLicenseLockScreen(message) {
             {
                 title: 'Copy sales order notes',
                 body: 'Smart Calc builds notes from the quote, coverage, delivery, discounts, and policy details. Copy them into the sales order before checkout.',
-                tip: 'BotBot does not auto-copy to the clipboard. Copy the notes after the tutorial exits.',
+                tip: 'WOLFbot does not auto-copy to the clipboard. Copy the notes after the tutorial exits.',
                 target: '#sales-notes-section'
             },
             {
                 title: 'Print the customer copy',
-                body: 'When the quote is ready, print the customer copy to show merchandise, delivery fees, discounts, tax, and the final total.',
-                tip: 'BotBot does not open the print dialog. Print the customer copy after the tutorial exits.',
+                body: 'When the quote is ready, print the customer copy plus the internal employee copy with item numbers and itemized prices.',
+                tip: 'WOLFbot does not open the print dialog. Print the quote copies after the tutorial exits.',
                 target: '#smartcalc-tour-copy-print-section',
                 fallbackTarget: '#sales-notes-section'
             },
@@ -1340,6 +1393,7 @@ function showLicenseLockScreen(message) {
                 setupEventListeners();
                 preventNumberInputWheelChanges();
                 setupGuidedTutorial();
+                applySmartCalcCartTransfer();
             }
 
             function preventNumberInputWheelChanges() {
@@ -1350,6 +1404,60 @@ function showLicenseLockScreen(message) {
                         }
                     }, { passive: false });
                 });
+            }
+
+            function normalizeMoneyValue(value) {
+                const numeric = Number(value);
+                return Number.isFinite(numeric) ? Math.round((numeric + Number.EPSILON) * 100) / 100 : null;
+            }
+
+            function getTransferredCartItems() {
+                return Array.isArray(currentCartTransfer?.items) ? currentCartTransfer.items : [];
+            }
+
+            function applySmartCalcCartTransfer() {
+                let rawTransfer = '';
+                try {
+                    rawTransfer = window.localStorage.getItem(SMART_CALC_CART_TRANSFER_KEY) || '';
+                    if (rawTransfer) window.localStorage.removeItem(SMART_CALC_CART_TRANSFER_KEY);
+                } catch (error) {
+                    rawTransfer = '';
+                }
+                if (!rawTransfer) return;
+
+                try {
+                    const parsed = JSON.parse(rawTransfer);
+                    const merchandiseTotal = normalizeMoneyValue(parsed?.merchandiseTotal);
+                    if (!merchandiseTotal || merchandiseTotal <= 0) return;
+                    const cartItems = Array.isArray(parsed.items) ? parsed.items.map((item) => ({
+                        sku: String(item?.sku || ''),
+                        manufacturer: String(item?.manufacturer || ''),
+                        description: String(item?.description || item?.sku || 'Catalog item'),
+                        qty: Math.max(1, parseInt(item?.qty || '1', 10) || 1),
+                        retailPrice: normalizeMoneyValue(item?.retailPrice),
+                        retailTotal: normalizeMoneyValue(item?.retailTotal),
+                        floorPrice: normalizeMoneyValue(item?.floorPrice),
+                        cost: normalizeMoneyValue(item?.cost),
+                        imageUrl: String(item?.imageUrl || '')
+                    })) : [];
+                    currentCartTransfer = {
+                        source: 'product-search-cart',
+                        createdAt: String(parsed?.createdAt || new Date().toISOString()),
+                        cartName: String(parsed?.cartName || 'Product Search Cart'),
+                        merchandiseTotal,
+                        itemCount: Math.max(0, parseInt(parsed?.itemCount || '0', 10) || cartItems.reduce((sum, item) => sum + item.qty, 0)),
+                        items: cartItems
+                    };
+                    setEntryMode('tagged');
+                    allElements.manualRetailInput.value = merchandiseTotal.toFixed(2);
+                    handleManualRetailInput();
+                    if (allElements.cartTransferNotice) {
+                        allElements.cartTransferNotice.textContent = `${currentCartTransfer.cartName} sent ${formatCurrency(merchandiseTotal)} merchandise total from Product Search. Discounts, delivery, protection, tax, and print copies can be finished here.`;
+                        allElements.cartTransferNotice.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.warn('Smart Calc cart transfer could not be applied', error);
+                }
             }
 
 
@@ -1558,7 +1666,7 @@ function showLicenseLockScreen(message) {
                 tourElements.body.textContent = step.body;
                 tourElements.tip.textContent = step.tip || '';
                 tourElements.tip.classList.toggle('hidden', !step.tip);
-                tourElements.stepCount.textContent = `BotBot says • Step ${currentTutorialStepIndex + 1} of ${smartCalcTutorialSteps.length}`;
+                tourElements.stepCount.textContent = `WOLFbot says • Step ${currentTutorialStepIndex + 1} of ${smartCalcTutorialSteps.length}`;
                 if (tourElements.progressBar) {
                     const progressPercent = ((currentTutorialStepIndex + 1) / smartCalcTutorialSteps.length) * 100;
                     tourElements.progressBar.style.width = `${progressPercent}%`;
@@ -1781,10 +1889,10 @@ function showLicenseLockScreen(message) {
                 tourElements.spotlight.disabled = true;
                 tourElements.spotlight.setAttribute('aria-label', 'Highlighted tutorial section');
 
-                positionBotBotPointer(spotlightRect);
+                positionWOLFbotPointer(spotlightRect);
             }
 
-            function positionBotBotPointer(spotlightRect) {
+            function positionWOLFbotPointer(spotlightRect) {
                 const tourElements = getTutorialElements();
                 const pointer = tourElements.botbotPointer;
                 if (!pointer || !spotlightRect) return;
@@ -1951,8 +2059,16 @@ function showLicenseLockScreen(message) {
                     updateGrandTotal();
                 });
                 allElements.storeLocationSelect.addEventListener('change', updateGrandTotal);
-                allElements.resetBtn.addEventListener('click', printCustomerCopy);
+                allElements.resetBtn.addEventListener('click', openCustomerCopyCapture);
                 allElements.topResetBtn.addEventListener('click', resetForm);
+                allElements.customerQuoteForm?.addEventListener('submit', handleCustomerQuoteSubmit);
+                allElements.customerQuoteCancelBtn?.addEventListener('click', closeCustomerQuoteModal);
+                allElements.customerQuotePrintWithoutSaveBtn?.addEventListener('click', printCustomerCopyWithoutSaving);
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && allElements.customerQuoteModal && !allElements.customerQuoteModal.classList.contains('hidden')) {
+                        closeCustomerQuoteModal();
+                    }
+                });
                 allElements.copySalesNotesBtn.addEventListener('click', copySalesOrderNotes);
                 allElements.copyAdjustmentFieldBtn.addEventListener('click', copyAdjustmentFieldAmount);
                 allElements.showFinancingCheckbox.addEventListener('change', updateFinancingBreakdown);
@@ -3003,14 +3119,201 @@ function showLicenseLockScreen(message) {
                 return expirationDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
             }
 
-            function printCustomerCopy() {
+            function getQuoteValidUntilIsoDate() {
+                const expirationDate = new Date();
+                expirationDate.setDate(expirationDate.getDate() + getQuoteValidDays());
+                return expirationDate.toISOString().slice(0, 10);
+            }
+
+            function roundMoney(value) {
+                const number = Number(value || 0);
+                return Number.isFinite(number) ? Number(number.toFixed(2)) : 0;
+            }
+
+            function getCustomerQuoteFields() {
+                return {
+                    first_name: (allElements.customerQuoteFirstNameInput?.value || '').trim(),
+                    last_name: (allElements.customerQuoteLastNameInput?.value || '').trim(),
+                    phone: (allElements.customerQuotePhoneInput?.value || '').trim(),
+                    email: (allElements.customerQuoteEmailInput?.value || '').trim()
+                };
+            }
+
+            function validateCustomerQuoteFields(customer) {
+                if (!customer.first_name || !customer.last_name) {
+                    return 'First and last name are required before saving this quote.';
+                }
+                if (!customer.phone && !customer.email) {
+                    return 'Phone or email is required so CRM can match this quote.';
+                }
+                return '';
+            }
+
+            function setCustomerQuoteStatus(message, tone = 'neutral') {
+                if (!allElements.customerQuoteStatus) return;
+                const toneClasses = {
+                    neutral: 'text-gray-600 bg-transparent',
+                    error: 'text-red-800 bg-red-50',
+                    warning: 'text-amber-900 bg-amber-50',
+                    success: 'text-emerald-800 bg-emerald-50'
+                };
+                allElements.customerQuoteStatus.className = `min-h-[1.25rem] rounded-md px-3 py-2 text-sm font-medium ${toneClasses[tone] || toneClasses.neutral}`;
+                allElements.customerQuoteStatus.textContent = message;
+            }
+
+            function setCustomerQuoteSaving(isSaving) {
+                if (allElements.customerQuoteSavePrintBtn) {
+                    allElements.customerQuoteSavePrintBtn.disabled = isSaving;
+                    allElements.customerQuoteSavePrintBtn.textContent = isSaving ? 'Saving quote...' : 'Save quote & print';
+                }
+            }
+
+            function buildCustomerCopyChargeSnapshot() {
+                const charges = [{ label: 'Merchandise Total', amount: roundMoney(currentRetailPrice) }];
+                if (allElements.addThresholdDeliveryCheckbox?.checked) {
+                    charges.push({ label: 'Threshold Delivery', amount: 75 });
+                }
+                if (allElements.addDeliveryCheckbox?.checked) {
+                    const localDelivery = getLocalDeliveryCharge();
+                    const powerBaseSetup = getPowerBaseSetupCharge();
+                    const upcharge = getDeliveryUpcharge();
+                    if (localDelivery > 0) charges.push({ label: getLocalDeliveryLabel(), amount: roundMoney(localDelivery) });
+                    if (powerBaseSetup > 0) charges.push({ label: 'Power Base Delivery/Setup Upcharge', amount: roundMoney(powerBaseSetup) });
+                    if (allElements.addLongDistanceCheckbox?.checked && upcharge > 0) charges.push({ label: 'Outside Area Upcharge (DEL_UPCHARGE)', amount: roundMoney(upcharge) });
+                }
+                if (allElements.addAssemblyCheckbox?.checked) charges.push({ label: 'Assembly Fee', amount: 65 });
+                if (allElements.addAshleyExpressCheckbox?.checked) charges.push({ label: 'Ashley Express Fee', amount: ASHLEY_EXPRESS_FEE });
+                if (allElements.addPro1stCheckbox?.checked) charges.push({ label: 'Pro1st Protection', amount: roundMoney(getPro1stCharge()), detail: getPro1stCustomerCopyDetail() });
+                if (allElements.addRemovalCheckbox?.checked && currentRemovalCharge > 0) {
+                    charges.push({ label: 'Removal Fee', amount: 35 });
+                    const additionalRemoval = getAdditionalRemovalCharge();
+                    if (additionalRemoval > 0) charges.push({ label: 'Non-Inventory Removal Fee', amount: roundMoney(additionalRemoval) });
+                }
+                return charges;
+            }
+
+            function buildCustomerQuotePayload() {
+                updateGrandTotal();
+                const discountEntries = getDiscountReasonEntries()
+                    .filter((entry) => entry.amount > 0)
+                    .map((entry) => ({
+                        label: entry.label,
+                        detail: entry.detail || '',
+                        amount: roundMoney(entry.amount),
+                        affects_subtotal: entry.affectsSubtotal !== false
+                    }));
+                return {
+                    store: 'FD7',
+                    source_context: 'shop-smart-calc',
+                    quote_total: roundMoney(currentGrandTotal),
+                    subtotal_before_tax: roundMoney(currentTotalBeforeTax),
+                    tax_amount: roundMoney(currentTaxAmount),
+                    discount_total: roundMoney(currentAdditionalDiscount),
+                    quote_valid_days: getQuoteValidDays(),
+                    quote_valid_until: getQuoteValidUntilIsoDate(),
+                    sales_order_notes: allElements.salesOrderNotes?.value || '',
+                    quote_snapshot: {
+                        pricing_input_mode: currentPricingInputMode,
+                        target_margin: currentTargetMargin,
+                        retail_price: roundMoney(currentRetailPrice),
+                        total_before_tax: roundMoney(currentTotalBeforeTax),
+                        discounted_subtotal: roundMoney(currentDiscountedSubtotal),
+                        adjustment_total: roundMoney(currentAdjustmentTotal),
+                        store_location: allElements.storeLocationSelect?.value || 'camp-greenville',
+                        charges: buildCustomerCopyChargeSnapshot(),
+                        discounts: discountEntries,
+                        cart_transfer: currentCartTransfer,
+                        notes: allElements.salesOrderNotes?.value || ''
+                    }
+                };
+            }
+
+            function openCustomerCopyCapture(event) {
                 updateGrandTotal();
                 if (!currentRetailPrice || currentRetailPrice <= 0 || !currentGrandTotal || currentGrandTotal <= 0) {
-                    window.alert('Enter a selling price before printing a customer copy.');
+                    window.alert('Enter a selling price before printing customer and employee copies.');
+                    return;
+                }
+                pendingCustomerQuoteSnapshot = buildCustomerQuotePayload();
+                customerQuoteTriggerElement = event?.currentTarget || document.activeElement;
+                setCustomerQuoteStatus('');
+                allElements.customerQuotePrintWithoutSaveBtn?.classList.remove('hidden');
+                allElements.customerQuoteModal?.classList.remove('hidden');
+                allElements.customerQuoteModal?.classList.add('flex');
+                allElements.customerQuoteModal?.setAttribute('aria-hidden', 'false');
+                setTimeout(() => allElements.customerQuoteFirstNameInput?.focus(), 0);
+            }
+
+            function closeCustomerQuoteModal() {
+                allElements.customerQuoteModal?.classList.add('hidden');
+                allElements.customerQuoteModal?.classList.remove('flex');
+                allElements.customerQuoteModal?.setAttribute('aria-hidden', 'true');
+                setCustomerQuoteStatus('');
+                allElements.customerQuotePrintWithoutSaveBtn?.classList.remove('hidden');
+                setCustomerQuoteSaving(false);
+                if (customerQuoteTriggerElement && typeof customerQuoteTriggerElement.focus === 'function') {
+                    customerQuoteTriggerElement.focus();
+                }
+            }
+
+            async function handleCustomerQuoteSubmit(event) {
+                event.preventDefault();
+                const customer = getCustomerQuoteFields();
+                const validationMessage = validateCustomerQuoteFields(customer);
+                if (validationMessage) {
+                    setCustomerQuoteStatus(validationMessage, 'error');
                     return;
                 }
 
-                const merchandiseRows = [{ label: 'Merchandise Total', amount: currentRetailPrice }];
+                const quote = pendingCustomerQuoteSnapshot || buildCustomerQuotePayload();
+                pendingCustomerQuoteSnapshot = quote;
+                setCustomerQuoteSaving(true);
+                setCustomerQuoteStatus('Saving quote to CRM before printing...', 'neutral');
+                allElements.customerQuotePrintWithoutSaveBtn?.classList.add('hidden');
+
+                try {
+                    const response = await fetch('/fd/api/api/crm/quotes', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ customer, quote })
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Quote save failed with HTTP ${response.status}`);
+                    }
+                    const savedQuote = await response.json();
+                    closeCustomerQuoteModal();
+                    printCustomerCopy({ customer, savedQuote, quote, saved: true });
+                } catch (error) {
+                    console.warn('Smart Calc quote save failed', error);
+                    setCustomerQuoteStatus('Could not save this quote to CRM. Check your dashboard sign-in, then retry or use Skip & print.', 'warning');
+                    allElements.customerQuotePrintWithoutSaveBtn?.classList.remove('hidden');
+                } finally {
+                    setCustomerQuoteSaving(false);
+                }
+            }
+
+            function printCustomerCopyWithoutSaving() {
+                const customer = getCustomerQuoteFields();
+                const quote = pendingCustomerQuoteSnapshot || buildCustomerQuotePayload();
+                closeCustomerQuoteModal();
+                printCustomerCopy({ customer, savedQuote: null, quote, saved: false });
+            }
+
+            function printCustomerCopy(printContext = {}) {
+                updateGrandTotal();
+                if (!currentRetailPrice || currentRetailPrice <= 0 || !currentGrandTotal || currentGrandTotal <= 0) {
+                    window.alert('Enter a selling price before printing a customer and employee copy.');
+                    return;
+                }
+
+                const transferredCartItems = getTransferredCartItems();
+                const transferredItemCount = transferredCartItems.reduce((sum, item) => sum + (parseInt(item.qty || '1', 10) || 1), 0);
+                const merchandiseRows = [{
+                    label: 'Merchandise Total',
+                    amount: currentRetailPrice,
+                    detail: transferredCartItems.length ? `${transferredItemCount} catalog item${transferredItemCount === 1 ? '' : 's'} from Product Search` : ''
+                }];
                 const deliveryFeeRows = [];
                 const additionalRemoval = getAdditionalRemovalCharge();
                 if (allElements.addThresholdDeliveryCheckbox?.checked) {
@@ -3054,6 +3357,25 @@ function showLicenseLockScreen(message) {
                 const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
                 const quoteValidDays = getQuoteValidDays();
                 const quoteExpirationDate = getQuoteExpirationDateLabel();
+                const savedCustomerRecord = printContext.savedQuote?.customer || {};
+                const customer = printContext.customer || {};
+                const customerName = [customer.first_name, customer.last_name].filter(Boolean).join(' ') || savedCustomerRecord.name || 'Not captured';
+                const salesOrderNotes = (printContext.quote?.sales_order_notes || allElements.salesOrderNotes?.value || '').trim();
+                const customerRowsHtml = `
+                    <div class="row"><span>Customer:</span><strong>${escapeHtml(customerName)}</strong></div>
+                `;
+                const salesNotesHtml = salesOrderNotes ? `<section class="panel notes-panel"><h2>Sales Order Notes</h2><p>${escapeHtml(salesOrderNotes).replace(/\n/g, '<br>')}</p></section>` : '';
+                const printRowCount = merchandiseRows.length + deliveryFeeRows.length + subtotalDiscountEntries.length
+                    + 4 + transferredCartItems.length + (currentTaxAmount > 0 ? 1 : 0) + (salesTaxDiscountEntry ? 1 : 0);
+                const printNoteWeight = salesOrderNotes.length + removalDescription.length + closeoutAsIsDetail.length;
+                let quoteDensity = 'spacious';
+                if (printRowCount >= 18 || printNoteWeight > 850) {
+                    quoteDensity = 'dense';
+                } else if (printRowCount >= 13 || printNoteWeight > 420) {
+                    quoteDensity = 'compact';
+                } else if (printRowCount >= 9 || printNoteWeight > 180) {
+                    quoteDensity = 'standard';
+                }
 
                 const renderChargeRows = (rows) => rows.map((row) => `
                     <div class="row">
@@ -3062,6 +3384,18 @@ function showLicenseLockScreen(message) {
                     </div>
                 `).join('');
                 const merchandiseRowsHtml = renderChargeRows(merchandiseRows);
+                const employeeItemizedRowsHtml = transferredCartItems.length ? transferredCartItems.map((item) => {
+                    const qty = Math.max(1, parseInt(item.qty || '1', 10) || 1);
+                    const retailTotal = normalizeMoneyValue(item.retailTotal) ?? (normalizeMoneyValue(item.retailPrice) !== null ? normalizeMoneyValue(item.retailPrice) * qty : 0);
+                    const retailEach = normalizeMoneyValue(item.retailPrice) ?? (retailTotal > 0 ? retailTotal / qty : 0);
+                    const meta = [item.manufacturer, item.sku ? `Item # ${item.sku}` : '', `Qty ${qty}`, retailEach > 0 ? `${formatCurrency(retailEach)} each` : 'Price included'].filter(Boolean).join(' · ');
+                    return `
+                        <div class="row employee-item-row">
+                            <span>${escapeHtml(item.description || item.sku || 'Catalog item')}<small>${escapeHtml(meta)}</small></span>
+                            <strong>${retailTotal > 0 ? formatCurrency(retailTotal) : 'Included'}</strong>
+                        </div>
+                    `;
+                }).join('') : merchandiseRowsHtml;
                 const deliveryFeeRowsHtml = deliveryFeeRows.length ? renderChargeRows(deliveryFeeRows) : '<p class="muted">No delivery fees selected.</p>';
                 const discountRowsHtml = subtotalDiscountEntries.length ? subtotalDiscountEntries.map((entry) => `
                     <div class="row discount">
@@ -3079,85 +3413,161 @@ function showLicenseLockScreen(message) {
                 const closeoutAsIsDetailsHtml = closeoutAsIsSelected ? `<p><strong>Closeout / AS IS:</strong> ${escapeHtml(closeoutAsIsDetail || 'Item sold Closeout / AS IS')}. Customer acknowledges item(s) are sold Closeout / AS IS.</p>` : '';
                 const orderDetailsHtml = [removalDetailsHtml, closeoutAsIsDetailsHtml].filter(Boolean).join('');
 
+                const renderQuoteSheet = (copyType) => {
+                    const isEmployeeCopy = copyType === 'employee';
+                    return `
+                        <div class="sheet quote-density-${quoteDensity} ${isEmployeeCopy ? 'employee-copy' : 'customer-copy'}" data-smartcalc-print-layout="fit-page-quote-customer-employee-20260602" data-smartcalc-print-density="${quoteDensity}" data-smartcalc-print-copy="${copyType}">
+                            <header>
+                                <div class="brand-line">
+                                    <div class="brand-mark">FD</div>
+                                    <div>
+                                        <div class="print-kicker">Furniture Distributors</div>
+                                        <h1>${isEmployeeCopy ? 'Employee Copy' : 'Customer Quote'}</h1>
+                                    </div>
+                                </div>
+                                <div class="date"><strong>Prepared ${escapeHtml(today)}</strong><br>Valid through ${escapeHtml(quoteExpirationDate)}</div>
+                            </header>
+                            <div class="total-banner">
+                                <div>
+                                    <span>${isEmployeeCopy ? 'Employee Ticket Total' : "Today's Total"}</span>
+                                    <small>${isEmployeeCopy ? 'Includes item numbers and itemized merchandise pricing' : 'Tax and selected services included'}</small>
+                                </div>
+                                <strong>${formatCurrency(currentGrandTotal)}</strong>
+                            </div>
+                            <div class="content">
+                                <div class="content-grid">
+                                    <section class="panel">
+                                        <h2>Customer</h2>
+                                        ${customerRowsHtml}
+                                    </section>
+                                    <section class="panel">
+                                        <h2>${isEmployeeCopy ? 'Merchandise Item Detail' : 'Merchandise / Cart'}</h2>
+                                        ${isEmployeeCopy ? employeeItemizedRowsHtml : merchandiseRowsHtml}
+                                    </section>
+                                </div>
+                                <div class="content-grid">
+                                    <section class="panel">
+                                        <h2>Delivery Fees</h2>
+                                        ${deliveryFeeRowsHtml}
+                                    </section>
+                                    <section class="panel">
+                                        <h2>Discounts Applied</h2>
+                                        ${discountRowsHtml}
+                                    </section>
+                                </div>
+                                <section class="panel totals">
+                                    <h2>Quote Summary</h2>
+                                    <div class="row"><span>Charges Subtotal</span><strong>${formatCurrency(chargeSubtotal)}</strong></div>
+                                    ${subtotalDiscountTotal > 0 ? `<div class="row discount"><span>Discounts</span><strong>-${formatCurrency(subtotalDiscountTotal)}</strong></div>` : ''}
+                                    <div class="row"><span>Subtotal After Discounts</span><strong>${formatCurrency(currentTotalBeforeTax)}</strong></div>
+                                    ${currentTaxAmount > 0 ? `<div class="row"><span>Sales Tax</span><strong>${formatCurrency(currentTaxAmount)}</strong></div>` : ''}
+                                    ${taxDiscountHtml}
+                                    <div class="row grand"><span>Total Today</span><strong>${formatCurrency(currentGrandTotal)}</strong></div>
+                                </section>
+                                ${orderDetailsHtml ? `<section class="panel"><h2>Order Details</h2>${orderDetailsHtml}</section>` : ''}
+                                ${isEmployeeCopy && currentCartTransfer ? `<section class="panel"><h2>Source Cart</h2><p>${escapeHtml(currentCartTransfer.cartName || 'Product Search Cart')} · ${transferredItemCount} item${transferredItemCount === 1 ? '' : 's'} · Merchandise ${formatCurrency(currentRetailPrice)}</p></section>` : ''}
+                                ${salesNotesHtml}
+                                <div class="fine">Quote valid through ${escapeHtml(quoteExpirationDate)} (${quoteValidDays} day${quoteValidDays === 1 ? '' : 's'}). ${isEmployeeCopy ? 'Internal employee copy: verify item numbers, quantities, discounts, and final POS ticket before checkout.' : 'Thank you for shopping with Furniture Distributors. Final availability, delivery scheduling, and financing approval are confirmed at checkout.'}</div>
+                                <footer class="print-powered-footer">Powered by <span>WOLF.discount</span></footer>
+                            </div>
+                        </div>
+                    `;
+                };
+
                 const printHtml = `
                     <!doctype html>
                     <html>
                     <head>
-                        <title>Furniture Distributors Customer Copy</title>
+                        <title>Furniture Distributors Quote Copies</title>
                         <style>
                             * { box-sizing: border-box; }
-                            body { margin: 0; padding: 28px; font-family: Arial, sans-serif; color: #2f241d; background: #fff; }
-                            .sheet { max-width: 760px; margin: 0 auto; border: 2px solid #2f241d; border-radius: 10px; overflow: hidden; }
-                            header { background: #2f241d; color: #fff; padding: 22px 26px; display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; }
-                            h1 { margin: 0; font-size: 28px; letter-spacing: 0; }
-                            h2 { margin: 0 0 12px; font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: #8b3f12; }
-                            .date { text-align: right; font-size: 13px; color: #ffe8dc; }
-                            .total-banner { background: #f97316; color: #fff; padding: 22px 26px; display: flex; justify-content: space-between; align-items: center; }
-                            .total-banner span { font-size: 14px; text-transform: uppercase; letter-spacing: .08em; }
-                            .total-banner strong { font-size: 34px; }
-                            section { padding: 20px 26px; border-top: 1px solid #eadfd8; }
-                            .row { display: flex; justify-content: space-between; gap: 20px; padding: 9px 0; border-bottom: 1px solid #f0e7e0; font-size: 15px; }
+                            :root { color-scheme: light; }
+                            body { margin: 0; padding: 18px; font-family: Arial, Helvetica, sans-serif; color: #2f241d; background: #f8f3ef; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            .sheet {
+                                --quote-total-font: 56px;
+                                --quote-h1-font: 30px;
+                                --quote-h2-font: 14px;
+                                --quote-row-font: 14px;
+                                --quote-small-font: 12px;
+                                --quote-panel-pad: 14px 16px;
+                                --quote-content-gap: 14px;
+                                --quote-row-pad: 5px;
+                                max-width: 816px;
+                                min-height: min(10.25in, calc(100vh - 36px));
+                                margin: 0 auto 18px;
+                                overflow: hidden;
+                                border: 1.5px solid #2f241d;
+                                border-radius: 18px;
+                                background: #fff;
+                                box-shadow: 0 18px 45px rgba(47, 36, 29, 0.16);
+                                display: flex;
+                                flex-direction: column;
+                            }
+                            .sheet.quote-density-spacious { --quote-total-font: 64px; --quote-h1-font: 32px; --quote-h2-font: 15px; --quote-row-font: 15.5px; --quote-small-font: 12.5px; --quote-panel-pad: 17px 18px; --quote-content-gap: 16px; --quote-row-pad: 6px; }
+                            .sheet.quote-density-standard { --quote-total-font: 56px; --quote-h1-font: 30px; --quote-h2-font: 14px; --quote-row-font: 14px; --quote-small-font: 12px; --quote-panel-pad: 14px 16px; --quote-content-gap: 14px; --quote-row-pad: 5px; }
+                            .sheet.quote-density-compact { --quote-total-font: 48px; --quote-h1-font: 27px; --quote-h2-font: 13px; --quote-row-font: 12.5px; --quote-small-font: 10.5px; --quote-panel-pad: 11px 13px; --quote-content-gap: 10px; --quote-row-pad: 4px; }
+                            .sheet.quote-density-dense { --quote-total-font: 42px; --quote-h1-font: 24px; --quote-h2-font: 12px; --quote-row-font: 11.2px; --quote-small-font: 9.5px; --quote-panel-pad: 8px 10px; --quote-content-gap: 8px; --quote-row-pad: 3px; }
+                            header { background: linear-gradient(135deg, #2f241d 0%, #46372e 100%); color: #fff; padding: 20px 24px; display: flex; justify-content: space-between; gap: 18px; align-items: center; }
+                            .employee-copy header { background: linear-gradient(135deg, #172554 0%, #1e3a8a 100%); }
+                            .brand-line { display: flex; align-items: center; gap: 14px; }
+                            .brand-mark { width: 52px; height: 52px; border: 2px solid #f97316; border-radius: 14px; display: grid; place-items: center; color: #f97316; font-size: 22px; font-weight: 900; letter-spacing: -0.04em; background: rgba(255,255,255,0.08); }
+                            .print-kicker { margin: 0 0 2px; color: #ffd7c2; font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+                            h1 { margin: 0; font-size: var(--quote-h1-font); letter-spacing: -0.035em; }
+                            h2 { margin: 0 0 9px; font-size: var(--quote-h2-font); text-transform: uppercase; letter-spacing: .12em; color: #8b3f12; }
+                            .date { text-align: right; font-size: 13px; line-height: 1.45; color: #ffe8dc; }
+                            .date strong { color: #fff; font-size: 14px; }
+                            .total-banner { background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: #fff; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+                            .employee-copy .total-banner { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+                            .total-banner span { display: block; font-size: 14px; text-transform: uppercase; letter-spacing: .14em; font-weight: 900; }
+                            .total-banner small { display: block; margin-top: 4px; color: #ffedd5; font-size: var(--quote-small-font); }
+                            .total-banner strong { font-size: var(--quote-total-font); line-height: .9; letter-spacing: -0.06em; text-shadow: 0 2px 0 rgba(47, 36, 29, 0.16); white-space: nowrap; }
+                            .content { padding: 16px; display: flex; flex: 1; flex-direction: column; gap: var(--quote-content-gap); }
+                            .content-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--quote-content-gap); }
+                            .panel { padding: var(--quote-panel-pad); border: 1px solid #eadfd8; border-radius: 13px; background: #fffdfb; }
+                            .row { display: flex; justify-content: space-between; gap: 14px; padding: var(--quote-row-pad) 0; border-bottom: 1px solid #f0e7e0; font-size: var(--quote-row-font); line-height: 1.28; }
                             .row:last-child { border-bottom: 0; }
-                            .row small { display: block; margin-top: 3px; color: #6b5b50; font-size: 12px; }
+                            .row span { min-width: 0; color: #4b3b31; }
+                            .row strong { text-align: right; color: #2f241d; }
+                            .row small { display: block; margin-top: 2px; color: #6b5b50; font-size: var(--quote-small-font); }
+                            .employee-item-row small { color: #1e3a8a; font-weight: 700; }
                             .discount strong { color: #15803d; }
-                            .totals { background: #fff7ed; }
-                            .totals .row { font-size: 16px; }
-                            .totals .grand { font-size: 22px; border-top: 2px solid #2f241d; margin-top: 8px; padding-top: 14px; }
-                            .terms { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-                            .terms div { border: 1px solid #eadfd8; border-radius: 7px; padding: 9px; text-align: center; }
-                            .terms span { display: block; font-size: 12px; color: #6b5b50; }
-                            .terms strong { display: block; margin-top: 4px; color: #f97316; }
-                            .muted { color: #6b5b50; margin: 0; }
-                            .fine { padding: 16px 26px 22px; color: #6b5b50; font-size: 12px; line-height: 1.45; }
+                            .totals { background: #fff7ed; border: 2px solid #fed7aa; }
+                            .totals .row { font-size: calc(var(--quote-row-font) + 1px); }
+                            .totals .grand { margin-top: 7px; padding-top: 10px; border-top: 3px solid #2f241d; font-size: calc(var(--quote-row-font) + 8px); }
+                            .totals .grand strong { color: #c2410c; font-size: calc(var(--quote-row-font) + 12px); }
+                            .muted { color: #6b5b50; margin: 0; font-size: var(--quote-row-font); }
+                            .notes-panel p, .panel p { margin: 0; color: #4b3b31; font-size: var(--quote-row-font); line-height: 1.35; }
+                            .fine { margin-top: auto; padding: 8px 3px 2px; color: #6b5b50; font-size: var(--quote-small-font); line-height: 1.32; }
+                            .print-powered-footer { border-top: 1px solid #eadfd8; padding: 9px 0 2px; text-align: center; color: #6b5b50; font-size: var(--quote-small-font); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+                            .print-powered-footer span { color: #c2410c; letter-spacing: normal; text-transform: none; }
+                            @page { size: letter; margin: 0.20in; }
                             @media print {
-                                body { padding: 0; }
-                                .sheet { border-radius: 0; border-width: 0; }
+                                html, body { width: 100%; min-height: 100%; }
+                                body { padding: 0; background: #fff; }
+                                .sheet { max-width: none; width: 100%; min-height: 10.6in; margin: 0; border-radius: 0; border-width: 1px; box-shadow: none; break-after: page; page-break-after: always; }
+                                .sheet:last-child { break-after: auto; page-break-after: auto; }
+                                header { padding: 18px 22px; }
+                                .brand-mark { width: 48px; height: 48px; border-radius: 13px; font-size: 20px; }
+                                .total-banner { padding: 18px 22px; }
+                                .content { padding: 14px; }
+                                .panel { break-inside: avoid; page-break-inside: avoid; }
+                                .sheet.quote-density-spacious { --quote-total-font: 62px; --quote-h1-font: 31px; --quote-row-font: 15px; --quote-panel-pad: 16px 18px; }
+                                .sheet.quote-density-standard { --quote-total-font: 54px; --quote-h1-font: 29px; --quote-row-font: 13.8px; }
+                                .sheet.quote-density-compact { --quote-total-font: 46px; --quote-h1-font: 26px; --quote-row-font: 12.2px; }
+                                .sheet.quote-density-dense { --quote-total-font: 40px; --quote-h1-font: 23px; --quote-row-font: 10.8px; --quote-panel-pad: 7px 9px; --quote-content-gap: 7px; }
                             }
                         </style>
                     </head>
                     <body>
-                        <div class="sheet">
-                            <header>
-                                <div>
-                                    <h1>Furniture Distributors</h1>
-                                    <p style="margin:6px 0 0;">Customer Copy</p>
-                                </div>
-                                <div class="date">Prepared ${escapeHtml(today)}<br>Quote valid through ${escapeHtml(quoteExpirationDate)}</div>
-                            </header>
-                            <div class="total-banner">
-                                <span>Today's Total</span>
-                                <strong>${formatCurrency(currentGrandTotal)}</strong>
-                            </div>
-                            <section>
-                                <h2>Merchandise / Shopping Cart Items</h2>
-                                ${merchandiseRowsHtml}
-                            </section>
-                            <section>
-                                <h2>Delivery Fees</h2>
-                                ${deliveryFeeRowsHtml}
-                            </section>
-                            <section>
-                                <h2>Discounts Applied</h2>
-                                ${discountRowsHtml}
-                            </section>
-                            <section class="totals">
-                                <div class="row"><span>Charges Subtotal</span><strong>${formatCurrency(chargeSubtotal)}</strong></div>
-                                ${subtotalDiscountTotal > 0 ? `<div class="row discount"><span>Discounts</span><strong>-${formatCurrency(subtotalDiscountTotal)}</strong></div>` : ''}
-                                <div class="row"><span>Subtotal After Discounts</span><strong>${formatCurrency(currentTotalBeforeTax)}</strong></div>
-                                ${currentTaxAmount > 0 ? `<div class="row"><span>Sales Tax</span><strong>${formatCurrency(currentTaxAmount)}</strong></div>` : ''}
-                                ${taxDiscountHtml}
-                                <div class="row grand"><span>Total Today</span><strong>${formatCurrency(currentGrandTotal)}</strong></div>
-                            </section>
-                            ${orderDetailsHtml ? `<section><h2>Order Details</h2>${orderDetailsHtml}</section>` : ''}
-                            <div class="fine">Quote valid through ${escapeHtml(quoteExpirationDate)} (${quoteValidDays} day${quoteValidDays === 1 ? '' : 's'}). Thank you for shopping with Furniture Distributors. Final availability, delivery scheduling, and financing approval are confirmed at checkout.</div>
-                        </div>
+                        ${renderQuoteSheet('customer')}
+                        ${renderQuoteSheet('employee')}
                     </body>
                     </html>
                 `;
 
                 const printWindow = window.open('', '_blank', 'width=840,height=900');
                 if (!printWindow) {
-                    window.alert('Allow pop-ups to print the customer copy.');
+                    window.alert('Allow pop-ups to print the customer and employee copies.');
                     return;
                 }
                 const triggerPrintWindow = () => {
@@ -3205,7 +3615,9 @@ function showLicenseLockScreen(message) {
                     otherDiscountExplanationInput, otherDiscountAmountInput, otherDiscountWrapper,
                     salesTaxDiscountWrapper, salesTaxDiscountCommentInput, salesTaxDiscountAmountInput,
                     adjustmentFieldSection, adjustmentFieldValue, copyAdjustmentStatus,
-                    quoteValidDaysInput, discountDocumentationStatus
+                    quoteValidDaysInput, discountDocumentationStatus,
+                    customerQuoteFirstNameInput, customerQuoteLastNameInput,
+                    customerQuotePhoneInput, customerQuoteEmailInput
                 } = allElements;
                 const formElements = [
                     baseCostInput, costCodeInput, manualRetailInput, totalCostInput,
@@ -3217,7 +3629,8 @@ function showLicenseLockScreen(message) {
                     deliveryDiscountAmountInput, pro1stDiscountAmountInput, pro1stCoveredItemsInput,
                     pro1stCoveredValueInput, percentageOffReasonInput,
                     percentageOffPercentInput, percentageOffAmountInput, advertisedPriceSourceSelect,
-                    advertisedPriceItemsInput, advertisedPriceAmountInput
+                    advertisedPriceItemsInput, advertisedPriceAmountInput, customerQuoteFirstNameInput,
+                    customerQuoteLastNameInput, customerQuotePhoneInput, customerQuoteEmailInput
                 ].filter(Boolean);
                 formElements.forEach(el => el.value = '');
                 if (deliveryDiscountCommentInput) deliveryDiscountCommentInput.value = 'Local Delivery Discount';
@@ -3245,6 +3658,9 @@ function showLicenseLockScreen(message) {
                 pro1stDiscountAmountEdited = false;
                 notesManuallyEdited = false;
                 lastGeneratedNotes = '';
+                pendingCustomerQuoteSnapshot = null;
+                customerQuoteTriggerElement = null;
+                closeCustomerQuoteModal();
 
                 [
                     addDeliveryCheckbox, addPowerBaseSetupCheckbox, addThresholdDeliveryCheckbox, addAssemblyCheckbox, addAshleyExpressCheckbox, addPro1stCheckbox,

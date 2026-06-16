@@ -70,7 +70,7 @@ export async function fetchEmployeePermissions(userId: string): Promise<{
         name: String(json.row.name ?? ""),
         email: String(json.row.email ?? ""),
         roles: (Array.isArray(json.row.roles) ? json.row.roles.map((role) => String(role)) : []) as UserRole[],
-        permissionMode: json.row.permission_mode === "explicit" ? "explicit" : "role",
+        permissionMode: (json.row.permission_mode === "explicit" ? "explicit" : "role") as PermissionMode,
         explicitPermissions:
           json.row.explicit_permissions && typeof json.row.explicit_permissions === "object"
             ? { ...json.row.explicit_permissions }

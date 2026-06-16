@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   BarChart3,
@@ -7,12 +7,11 @@ import {
   ChevronDown,
   ClipboardList,
   Globe,
+  Headphones,
   LayoutDashboard,
   MessageSquare,
   Monitor,
-  Move,
   Receipt,
-  Settings2,
   Star,
   UploadCloud,
   Users,
@@ -36,7 +35,6 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useBotBotContext } from "./botbot/BotBotContext";
 
 const ORDER_STORAGE_KEY = "fd_dashboard_card_order";
 const VISIBLE_STORAGE_KEY = "fd_dashboard_visible_cards";
@@ -49,7 +47,7 @@ type SnapshotCard = {
   cta: string;
   icon: React.ReactNode;
   onClick: () => void;
-  module: "Dashboard" | "Den" | "Pulse" | "AMP" | "Shop" | "Tools";
+  module: "Dashboard" | "Den" | "Pulse" | "AMP" | "Shop" | "Training" | "Tools";
   accentClass: string;
   defaultVisible?: boolean;
 };
@@ -63,6 +61,8 @@ type DashboardOverviewProps = {
   onNavigate: (tab: string) => void;
   canViewCard?: (cardId: string) => boolean;
   isDarkMode: boolean;
+  customizeOpen?: boolean;
+  resetToken?: number;
 };
 
 const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
@@ -79,7 +79,13 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
   );
 };
 
-const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canViewCard, isDarkMode }) => {
+const DashboardOverview: React.FC<DashboardOverviewProps> = ({
+  onNavigate,
+  canViewCard,
+  isDarkMode,
+  customizeOpen: controlledCustomizeOpen,
+  resetToken = 0,
+}) => {
   const [order, setOrder] = useState<string[]>(() => {
     try {
       const raw = localStorage.getItem(ORDER_STORAGE_KEY);
@@ -101,18 +107,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
     }
   });
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
-  const [customizeOpen, setCustomizeOpen] = useState(false);
-  const { setPageContext } = useBotBotContext();
-
-  useEffect(() => {
-    setPageContext({
-      pageName: "Dashboard",
-      module: "",
-      userRole: "Employee", // Default, will be overridden by provider if needed
-      keyMetricsVisible: ["Quick Links", "UPS Status", "CRM Activity"],
-      suggestedActions: ["Check UPS List", "Open CRM", "View Analytics"],
-    });
-  }, [setPageContext]);
+  const resetTokenRef = useRef(resetToken);
+  const customizeOpen = controlledCustomizeOpen ?? false;
 
   const cards = useMemo<SnapshotCard[]>(() => {
     const openExternal = (url: string) => {
@@ -192,13 +188,13 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       {
         id: "pulse-alphaos",
         title: "AlphaOS / Kiosks",
-        description: "Check kiosk health and system status from Pulse.",
-        details: "This lands on the AlphaOS view in Pulse so you can see device state and store-facing system health without leaving the dashboard flow.",
-        cta: "Open AlphaOS",
-        icon: <Monitor size={22} className="text-sky-500" />,
-        onClick: () => onNavigate("PULSE_ALPHAOS"),
-        module: "Pulse",
-        accentClass: "from-sky-100 via-sky-50 to-white border-sky-200/80",
+        description: "Check kiosk health and system status from AMP.",
+        details: "This lands on the Kiosks tab inside AMP so you can see device state and store-facing system health without leaving the dashboard flow.",
+        cta: "Open Kiosks",
+        icon: <Monitor size={22} className="text-cyan-500" />,
+        onClick: () => onNavigate("AMP_KIOSKS"),
+        module: "AMP",
+        accentClass: "from-cyan-100 via-cyan-50 to-white border-cyan-200/80",
         defaultVisible: true,
       },
       {
@@ -227,22 +223,34 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
       {
         id: "pulse-reviews",
         title: "FD Connect",
-        description: "Open FD Connect in a new tab from the Pulse shortcuts.",
-        details: "This keeps the FD Connect shortcut grouped with Pulse while sending you to the outside site in its own tab.",
-        cta: "Open Reviews",
-        icon: <Star size={22} className="text-sky-500" />,
-        onClick: () => onNavigate("PULSE_REVIEWS"),
-        module: "Pulse",
-        accentClass: "from-sky-100 via-sky-50 to-white border-sky-200/80",
+        description: "Open FD Connect from the AMP shortcuts.",
+        details: "This keeps the FD Connect shortcut grouped with AMP and opens the FD Connect tab inside the dashboard shell.",
+        cta: "Open FD Connect",
+        icon: <Star size={22} className="text-cyan-500" />,
+        onClick: () => onNavigate("AMP_FDCONNECT"),
+        module: "AMP",
+        accentClass: "from-cyan-100 via-cyan-50 to-white border-cyan-200/80",
       },
       {
         id: "product-search",
         title: "Product Search",
-        description: "Search products, pricing, and inventory support tools inside Shop.",
-        details: "Use this when you need catalog lookup or to get into item-level workflows without dropping into Den or Pulse first.",
+        description: "Search products with images, cart totals, pricing, and inventory support tools inside Shop.",
+        details: "Catalog results now show thumbnails; add items to a cart, then send the merchandise total straight to Smart Calc.",
         cta: "Open Shop Search",
         icon: <LayoutDashboard size={22} className="text-slate-600" />,
         onClick: () => onNavigate("SHOP_SEARCH"),
+        module: "Shop",
+        accentClass: "from-emerald-100 via-emerald-50 to-white border-emerald-200/80",
+        defaultVisible: true,
+      },
+      {
+        id: "shop-calculator",
+        title: "Smart Calc",
+        description: "Open the pricing calculator inside Shop.",
+        details: "Use this for cart handoff, margin math, freight-aware pricing, discount reasons, quote notes, and customer plus employee quote copies.",
+        cta: "Open Smart Calc",
+        icon: <Receipt size={22} className="text-emerald-500" />,
+        onClick: () => onNavigate("SHOP_CALCULATOR"),
         module: "Shop",
         accentClass: "from-emerald-100 via-emerald-50 to-white border-emerald-200/80",
         defaultVisible: true,
@@ -257,6 +265,18 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
         onClick: () => onNavigate("SHOP_POS"),
         module: "Shop",
         accentClass: "from-emerald-100 via-emerald-50 to-white border-emerald-200/80",
+      },
+      {
+        id: "training-podcasts",
+        title: "Podcasts",
+        description: "Open the training podcast library.",
+        details: "This opens the Training module on the Podcasts tab, starting with the Jackson & Catnapper floor-training episode.",
+        cta: "Open Podcasts",
+        icon: <Headphones size={22} className="text-amber-500" />,
+        onClick: () => onNavigate("TRAINING_PODCASTS"),
+        module: "Training",
+        accentClass: "from-amber-100 via-amber-50 to-white border-amber-200/80",
+        defaultVisible: true,
       },
       {
         id: "amp-social",
@@ -408,7 +428,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
     setVisibleCardIds(next);
   };
 
-  const resetDashboard = () => {
+  const resetDashboard = useCallback(() => {
     setVisibleCardIds(defaultVisibleIds);
     setOrder([]);
     try {
@@ -417,7 +437,13 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
     } catch {
       // ignore storage failures
     }
-  };
+  }, [defaultVisibleIds]);
+
+  useEffect(() => {
+    if (resetToken === resetTokenRef.current) return;
+    resetTokenRef.current = resetToken;
+    resetDashboard();
+  }, [resetToken, resetDashboard]);
 
   const shellClass = isDarkMode
     ? "border-slate-800 bg-slate-950/70 text-slate-100 shadow-black/20"
@@ -431,53 +457,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
 
   return (
     <div className="space-y-7">
-      <section className={`rounded-[2rem] border p-6 shadow-sm md:p-7 ${shellClass}`}>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/20 bg-sky-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-400">
-              <LayoutDashboard size={14} />
-              Custom Dashboard
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold">Your home board</h2>
-              <p className={`mt-1 max-w-2xl text-sm ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                Mix cards from Den, Pulse, and shared tools. Pick what you want to see, then drag cards into the order that fits your day.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setCustomizeOpen((open) => !open)}
-              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                isDarkMode
-                  ? "border-sky-400/25 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20"
-                  : "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
-              }`}
-            >
-              <Settings2 size={15} />
-              Customize cards
-            </button>
-            <button
-              type="button"
-              onClick={resetDashboard}
-              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                isDarkMode
-                  ? "border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
-                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              Reset layout
-            </button>
-            <div className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold ${subtlePanelClass}`}>
-              <Move size={14} />
-              Drag cards to reorder
-            </div>
-          </div>
-        </div>
-        {customizeOpen && (
-          <div className={`mt-5 rounded-3xl border p-5 ${subtlePanelClass}`}>
+      {customizeOpen && (
+        <section className={`rounded-3xl border p-5 ${subtlePanelClass}`}>
             <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
               <div>
                 <div className="text-sm font-semibold">Choose dashboard cards</div>
@@ -532,9 +513,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, canVi
                 </div>
               ))}
             </div>
-          </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {orderedCards.length === 0 ? (
         <section className={`rounded-[2rem] border p-10 text-center ${shellClass}`}>

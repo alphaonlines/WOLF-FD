@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   UserCog,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import AdminUsers from "./AdminUsers";
 import AccessPermissions from "./settings/AccessPermissions";
@@ -26,7 +27,7 @@ type SettingsPanelMeta = {
   group: "people" | "access" | "integrations" | "training";
   description: string;
   helper: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
 };
 
 const PANEL_META: Record<SettingsPanel, SettingsPanelMeta> = {
@@ -128,7 +129,7 @@ const OwnerSettings: React.FC<OwnerSettingsProps> = ({
   const quickActions: Array<{
     title: string;
     description: string;
-    icon: React.ComponentType<{ size?: number; className?: string }>;
+    icon: LucideIcon;
     onClick: () => void;
   }> = [
     {

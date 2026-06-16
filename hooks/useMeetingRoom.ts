@@ -123,7 +123,7 @@ export function useMeetingRoom(): UseMeetingRoomReturn {
             scope: "channel" as const,
             channel: "meeting-room",
           });
-          const boardMessages = Array.isArray(history) ? history : history?.messages || [];
+          const boardMessages = history;
           const converted: MeetingChatMessage[] = boardMessages.map((msg: BoardMessage) => ({
             id: msg.id,
             userName: msg.authorName,
@@ -327,7 +327,7 @@ export function useMeetingRoom(): UseMeetingRoomReturn {
     } else {
       try {
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { cursor: "always" },
+          video: { cursor: "always" } as MediaTrackConstraints & { cursor: "always" },
           audio: false,
         });
 
@@ -335,7 +335,6 @@ export function useMeetingRoom(): UseMeetingRoomReturn {
         const screenVideoTrack = displayStream.getVideoTracks()[0];
 
         if (screenVideoTrack && localStreamRef.current) {
-          const webcamVideoTrack = localStreamRef.current.getVideoTracks()[0];
 
           const canvas = document.createElement("canvas");
           canvas.width = 1920;

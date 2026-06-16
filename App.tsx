@@ -24,6 +24,7 @@ import {
   Globe,
   Tv,
   Share2,
+  TrendingUp,
   FolderSearch,
   MapPin,
 } from 'lucide-react';
@@ -34,14 +35,14 @@ import KiosksStatus from './components/KiosksStatus';
 import DashboardOverview from './components/DashboardOverview';
 import CRMWorkspace from './components/CRMWorkspace';
 import ProductSearchWorkspace from './components/ProductSearchWorkspace';
+import CompetitorPricingWorkspace from './components/CompetitorPricingWorkspace';
 import MessageBoard from './components/MessageBoard';
 import TaskManager from './components/TaskManager';
 import OwnerSettings from './components/OwnerSettings';
-import PulseWorkspace from './components/PulseWorkspace';
+import PulseWorkspace, { PulseSubTab } from './components/PulseWorkspace';
 import AmpWorkspace, { AmpSubTab } from './components/AmpWorkspace';
 import ShopWorkspace, { ShopSubTab } from './components/ShopWorkspace';
 import WolfdenWorkspace, { WolfdenSubTab } from './components/WolfdenWorkspace';
-import { PulseSubTab } from './components/PulseWorkspace';
 import { BotBotOrb, BotBotChatPanel, BotBotContextProvider } from './components/botbot';
 import BotBotTutorial, { BotBotTutorialStep } from './components/botbot/BotBotTutorial';
 import type { AccessRequestProfile, AuthConfig, AuthUser, UserRole } from './types';
@@ -55,7 +56,7 @@ import {
   startGoogleSignIn,
   submitGoogleAccessRequest,
 } from './services/authApi';
-import { getPosApiBaseUrl } from './services/posBackendApi';
+import { getPosApiBaseUrl, type PosDateBasis } from './services/posBackendApi';
 import AuthScreen from './components/app/AuthScreen';
 import LoadingOverlay from './components/app/LoadingOverlay';
 import NavItem from './components/app/NavItem'; // Added NavItem import
@@ -69,6 +70,8 @@ import {
   normalizeStoreCode,
   type StoreCode,
 } from './storeLocations';
+
+type AppPulseSubTab = PulseSubTab | 'alphaos' | 'reviews';
 
 const buildBotBotTutorialSteps = ({
   canOpenPulse,
@@ -109,7 +112,7 @@ const buildBotBotTutorialSteps = ({
       requiredModules: [],
       advanceWhen: {
         type: 'state',
-        check: (state) => state.sidebarOpen,
+        check: (state) => Boolean(state.sidebarOpen),
       },
       primaryActionLabel: 'Next',
     },
@@ -344,9 +347,9 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
   const [requestedWolfdenSubTab, setRequestedWolfdenSubTab] = useState<WolfdenSubTab>('ups');
   const [requestedWolfdenSubTabToken, setRequestedWolfdenSubTabToken] = useState(0);
-  const [requestedPulseSubTab, setRequestedPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('sales');
+  const [requestedPulseSubTab, setRequestedPulseSubTab] = useState<AppPulseSubTab>('sales');
   const [requestedPulseSubTabToken, setRequestedPulseSubTabToken] = useState(0);
-  const [currentPulseSubTab, setCurrentPulseSubTab] = useState<'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews'>('sales');
+  const [currentPulseSubTab, setCurrentPulseSubTab] = useState<PulseSubTab>('sales');
   const [requestedAmpSubTab, setRequestedAmpSubTab] = useState<AmpSubTab>('bot');
   const [requestedAmpSubTabToken, setRequestedAmpSubTabToken] = useState(0);
   const [requestedShopSubTab, setRequestedShopSubTab] = useState<ShopSubTab>('calculator');
@@ -465,9 +468,9 @@ const App: React.FC = () => {
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [headerSearch, setHeaderSearch] = useState('');
   const [rangeLabel, setRangeLabel] = useState<string | null>(null);
   const [showRange, setShowRange] = useState(false);
+  const [salesDateBasis, setSalesDateBasis] = useState<PosDateBasis>('delivered');
   const [itemSortMetric, setItemSortMetric] = useState<'sales' | 'qty'>('sales');
   const [updatePanelOpen, setUpdatePanelOpen] = useState(false);
   const [updatePanelClosing, setUpdatePanelClosing] = useState(false);
@@ -477,8 +480,8 @@ const App: React.FC = () => {
   const [botbotOpen, setBotbotOpen] = useState(false);
   const [botbotInitialFullscreen, setBotbotInitialFullscreen] = useState(false);
   const [botbotFullscreenRequestKey, setBotbotFullscreenRequestKey] = useState(0);
-  const [botbotAssistantName, setBotbotAssistantName] = useState('BotBot');
-  const [botbotTheme, setBotbotTheme] = useState('sky');
+  const [, setBotbotAssistantName] = useState('BotBot');
+  const [, setBotbotTheme] = useState('sky');
   const [showBotBotTutorial, setShowBotBotTutorial] = useState(false);
   const [pendingBotBotTutorial, setPendingBotBotTutorial] = useState(false);
   const [botBotTutorialRunKey, setBotBotTutorialRunKey] = useState(0);
@@ -692,6 +695,17 @@ const App: React.FC = () => {
     };
     window.addEventListener('fd-range', handler as EventListener);
     return () => window.removeEventListener('fd-range', handler as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { basis?: PosDateBasis } | undefined;
+      if (detail?.basis === 'delivered' || detail?.basis === 'written') {
+        setSalesDateBasis(detail.basis);
+      }
+    };
+    window.addEventListener('fd-sales-basis', handler as EventListener);
+    return () => window.removeEventListener('fd-sales-basis', handler as EventListener);
   }, []);
 
   useEffect(() => {
@@ -975,11 +989,16 @@ const App: React.FC = () => {
     setActiveTab(Tab.WOLFDEN);
   };
 
-  const openPulseSubTab = (subTab: 'sales' | 'alphaos' | 'alphapulse' | 'website' | 'reviews') => {
+  const openPulseSubTab = (subTab: AppPulseSubTab) => {
     setRequestedPulseSubTab(subTab);
     setRequestedPulseSubTabToken((current) => current + 1);
     setActiveTab(Tab.PULSE);
   };
+
+  const pulseWorkspaceSubTab: PulseSubTab =
+    requestedPulseSubTab === 'alphaos' || requestedPulseSubTab === 'reviews'
+      ? 'sales'
+      : requestedPulseSubTab;
 
   const openAmpSubTab = (subTab: AmpSubTab) => {
     setRequestedAmpSubTab(subTab);
@@ -1025,7 +1044,10 @@ const App: React.FC = () => {
                 if (tab === 'PULSE_REVIEWS') window.open('https://www.furnituredistributors.net/content/connect', '_blank', 'noopener,noreferrer');
                 if (tab === 'AMP_SOCIAL' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('social');
                 if (tab === 'AMP_BOT' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('bot');
+                if (tab === 'AMP_KIOSKS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('kiosks');
+                if (tab === 'AMP_FDCONNECT' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.AMP)) openAmpSubTab('fdconnect');
                 if (tab === 'SHOP_SEARCH' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('search');
+                if (tab === 'SHOP_CALCULATOR' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('calculator');
                 if (tab === 'SHOP_POS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('pos');
                 if (tab === 'UPDATE' && canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL)) {
                   setUpdatePanelOpen(true);
@@ -1046,6 +1068,8 @@ const App: React.FC = () => {
         );
       case Tab.PRODUCT_SEARCH:
         return <ProductSearchWorkspace isDarkMode={isDarkMode} onOpenUploadArea={() => setUpdatePanelOpen(true)} />;
+      case Tab.COMPETITOR_PRICING:
+        return <CompetitorPricingWorkspace isDarkMode={isDarkMode} />;
       case Tab.CRM:
         return <CRMWorkspace authUser={authUser!} isDarkMode={isDarkMode} selectedStore="ALL" />;
       case Tab.SOCIAL:
@@ -1092,7 +1116,7 @@ const App: React.FC = () => {
         return (
           <PulseWorkspace
             isDarkMode={isDarkMode}
-            requestedSubTab={requestedPulseSubTab}
+            requestedSubTab={pulseWorkspaceSubTab}
             requestedSubTabToken={requestedPulseSubTabToken}
             onSubTabChange={setCurrentPulseSubTab}
             itemSortMetric={itemSortMetric}
@@ -1356,6 +1380,20 @@ const App: React.FC = () => {
                 isDarkMode={isDarkMode}
               />
             )}
+            {canView(Tab.COMPETITOR_PRICING) && (
+              <NavItem
+                tourId="sidebar-competitor-pricing-nav-item"
+                icon={<TrendingUp size={24} />}
+                label="Competitor Pricing"
+                isActive={activeTab === Tab.COMPETITOR_PRICING}
+                onClick={() => {
+                  setActiveTab(Tab.COMPETITOR_PRICING);
+                  closeSidebarForMobile();
+                }}
+                isOpen={sidebarOpen}
+                isDarkMode={isDarkMode}
+              />
+            )}
           </nav>
 
           <div className="px-3 pb-1">
@@ -1516,6 +1554,9 @@ const App: React.FC = () => {
                 <button data-tour-id="pulse-tab-sales" onClick={() => openPulseSubTab('sales')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedPulseSubTab === 'sales' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Activity size={13} className="inline mr-1.5" />Sales</button>
+                <button data-tour-id="pulse-tab-marketing" onClick={() => openPulseSubTab('marketing')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  requestedPulseSubTab === 'marketing' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                }`}><TrendingUp size={13} className="inline mr-1.5" />Organic + GA4</button>
                 <button data-tour-id="pulse-tab-alphaos" onClick={() => openPulseSubTab('alphaos')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   requestedPulseSubTab === 'alphaos' ? (isDarkMode ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-sky-50 text-sky-600 border border-sky-200') : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                 }`}><Tv size={13} className="inline mr-1.5" />AlphaOS</button>
@@ -1558,6 +1599,38 @@ const App: React.FC = () => {
             )}
 
             <div data-tour-id="top-right-controls" className="ml-auto flex flex-wrap items-center justify-end gap-2 sm:gap-3 lg:gap-4">
+              {isSalesHeaderView && (
+                <div
+                  data-tour-id="sales-date-basis-toggle"
+                  className={`inline-flex items-center gap-1 rounded-full p-1 text-xs ${
+                    isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-slate-100'
+                  }`}
+                  title="Switch Sales Analysis between delivered-date and written-date sales"
+                >
+                  {(['delivered', 'written'] as const).map((basis) => (
+                    <button
+                      key={basis}
+                      type="button"
+                      aria-pressed={salesDateBasis === basis}
+                      onClick={() => {
+                        setSalesDateBasis(basis);
+                        window.dispatchEvent(new CustomEvent('fd-set-sales-basis', { detail: { basis } }));
+                      }}
+                      className={`px-3 py-1 rounded-full font-semibold ${
+                        salesDateBasis === basis
+                          ? isDarkMode
+                            ? 'bg-sky-400 text-slate-950 shadow-sm'
+                            : 'bg-white text-sky-700 shadow-sm'
+                          : isDarkMode
+                            ? 'text-slate-400 hover:text-slate-200'
+                            : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      {basis === 'delivered' ? 'Delivered' : 'Written'}
+                    </button>
+                  ))}
+                </div>
+              )}
               {isSalesHeaderView && showRange && rangeLabel && (
                 <button
                   onClick={() => window.dispatchEvent(new Event('fd-open-range'))}

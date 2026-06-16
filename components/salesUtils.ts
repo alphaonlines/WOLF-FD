@@ -9,6 +9,27 @@ export const addDaysYmd = (dateYmd: string, days: number) => {
 export const startOfMonthYmd = (year: number, monthIndex0: number) =>
   ymd(new Date(Date.UTC(year, monthIndex0, 1)));
 
+export const getCurrentMonthToDateRange = (now = new Date()): {
+  start: string;
+  endInclusive: string;
+  endExclusive: string;
+  year: number;
+  month: string;
+} => {
+  const year = now.getFullYear();
+  const monthIndex0 = now.getMonth();
+  const day = now.getDate();
+  const start = startOfMonthYmd(year, monthIndex0);
+  const endInclusive = ymd(new Date(Date.UTC(year, monthIndex0, day)));
+  return {
+    start,
+    endInclusive,
+    endExclusive: addDaysYmd(endInclusive, 1),
+    year,
+    month: String(monthIndex0 + 1).padStart(2, "0"),
+  };
+};
+
 export const getMonthRange = (yearMonth: string): { start: string; endExclusive: string } => {
   const [y, m] = yearMonth.split("-").map((n) => Number(n));
   const start = startOfMonthYmd(y, m - 1);
@@ -41,6 +62,16 @@ export const pctChange = (current: number, previous: number) => {
   if (!Number.isFinite(current)) return 0;
   if (!Number.isFinite(previous) || previous === 0) return current === 0 ? 0 : 100;
   return ((current - previous) / previous) * 100;
+};
+
+export const getMetricComparisonDisplay = (current: number, previous: number, compareLabel: string) => {
+  const changePct = pctChange(current, previous);
+  return {
+    changePct,
+    direction: changePct >= 0 ? "up" as const : "down" as const,
+    absLabel: `${Math.abs(changePct).toFixed(1)}%`,
+    compareLabel,
+  };
 };
 
 export const monthOptions = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));

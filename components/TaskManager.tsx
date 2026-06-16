@@ -54,7 +54,7 @@ const ObjectionPublishForm: React.FC<{ task: Task; onUpdated: () => void }> = ({
         label: label.trim(),
         rebuttals: validRebuttals,
       });
-      await updateTaskInApi(task.id, { status: "DONE" });
+      await updateTaskInApi(task.id, { status: TaskStatus.DONE });
       setPublished(true);
       setTimeout(onUpdated, 1500);
     } catch (e) {

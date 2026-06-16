@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Activity, Bot, Gamepad2 } from "lucide-react";
+import { Activity, Bot, Gamepad2, Monitor, Star } from "lucide-react";
 import type { AuthUser } from "../types";
-import { useBotBotContext } from "./botbot/BotBotContext";
 import WorkAdvertising from "./WorkAdvertising";
+import KiosksStatus from "./KiosksStatus";
 
-export type AmpSubTab = "social" | "bot" | "tycoon";
+export type AmpSubTab = "social" | "bot" | "tycoon" | "kiosks" | "fdconnect";
+
+const FD_CONNECT_URL = "https://www.furnituredistributors.net/content/connect";
 
 type AmpWorkspaceProps = {
   authUser: AuthUser;
   isDarkMode: boolean;
   requestedSubTab?: AmpSubTab;
   requestedSubTabToken?: number;
-  onOpenBotBot: () => void;
   onOpenSocialIntegrations: () => void;
   hideTabBar?: boolean;
 };
@@ -21,48 +22,14 @@ const AmpWorkspace: React.FC<AmpWorkspaceProps> = ({
   isDarkMode,
   requestedSubTab = "bot",
   requestedSubTabToken,
-  onOpenBotBot,
   onOpenSocialIntegrations,
   hideTabBar = false,
 }) => {
   const [subTab, setSubTab] = useState<AmpSubTab>(requestedSubTab);
-  const { setPageContext } = useBotBotContext();
 
   useEffect(() => {
     setSubTab(requestedSubTab);
   }, [requestedSubTab, requestedSubTabToken]);
-
-  useEffect(() => {
-    if (subTab === "social") {
-      setPageContext({
-        pageName: "AMP Market",
-        module: "amp.market",
-        userRole: "Employee",
-        keyMetricsVisible: ["Social scheduler", "Scheduled posts", "Connected accounts"],
-        suggestedActions: ["Draft a social post", "Review scheduled posts", "Check social integrations"],
-      });
-      return;
-    }
-
-    if (subTab === "tycoon") {
-      setPageContext({
-        pageName: "AMP Tycoon",
-        module: "amp.tycoon",
-        userRole: "Employee",
-        keyMetricsVisible: ["Training game", "Showroom simulation"],
-        suggestedActions: ["Open Tycoon", "Use BotBot for training help"],
-      });
-      return;
-    }
-
-    setPageContext({
-      pageName: "AMP AI",
-      module: "amp.bot",
-      userRole: "Employee",
-      keyMetricsVisible: ["BotBot assistant", "Connected page context", "Shared AI settings"],
-      suggestedActions: ["Open BotBot", "Ask about the current dashboard", "Tune BotBot settings"],
-    });
-  }, [setPageContext, subTab]);
 
   const divider = isDarkMode ? "border-slate-800" : "border-slate-200";
   const stickyBarClass = isDarkMode
@@ -88,11 +55,17 @@ const AmpWorkspace: React.FC<AmpWorkspaceProps> = ({
         <button className={tabBtn(subTab === "bot")} onClick={() => setSubTab("bot")}>
           <Bot size={15} /> AI Bot
         </button>
-        <button className={tabBtn(subTab === "social")} onClick={() => setSubTab("social")}>
-          <Activity size={15} /> Market
+        <button data-tour-id="amp-tab-social" className={tabBtn(subTab === "social")} onClick={() => setSubTab("social")}>
+          <Activity size={15} /> Social
         </button>
         <button className={tabBtn(subTab === "tycoon")} onClick={() => setSubTab("tycoon")}>
           <Gamepad2 size={15} /> Tycoon
+        </button>
+        <button className={tabBtn(subTab === "kiosks")} onClick={() => setSubTab("kiosks")}>
+          <Monitor size={15} /> Kiosks
+        </button>
+        <button className={tabBtn(subTab === "fdconnect")} onClick={() => setSubTab("fdconnect")}>
+          <Star size={15} /> FD Connect
         </button>
       </div>
       )}
@@ -101,39 +74,26 @@ const AmpWorkspace: React.FC<AmpWorkspaceProps> = ({
         {subTab === "social" ? (
           <WorkAdvertising authUser={authUser} onOpenSocialIntegrations={onOpenSocialIntegrations} />
         ) : subTab === "bot" ? (
-          <div className="h-full overflow-auto p-5 lg:p-7">
-            <div className={`mx-auto max-w-4xl rounded-3xl border p-8 shadow-sm ${
-              isDarkMode
-                ? "border-slate-700 bg-slate-900/80 text-slate-100"
-                : "border-slate-200 bg-white text-slate-900"
-            }`}>
-              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <div className={`text-xs font-semibold uppercase tracking-[0.24em] ${isDarkMode ? "text-cyan-300" : "text-cyan-600"}`}>
-                    Connected AI
-                  </div>
-                  <h2 className="mt-2 text-3xl font-bold">BotBot AI</h2>
-                  <p className={`mt-3 max-w-2xl text-sm leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                    This page uses the same BotBot assistant as the bottom-right orb. BotBot shares dashboard context,
-                    settings, model routing, and conversations so the AI experience stays connected across the app.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={onOpenBotBot}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-400"
-                >
-                  <Bot size={18} /> Open BotBot
-                </button>
-              </div>
-              <div className={`mt-6 rounded-2xl border px-5 py-4 text-sm ${
-                isDarkMode
-                  ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-100"
-                  : "border-cyan-100 bg-cyan-50 text-cyan-800"
-              }`}>
-                Use the BotBot orb from anywhere, or start here when you want the AMP AI workspace.
-              </div>
-            </div>
+          <div className="h-[calc(100dvh-8rem)] min-h-[720px] w-full overflow-hidden bg-white" data-amp-ai-embed="wolf-discount-ai-fullbleed-visible">
+            <iframe
+              title="WOLF AI workspace"
+              src="https://wolf.discount/ai/"
+              className="block h-full w-full border-0 bg-white"
+              loading="eager"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allow="clipboard-write; microphone; camera; fullscreen"
+            />
+          </div>
+        ) : subTab === "kiosks" ? (
+          <KiosksStatus />
+        ) : subTab === "fdconnect" ? (
+          <div className="h-full w-full overflow-hidden">
+            <iframe
+              src={FD_CONNECT_URL}
+              title="FD Connect"
+              className="w-full h-full border-none"
+              style={{ height: "100vh" }}
+            />
           </div>
         ) : (
           <div className="h-full overflow-auto p-5 lg:p-7">

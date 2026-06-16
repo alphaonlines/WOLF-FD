@@ -1,6 +1,24 @@
 type JsonValue = null | boolean | number | string | JsonValue[] | { [k: string]: JsonValue };
+export type PosDateBasis = "delivered" | "written";
 
-const DEFAULT_BASE_URL = "http://127.0.0.1:5057";
+type PosDateBasisOption = { dateBasis?: PosDateBasis };
+
+let activePosDateBasis: PosDateBasis = "delivered";
+
+export function setActivePosDateBasis(dateBasis: PosDateBasis): void {
+  activePosDateBasis = dateBasis === "written" ? "written" : "delivered";
+}
+
+const withActiveDateBasis = (path: string): string => {
+  if (activePosDateBasis === "delivered" || !path.startsWith("/api/")) return path;
+  const [base, query = ""] = path.split("?", 2);
+  const qs = new URLSearchParams(query);
+  if (!qs.has("date_basis")) qs.set("date_basis", activePosDateBasis);
+  const next = qs.toString();
+  return next ? `${base}?${next}` : base;
+};
+
+const DEFAULT_BASE_URL = "/fd/api";
 
 export function getPosApiBaseUrl(): string {
   const v = (import.meta as any).env?.VITE_POS_API_BASE_URL;
@@ -25,7 +43,8 @@ export async function checkPosBackendHealthy(timeoutMs = 900): Promise<boolean> 
 
 async function fetchJson(path: string, init?: RequestInit): Promise<JsonValue> {
   const baseUrl = getPosApiBaseUrl();
-  const url = `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+  const requestPath = init?.method && init.method.toUpperCase() !== "GET" ? path : withActiveDateBasis(path);
+  const url = `${baseUrl}${requestPath.startsWith("/") ? "" : "/"}${requestPath}`;
   const res = await fetch(url, {
     ...init,
     credentials: "include",
@@ -70,6 +89,7 @@ export async function uploadPosExports(files: File[]): Promise<{ import?: { ok?:
   const baseUrl = getPosApiBaseUrl();
   const form = new FormData();
   files.forEach((file) => form.append("files", file, file.name));
+  form.append("date_basis", activePosDateBasis);
   const res = await fetch(`${baseUrl}/api/import/upload`, {
     method: "POST",
     credentials: "include",
@@ -178,6 +198,7 @@ export async function fetchLowMargin(params: {
   salesperson?: string;
   location?: string;
   category?: string;
+  categories?: string[];
   manufacturer?: string;
 }): Promise<{
   totalCount: number;
@@ -206,6 +227,7 @@ export async function fetchLowMargin(params: {
   if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
   if (params.location && params.location.trim()) qs.set("location", params.location.trim());
   if (params.category && params.category.trim()) qs.set("category", params.category.trim());
+  params.categories?.map((category) => category.trim()).filter(Boolean).forEach((category) => qs.append("category", category));
   if (params.manufacturer && params.manufacturer.trim()) qs.set("manufacturer", params.manufacturer.trim());
   const json = await fetchJson(`/api/low-margin?${qs.toString()}`);
 
@@ -237,6 +259,7 @@ export async function fetchSalesReport(params: {
   salesperson?: string;
   location?: string;
   category?: string;
+  categories?: string[];
   manufacturer?: string;
 }): Promise<{
   dimension: "salesperson" | "store";
@@ -260,6 +283,7 @@ export async function fetchSalesReport(params: {
   if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
   if (params.location && params.location.trim()) qs.set("location", params.location.trim());
   if (params.category && params.category.trim()) qs.set("category", params.category.trim());
+  params.categories?.map((category) => category.trim()).filter(Boolean).forEach((category) => qs.append("category", category));
   if (params.manufacturer && params.manufacturer.trim()) qs.set("manufacturer", params.manufacturer.trim());
   const json = await fetchJson(`/api/report/sales-summary?${qs.toString()}`);
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];
@@ -283,28 +307,43 @@ export async function fetchSalesReport(params: {
   };
 }
 
+export type PosSalesTicketRow = {
+  saleId: string;
+  saleDate: string;
+  salesperson: string;
+  location: string;
+  receiptNo: string;
+  customerName: string;
+  grandTotal: number;
+  profit: number;
+  marginPct: number | null;
+  pro1stSales: number;
+  pro1stPct: number | null;
+  rawSourceFile: string;
+};
+
+const mapPosSalesTicketRow = (r: any): PosSalesTicketRow => ({
+  saleId: String(r.sale_id ?? ""),
+  saleDate: String(r.sale_date ?? ""),
+  salesperson: String(r.salesperson ?? ""),
+  location: String(r.location ?? ""),
+  receiptNo: String(r.receipt_no ?? ""),
+  customerName: String(r.customer_name ?? ""),
+  grandTotal: Number(r.grand_total ?? 0),
+  profit: Number(r.profit ?? 0),
+  marginPct: r.margin_pct === null || r.margin_pct === undefined ? null : Number(r.margin_pct),
+  pro1stSales: Number(r.pro1st_sales ?? 0),
+  pro1stPct: r.pro1st_pct === null || r.pro1st_pct === undefined ? null : Number(r.pro1st_pct),
+  rawSourceFile: String(r.raw_source_file ?? ""),
+});
+
 export async function fetchSalespersonTickets(params: {
   start: string;
   end: string;
   salesperson: string;
   limit?: number;
   location?: string;
-}): Promise<
-  Array<{
-    saleId: string;
-    saleDate: string;
-    salesperson: string;
-    location: string;
-    receiptNo: string;
-    customerName: string;
-    grandTotal: number;
-    profit: number;
-    marginPct: number | null;
-    pro1stSales: number;
-    pro1stPct: number | null;
-    rawSourceFile: string;
-  }>
-> {
+}): Promise<PosSalesTicketRow[]> {
   const qs = new URLSearchParams({
     start: params.start,
     end: params.end,
@@ -315,20 +354,45 @@ export async function fetchSalespersonTickets(params: {
   const json = await fetchJson(`/api/salesperson-tickets?${qs.toString()}`);
   const rows = (json as any)?.rows;
   if (!Array.isArray(rows)) return [];
-  return rows.map((r: any) => ({
-    saleId: String(r.sale_id ?? ""),
-    saleDate: String(r.sale_date ?? ""),
-    salesperson: String(r.salesperson ?? ""),
-    location: String(r.location ?? ""),
-    receiptNo: String(r.receipt_no ?? ""),
-    customerName: String(r.customer_name ?? ""),
-    grandTotal: Number(r.grand_total ?? 0),
-    profit: Number(r.profit ?? 0),
-    marginPct: r.margin_pct === null || r.margin_pct === undefined ? null : Number(r.margin_pct),
-    pro1stSales: Number(r.pro1st_sales ?? 0),
-    pro1stPct: r.pro1st_pct === null || r.pro1st_pct === undefined ? null : Number(r.pro1st_pct),
-    rawSourceFile: String(r.raw_source_file ?? ""),
-  }));
+  return rows.map(mapPosSalesTicketRow);
+}
+
+export async function fetchStoreTickets(params: {
+  start: string;
+  end: string;
+  location: string;
+  limit?: number;
+}): Promise<PosSalesTicketRow[]> {
+  const qs = new URLSearchParams({
+    start: params.start,
+    end: params.end,
+    location: params.location,
+    limit: String(params.limit ?? 2000),
+  });
+  const json = await fetchJson(`/api/store-tickets?${qs.toString()}`);
+  const rows = (json as any)?.rows;
+  if (!Array.isArray(rows)) return [];
+  return rows.map(mapPosSalesTicketRow);
+}
+
+export async function fetchDayTickets(params: {
+  start: string;
+  end: string;
+  limit?: number;
+  salesperson?: string;
+  location?: string;
+}): Promise<PosSalesTicketRow[]> {
+  const qs = new URLSearchParams({
+    start: params.start,
+    end: params.end,
+    limit: String(params.limit ?? 5000),
+  });
+  if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
+  if (params.location && params.location.trim()) qs.set("location", params.location.trim());
+  const json = await fetchJson(`/api/day-tickets?${qs.toString()}`);
+  const rows = (json as any)?.rows;
+  if (!Array.isArray(rows)) return [];
+  return rows.map(mapPosSalesTicketRow);
 }
 
 export type OpenLocationTicketRow = {
@@ -502,17 +566,20 @@ export async function fetchPro1stTrend(params: {
   end: string;
   salesperson?: string;
   location?: string;
+  dateBasis?: PosDateBasis;
 }): Promise<
   Array<{
     day: string;
     furnitureSales: number;
     mattressBoxSpringAdjustableSales: number;
+    averageDailyAdSpend: number | null;
   }>
 > {
   const qs = new URLSearchParams({
     start: params.start,
     end: params.end,
   });
+  if (params.dateBasis) qs.set("date_basis", params.dateBasis);
   if (params.salesperson && params.salesperson.trim()) qs.set("salesperson", params.salesperson.trim());
   if (params.location && params.location.trim()) qs.set("location", params.location.trim());
   const json = await fetchJson(`/api/pro1st/trend?${qs.toString()}`);
@@ -520,11 +587,18 @@ export async function fetchPro1stTrend(params: {
   const rows = (json as any)?.rows;
   if (!Array.isArray(rows)) return [];
 
-  return rows.map((r: any) => ({
-    day: String(r.day ?? ""),
-    furnitureSales: Number(r.furnitureSales ?? 0),
-    mattressBoxSpringAdjustableSales: Number(r.mattressBoxSpringAdjustableSales ?? 0),
-  }));
+  return rows.map((r: any) => {
+    const rawAverageDailyAdSpend = r.averageDailyAdSpend;
+    return {
+      day: String(r.day ?? ""),
+      furnitureSales: Number(r.furnitureSales ?? 0),
+      mattressBoxSpringAdjustableSales: Number(r.mattressBoxSpringAdjustableSales ?? 0),
+      averageDailyAdSpend:
+        rawAverageDailyAdSpend === null || rawAverageDailyAdSpend === undefined
+          ? null
+          : Number(rawAverageDailyAdSpend),
+    };
+  });
 }
 
 export async function fetchFinanceSummary(params: {

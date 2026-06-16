@@ -27,8 +27,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Compass, Database, Loader2, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
-import { useBotBotContext } from "./botbot/BotBotContext";
+import { Database, Loader2, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
 import {
   getPosApiBaseUrl,
   fetchAvailableYears,
@@ -44,10 +43,14 @@ import {
   fetchTopManufacturers,
   fetchPro1stAttachRate,
   fetchSalespersonTickets,
+  fetchStoreTickets,
+  fetchDayTickets,
   fetchSalesReport,
   fetchManufacturerTopItems,
   fetchCategoryTopItems,
   fetchSalespeopleBySaleIds,
+  setActivePosDateBasis,
+  type PosDateBasis,
 } from "../services/posBackendApi";
 import { SalesData, StoreData } from "../types";
 import {
@@ -57,6 +60,8 @@ import {
   formatDateLong,
   formatRangeLabel,
   formatShortDate,
+  getCurrentMonthToDateRange,
+  getMetricComparisonDisplay,
   getSimplifiedRange,
   monthOptions,
   pctChange,
@@ -67,6 +72,7 @@ import SortableItem from "./sales/SortableItem";
 import SalesPrintDialog from "./sales/SalesPrintDialog";
 import SalesReportCard from "./sales/SalesReportCard";
 import SalespersonDetailCard, { type SalespersonTicketRow } from "./sales/SalespersonDetailCard";
+import TopManufacturersCard from "./sales/TopManufacturersCard";
 import {
   openSalesPrintWindowShell,
   renderSalesPrintError,
@@ -77,7 +83,7 @@ import {
   type ReportSummaryRow,
   withReportPercentages,
 } from "./salesReportUtils";
-import BotBotTutorial, { type BotBotTutorialStep } from "./botbot/BotBotTutorial";
+import ModuleTourOverlay, { type ModuleTourStep } from "./app/ModuleTourOverlay";
 
 type SalespersonPoint = SalesData & {
   fullName: string;
@@ -95,6 +101,52 @@ type ReportRowsState = {
   availableManufacturers: string[];
 };
 
+type BestSellerRow = {
+  itemDescription: string;
+  category: string;
+  manufacturer: string;
+  itemNo: string;
+  qty: number;
+  sales: number;
+  saleIds: string[];
+};
+
+type TopCategoryRow = { category: string; qty: number; sales: number };
+type TopManufacturerRow = { manufacturer: string; qty: number; sales: number };
+
+type Pro1stStats = {
+  totalSales: number;
+  proSales: number;
+  attachRate: number;
+  saleIds: string[];
+  saleIdsLow: string[];
+  saleIdsMid: string[];
+  saleIdsHigh: string[];
+};
+
+const EMPTY_PRO1ST_STATS: Pro1stStats = {
+  totalSales: 0,
+  proSales: 0,
+  attachRate: 0,
+  saleIds: [],
+  saleIdsLow: [],
+  saleIdsMid: [],
+  saleIdsHigh: [],
+};
+
+type TrendPoint = {
+  day: string;
+  furnitureSales: number;
+  mattressBoxSpringAdjustableSales: number;
+  averageDailyAdSpend: number | null;
+};
+
+type DisplayTrendPoint = TrendPoint & {
+  compareDay?: string;
+  compareFurnitureSales?: number | null;
+  compareAverageDailyAdSpend?: number | null;
+};
+
 type RangeMode = "preset" | "custom";
 
 type SalesDashboardProps = {
@@ -102,55 +154,60 @@ type SalesDashboardProps = {
   showTooltips?: boolean;
   tourStorageKey?: string;
   enableTourAutoStart?: boolean;
+  tourReplayToken?: number;
   isDarkMode?: boolean;
 };
 
 const DEFAULT_STAT_CARD_ORDER = ["range-selector", "sales-overview", "finance-overview"];
-const SALES_ANALYSIS_TOUR_STEPS: BotBotTutorialStep[] = [
+const DEFAULT_DASHBOARD_CARD_ORDER = [
+  ...DEFAULT_STAT_CARD_ORDER,
+  "sales-report",
+  "best-sellers",
+  "top-categories",
+  "top-manufacturers",
+  "pro1st-attach",
+  "salesperson-performance",
+  "store-performance",
+  "sales-trend",
+];
+const DASHBOARD_CARD_SPANS: Record<string, string> = {
+  "range-selector": "md:col-span-2 xl:col-span-4",
+  "sales-overview": "md:col-span-2 xl:col-span-4",
+  "finance-overview": "md:col-span-2 xl:col-span-4",
+  "sales-report": "md:col-span-6 xl:col-span-12",
+  "best-sellers": "md:col-span-3 xl:col-span-6",
+  "top-categories": "md:col-span-3 xl:col-span-6",
+  "top-manufacturers": "md:col-span-3 xl:col-span-6",
+  "pro1st-attach": "md:col-span-3 xl:col-span-6",
+  "salesperson-performance": "md:col-span-3 xl:col-span-6",
+  "store-performance": "md:col-span-3 xl:col-span-6",
+  "sales-trend": "md:col-span-6 xl:col-span-12",
+};
+const SALES_ANALYSIS_TOUR_STEPS: ModuleTourStep[] = [
   {
-    id: "sales-range",
-    highlightId: "sales-date-range",
+    targetSelector: '[data-tour-id="sales-date-range"]',
     title: "Choose the report window",
-    message: "Pick a preset range or a custom start and end date. Use Compare when you want this period measured against another one.",
-    advanceWhen: { type: "manual" },
+    description: "Pick a preset range or a custom start and end date. Use Compare when you want this period measured against another one.",
   },
   {
-    id: "sales-overview",
-    highlightId: "sales-overview",
+    targetSelector: '[data-tour-id="sales-overview"]',
     title: "Read the floor at a glance",
-    message: "This card summarizes sales, ticket count, and average ticket for the selected delivered-date range.",
-    advanceWhen: { type: "manual" },
+    description: "This card summarizes sales, ticket count, and average ticket for the selected delivered-date range.",
   },
   {
-    id: "sales-report",
-    highlightId: "sales-report-card",
+    targetSelector: '[data-tour-id="sales-report-card"]',
     title: "Work the full report",
-    message: "This is the main investigation table for drilling into stores, salespeople, manufacturers, and categories.",
-    advanceWhen: { type: "manual" },
+    description: "This is the main investigation table for drilling into stores, salespeople, manufacturers, and categories.",
   },
   {
-    id: "sales-best-sellers",
-    highlightId: "sales-best-sellers",
+    targetSelector: '[data-tour-id="sales-best-sellers"]',
     title: "Find what is moving",
-    message: "Best sellers, categories, manufacturers, and Pro1st attach rate help you see what products are driving the numbers.",
-    advanceWhen: { type: "manual" },
+    description: "Best sellers, categories, manufacturers, and Pro1st attach rate help you see what products are driving the numbers.",
   },
   {
-    id: "sales-performance",
-    highlightId: "sales-performance",
+    targetSelector: '[data-tour-id="sales-performance"]',
     title: "Compare people and stores",
-    message: "Click a salesperson or store bar to filter the rest of the page to that person or location.",
-    advanceWhen: { type: "manual" },
-  },
-  {
-    id: "sales-botbot",
-    highlightId: "botbot-entry",
-    title: "Ask BotBot what to look at",
-    message: "Open BotBot when you want help explaining a dip, finding standout reps, or deciding which section deserves attention next.",
-    highlightOnAction: true,
-    advanceWhen: { type: "manual" },
-    primaryActionLabel: "Done",
-    isTerminal: true,
+    description: "Click a salesperson or store bar to filter the rest of the page to that person or location.",
   },
 ];
 
@@ -178,6 +235,19 @@ const normalizeStatCardOrder = (value: unknown): string[] => {
   return deduped;
 };
 
+const normalizeDashboardCardOrder = (value: unknown): string[] => {
+  const allowed = new Set(DEFAULT_DASHBOARD_CARD_ORDER);
+  const raw = Array.isArray(value) ? value.map((entry) => String(entry)) : DEFAULT_DASHBOARD_CARD_ORDER;
+  const normalized = raw.filter((entry) => allowed.has(entry));
+  const deduped = Array.from(new Set(normalized));
+
+  for (const entry of DEFAULT_DASHBOARD_CARD_ORDER) {
+    if (!deduped.includes(entry)) deduped.push(entry);
+  }
+
+  return deduped;
+};
+
 const sortReportRows = (rows: ReportSummaryRow[], itemSortMetric: "sales" | "qty"): ReportSummaryRow[] =>
   [...rows].sort((a, b) => {
     if (itemSortMetric === "qty") {
@@ -196,44 +266,80 @@ const sortReportRows = (rows: ReportSummaryRow[], itemSortMetric: "sales" | "qty
     );
   });
 
+const bestSellerKeyFor = (row: Pick<BestSellerRow, "itemNo" | "itemDescription" | "category" | "manufacturer">) =>
+  `${row.itemNo}||${row.itemDescription}||${row.category}||${row.manufacturer}`;
+
 const SalesDashboard: React.FC<SalesDashboardProps> = ({
   itemSortMetric,
   showTooltips = false,
   tourStorageKey = "fd-tour-sales-analysis",
   enableTourAutoStart = true,
+  tourReplayToken = 0,
   isDarkMode = true,
 }) => {
-  const { setPageContext } = useBotBotContext();
   const [salesData, setSalesData] = useState<SalespersonPoint[]>([]);
+  const [salesDataCompare, setSalesDataCompare] = useState<SalespersonPoint[]>([]);
   const [storeData, setStoreData] = useState<StoreData[]>([]);
-  const [trendData, setTrendData] = useState<Array<{ day: string; furnitureSales: number; mattressBoxSpringAdjustableSales: number }>>([]);
+  const [storeDataCompare, setStoreDataCompare] = useState<StoreData[]>([]);
+  const [trendData, setTrendData] = useState<TrendPoint[]>([]);
+  const [trendCompareData, setTrendCompareData] = useState<TrendPoint[]>([]);
   const [trendFocusDay, setTrendFocusDay] = useState<string | null>(null);
   const trendPrevRangeRef = useRef<{ year: number; month: string; day: string } | null>(null);
   const [summary, setSummary] = useState<Summary>({ sales: 0, lines: 0 });
   const [summaryCompare, setSummaryCompare] = useState<Summary>({ sales: 0, lines: 0 });
-  
-  const [yearA, setYearA] = useState<number>(() => new Date().getFullYear());
-  const [monthA, setMonthA] = useState<string>("01");
-  const [dayA, setDayA] = useState<string>("ALL");
-  const [rangeModeA, setRangeModeA] = useState<RangeMode>("preset");
-  const [customStartA, setCustomStartA] = useState<string>("");
-  const [customEndA, setCustomEndA] = useState<string>("");
+  const [dateBasis, setDateBasis] = useState<PosDateBasis>("delivered");
+  const dateBasisLabel = dateBasis === "written" ? "written sale date" : "delivered date";
+  const dateBasisShortLabel = dateBasis === "written" ? "Written" : "Delivered";
 
-  const [statCardOrder, setStatCardOrder] = useState<string[]>(() => {
-    const saved = localStorage.getItem("fd-stat-card-order");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return normalizeStatCardOrder(parsed);
-      } catch (e) {}
-    }
-    return DEFAULT_STAT_CARD_ORDER;
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("fd-sales-basis", {
+        detail: { basis: dateBasis, label: dateBasisShortLabel, basisLabel: dateBasisLabel },
+      })
+    );
+  }, [dateBasis, dateBasisLabel, dateBasisShortLabel]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { basis?: PosDateBasis } | undefined;
+      if (detail?.basis === "delivered" || detail?.basis === "written") {
+        setDateBasis(detail.basis);
+      }
+    };
+    window.addEventListener("fd-set-sales-basis", handler as EventListener);
+    return () => window.removeEventListener("fd-set-sales-basis", handler as EventListener);
+  }, []);
+
+  const [initialMonthToDate] = useState(() => getCurrentMonthToDateRange());
+  
+  const [yearA, setYearA] = useState<number>(initialMonthToDate.year);
+  const [monthA, setMonthA] = useState<string>(initialMonthToDate.month);
+  const [dayA, setDayA] = useState<string>("ALL");
+  const [rangeModeA, setRangeModeA] = useState<RangeMode>("custom");
+  const [customStartA, setCustomStartA] = useState<string>(initialMonthToDate.start);
+  const [customEndA, setCustomEndA] = useState<string>(initialMonthToDate.endInclusive);
+
+  const [dashboardCardOrder, setDashboardCardOrder] = useState<string[]>(() => {
+    try {
+      const savedDashboardOrder = localStorage.getItem("fd-sales-analysis-card-order");
+      if (savedDashboardOrder) {
+        return normalizeDashboardCardOrder(JSON.parse(savedDashboardOrder));
+      }
+      const savedStatOrder = localStorage.getItem("fd-stat-card-order");
+      if (savedStatOrder) {
+        return normalizeDashboardCardOrder([
+          ...normalizeStatCardOrder(JSON.parse(savedStatOrder)),
+          ...DEFAULT_DASHBOARD_CARD_ORDER.filter((id) => !DEFAULT_STAT_CARD_ORDER.includes(id)),
+        ]);
+      }
+    } catch (e) {}
+    return DEFAULT_DASHBOARD_CARD_ORDER;
   });
   const [showSalesTour, setShowSalesTour] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem("fd-stat-card-order", JSON.stringify(statCardOrder));
-  }, [statCardOrder]);
+    localStorage.setItem("fd-sales-analysis-card-order", JSON.stringify(dashboardCardOrder));
+  }, [dashboardCardOrder]);
 
   useEffect(() => {
     if (!enableTourAutoStart) {
@@ -249,6 +355,12 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     }
   }, [tourStorageKey, enableTourAutoStart]);
 
+  useEffect(() => {
+    if (tourReplayToken > 0) {
+      setShowSalesTour(true);
+    }
+  }, [tourReplayToken]);
+
   const completeSalesTour = () => {
     try {
       localStorage.setItem(tourStorageKey, "1");
@@ -257,19 +369,19 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   };
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (active.id !== over?.id) {
-      setStatCardOrder((items) => {
-        const oldIndex = items.indexOf(active.id as string);
-        const newIndex = items.indexOf(over!.id as string);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
+    if (!over || active.id === over.id) return;
+    setDashboardCardOrder((items) => {
+      const oldIndex = items.indexOf(active.id as string);
+      const newIndex = items.indexOf(over.id as string);
+      if (oldIndex < 0 || newIndex < 0) return items;
+      return arrayMove(items, oldIndex, newIndex);
+    });
   };
 
   const [yearB, setYearB] = useState<number | null>(null);
@@ -286,6 +398,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
 
   const [selectedSalesperson, setSelectedSalesperson] = useState<string | null>(null);
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
+  const [selectedTrendDay, setSelectedTrendDay] = useState<string | null>(null);
   const [searchHint, setSearchHint] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentRange, setCurrentRange] = useState<{ start: string; endExclusive: string }>({
@@ -348,7 +461,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   } | null>(null);
   const [reportMode, setReportMode] = useState<"totals" | "lowest">("totals");
   const [reportDimension, setReportDimension] = useState<"salesperson" | "store">("salesperson");
-  const [reportCategory, setReportCategory] = useState<string>("ALL");
+  const [reportCategories, setReportCategories] = useState<string[]>([]);
   const [reportManufacturer, setReportManufacturer] = useState<string>("ALL");
   const [reportData, setReportData] = useState<ReportRowsState>({
     rows: [],
@@ -368,24 +481,40 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     availableCategories: [],
     availableManufacturers: [],
   });
+  const [reportDataSalespersonCompare, setReportDataSalespersonCompare] = useState<ReportRowsState>({
+    rows: [],
+    distinctTicketCount: 0,
+    availableCategories: [],
+    availableManufacturers: [],
+  });
+  const [reportDataStoreCompare, setReportDataStoreCompare] = useState<ReportRowsState>({
+    rows: [],
+    distinctTicketCount: 0,
+    availableCategories: [],
+    availableManufacturers: [],
+  });
   const [reportOverallTotals, setReportOverallTotals] = useState<{ totalRetail: number; totalUnits: number }>({
+    totalRetail: 0,
+    totalUnits: 0,
+  });
+  const [reportOverallTotalsCompare, setReportOverallTotalsCompare] = useState<{ totalRetail: number; totalUnits: number }>({
     totalRetail: 0,
     totalUnits: 0,
   });
   const [reportOverallRowsSalesperson, setReportOverallRowsSalesperson] = useState<ReportSummaryRow[]>([]);
   const [reportOverallRowsStore, setReportOverallRowsStore] = useState<ReportSummaryRow[]>([]);
-  const [bestSellers, setBestSellers] = useState<Array<{
-    itemDescription: string;
-    category: string;
-    manufacturer: string;
-    itemNo: string;
-    qty: number;
-    sales: number;
-    saleIds: string[];
-  }>>([]);
+  const [reportOverallRowsSalespersonCompare, setReportOverallRowsSalespersonCompare] = useState<ReportSummaryRow[]>([]);
+  const [reportOverallRowsStoreCompare, setReportOverallRowsStoreCompare] = useState<ReportSummaryRow[]>([]);
+  const [bestSellers, setBestSellers] = useState<BestSellerRow[]>([]);
+  const [bestSellersCompare, setBestSellersCompare] = useState<BestSellerRow[]>([]);
   const [salespersonTickets, setSalespersonTickets] = useState<SalespersonTicketRow[]>([]);
-  const [topCategories, setTopCategories] = useState<Array<{ category: string; qty: number; sales: number }>>([]);
-  const [topManufacturers, setTopManufacturers] = useState<Array<{ manufacturer: string; qty: number; sales: number }>>([]);
+  const [trendDayTickets, setTrendDayTickets] = useState<SalespersonTicketRow[]>([]);
+  const [trendDayTicketsLoading, setTrendDayTicketsLoading] = useState(false);
+  const [trendDayTicketsError, setTrendDayTicketsError] = useState<string | null>(null);
+  const [topCategories, setTopCategories] = useState<TopCategoryRow[]>([]);
+  const [topCategoriesCompare, setTopCategoriesCompare] = useState<TopCategoryRow[]>([]);
+  const [topManufacturers, setTopManufacturers] = useState<TopManufacturerRow[]>([]);
+  const [topManufacturersCompare, setTopManufacturersCompare] = useState<TopManufacturerRow[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [categoryItems, setCategoryItems] = useState<Record<string, Array<{
     itemDescription: string;
@@ -406,23 +535,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     saleIds: string[];
   }>>>({});
   const [manufacturerLoading, setManufacturerLoading] = useState<Record<string, boolean>>({});
-  const [pro1stStats, setPro1stStats] = useState<{
-    totalSales: number;
-    proSales: number;
-    attachRate: number;
-    saleIds: string[];
-    saleIdsLow: string[];
-    saleIdsMid: string[];
-    saleIdsHigh: string[];
-  }>({
-    totalSales: 0,
-    proSales: 0,
-    attachRate: 0,
-    saleIds: [],
-    saleIdsLow: [],
-    saleIdsMid: [],
-    saleIdsHigh: [],
-  });
+  const [pro1stStats, setPro1stStats] = useState<Pro1stStats>(EMPTY_PRO1ST_STATS);
+  const [pro1stStatsCompare, setPro1stStatsCompare] = useState<Pro1stStats>(EMPTY_PRO1ST_STATS);
   const [salePeopleMap, setSalePeopleMap] = useState<Record<string, string>>({});
   const salespersonDetailRef = useRef<HTMLDivElement | null>(null);
 
@@ -489,9 +603,21 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     () => (reportDimension === "store" ? reportOverallRowsStore : reportOverallRowsSalesperson),
     [reportDimension, reportOverallRowsSalesperson, reportOverallRowsStore]
   );
+  const currentCompareReportData = useMemo(
+    () => (reportDimension === "store" ? reportDataStoreCompare : reportDataSalespersonCompare),
+    [reportDimension, reportDataSalespersonCompare, reportDataStoreCompare]
+  );
+  const currentCompareReportOverallRows = useMemo(
+    () => (reportDimension === "store" ? reportOverallRowsStoreCompare : reportOverallRowsSalespersonCompare),
+    [reportDimension, reportOverallRowsSalespersonCompare, reportOverallRowsStoreCompare]
+  );
   const currentReportOverallMap = useMemo(
     () => new Map(currentReportOverallRows.map((row) => [row.label, row])),
     [currentReportOverallRows]
+  );
+  const currentCompareReportOverallMap = useMemo(
+    () => new Map(currentCompareReportOverallRows.map((row) => [row.label, row])),
+    [currentCompareReportOverallRows]
   );
 
   const reportRowsWithPct = useMemo(() => {
@@ -500,6 +626,57 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       itemSortMetric
     );
   }, [reportData.rows, reportTotals, currentReportOverallMap, reportOverallTotals, itemSortMetric]);
+
+  const reportTotalsCompare = useMemo(() => {
+    return computeReportTotals(currentCompareReportData.rows, currentCompareReportData.distinctTicketCount);
+  }, [currentCompareReportData.rows, currentCompareReportData.distinctTicketCount]);
+
+  const reportRowsWithPctCompare = useMemo(() => {
+    return sortReportRows(
+      withReportPercentages(
+        currentCompareReportData.rows,
+        reportTotalsCompare,
+        currentCompareReportOverallMap,
+        reportOverallTotalsCompare
+      ),
+      itemSortMetric
+    );
+  }, [currentCompareReportData.rows, reportTotalsCompare, currentCompareReportOverallMap, reportOverallTotalsCompare, itemSortMetric]);
+
+  const bestSellersCompareMap = useMemo(
+    () => new Map(bestSellersCompare.map((row) => [bestSellerKeyFor(row), row])),
+    [bestSellersCompare]
+  );
+  const topCategoriesCompareMap = useMemo(
+    () => new Map(topCategoriesCompare.map((row) => [row.category, row])),
+    [topCategoriesCompare]
+  );
+  const salesDataCompareMap = useMemo(
+    () => new Map(salesDataCompare.map((row) => [row.fullName, row])),
+    [salesDataCompare]
+  );
+  const storeDataCompareMap = useMemo(
+    () => new Map(storeDataCompare.map((row) => [row.storeName, row])),
+    [storeDataCompare]
+  );
+
+  const salesPerformanceData = useMemo(
+    () =>
+      salesData.map((row) => ({
+        ...row,
+        compareSales: Number(salesDataCompareMap.get(row.fullName)?.sales || 0),
+      })),
+    [salesData, salesDataCompareMap]
+  );
+
+  const storePerformanceData = useMemo(
+    () =>
+      storeData.map((row) => ({
+        ...row,
+        compareRevenue: Number(storeDataCompareMap.get(row.storeName)?.revenue || 0),
+      })),
+    [storeData, storeDataCompareMap]
+  );
 
   const printLowMarginRows = useMemo(() => (printData?.lowMarginRows ?? sortedLowMarginData), [printData, sortedLowMarginData]);
   const printStoreBaseRows = useMemo(() => (printData?.storeRows ?? reportDataStore.rows), [printData, reportDataStore.rows]);
@@ -578,10 +755,15 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     return `${(value as number).toFixed(1)}%`;
   };
 
+  const activeReportCategories = useMemo(
+    () => reportCategories.map((category) => category.trim()).filter(Boolean),
+    [reportCategories]
+  );
+
   const reportCategoryOptions = useMemo(() => {
-    const values = [...reportData.availableCategories, reportCategory].filter((v) => v && String(v).trim());
+    const values = [...reportData.availableCategories, ...activeReportCategories].filter((v) => v && String(v).trim());
     return ["ALL", ...Array.from(new Set(values))];
-  }, [reportData.availableCategories, reportCategory]);
+  }, [reportData.availableCategories, activeReportCategories]);
 
   const reportManufacturerOptions = useMemo(() => {
     const values = [...reportData.availableManufacturers, reportManufacturer].filter((v) => v && String(v).trim());
@@ -649,19 +831,19 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     if (!trendFocusDay) return;
     if (!currentRangeInput) {
       setTrendFocusDay(null);
+      setSelectedTrendDay(null);
       trendPrevRangeRef.current = null;
       return;
     }
     if (!(trendFocusDay >= currentRangeInput.start && trendFocusDay < currentRangeInput.endExclusive)) {
       setTrendFocusDay(null);
+      setSelectedTrendDay(null);
       trendPrevRangeRef.current = null;
     }
   }, [currentRangeInput, trendFocusDay]);
 
-
-
-
   useEffect(() => {
+    setActivePosDateBasis(dateBasis);
     fetchAvailableYears()
       .then((years) => {
         if (!years.length) return;
@@ -677,11 +859,12 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       .catch(() => {
         // ignore; UI still works with manual year values
       });
-  }, []);
+  }, [dateBasis]);
 
   const loadData = async () => {
     setLoading(true);
     setError(null);
+    setActivePosDateBasis(dateBasis);
     try {
       const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
       const location = selectedStore ? selectedStore : undefined;
@@ -717,6 +900,16 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         manufacturerRows,
         pro1stSummary,
         salespersonTicketsRows,
+        compareLeaderRows,
+        compareLocationRows,
+        compareReportSummarySalesperson,
+        compareReportSummaryStore,
+        compareReportSummaryOverallSalesperson,
+        compareReportSummaryOverallStore,
+        compareBestSellerRows,
+        compareCategoryRows,
+        compareManufacturerRows,
+        comparePro1stSummary,
       ] = await Promise.all([
         fetchLeaderboard({
           start: currentRange.start,
@@ -741,7 +934,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
           limitTotal: 200,
           salesperson,
           location,
-          category: reportCategory !== "ALL" ? reportCategory : undefined,
+          categories: activeReportCategories.length ? activeReportCategories : undefined,
           manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
         }),
         fetchSalesReport({
@@ -750,7 +943,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
           dimension: "salesperson",
           salesperson,
           location,
-          category: reportCategory !== "ALL" ? reportCategory : undefined,
+          categories: activeReportCategories.length ? activeReportCategories : undefined,
           manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
         }),
         fetchSalesReport({
@@ -759,7 +952,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
           dimension: "store",
           salesperson,
           location,
-          category: reportCategory !== "ALL" ? reportCategory : undefined,
+          categories: activeReportCategories.length ? activeReportCategories : undefined,
           manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
         }),
         fetchSalesReport({
@@ -788,9 +981,80 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
               limit: 5000,
               location,
             })
+          : location
+            ? fetchStoreTickets({
+                start: currentRange.start,
+                end: currentRange.endExclusive,
+                location,
+                limit: 5000,
+              })
+            : Promise.resolve([]),
+        compareRange
+          ? fetchLeaderboard({
+              start: compareRange.start,
+              end: compareRange.endExclusive,
+              limit: salesperson ? 100 : 20,
+              salesperson,
+              location,
+            })
           : Promise.resolve([]),
-      ]);
+        compareRange
+          ? fetchSalesByLocation({ start: compareRange.start, end: compareRange.endExclusive, salesperson, location })
+          : Promise.resolve([]),
+        compareRange
+          ? fetchSalesReport({
+              start: compareRange.start,
+              end: compareRange.endExclusive,
+              dimension: "salesperson",
+              salesperson,
+              location,
+              categories: activeReportCategories.length ? activeReportCategories : undefined,
+              manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
+            })
+          : Promise.resolve(null),
+        compareRange
+          ? fetchSalesReport({
+              start: compareRange.start,
+              end: compareRange.endExclusive,
+              dimension: "store",
+              salesperson,
+              location,
+              categories: activeReportCategories.length ? activeReportCategories : undefined,
+              manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
+            })
+          : Promise.resolve(null),
+        compareRange
+          ? fetchSalesReport({
+              start: compareRange.start,
+              end: compareRange.endExclusive,
+              dimension: "salesperson",
+              salesperson,
+              location,
+            })
+          : Promise.resolve(null),
+        compareRange
+          ? fetchSalesReport({
+              start: compareRange.start,
+              end: compareRange.endExclusive,
+              dimension: "store",
+              salesperson,
+              location,
+            })
+          : Promise.resolve(null),
+        compareRange
+          ? fetchBestSellers({ start: compareRange.start, end: compareRange.endExclusive, limit: 15, sort: itemSortMetric, location, salesperson })
+          : Promise.resolve([]),
+        compareRange
+          ? fetchTopCategories({ start: compareRange.start, end: compareRange.endExclusive, limit: 8, sort: itemSortMetric, location, salesperson })
+          : Promise.resolve([]),
+        compareRange
+          ? fetchTopManufacturers({ start: compareRange.start, end: compareRange.endExclusive, limit: 8, sort: itemSortMetric, location, salesperson })
+          : Promise.resolve([]),
+        compareRange
+          ? fetchPro1stAttachRate({ start: compareRange.start, end: compareRange.endExclusive, location, salesperson })
+          : Promise.resolve(null),
 
+      ]);
       setCurrentRange(currentRange);
       setSalesData(
         leaderRows
@@ -803,9 +1067,29 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
           }))
           .filter((r) => r.fullName)
       );
+      setSalesDataCompare(
+        compareLeaderRows
+          .map((r) => ({
+            name: salespersonLabel(r.salesperson),
+            fullName: r.salesperson,
+            sales: Number.isFinite(r.sales) ? r.sales : 0,
+            margin: 0,
+            itemsSold: Number.isFinite(r.lines) ? r.lines : 0,
+          }))
+          .filter((r) => r.fullName)
+      );
 
       setStoreData(
         locationRows
+          .map((r) => ({
+            storeName: r.location || "(unknown)",
+            revenue: Number.isFinite(r.sales) ? r.sales : 0,
+            profit: Number.isFinite(r.profit) ? r.profit : 0,
+          }))
+          .filter((r) => r.storeName)
+      );
+      setStoreDataCompare(
+        compareLocationRows
           .map((r) => ({
             storeName: r.location || "(unknown)",
             revenue: Number.isFinite(r.sales) ? r.sales : 0,
@@ -868,9 +1152,28 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       });
       setReportOverallRowsSalesperson(reportSummaryOverallSalesperson.rows);
       setReportOverallRowsStore(reportSummaryOverallStore.rows);
+      setReportDataSalespersonCompare({
+        rows: compareReportSummarySalesperson?.rows ?? [],
+        distinctTicketCount: compareReportSummarySalesperson?.distinctTicketCount ?? 0,
+        availableCategories: compareReportSummarySalesperson?.availableCategories ?? [],
+        availableManufacturers: compareReportSummarySalesperson?.availableManufacturers ?? [],
+      });
+      setReportDataStoreCompare({
+        rows: compareReportSummaryStore?.rows ?? [],
+        distinctTicketCount: compareReportSummaryStore?.distinctTicketCount ?? 0,
+        availableCategories: compareReportSummaryStore?.availableCategories ?? [],
+        availableManufacturers: compareReportSummaryStore?.availableManufacturers ?? [],
+      });
+      setReportOverallRowsSalespersonCompare(compareReportSummaryOverallSalesperson?.rows ?? []);
+      setReportOverallRowsStoreCompare(compareReportSummaryOverallStore?.rows ?? []);
       {
         const overallTotals = computeReportTotals(reportSummaryOverallStore.rows);
         setReportOverallTotals({ totalRetail: overallTotals.totalRetail, totalUnits: overallTotals.totalUnits });
+        const compareOverallTotals = computeReportTotals(compareReportSummaryOverallStore?.rows ?? []);
+        setReportOverallTotalsCompare({
+          totalRetail: compareOverallTotals.totalRetail,
+          totalUnits: compareOverallTotals.totalUnits,
+        });
       }
       const activeReport = reportDimension === "store" ? reportSummaryStore : reportSummarySalesperson;
       setReportData({
@@ -880,9 +1183,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         availableManufacturers: activeReport.availableManufacturers,
       });
       setBestSellers(bestSellerRows);
+      setBestSellersCompare(compareBestSellerRows);
       setTopCategories(categoryRows);
+      setTopCategoriesCompare(compareCategoryRows);
       setTopManufacturers(manufacturerRows);
+      setTopManufacturersCompare(compareManufacturerRows);
       setPro1stStats(pro1stSummary);
+      setPro1stStatsCompare(comparePro1stSummary ?? EMPTY_PRO1ST_STATS);
       setSalespersonTickets(salespersonTicketsRows);
       setExpandedManufacturers({});
       setManufacturerItems({});
@@ -902,7 +1209,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       setError(`Couldn’t load POS data. Confirm the backend API is running at ${getPosApiBaseUrl()}`);
       // Reset all data on error
       setSalesData([]);
+      setSalesDataCompare([]);
       setStoreData([]);
+      setStoreDataCompare([]);
       setSummary({ sales: 0, lines: 0 });
       setSummaryCompare({ sales: 0, lines: 0 });
       setFinance({
@@ -936,21 +1245,32 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         availableCategories: [],
         availableManufacturers: [],
       });
+      setReportDataSalespersonCompare({
+        rows: [],
+        distinctTicketCount: 0,
+        availableCategories: [],
+        availableManufacturers: [],
+      });
+      setReportDataStoreCompare({
+        rows: [],
+        distinctTicketCount: 0,
+        availableCategories: [],
+        availableManufacturers: [],
+      });
       setReportOverallRowsSalesperson([]);
       setReportOverallRowsStore([]);
+      setReportOverallRowsSalespersonCompare([]);
+      setReportOverallRowsStoreCompare([]);
       setReportOverallTotals({ totalRetail: 0, totalUnits: 0 });
+      setReportOverallTotalsCompare({ totalRetail: 0, totalUnits: 0 });
       setBestSellers([]);
+      setBestSellersCompare([]);
       setTopCategories([]);
+      setTopCategoriesCompare([]);
       setTopManufacturers([]);
-      setPro1stStats({
-        totalSales: 0,
-        proSales: 0,
-        attachRate: 0,
-        saleIds: [],
-        saleIdsLow: [],
-        saleIdsMid: [],
-        saleIdsHigh: [],
-      });
+      setTopManufacturersCompare([]);
+      setPro1stStats(EMPTY_PRO1ST_STATS);
+      setPro1stStatsCompare(EMPTY_PRO1ST_STATS);
       setSalespersonTickets([]);
       setExpandedManufacturers({});
       setManufacturerItems({});
@@ -974,8 +1294,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     selectedStore,
     itemSortMetric,
     reportDimension,
-    reportCategory,
+    activeReportCategories,
     reportManufacturer,
+    dateBasis,
   ]);
 
   useEffect(() => {
@@ -988,6 +1309,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
 
   const runPrint = async () => {
     setPrintLoading(true);
+    setActivePosDateBasis(dateBasis);
     const printWindow = openSalesPrintWindowShell();
     try {
       const currentRange = currentRangeInput;
@@ -1002,7 +1324,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
           dimension: "store",
           salesperson,
           location,
-          category: reportCategory !== "ALL" ? reportCategory : undefined,
+          categories: activeReportCategories.length ? activeReportCategories : undefined,
           manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
         }),
         fetchSalesReport({
@@ -1011,7 +1333,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
           dimension: "salesperson",
           salesperson,
           location,
-          category: reportCategory !== "ALL" ? reportCategory : undefined,
+          categories: activeReportCategories.length ? activeReportCategories : undefined,
           manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
         }),
         fetchSalesReport({
@@ -1189,6 +1511,24 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     }
   };
 
+  const normalizeTrendRows = (proRows: Awaited<ReturnType<typeof fetchPro1stTrend>>): TrendPoint[] =>
+    proRows
+      .filter((r) => r.day)
+      .map((r) => ({
+        day: String(r.day).includes("T") ? String(r.day).slice(0, 10) : String(r.day),
+        furnitureSales: Number.isFinite(r.furnitureSales) ? r.furnitureSales : 0,
+        mattressBoxSpringAdjustableSales: Number.isFinite(r.mattressBoxSpringAdjustableSales)
+          ? r.mattressBoxSpringAdjustableSales
+          : 0,
+        averageDailyAdSpend:
+          r.averageDailyAdSpend === null || r.averageDailyAdSpend === undefined
+            ? null
+            : Number.isFinite(r.averageDailyAdSpend)
+              ? r.averageDailyAdSpend
+              : 0,
+      }))
+      .sort((a, b) => a.day.localeCompare(b.day));
+
   useEffect(() => {
     const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
     const location = selectedStore ? selectedStore : undefined;
@@ -1196,32 +1536,50 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     const range = currentRangeInput;
     if (!range) return;
     const { start, endExclusive } = range;
+    const compareRange = compareRangeInput;
 
-    fetchPro1stTrend({ start, end: endExclusive, salesperson, location })
-      .then((proRows) => {
-        const rows = proRows
-          .filter((r) => r.day)
-          .map((r) => ({
-            day: String(r.day).includes("T") ? String(r.day).slice(0, 10) : String(r.day),
-            furnitureSales: Number.isFinite(r.furnitureSales) ? r.furnitureSales : 0,
-            mattressBoxSpringAdjustableSales: Number.isFinite(r.mattressBoxSpringAdjustableSales) ? r.mattressBoxSpringAdjustableSales : 0,
-          }));
-        setTrendData(rows.sort((a, b) => a.day.localeCompare(b.day)));
+    Promise.all([
+      fetchPro1stTrend({ start, end: endExclusive, salesperson, location, dateBasis }),
+      compareRange
+        ? fetchPro1stTrend({
+            start: compareRange.start,
+            end: compareRange.endExclusive,
+            salesperson,
+            location,
+            dateBasis,
+          })
+        : Promise.resolve([]),
+    ])
+      .then(([proRows, compareRows]) => {
+        setTrendData(normalizeTrendRows(proRows));
+        setTrendCompareData(normalizeTrendRows(compareRows));
       })
       .catch((e) => {
         console.error(e);
         setTrendData([]);
+        setTrendCompareData([]);
       });
-  }, [currentRangeInput, selectedSalesperson, selectedStore]);
+  }, [currentRangeInput, compareRangeInput, selectedSalesperson, selectedStore, dateBasis]);
 
-  const displayTrendData = useMemo(() => {
+  const displayTrendData = useMemo<DisplayTrendPoint[]>(() => {
     const rangeStart = currentRange.start;
     const rangeEnd = currentRange.endExclusive;
     const inRange = (day: string) => day >= rangeStart && day < rangeEnd;
     const filtered = trendData.filter((row) => row.day && inRange(row.day));
-    if (!trendFocusDay) return filtered;
-    return filtered.filter((row) => row.day === trendFocusDay);
-  }, [trendData, trendFocusDay, currentRange.start, currentRange.endExclusive]);
+    const visible = trendFocusDay ? filtered.filter((row) => row.day === trendFocusDay) : filtered;
+    if (!compareRangeInput || !trendCompareData.length) return visible;
+    const compareRows = trendCompareData.filter((row) => row.day);
+    return visible.map((row) => {
+      const currentIndex = filtered.findIndex((candidate) => candidate.day === row.day);
+      const compareRow = currentIndex >= 0 ? compareRows[currentIndex] : undefined;
+      return {
+        ...row,
+        compareDay: compareRow?.day,
+        compareFurnitureSales: compareRow ? compareRow.furnitureSales : null,
+        compareAverageDailyAdSpend: compareRow ? compareRow.averageDailyAdSpend : null,
+      };
+    });
+  }, [trendData, trendCompareData, trendFocusDay, currentRange.start, currentRange.endExclusive, compareRangeInput]);
   const trendXAxisPadding = displayTrendData.length <= 2 ? { left: 80, right: 80 } : { left: 10, right: 10 };
 
   const revenuePct = pctChange(summary.sales, summaryCompare.sales);
@@ -1231,6 +1589,10 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   const linesUp = linesPct >= 0;
   const financePenetration = summary.lines > 0 ? (finance.financedLines / summary.lines) * 100 : 0;
   const financeAmountPctOfSales = summary.sales > 0 ? (finance.financedAmount / summary.sales) * 100 : 0;
+  const financePenetrationCompare =
+    summaryCompare.lines > 0 ? (financeCompare.financedLines / summaryCompare.lines) * 100 : 0;
+  const financeAmountPctOfSalesCompare =
+    summaryCompare.sales > 0 ? (financeCompare.financedAmount / summaryCompare.sales) * 100 : 0;
   const hasCompare = compareHint.trim().length > 0;
   const financedLinesPct = pctChange(finance.financedLines, financeCompare.financedLines);
   const financedAmountPct = pctChange(finance.financedAmount, financeCompare.financedAmount);
@@ -1244,6 +1606,22 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   const avgTicketPct = pctChange(avgTicket, avgTicketCompare);
 
   const avgTicketUp = avgTicketPct >= 0;
+  const formatCompareCurrency = (value: number) =>
+    `$${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  const formatCompareNumber = (value: number) =>
+    Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const renderMetricComparison = (current: number, previous: number, previousLabel: string) => {
+    if (!hasCompare) return null;
+    const display = getMetricComparisonDisplay(current, previous, `vs ${previousLabel}`);
+    const isUp = display.direction === "up";
+    return (
+      <div className={`mt-2 flex items-center text-xs ${isUp ? "text-green-600" : "text-red-500"}`}>
+        {isUp ? <TrendingUp size={14} className="mr-1" /> : <TrendingDown size={14} className="mr-1" />}
+        <span className="font-medium">{display.absLabel}</span>
+        <span className="ml-1">{display.compareLabel}</span>
+      </div>
+    );
+  };
   const salesOverviewPrimaryIsQty = itemSortMetric === "qty";
   const salesOverviewPrimaryLabel = salesOverviewPrimaryIsQty ? "Transactions" : "Total Sales";
   const salesOverviewPrimaryValue = salesOverviewPrimaryIsQty
@@ -1317,6 +1695,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     const next = normalizeName(name);
     setSelectedSalesperson((prev) => (normalizeName(prev) === next ? null : next));
     setSelectedStore(null);
+    setSelectedTrendDay(null);
     setSearchHint(null);
   };
   const openSalespersonDetail = (name: string) => {
@@ -1324,21 +1703,67 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     if (!next) return;
     setSelectedSalesperson(next);
     setSelectedStore(null);
+    setSelectedTrendDay(null);
+    setSearchHint(null);
+  };
+  const openStoreDetail = (name: string) => {
+    const next = normalizeName(name);
+    if (!next) return;
+    setSelectedStore(next);
+    setSelectedSalesperson(null);
+    setSelectedTrendDay(null);
     setSearchHint(null);
   };
   const selectStore = (name: string) => {
     const next = normalizeName(name);
     setSelectedStore((prev) => (normalizeName(prev) === next ? null : next));
     setSelectedSalesperson(null);
+    setSelectedTrendDay(null);
     setSearchHint(null);
   };
 
   useEffect(() => {
-    if (!selectedSalesperson || !salespersonDetailRef.current) return;
+    if ((!selectedSalesperson && !selectedStore && !selectedTrendDay) || !salespersonDetailRef.current) return;
     window.requestAnimationFrame(() => {
       salespersonDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
-  }, [selectedSalesperson]);
+  }, [selectedSalesperson, selectedStore, selectedTrendDay]);
+
+  useEffect(() => {
+    if (!selectedTrendDay) {
+      setTrendDayTickets([]);
+      setTrendDayTicketsError(null);
+      return;
+    }
+    let cancelled = false;
+    const dayEnd = addDaysYmd(selectedTrendDay, 1);
+    setTrendDayTicketsLoading(true);
+    setTrendDayTicketsError(null);
+    setActivePosDateBasis(dateBasis);
+    fetchDayTickets({
+      start: selectedTrendDay,
+      end: dayEnd,
+      salesperson: selectedSalesperson || undefined,
+      location: selectedStore || undefined,
+      limit: 5000,
+    })
+      .then((rows) => {
+        if (!cancelled) setTrendDayTickets(rows);
+      })
+      .catch((error) => {
+        console.error(error);
+        if (!cancelled) {
+          setTrendDayTickets([]);
+          setTrendDayTicketsError("Couldn’t load tickets for that day.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setTrendDayTicketsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTrendDay, selectedSalesperson, selectedStore, dateBasis]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -1421,7 +1846,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     };
     window.addEventListener("fd-refresh-data", handler);
     return () => window.removeEventListener("fd-refresh-data", handler);
-  }, [currentRangeInput, compareRangeInput, compareEnabled, selectedSalesperson, selectedStore, itemSortMetric]);
+  }, [currentRangeInput, compareRangeInput, compareEnabled, selectedSalesperson, selectedStore, itemSortMetric, dateBasis]);
 
   const hasItemData = pro1stStats.totalSales > 0;
   const missingItemData = summary.lines > 0 && !hasItemData;
@@ -1444,91 +1869,10 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   }, [selectedSalesperson, selectedStore]);
 
   useEffect(() => {
-    const range = currentRangeInput;
-    const compareRange = compareRangeInput;
-    const dataWarnings = [
-      missingItemData ? "Item report data is missing for this range, so item-level cards and Pro1st attach may be incomplete." : "",
-      missingSalesData ? "Sales report data is missing or zero for this range." : "",
-      error ? `Sales dashboard error: ${error}` : "",
-    ].filter(Boolean);
-    const visibleSections = [
-      "Date range selector",
-      "Sales overview",
-      "Finance overview",
-      collapsedCards["best-sellers"] ? "" : "Best sellers",
-      collapsedCards["top-categories"] ? "" : "Top categories",
-      collapsedCards["top-manufacturers"] ? "" : "Top manufacturers",
-      collapsedCards["pro1st-attach"] ? "" : "Pro1st attach rate",
-      lowMarginData.length ? "Low margin tickets" : "",
-      salesData.length ? "Salesperson leaderboard" : "",
-      storeData.length ? "Store performance" : "",
-      trendData.length ? "Daily sales trend" : "",
-    ].filter(Boolean);
-
-    setPageContext({
-      pageName: "Sales Analysis",
-      module: "sales",
-      pageId: "sales-dashboard",
-      subPageId: "pulse-sales",
-      userRole: "Employee",
-      keyMetricsVisible: [
-        "Total sales",
-        "Ticket count",
-        "Average ticket",
-        "Finance amount",
-        "Low margin tickets",
-        "Pro1st attach rate",
-      ],
-      suggestedActions: [
-        "Review this range",
-        "Find low-margin risks",
-        "Explain Pro1st attach rate",
-        "Summarize leaderboard gaps",
-      ],
-      dateRange: range
-        ? {
-            start: range.start,
-            end: range.endExclusive,
-            label: rangeLabel,
-            compareStart: compareRange?.start,
-            compareEnd: compareRange?.endExclusive,
-            compareLabel: compareRange ? formatRangeLabel(compareRange) : undefined,
-          }
-        : undefined,
-      filters: {
-        salesperson: selectedSalesperson,
-        location: selectedStore,
-        category: reportCategory !== "ALL" ? reportCategory : null,
-        manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : null,
-      },
-      visibleSections,
-      dataWarnings,
-      selectedSort: itemSortMetric,
-    });
-  }, [
-    collapsedCards,
-    compareRangeInput,
-    currentRangeInput,
-    error,
-    itemSortMetric,
-    lowMarginData.length,
-    missingItemData,
-    missingSalesData,
-    rangeLabel,
-    reportCategory,
-    reportManufacturer,
-    salesData.length,
-    selectedSalesperson,
-    selectedStore,
-    setPageContext,
-    storeData.length,
-    trendData.length,
-  ]);
-
-  useEffect(() => {
     const handler = () => {
       setSelectedSalesperson(null);
       setSelectedStore(null);
+      setSelectedTrendDay(null);
       setSearchHint(null);
     };
     window.addEventListener("fd-clear-filters", handler as EventListener);
@@ -1744,7 +2088,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                       <div className={`flex items-center text-sm mt-2 ${salesOverviewPrimaryUp ? "text-green-600" : "text-red-500"}`}>
                         {salesOverviewPrimaryUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
                         <span className="font-medium">{Math.abs(salesOverviewPrimaryPct).toFixed(1)}%</span>
-                        <span className="text-slate-400 ml-1">{compareHint}</span>
+                        <span className="ml-1">
+                          vs {salesOverviewPrimaryIsQty ? formatCompareNumber(summaryCompare.lines) : formatCompareCurrency(summaryCompare.sales)}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -1761,12 +2107,18 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                     <div className="mt-1 text-lg font-semibold text-slate-800">
                       {salesOverviewPrimaryIsQty ? `$${summary.sales.toLocaleString()}` : summary.lines.toLocaleString()}
                     </div>
+                    {renderMetricComparison(
+                      salesOverviewPrimaryIsQty ? summary.sales : summary.lines,
+                      salesOverviewPrimaryIsQty ? summaryCompare.sales : summaryCompare.lines,
+                      salesOverviewPrimaryIsQty ? formatCompareCurrency(summaryCompare.sales) : formatCompareNumber(summaryCompare.lines)
+                    )}
                   </div>
                   <div className="rounded-xl bg-slate-50 p-3">
                     <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Average Ticket</div>
                     <div className="mt-1 text-lg font-semibold text-slate-800">
                       ${avgTicket.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </div>
+                    {renderMetricComparison(avgTicket, avgTicketCompare, formatCompareCurrency(avgTicketCompare))}
                   </div>
                 </div>
               </div>
@@ -1807,7 +2159,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                       <div className={`flex items-center text-sm mt-2 ${financeOverviewPrimaryUp ? "text-green-600" : "text-red-500"}`}>
                         {financeOverviewPrimaryUp ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
                         <span className="font-medium">{Math.abs(financeOverviewPrimaryPct).toFixed(1)}%</span>
-                        <span className="text-slate-400 ml-1">{compareHint}</span>
+                        <span className="ml-1">
+                          vs {financeOverviewPrimaryIsQty ? formatCompareNumber(financeCompare.financedLines) : formatCompareCurrency(financeCompare.financedAmount)}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -1816,7 +2170,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="rounded-xl bg-slate-50 p-3">
                     <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                       {financeOverviewPrimaryIsQty ? "Financed Amount" : "Financed Transactions"}
@@ -1824,6 +2178,18 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                     <div className="mt-1 text-lg font-semibold text-slate-800">
                       {financeOverviewPrimaryIsQty ? `$${finance.financedAmount.toLocaleString()}` : finance.financedLines.toLocaleString()}
                     </div>
+                    {renderMetricComparison(
+                      financeOverviewPrimaryIsQty ? finance.financedAmount : finance.financedLines,
+                      financeOverviewPrimaryIsQty ? financeCompare.financedAmount : financeCompare.financedLines,
+                      financeOverviewPrimaryIsQty ? formatCompareCurrency(financeCompare.financedAmount) : formatCompareNumber(financeCompare.financedLines)
+                    )}
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Finance Cost</div>
+                    <div className="mt-1 text-lg font-semibold text-slate-800">
+                      ${finance.financeFee.toLocaleString()}
+                    </div>
+                    {renderMetricComparison(finance.financeFee, financeCompare.financeFee, formatCompareCurrency(financeCompare.financeFee))}
                   </div>
                   <div className="rounded-xl bg-slate-50 p-3">
                     <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -1832,6 +2198,11 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                     <div className="mt-1 text-lg font-semibold text-slate-800">
                       {financeOverviewPrimaryIsQty ? `${financeAmountPctOfSales.toFixed(1)}%` : `${financePenetration.toFixed(1)}%`}
                     </div>
+                    {renderMetricComparison(
+                      financeOverviewPrimaryIsQty ? financeAmountPctOfSales : financePenetration,
+                      financeOverviewPrimaryIsQty ? financeAmountPctOfSalesCompare : financePenetrationCompare,
+                      `${(financeOverviewPrimaryIsQty ? financeAmountPctOfSalesCompare : financePenetrationCompare).toFixed(1)}%`
+                    )}
                   </div>
                 </div>
               </div>
@@ -1843,89 +2214,14 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     }
   };
 
-  if (loading && salesData.length === 0) {
-    return (
-      <div className="h-96 flex flex-col items-center justify-center text-slate-400">
-        <Loader2 className="animate-spin mb-2" size={32} />
-        <p>Loading business analytics...</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6 animate-fade-in relative">
-      <div className="space-y-6">
-        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-3 text-blue-800 fd-print-hide">
-          <Database size={18} className="text-blue-500" />
-          <span className="text-sm font-medium">All figures are based on delivered date.</span>
-          <button
-            type="button"
-            onClick={() => setShowSalesTour(true)}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100"
-          >
-            <Compass size={14} />
-            Tour
-          </button>
-        </div>
-      {(selectedSalesperson || selectedStore || searchHint) && (
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center fd-print-hide">
-          <div className="text-sm font-semibold text-slate-800">Active Filters</div>
-          {selectedSalesperson && (
-            <span className="px-3 py-1 text-xs rounded-full bg-blue-50 text-blue-700">
-              Salesperson: {selectedSalesperson}
-            </span>
-          )}
-          {selectedStore && (
-            <span className="px-3 py-1 text-xs rounded-full bg-indigo-50 text-indigo-700">
-              Store: {selectedStore}
-            </span>
-          )}
-          {searchHint && (
-            <span className="text-xs text-amber-600">{searchHint}</span>
-          )}
-          {(selectedSalesperson || selectedStore || searchHint) && (
-            <button
-              onClick={() => {
-                setSelectedSalesperson(null);
-                setSelectedStore(null);
-                setSearchHint(null);
-              }}
-              className="ml-auto text-xs text-slate-500 hover:text-slate-700"
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 fd-print-hide">
-          {error}
-        </div>
-      )}
-
-
-      <div className="mb-6">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={statCardOrder}
-            strategy={rectSortingStrategy}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {statCardOrder.map((id) => (
-                <SortableItem key={id} id={id} className="h-full">
-                  {renderStatCard(id)}
-                </SortableItem>
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      </div>
-
+  const renderDashboardCard = (id: string) => {
+    switch (id) {
+      case "range-selector":
+      case "sales-overview":
+      case "finance-overview":
+        return renderStatCard(id);
+      case "sales-report":
+        return (
       <div data-tour-id="sales-report-card">
         <SalesReportCard
           collapsed={isCardCollapsed("sales-report")}
@@ -1936,15 +2232,19 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
           setReportMode={setReportMode}
           reportDimension={reportDimension}
           setReportDimension={setReportDimension}
-          reportCategory={reportCategory}
-          setReportCategory={setReportCategory}
+          reportCategories={activeReportCategories}
+          setReportCategories={setReportCategories}
           reportManufacturer={reportManufacturer}
           setReportManufacturer={setReportManufacturer}
           reportCategoryOptions={reportCategoryOptions}
           reportManufacturerOptions={reportManufacturerOptions}
           reportRowsWithPct={reportRowsWithPct}
+          compareRowsWithPct={reportRowsWithPctCompare}
           reportTotals={reportTotals}
+          compareTotals={reportTotalsCompare}
           reportOverallTotals={reportOverallTotals}
+          compareOverallTotals={reportOverallTotalsCompare}
+          compareHint={compareHint}
           formatMarginPct={formatMarginPct}
           lowMarginRows={printData?.lowMarginRows ?? sortedLowMarginData}
           lowMarginSort={lowMarginSort}
@@ -1952,14 +2252,18 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
           saleLink={saleLink}
           saleLabel={saleLabel}
           selectedSalesperson={selectedSalesperson}
+          selectedStore={selectedStore}
           onSelectSalesperson={openSalespersonDetail}
+          onSelectStore={openStoreDetail}
         />
       </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6" data-tour-id="sales-best-sellers">
+        );
+      case "best-sellers":
+        return (
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="best-sellers"
+          data-tour-id="sales-best-sellers"
          
          
         >
@@ -1984,6 +2288,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
               <div className="space-y-4">
                 {bestSellers.map((item, idx) => {
                   const { ids, remaining } = limitSaleLinks(item.saleIds);
+                  const compareItem = bestSellersCompareMap.get(bestSellerKeyFor(item));
+                  const primaryValue = itemSortMetric === "qty" ? Number(item.qty || 0) : Number(item.sales || 0);
+                  const comparePrimaryValue = itemSortMetric === "qty" ? Number(compareItem?.qty || 0) : Number(compareItem?.sales || 0);
                   return (
                     <div key={`${item.itemDescription}-${idx}`} className="flex flex-col gap-2">
                       <div className="flex items-start justify-between gap-4">
@@ -1997,6 +2304,11 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                         <div className="text-right">
                           <div className="text-sm font-semibold text-slate-800">{item.qty.toLocaleString()} qty</div>
                           <div className="text-xs text-slate-500">${item.sales.toLocaleString()}</div>
+                          {renderMetricComparison(
+                            primaryValue,
+                            comparePrimaryValue,
+                            itemSortMetric === "qty" ? formatCompareNumber(comparePrimaryValue) : formatCompareCurrency(comparePrimaryValue)
+                          )}
                         </div>
                       </div>
                       {ids.length > 0 && (
@@ -2028,7 +2340,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
             )
           )}
         </div>
-
+        );
+      case "top-categories":
+        return (
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="top-categories"
@@ -2058,6 +2372,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                   const isOpen = !!expandedCategories[row.category];
                   const items = categoryItems[row.category] || [];
                   const loading = categoryLoading[row.category];
+                  const compareRow = topCategoriesCompareMap.get(row.category);
+                  const primaryValue = itemSortMetric === "qty" ? Number(row.qty || 0) : Number(row.sales || 0);
+                  const comparePrimaryValue = itemSortMetric === "qty" ? Number(compareRow?.qty || 0) : Number(compareRow?.sales || 0);
                   return (
                     <div
                       key={row.category}
@@ -2076,7 +2393,14 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                           <div className="text-sm font-semibold text-slate-800">{row.category}</div>
                           <div className="text-xs text-slate-500">{row.qty.toLocaleString()} qty</div>
                         </div>
-                        <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
+                        <div className="text-right">
+                          <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
+                          {renderMetricComparison(
+                            primaryValue,
+                            comparePrimaryValue,
+                            itemSortMetric === "qty" ? formatCompareNumber(comparePrimaryValue) : formatCompareCurrency(comparePrimaryValue)
+                          )}
+                        </div>
                       </button>
                       {isOpen && (
                         <div className="px-4 pb-4">
@@ -2138,119 +2462,28 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
             )
           )}
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div
-          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
-          data-print-id="top-manufacturers"
-         
-         
-        >
-          <div className="mb-6 flex items-start justify-between gap-4">
-            <div 
-              onClick={() => toggleCard("top-manufacturers")}
-              className="cursor-pointer flex-1"
-            >
-              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                Top Manufacturers
-                <span className={`text-xs font-normal ${isCardCollapsed("top-manufacturers") ? "text-slate-400" : "hidden"}`}>(collapsed — click to expand)</span>
-                {renderHelp("Based on item report: manufacturer totals for qty and sales in the selected range.")}
-              </h3>
-              <p className="text-sm text-slate-500">
-                Ranked by {itemSortMetric === "qty" ? "units sold" : "sales dollars"}.
-              </p>
-            </div>
-            {renderCardToggle("top-manufacturers")}
-          </div>
-          {!isCardCollapsed("top-manufacturers") && (
-            topManufacturers.length ? (
-              <div className="space-y-4">
-                {topManufacturers.map((row) => {
-                  const isOpen = !!expandedManufacturers[row.manufacturer];
-                  const items = manufacturerItems[row.manufacturer] || [];
-                  const loading = manufacturerLoading[row.manufacturer];
-                  return (
-                    <div
-                      key={row.manufacturer}
-                      className={`border rounded-lg transition-colors ${
-                        isOpen ? "border-blue-200 bg-blue-50/60" : "border-slate-100"
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => toggleManufacturer(row.manufacturer)}
-                        className={`w-full flex items-center justify-between px-4 py-3 text-left ${
-                          isOpen ? "hover:bg-blue-50" : "hover:bg-slate-50"
-                        }`}
-                      >
-                        <div>
-                          <div className="text-sm font-semibold text-slate-800">{row.manufacturer}</div>
-                          <div className="text-xs text-slate-500">{row.qty.toLocaleString()} qty</div>
-                        </div>
-                        <div className="text-sm font-semibold text-slate-800">${row.sales.toLocaleString()}</div>
-                      </button>
-                      {isOpen && (
-                        <div className="px-4 pb-4">
-                          {loading ? (
-                            <div className="text-xs text-slate-500">Loading top items…</div>
-                          ) : items.length ? (
-                            <div className="space-y-3">
-                              {items.map((item) => {
-                                const { ids, remaining } = limitSaleLinks(item.saleIds);
-                                return (
-                                  <div key={`${row.manufacturer}-${item.itemNo}-${item.itemDescription}`} className="flex flex-col gap-1">
-                                    <div className="flex items-start justify-between gap-4 text-sm">
-                                      <div>
-                                        <div className="font-semibold text-slate-800">{item.itemDescription || "Unnamed Item"}</div>
-                                        <div className="text-xs text-slate-500">
-                                          {(item.category || "Uncategorized").toUpperCase()}
-                                        </div>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="font-semibold text-slate-800">{item.qty.toLocaleString()} qty</div>
-                                        <div className="text-xs text-slate-500">${item.sales.toLocaleString()}</div>
-                                      </div>
-                                    </div>
-                                    {ids.length > 0 && (
-                                      <div className="flex flex-wrap gap-2 text-xs">
-                                        {ids.map((sid) => (
-                                          <a
-                                            key={sid}
-                                            href={saleLink(sid)}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
-                                          >
-                                          {saleLabel(sid)}
-                                          </a>
-                                        ))}
-                                        {remaining > 0 && (
-                                          <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-500">
-                                            +{remaining} more
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <div className="text-xs text-slate-500">No items for this brand.</div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-500">No manufacturer data available for this range.</p>
-            )
-          )}
-        </div>
-
+        );
+      case "top-manufacturers":
+        return (
+        <TopManufacturersCard
+          collapsed={isCardCollapsed("top-manufacturers")}
+          renderHelp={renderHelp}
+          cardToggle={renderCardToggle("top-manufacturers")}
+          itemSortMetric={itemSortMetric}
+          topManufacturers={topManufacturers}
+          compareManufacturers={topManufacturersCompare}
+          renderMetricComparison={renderMetricComparison}
+          expandedManufacturers={expandedManufacturers}
+          manufacturerItems={manufacturerItems}
+          manufacturerLoading={manufacturerLoading}
+          onToggleManufacturer={toggleManufacturer}
+          limitSaleLinks={limitSaleLinks}
+          saleLink={saleLink}
+          saleLabel={saleLabel}
+        />
+        );
+      case "pro1st-attach":
+        return (
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="pro1st-attach"
@@ -2278,9 +2511,11 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                   <div className="text-2xl font-bold text-slate-800">
                     {hasItemData ? `${pro1stStats.attachRate.toFixed(1)}%` : "—"}
                   </div>
+                  {renderMetricComparison(pro1stStats.attachRate, pro1stStatsCompare.attachRate, `${pro1stStatsCompare.attachRate.toFixed(1)}%`)}
                   <div className="text-xs text-slate-500">
                     {hasItemData ? `$${pro1stStats.proSales.toLocaleString()} of $${pro1stStats.totalSales.toLocaleString()}` : "No item data in this range"}
                   </div>
+                  {renderMetricComparison(pro1stStats.proSales, pro1stStatsCompare.proSales, formatCompareCurrency(pro1stStatsCompare.proSales))}
                 </div>
               </div>
               {pro1stStats.saleIds.length ? (
@@ -2324,14 +2559,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
             </>
           )}
         </div>
-      </div>
-
-      {/* Main Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour-id="sales-performance">
-        {/* Salesperson Performance */}
+        );
+      case "salesperson-performance":
+        return (
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="salesperson-performance"
+          data-tour-id="sales-performance"
          
          
         >
@@ -2349,7 +2583,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
             <div className="h-80 w-full" data-no-print-toggle>
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
-                  data={salesData}
+                  data={salesPerformanceData}
                   margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                   onClick={(evt: any) => {
                     if (evt?.activePayload?.length) return;
@@ -2385,19 +2619,33 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                     name="Total Sales"
                     fill="#3b82f6"
                     radius={[4, 4, 0, 0]}
-                    barSize={30}
+                    barSize={hasCompare ? 18 : 30}
                     onClick={(data: any) => {
                       const name = data?.payload?.fullName;
                       if (name) selectSalesperson(name);
                     }}
                   />
+                  {hasCompare && (
+                    <Bar
+                      dataKey="compareSales"
+                      name={`Compare Sales ${compareHint}`}
+                      fill="#93c5fd"
+                      radius={[4, 4, 0, 0]}
+                      barSize={18}
+                      onClick={(data: any) => {
+                        const name = data?.payload?.fullName;
+                        if (name) selectSalesperson(name);
+                      }}
+                    />
+                  )}
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
           )}
         </div>
-
-        {/* Store Location Breakdown */}
+        );
+      case "store-performance":
+        return (
         <div
           className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
           data-print-id="store-performance"
@@ -2418,13 +2666,14 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
             <div className="h-80 w-full" data-no-print-toggle>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={storeData}
+                  data={storePerformanceData}
                   layout="vertical"
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                   onClick={(evt: any) => {
                     if (evt?.activePayload?.length) return;
                     if (selectedStore) {
                       setSelectedStore(null);
+                      setSelectedTrendDay(null);
                       setSearchHint(null);
                     }
                   }}
@@ -2454,20 +2703,33 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                     name="Revenue"
                     fill="#6366f1"
                     radius={[0, 4, 4, 0]}
-                    barSize={20}
+                    barSize={hasCompare ? 14 : 20}
                     onClick={(data: any) => {
                       const name = data?.payload?.storeName;
                       if (name) selectStore(name);
                     }}
                   />
+                  {hasCompare && (
+                    <Bar
+                      dataKey="compareRevenue"
+                      name={`Compare Revenue ${compareHint}`}
+                      fill="#a5b4fc"
+                      radius={[0, 4, 4, 0]}
+                      barSize={14}
+                      onClick={(data: any) => {
+                        const name = data?.payload?.storeName;
+                        if (name) selectStore(name);
+                      }}
+                    />
+                  )}
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
         </div>
-      </div>
-
-      {/* Trend */}
+        );
+      case "sales-trend":
+        return (
       <div
         className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
         data-print-id="sales-trend"
@@ -2478,9 +2740,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
             <div>
               <h3 className="text-lg font-bold text-slate-800">
                 Sales Trend
-                {renderHelp("Based on sales report: daily sales trend for the selected range.")}
+                {renderHelp(
+                  "Based on sales report: combined non-Pro1st furniture sales for the selected range, with average daily advertising spend from the 2026 advertising schedule."
+                )}
               </h3>
-              <p className="text-sm text-slate-500">Trend mirrors the selected date range.</p>
+              <p className="text-sm text-slate-500">
+                Trend mirrors the selected date range{compareRangeInput ? "; compare adds matched-period sales and ad-spend lines." : "."}
+              </p>
             </div>
             {renderCardToggle("sales-trend")}
           </div>
@@ -2502,6 +2768,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                     setMonthA(prev.month);
                     setDayA(prev.day);
                     setTrendFocusDay(null);
+                    setSelectedTrendDay(null);
                     trendPrevRangeRef.current = null;
                     window.dispatchEvent(new Event("fd-open-range"));
                   }
@@ -2517,6 +2784,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                   setMonthA(prev.month);
                   setDayA(prev.day);
                   setTrendFocusDay(null);
+                  setSelectedTrendDay(null);
                   trendPrevRangeRef.current = null;
                   window.dispatchEvent(new Event("fd-open-range"));
                   return;
@@ -2530,6 +2798,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                 setMonthA(m);
                 setDayA(d);
                 setTrendFocusDay(day);
+                setSelectedTrendDay(day);
+                setSearchHint(null);
                 window.dispatchEvent(new Event("fd-open-range"));
               }}
             >
@@ -2549,6 +2819,14 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                 tick={{ fill: "#64748b" }}
                 tickFormatter={(v: number) => `$${Number(v).toLocaleString()}`}
               />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "#f97316" }}
+                tickFormatter={(v: number) => `$${Number(v).toLocaleString()}`}
+              />
               <Tooltip
                 contentStyle={{
                   borderRadius: "8px",
@@ -2558,22 +2836,156 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
                 labelFormatter={(label: string) =>
                   formatShortDate(String(label).includes("T") ? String(label).slice(0, 10) : String(label))
                 }
-                formatter={(value: number, name: string) => [`$${Number(value).toLocaleString()}`, name]}
+                formatter={(value: number | null, name: string) => [
+                  value === null || value === undefined ? "—" : `$${Number(value).toLocaleString()}`,
+                  name,
+                ]}
               />
               <Legend iconType="circle" />
-              <Line type="monotone" dataKey="furnitureSales" name="Furniture Sales" yAxisId="left" stroke="#3b82f6" strokeWidth={3} dot={false} />
-              <Line type="monotone" dataKey="mattressBoxSpringAdjustableSales" name="Mattress/Box Spring/Adjustable" yAxisId="left" stroke="#10b981" strokeWidth={3} dot={false} />
+              <Line
+                type="monotone"
+                dataKey="furnitureSales"
+                name={`${dateBasisShortLabel} Furniture Sales`}
+                yAxisId="left"
+                stroke="#3b82f6"
+                strokeWidth={3}
+                dot={false}
+              />
+              {compareRangeInput && (
+                <Line
+                  type="monotone"
+                  dataKey="compareFurnitureSales"
+                  name={`Compared ${dateBasisShortLabel} Furniture Sales`}
+                  yAxisId="left"
+                  stroke="#22c55e"
+                  strokeWidth={3}
+                  strokeDasharray="4 4"
+                  dot={false}
+                  connectNulls
+                />
+              )}
+              <Line
+                type="monotone"
+                dataKey="averageDailyAdSpend"
+                name="Avg Daily Ad Spend"
+                yAxisId="right"
+                stroke="#f97316"
+                strokeWidth={3}
+                strokeDasharray="6 4"
+                dot={false}
+              />
+              {compareRangeInput && (
+                <Line
+                  type="monotone"
+                  dataKey="compareAverageDailyAdSpend"
+                  name="Compared Avg Daily Ad Spend"
+                  yAxisId="right"
+                  stroke="#a855f7"
+                  strokeWidth={3}
+                  strokeDasharray="2 5"
+                  dot={false}
+                  connectNulls
+                />
+              )}
             </ComposedChart>
           </ResponsiveContainer>
         </div>
         )}
       </div>
+        );
+      default:
+        return null;
+    }
+  };
 
-      {selectedSalesperson && (
+  if (loading && salesData.length === 0) {
+    return (
+      <div className="h-96 flex flex-col items-center justify-center text-slate-400">
+        <Loader2 className="animate-spin mb-2" size={32} />
+        <p>Loading business analytics...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in relative">
+      <div className="space-y-6">
+      {(selectedSalesperson || selectedStore || selectedTrendDay || searchHint) && (
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center fd-print-hide">
+          <div className="text-sm font-semibold text-slate-800">Active Filters</div>
+          {selectedSalesperson && (
+            <span className="px-3 py-1 text-xs rounded-full bg-blue-50 text-blue-700">
+              Salesperson: {selectedSalesperson}
+            </span>
+          )}
+          {selectedStore && (
+            <span className="px-3 py-1 text-xs rounded-full bg-indigo-50 text-indigo-700">
+              Store: {selectedStore}
+            </span>
+          )}
+          {selectedTrendDay && (
+            <span className="px-3 py-1 text-xs rounded-full bg-emerald-50 text-emerald-700">
+              Day: {formatShortDate(selectedTrendDay)}
+            </span>
+          )}
+          {searchHint && (
+            <span className="text-xs text-amber-600">{searchHint}</span>
+          )}
+          {(selectedSalesperson || selectedStore || selectedTrendDay || searchHint) && (
+            <button
+              onClick={() => {
+                setSelectedSalesperson(null);
+                setSelectedStore(null);
+                setSelectedTrendDay(null);
+                setSearchHint(null);
+              }}
+              className="ml-auto text-xs text-slate-500 hover:text-slate-700"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 fd-print-hide">
+          {error}
+        </div>
+      )}
+
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={dashboardCardOrder} strategy={rectSortingStrategy}>
+          <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 gap-6">
+            {dashboardCardOrder.map((id) => (
+              <SortableItem key={id} id={id} className={`${DASHBOARD_CARD_SPANS[id] ?? "md:col-span-6 xl:col-span-12"} h-full`}>
+                {renderDashboardCard(id)}
+              </SortableItem>
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+      {(selectedSalesperson || selectedStore || selectedTrendDay) && (
         <div ref={salespersonDetailRef}>
+          {selectedTrendDay && trendDayTicketsLoading && (
+            <div className="mb-3 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
+              Loading sales for {formatShortDate(selectedTrendDay)}…
+            </div>
+          )}
+          {selectedTrendDay && trendDayTicketsError && (
+            <div className="mb-3 rounded-lg border border-red-100 bg-red-50 px-4 py-2 text-sm text-red-700">
+              {trendDayTicketsError}
+            </div>
+          )}
           <SalespersonDetailCard
-            selectedSalesperson={selectedSalesperson}
-            salespersonTickets={salespersonTickets}
+            selectedSalesperson={selectedTrendDay ? undefined : selectedSalesperson || undefined}
+            selectedStore={selectedTrendDay ? undefined : selectedStore || undefined}
+            selectedDay={selectedTrendDay || undefined}
+            salespersonTickets={selectedTrendDay ? trendDayTickets : salespersonTickets}
             saleLink={saleLink}
             saleLabel={saleLabel}
           />
@@ -2597,12 +3009,10 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         onPrint={runPrint}
       />
       {showSalesTour && (
-        <BotBotTutorial
+        <ModuleTourOverlay
           isDarkMode={isDarkMode}
           steps={SALES_ANALYSIS_TOUR_STEPS}
-          state={{}}
-          eyebrowLabel="Sales guide"
-          onSkip={completeSalesTour}
+          onClose={completeSalesTour}
           onComplete={completeSalesTour}
         />
       )}

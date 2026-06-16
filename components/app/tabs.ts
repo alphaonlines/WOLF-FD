@@ -5,6 +5,7 @@ export enum Tab {
   DASHBOARD = 'DASHBOARD',
   SALES = 'SALES',
   PRODUCT_SEARCH = 'PRODUCT_SEARCH',
+  COMPETITOR_PRICING = 'COMPETITOR_PRICING',
   CRM = 'CRM',
   SOCIAL = 'SOCIAL',
   KIOSKS = 'KIOSKS',
@@ -15,12 +16,14 @@ export enum Tab {
   PULSE = 'PULSE',
   AMP = 'AMP',
   SHOP = 'SHOP',
+  TRAINING = 'TRAINING',
 }
 
 export const TAB_PERMISSION_KEYS: Record<Tab, string> = {
   [Tab.DASHBOARD]: MODULE_PERMISSION_KEYS.DASHBOARD,
   [Tab.SALES]: MODULE_PERMISSION_KEYS.SALES,
   [Tab.PRODUCT_SEARCH]: MODULE_PERMISSION_KEYS.PRODUCT_SEARCH,
+  [Tab.COMPETITOR_PRICING]: MODULE_PERMISSION_KEYS.SHOP,
   [Tab.CRM]: MODULE_PERMISSION_KEYS.CRM,
   [Tab.SOCIAL]: MODULE_PERMISSION_KEYS.SOCIAL,
   [Tab.KIOSKS]: MODULE_PERMISSION_KEYS.KIOSKS,
@@ -31,6 +34,7 @@ export const TAB_PERMISSION_KEYS: Record<Tab, string> = {
   [Tab.PULSE]: MODULE_PERMISSION_KEYS.PULSE,
   [Tab.AMP]: MODULE_PERMISSION_KEYS.AMP,
   [Tab.SHOP]: MODULE_PERMISSION_KEYS.SHOP,
+  [Tab.TRAINING]: MODULE_PERMISSION_KEYS.TRAINING,
 };
 
 export const canAccessTab = (
@@ -51,6 +55,8 @@ export const getTabTitle = (tab: Tab): string => {
       return 'Sales Analysis';
     case Tab.PRODUCT_SEARCH:
       return 'Product Search';
+    case Tab.COMPETITOR_PRICING:
+      return 'Competitor Pricing';
     case Tab.CRM:
       return 'Alpha Pulse CRM';
     case Tab.SOCIAL:
@@ -71,6 +77,8 @@ export const getTabTitle = (tab: Tab): string => {
       return 'A.I., Marketing, and Promotions';
     case Tab.SHOP:
       return 'Shop';
+    case Tab.TRAINING:
+      return 'Training';
     default:
       return 'WOLF FD Dashboard';
   }

@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseDateParam, parseTextParam } from "../parsers";
+import { dateFieldForBasis, prefixedDateFieldForBasis } from "../sqlFields";
 
 type RegisterInsightsRoutesDeps = {
   app: Express;
@@ -43,12 +44,13 @@ export function registerInsightsRoutes({
   `;
 
   // Available years present in data (for UI pickers)
-  app.get("/api/available-years", async (_req, res) => {
+  app.get("/api/available-years", async (req, res) => {
+    const dateField = dateFieldForBasis(req.query.date_basis);
     const sql = `
     SELECT DISTINCT year FROM (
-      SELECT EXTRACT(YEAR FROM delivery_confirmed_date)::int AS year
+      SELECT EXTRACT(YEAR FROM ${dateField})::int AS year
       FROM pos_sales
-      WHERE delivery_confirmed_date IS NOT NULL
+      WHERE ${dateField} IS NOT NULL
     ) years
     ORDER BY year;
   `;
@@ -64,12 +66,13 @@ export function registerInsightsRoutes({
     const limit = Math.min(Number(req.query.limit || 25), 200);
     const salespersonQ = parseTextParam(req.query.salesperson);
     const multiplier = Number(req.query.multiplier || 1.5);
+    const dateField = dateFieldForBasis(req.query.date_basis);
 
     const sql = `
     WITH s AS (
       SELECT
         sale_id,
-        delivery_confirmed_date AS sale_date,
+        ${dateField} AS sale_date,
         salesperson,
         location,
         receipt_no,
@@ -81,8 +84,8 @@ export function registerInsightsRoutes({
         ${safeFinanceFee}::numeric AS finance_fee,
         raw_source_file
       FROM pos_sales
-    WHERE delivery_confirmed_date >= $1
-      AND delivery_confirmed_date < $2
+    WHERE ${dateField} >= $1
+      AND ${dateField} < $2
         AND ($4::text IS NULL OR salesperson ILIKE ('%' || $4 || '%'))
     ),
     stats AS (
@@ -302,6 +305,7 @@ export function registerInsightsRoutes({
     const start = parseDateParam(req.query.start, "1900-01-01");
     const end = parseDateParam(req.query.end, "2100-01-01");
     const locationQ = parseTextParam(req.query.location);
+    const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
 
     const sql = `
     WITH item_rollup AS (
@@ -311,18 +315,18 @@ export function registerInsightsRoutes({
         SUM(CASE WHEN i.total_profit IS NULL OR i.total_profit <> i.total_profit THEN 0 ELSE i.total_profit END) AS item_profit
       FROM pos_sale_items i
       JOIN pos_sales s ON s.sale_id = i.sale_id
-      WHERE delivery_confirmed_date >= $1
-        AND delivery_confirmed_date < $2
+      WHERE ${prefixedDateField("s")} >= $1
+        AND ${prefixedDateField("s")} < $2
       GROUP BY i.sale_id
     )
     SELECT
-      date_trunc('week', delivery_confirmed_date)::date AS week,
+      date_trunc('week', ${prefixedDateField("s")})::date AS week,
       ROUND(SUM(COALESCE(item_rollup.item_sales, 0))::numeric, 2) AS sales,
       ROUND(SUM(COALESCE(item_rollup.item_profit, 0))::numeric, 2) AS profit
     FROM pos_sales s
     LEFT JOIN item_rollup ON item_rollup.sale_id = s.sale_id
-    WHERE delivery_confirmed_date >= $1
-      AND delivery_confirmed_date < $2
+    WHERE ${prefixedDateField("s")} >= $1
+      AND ${prefixedDateField("s")} < $2
       AND ($3::text IS NULL OR location ILIKE ('%' || $3 || '%'))
     GROUP BY 1
     ORDER BY 1;
@@ -338,6 +342,7 @@ export function registerInsightsRoutes({
     const end = parseDateParam(req.query.end, "2100-01-01");
     const salespersonQ = parseTextParam(req.query.salesperson);
     const locationQ = parseTextParam(req.query.location);
+    const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
 
     const sql = salespersonQ
       ? `
@@ -417,6 +422,7 @@ export function registerInsightsRoutes({
     const end = parseDateParam(req.query.end, "2100-01-01");
     const salespersonQ = parseTextParam(req.query.salesperson);
     const locationQ = parseTextParam(req.query.location);
+    const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
 
     const sql = salespersonQ
       ? `

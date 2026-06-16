@@ -11,7 +11,6 @@ import {
   sendMessage,
   createConversation,
   deleteConversation,
-  updateConversationTitle,
 } from '../../services/botbotApi';
 import { useBotBotContext } from './BotBotContext';
 import BotBotSettingsPanel from './BotBotSettingsPanel';

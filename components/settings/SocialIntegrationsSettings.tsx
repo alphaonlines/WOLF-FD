@@ -37,7 +37,7 @@ const fromLocalInputValue = (localValue: string) => {
 };
 
 const makeAccountDrafts = (accounts: SocialAccount[]): AccountDraft[] => {
-  const drafts = accounts.map((account) => ({
+  const drafts: AccountDraft[] = accounts.map((account) => ({
     draftKey: account.id,
     id: account.id,
     platform: account.platform,

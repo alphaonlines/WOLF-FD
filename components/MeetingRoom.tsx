@@ -44,12 +44,10 @@ function ChatPanel({
   isDarkMode,
   messages,
   onSendMessage,
-  authUser,
 }: {
   isDarkMode: boolean;
   messages: any[];
   onSendMessage: (body: string, file?: File) => Promise<void>;
-  authUser: AuthUser;
 }) {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -94,7 +92,7 @@ function ChatPanel({
   };
 
   const renderMessageBody = (body: string) => {
-    return body.replace(/#([\w-]+)/g, (match, channel) => {
+    return body.replace(/#([\w-]+)/g, (match) => {
       return `<span class="text-amber-500 font-semibold">${match}</span>`;
     });
   };
@@ -420,7 +418,7 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ isDarkMode, authUser }) => {
 
       {/* Chat panel on the right */}
       <div className={`w-80 border-l ${panelClass} flex flex-col`}>
-        <ChatPanel isDarkMode={isDarkMode} messages={chatMessages} onSendMessage={sendChatMessage} authUser={authUser} />
+        <ChatPanel isDarkMode={isDarkMode} messages={chatMessages} onSendMessage={sendChatMessage} />
       </div>
     </div>
   );

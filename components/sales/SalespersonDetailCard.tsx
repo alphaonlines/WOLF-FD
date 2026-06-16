@@ -16,7 +16,9 @@ export type SalespersonTicketRow = {
 };
 
 type SalespersonDetailCardProps = {
-  selectedSalesperson: string;
+  selectedSalesperson?: string;
+  selectedStore?: string;
+  selectedDay?: string;
   salespersonTickets: SalespersonTicketRow[];
   saleLink: (saleId: string) => string;
   saleLabel: (saleId: string, salesperson?: string) => string;
@@ -24,10 +26,28 @@ type SalespersonDetailCardProps = {
 
 const SalespersonDetailCard: React.FC<SalespersonDetailCardProps> = ({
   selectedSalesperson,
+  selectedStore,
+  selectedDay,
   salespersonTickets,
   saleLink,
   saleLabel,
 }) => {
+  const isDayDetail = !!selectedDay;
+  const isStoreDetail = !!selectedStore;
+  const title = isDayDetail
+    ? `Day Detail: ${formatShortDate(selectedDay || "")}`
+    : isStoreDetail
+      ? `Store Detail: ${selectedStore}`
+      : `Salesperson Detail: ${selectedSalesperson || ""}`;
+  const subtitle = isDayDetail
+    ? "All tickets for the clicked trend day"
+    : "All tickets for the selected date range";
+  const emptyMessage = isDayDetail
+    ? "No tickets found for this day."
+    : isStoreDetail
+      ? "No tickets found for this store and range."
+      : "No tickets found for this salesperson and range.";
+
   return (
     <div
       className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 fd-print-card"
@@ -35,8 +55,8 @@ const SalespersonDetailCard: React.FC<SalespersonDetailCardProps> = ({
     >
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-slate-800">Salesperson Detail: {selectedSalesperson}</h3>
-          <p className="text-sm text-slate-500">All tickets for the selected date range</p>
+          <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+          <p className="text-sm text-slate-500">{subtitle}</p>
         </div>
       </div>
       {salespersonTickets.length ? (
@@ -46,6 +66,9 @@ const SalespersonDetailCard: React.FC<SalespersonDetailCardProps> = ({
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Sale ID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                {(isStoreDetail || isDayDetail) && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Salesperson</th>
+                )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Location</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Pro1st</th>
@@ -65,6 +88,9 @@ const SalespersonDetailCard: React.FC<SalespersonDetailCardProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                     {formatShortDate(String(row.saleDate || ""))}
                   </td>
+                  {(isStoreDetail || isDayDetail) && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.salesperson || "(unknown)"}</td>
+                  )}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{row.location || "(unknown)"}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.grandTotal.toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${row.pro1stSales.toLocaleString()}</td>
@@ -81,7 +107,7 @@ const SalespersonDetailCard: React.FC<SalespersonDetailCardProps> = ({
           </table>
         </div>
       ) : (
-        <p className="text-sm text-slate-500">No tickets found for this salesperson and range.</p>
+        <p className="text-sm text-slate-500">{emptyMessage}</p>
       )}
     </div>
   );

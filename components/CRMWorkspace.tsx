@@ -346,7 +346,7 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
   const [selectedSalespersonName, setSelectedSalespersonName] = useState("");
   const [startDrafts, setStartDrafts] = useState<Record<string, StartCustomerDraft>>({});
   const [draft, setDraft] = useState<CustomerDraft>(() => buildDraft(authUser, DEFAULT_STORE_CODE));
-  const [customerSearchFieldValues, setCustomerSearchFieldValues] = useState<CustomerSearchFieldValues>({});
+  const [, setCustomerSearchFieldValues] = useState<CustomerSearchFieldValues>({});
   const [customerSearch, setCustomerSearch] = useState<{ fields: CustomerSearchField[]; query: string }>({
     fields: [],
     query: "",
@@ -850,7 +850,6 @@ const CRMWorkspace: React.FC<CRMWorkspaceProps> = ({ authUser, isDarkMode, view 
   };
 
   const handleCompleteCustomer = async (item: CRMUpsQueueItem, activeCustomerId: string) => {
-    const activeCustomer = item.activeCustomers.find((entry) => entry.id === activeCustomerId) || null;
     setStatusMessage(null);
     setErrorMessage(null);
     setSaving("queue");
