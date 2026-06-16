@@ -217,26 +217,37 @@ export default function CompetitorPricingResultsViewer({ isDarkMode = false }: P
       {/* Table */}
       {!loading && filtered.length > 0 && (
         <div className={`rounded-3xl border shadow-sm overflow-hidden ${card}`}>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
+          <div className={`border-b px-4 py-3 text-xs ${muted}`}>
+            Results are laid out to fit the dashboard width. Vendor/SKU, item details, competitor matches, and recommendation text wrap instead of clipping.
+          </div>
+          <div className="w-full overflow-x-auto">
+            <table className="w-full table-fixed text-left text-sm">
+              <colgroup>
+                <col className="w-[14%]" />
+                <col className="w-[22%]" />
+                <col className="w-[11%]" />
+                <col className="w-[27%]" />
+                <col className="w-[12%]" />
+                <col className="w-[14%]" />
+              </colgroup>
               <thead className={thCls}>
                 <tr>
-                  {([
-                    ['vendor', 'Vendor'],
-                    ['sku', 'SKU'],
-                    ['description', 'Description'],
-                    ['storePrice', 'Store Price'],
-                    ['ashleyPrice', 'Ashley Price'],
-                    ['fflPrice', 'FFL Price'],
-                    ['lowestComp', 'Lowest Comp'],
-                    ['diff', 'You vs Comp'],
-                    ['confidence', 'Match'],
-                  ] as [SortField, string][]).map(([field, label]) => (
-                    <th key={field} className="px-3 py-3 font-semibold cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort(field)}>
-                      <span className="inline-flex items-center gap-1">{label}<SortIcon field={field} /></span>
-                    </th>
-                  ))}
-                  <th className="px-3 py-3 font-semibold">Note</th>
+                  <th className="px-3 py-3 font-semibold cursor-pointer select-none align-top" onClick={() => toggleSort('vendor')}>
+                    <span className="inline-flex items-center gap-1">Vendor / SKU<SortIcon field="vendor" /></span>
+                  </th>
+                  <th className="px-3 py-3 font-semibold cursor-pointer select-none align-top" onClick={() => toggleSort('description')}>
+                    <span className="inline-flex items-center gap-1">Item<SortIcon field="description" /></span>
+                  </th>
+                  <th className="px-3 py-3 font-semibold cursor-pointer select-none align-top" onClick={() => toggleSort('storePrice')}>
+                    <span className="inline-flex items-center gap-1">Store<SortIcon field="storePrice" /></span>
+                  </th>
+                  <th className="px-3 py-3 font-semibold align-top">Comp Matches</th>
+                  <th className="px-3 py-3 font-semibold cursor-pointer select-none align-top" onClick={() => toggleSort('diff')}>
+                    <span className="inline-flex items-center gap-1">Lowest / Diff<SortIcon field="diff" /></span>
+                  </th>
+                  <th className="px-3 py-3 font-semibold cursor-pointer select-none align-top" onClick={() => toggleSort('confidence')}>
+                    <span className="inline-flex items-center gap-1">Status / Note<SortIcon field="confidence" /></span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/10">
@@ -252,36 +263,52 @@ export default function CompetitorPricingResultsViewer({ isDarkMode = false }: P
                   const diffColor = diff > 0 ? 'text-rose-500' : diff < 0 ? 'text-emerald-500' : muted;
                   return (
                     <tr key={`${row.sku}-${i}`} className={rowCls}>
-                      <td className="px-3 py-2.5 font-medium whitespace-nowrap">{row.vendor}</td>
-                      <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">{row.sku}</td>
-                      <td className="px-3 py-2.5 max-w-[200px] truncate">{row.description}</td>
-                      <td className="px-3 py-2.5 font-semibold whitespace-nowrap">{fmtPrice(storeP)}</td>
-                      <td className="px-3 py-2.5 whitespace-nowrap">
-                        {aPrice >= 0 ? (
-                          <span className="inline-flex items-center gap-1.5">
-                            {fmtPrice(aPrice)}
-                            {aConf !== 'none' && <a href={row.ashley?.url || '#'} target="_blank" rel="noreferrer" className={linkCls}><ExternalLink size={10} /></a>}
-                            {confidenceBadge(aConf)}
-                          </span>
-                        ) : <span className={muted}>—</span>}
+                      <td className="px-3 py-3 align-top">
+                        <div className="font-semibold break-words">{row.vendor || '—'}</div>
+                        <div className={`mt-1 font-mono text-[11px] leading-4 break-all ${muted}`}>{row.sku || '—'}</div>
                       </td>
-                      <td className="px-3 py-2.5 whitespace-nowrap">
-                        {fPrice >= 0 ? (
-                          <span className="inline-flex items-center gap-1.5">
-                            {fmtPrice(fPrice)}
-                            {fConf !== 'none' && <a href={row.furniture4Less?.url || '#'} target="_blank" rel="noreferrer" className={linkCls}><ExternalLink size={10} /></a>}
-                            {confidenceBadge(fConf)}
-                          </span>
-                        ) : <span className={muted}>—</span>}
+                      <td className="px-3 py-3 align-top">
+                        <div className="whitespace-normal break-words leading-5">{row.description || '—'}</div>
+                        {!!row.remarks && <div className={`mt-1 text-[11px] leading-4 whitespace-normal break-words ${muted}`}>Remarks: {row.remarks}</div>}
                       </td>
-                      <td className="px-3 py-2.5 font-semibold whitespace-nowrap">{fmtPrice(lowP)}</td>
-                      <td className={`px-3 py-2.5 font-semibold whitespace-nowrap ${diffColor}`}>
-                        {diff >= 0 ? `+${fmtPrice(diff)}` : fmtPrice(Math.abs(diff))}
-                        {diff > 0 && ' ↑'}
-                        {diff < 0 && ' ↓'}
+                      <td className="px-3 py-3 align-top">
+                        <div className="font-semibold">{fmtPrice(storeP)}</div>
+                        {!!row.regularPrice && <div className={`mt-1 text-[11px] ${muted}`}>Reg: {row.regularPrice}</div>}
                       </td>
-                      <td className="px-3 py-2.5">{confidenceBadge(bestConf)}</td>
-                      <td className={`px-3 py-2.5 text-xs max-w-[200px] truncate ${muted}`} title={row.recommendation}>{row.recommendation}</td>
+                      <td className="px-3 py-3 align-top">
+                        <div className="space-y-2">
+                          <div className={`rounded-xl border px-2.5 py-2 ${isDarkMode ? 'border-slate-700 bg-slate-950/40' : 'border-slate-200 bg-slate-50/70'}`}>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-[11px] font-bold uppercase tracking-wide">Ashley</span>
+                              {confidenceBadge(aConf)}
+                              {aConf !== 'none' && row.ashley?.url && <a href={row.ashley.url} target="_blank" rel="noreferrer" className={linkCls}><ExternalLink size={11} /></a>}
+                            </div>
+                            <div className="mt-1 font-semibold">{aPrice >= 0 ? fmtPrice(aPrice) : '—'}</div>
+                            {!!row.ashley?.title && <div className={`mt-1 text-[11px] leading-4 whitespace-normal break-words ${muted}`}>{row.ashley.title}</div>}
+                          </div>
+                          <div className={`rounded-xl border px-2.5 py-2 ${isDarkMode ? 'border-slate-700 bg-slate-950/40' : 'border-slate-200 bg-slate-50/70'}`}>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-[11px] font-bold uppercase tracking-wide">Furniture4Less</span>
+                              {confidenceBadge(fConf)}
+                              {fConf !== 'none' && row.furniture4Less?.url && <a href={row.furniture4Less.url} target="_blank" rel="noreferrer" className={linkCls}><ExternalLink size={11} /></a>}
+                            </div>
+                            <div className="mt-1 font-semibold">{fPrice >= 0 ? fmtPrice(fPrice) : '—'}</div>
+                            {!!row.furniture4Less?.title && <div className={`mt-1 text-[11px] leading-4 whitespace-normal break-words ${muted}`}>{row.furniture4Less.title}</div>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 align-top">
+                        <div className="font-semibold">{fmtPrice(lowP)}</div>
+                        <div className={`mt-1 font-semibold ${diffColor}`}>
+                          {diff >= 0 ? `+${fmtPrice(diff)}` : fmtPrice(Math.abs(diff))}
+                          {diff > 0 && ' ↑'}
+                          {diff < 0 && ' ↓'}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 align-top">
+                        <div>{confidenceBadge(bestConf)}</div>
+                        <div className={`mt-2 text-xs leading-4 whitespace-normal break-words ${muted}`} title={row.recommendation}>{row.recommendation || '—'}</div>
+                      </td>
                     </tr>
                   );
                 })}

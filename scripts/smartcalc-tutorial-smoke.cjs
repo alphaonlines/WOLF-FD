@@ -301,7 +301,7 @@ function assertDesktopRightRail() {
   assert.match(startButton.textContent, /start guided tutorial|restart tutorial/i, 'standalone calculator should expose a production tutorial start button');
 
   const botbot = byId('smartcalc-tour-botbot');
-  assert.match(botbot.getAttribute('aria-label') || '', /BotBot/i, 'tutorial card should include the BotBot assistant identity');
+  assert.match(botbot.getAttribute('aria-label') || '', /WOLFbot/i, 'tutorial card should include the WOLFbot assistant identity');
 
   setViewport(1280, 800);
   startButton.click();
@@ -320,7 +320,7 @@ function assertDesktopRightRail() {
   await settle();
   overlay = activeOverlay();
   assert.match(overlay.textContent, /Welcome to Smart Calc/i, 'first tutorial step should welcome the employee');
-  assert.match(overlay.textContent, /BotBot says/i, 'tutorial copy should be presented as BotBot guidance');
+  assert.match(overlay.textContent, /WOLFbot says/i, 'tutorial copy should be presented as WOLFbot guidance');
   assert.equal(byId('base-cost').value, '499', 'starting the tutorial itself should not mutate the quote before Next runs a demo action');
   assert.equal(byId('margin-percent').value, '45', 'starting the tutorial itself should not mutate margin before Next runs a demo action');
   assertSpotlightTracksTarget(document.querySelector('header'));
