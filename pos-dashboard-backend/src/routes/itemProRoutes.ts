@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseDateParam, parseTextParam } from "../parsers";
-import { dateFieldForBasis, prefixedDateFieldForBasis } from "../sqlFields";
+import { dateFieldForBasis, itemDateBasisFilter, prefixedDateFieldForBasis } from "../sqlFields";
 import { buildPro1stExcludedSql, buildQualifiedPro1stSql } from "../pro1stSql";
 
 type RegisterItemProRoutesDeps = {
@@ -23,6 +23,7 @@ export function registerItemProRoutes({
   const requestDateFields = (req: any) => ({
     itemDateField: dateFieldForBasis(req.query.date_basis),
     prefixedDateField: (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias),
+    itemBasisFilter: (tableAlias = "") => itemDateBasisFilter(req.query.date_basis, tableAlias),
   });
 
   // Best sellers (items)
@@ -33,7 +34,7 @@ export function registerItemProRoutes({
     const sort = String(req.query.sort || "sales").toLowerCase() === "qty" ? "qty" : "sales";
     const locationQ = parseTextParam(req.query.location);
     const salespersonQ = parseTextParam(req.query.salesperson);
-    const { itemDateField } = requestDateFields(req);
+    const { itemDateField, itemBasisFilter } = requestDateFields(req);
 
     const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
     const sql = `
@@ -85,6 +86,7 @@ export function registerItemProRoutes({
     LEFT JOIN people_counts pc ON pc.sale_id = pos_sale_items.sale_id
     WHERE ${itemDateField} >= $1
       AND ${itemDateField} < $2
+      AND ${itemBasisFilter()}
       AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
       AND ($5::text IS NULL OR pos_sale_items.sale_id IN (SELECT sale_id FROM salesperson_sales))
       AND item_description IS NOT NULL
@@ -140,7 +142,7 @@ export function registerItemProRoutes({
     const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
     const locationQ = parseTextParam(req.query.location);
     const salespersonQ = parseTextParam(req.query.salesperson);
-    const { itemDateField } = requestDateFields(req);
+    const { itemDateField, itemBasisFilter } = requestDateFields(req);
 
     const sql = `
     SELECT
@@ -150,6 +152,7 @@ export function registerItemProRoutes({
     FROM pos_sale_items
     WHERE ${itemDateField} >= $1
       AND ${itemDateField} < $2
+      AND ${itemBasisFilter()}
       AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
       AND ($5::text IS NULL OR sale_id IN (SELECT sale_id FROM pos_sales WHERE salesperson ILIKE ('%' || $5 || '%')))
       AND category IS NOT NULL
@@ -181,7 +184,7 @@ export function registerItemProRoutes({
     const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
     const locationQ = parseTextParam(req.query.location);
     const salespersonQ = parseTextParam(req.query.salesperson);
-    const { itemDateField } = requestDateFields(req);
+    const { itemDateField, itemBasisFilter } = requestDateFields(req);
 
     const sql = `
     SELECT
@@ -191,6 +194,7 @@ export function registerItemProRoutes({
     FROM pos_sale_items
     WHERE ${itemDateField} >= $1
       AND ${itemDateField} < $2
+      AND ${itemBasisFilter()}
       AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
       AND ($5::text IS NULL OR sale_id IN (SELECT sale_id FROM pos_sales WHERE salesperson ILIKE ('%' || $5 || '%')))
       AND manufacturer IS NOT NULL
@@ -226,7 +230,7 @@ export function registerItemProRoutes({
     }
     const sort = String(req.query.sort || "sales").toLowerCase() === "qty" ? "qty" : "sales";
     const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
-    const { itemDateField } = requestDateFields(req);
+    const { itemDateField, itemBasisFilter } = requestDateFields(req);
 
     const sql = `
     SELECT
@@ -239,6 +243,7 @@ export function registerItemProRoutes({
     FROM pos_sale_items
     WHERE ${itemDateField} >= $1
       AND ${itemDateField} < $2
+      AND ${itemBasisFilter()}
       AND category ILIKE $3
       AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
       AND ($5::text IS NULL OR sale_id IN (SELECT sale_id FROM pos_sales WHERE salesperson ILIKE ('%' || $5 || '%')))
@@ -277,7 +282,7 @@ export function registerItemProRoutes({
     }
     const sort = String(req.query.sort || "sales").toLowerCase() === "qty" ? "qty" : "sales";
     const orderBy = sort === "qty" ? "qty DESC NULLS LAST" : "sales DESC NULLS LAST";
-    const { itemDateField } = requestDateFields(req);
+    const { itemDateField, itemBasisFilter } = requestDateFields(req);
 
     const sql = `
     SELECT
@@ -290,6 +295,7 @@ export function registerItemProRoutes({
     FROM pos_sale_items
     WHERE ${itemDateField} >= $1
       AND ${itemDateField} < $2
+      AND ${itemBasisFilter()}
       AND manufacturer ILIKE $3
       AND ($4::text IS NULL OR location ILIKE ('%' || $4 || '%'))
       AND ($5::text IS NULL OR sale_id IN (SELECT sale_id FROM pos_sales WHERE salesperson ILIKE ('%' || $5 || '%')))
@@ -321,7 +327,7 @@ export function registerItemProRoutes({
     const end = parseDateParam(req.query.end, "2100-01-01");
     const locationQ = parseTextParam(req.query.location);
     const salespersonQ = parseTextParam(req.query.salesperson);
-    const { prefixedDateField } = requestDateFields(req);
+    const { prefixedDateField, itemBasisFilter } = requestDateFields(req);
 
     const totalSql = `
     WITH non_mattress_items AS (
@@ -337,6 +343,7 @@ export function registerItemProRoutes({
       JOIN pos_sales s ON s.sale_id = i.sale_id
       WHERE ${prefixedDateField("s")} >= $1
         AND ${prefixedDateField("s")} < $2
+        AND ${itemBasisFilter("i")}
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
         AND NOT (
           ${aliasedExcludedPro1stSql}
@@ -370,6 +377,7 @@ export function registerItemProRoutes({
       JOIN pos_sales s ON s.sale_id = i.sale_id
       WHERE ${prefixedDateField("s")} >= $1
         AND ${prefixedDateField("s")} < $2
+        AND ${itemBasisFilter("i")}
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
         AND ${aliasedPro1stItemSql}
         AND i.sale_id IS NOT NULL
@@ -435,7 +443,7 @@ export function registerItemProRoutes({
     const end = parseDateParam(req.query.end, "2100-01-01");
     const locationQ = parseTextParam(req.query.location);
     const salespersonQ = parseTextParam(req.query.salesperson);
-    const { prefixedDateField } = requestDateFields(req);
+    const { prefixedDateField, itemBasisFilter } = requestDateFields(req);
 
     const baseParams = [start, end, locationQ, salespersonQ];
 
@@ -453,6 +461,7 @@ export function registerItemProRoutes({
       JOIN pos_sales s ON s.sale_id = i.sale_id
       WHERE ${prefixedDateField("s")} >= $1
         AND ${prefixedDateField("s")} < $2
+        AND ${itemBasisFilter("i")}
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
         AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM pos_sales_people WHERE salesperson ILIKE ('%' || $4 || '%')))
         AND ${pro1stItemSql}
@@ -495,6 +504,7 @@ export function registerItemProRoutes({
       JOIN pos_sales s ON s.sale_id = i.sale_id
       WHERE ${prefixedDateField("s")} >= $1
         AND ${prefixedDateField("s")} < $2
+        AND ${itemBasisFilter("i")}
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
         AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM pos_sales_people WHERE salesperson ILIKE ('%' || $4 || '%')))
         AND ${pro1stItemSql}
@@ -539,6 +549,7 @@ export function registerItemProRoutes({
       JOIN pos_sales s ON s.sale_id = i.sale_id
       WHERE ${prefixedDateField("s")} >= $1
         AND ${prefixedDateField("s")} < $2
+        AND ${itemBasisFilter("i")}
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
         AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM pos_sales_people WHERE salesperson ILIKE ('%' || $4 || '%')))
         AND ${pro1stItemSql}
@@ -619,7 +630,7 @@ export function registerItemProRoutes({
     const end = parseDateParam(req.query.end, "2100-01-01");
     const locationQ = parseTextParam(req.query.location);
     const salespersonQ = parseTextParam(req.query.salesperson);
-    const { prefixedDateField } = requestDateFields(req);
+    const { prefixedDateField, itemBasisFilter } = requestDateFields(req);
 
     const sql = `
     WITH people_counts AS (
@@ -682,6 +693,7 @@ export function registerItemProRoutes({
     LEFT JOIN people_counts pc ON pc.sale_id = i.sale_id
     WHERE ${prefixedDateField("s")} >= $1
       AND ${prefixedDateField("s")} < $2
+      AND ${itemBasisFilter("i")}
       AND ($3::text IS NULL OR s.location ILIKE ('%' || $3 || '%'))
       AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM salesperson_sales))
       AND NOT (${buildQualifiedPro1stSql("i.")})

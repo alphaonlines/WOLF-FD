@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Specials Uploader | WOLF FD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .drop-zone--over { border-color: #f97316; background: #fff7ed; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="max-w-xl w-full">
+        <!-- Header -->
+        <div class="bg-black text-white p-8 rounded-t-2xl shadow-xl text-center">
+            <h1 class="text-3xl font-extrabold tracking-tight uppercase">Manager Specials</h1>
+            <p class="text-orange-400 font-semibold mt-2 tracking-widest uppercase text-sm">Inventory Uploader</p>
+        </div>
+
+        <!-- Content -->
+        <div class="bg-white p-8 rounded-b-2xl shadow-xl border-x border-b border-slate-200">
+            <div id="drop-zone" class="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center transition-all cursor-pointer hover:border-orange-400 hover:bg-orange-50 group">
+                <input type="file" id="file-input" class="hidden" accept=".csv,.xlsx,.xls">
+                <div class="flex flex-col items-center gap-4">
+                    <div class="p-4 bg-orange-100 rounded-full text-orange-600 group-hover:scale-110 transition-transform">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-lg font-bold text-slate-700">Drop your CSV or Excel here</p>
+                        <p class="text-slate-500 text-sm mt-1">Updates Living Room, Bedroom, Dining, and Recliners</p>
+                    </div>
+                    <button class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-6 rounded-lg transition-colors shadow-md">
+                        Browse Files
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Area -->
+            <div id="status-container" class="mt-6 hidden">
+                <div id="loading" class="flex items-center justify-center gap-3 py-4 text-slate-600">
+                    <svg class="animate-spin h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="font-semibold italic">Processing inventory data...</span>
+                </div>
+                
+                <div id="result" class="hidden rounded-lg p-4 border transition-all">
+                    <!-- Message content -->
+                </div>
+            </div>
+
+            <!-- Footer Info -->
+            <div class="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                <span>WOLF FD PRODUCTION</span>
+                <a href="/fd/" class="hover:text-orange-500 transition-colors">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const statusContainer = document.getElementById('status-container');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+        }
+
+        // Drag and drop handlers
+        ['dragover', 'dragleave', 'drop'].forEach(evt => {
+            dropZone.addEventListener(evt, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        dropZone.addEventListener('dragover', () => dropZone.classList.add('drop-zone--over'));
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone--over'));
+        dropZone.addEventListener('drop', e => {
+            dropZone.classList.remove('drop-zone--over');
+            const files = e.dataTransfer.files;
+            if (files.length) handleUpload(files[0]);
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) handleUpload(fileInput.files[0]);
+        });
+
+        async function handleUpload(file) {
+            statusContainer.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            result.classList.add('hidden');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/fd-upload-csv', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                loading.classList.add('hidden');
+                result.classList.remove('hidden');
+
+                if (response.ok) {
+                    result.className = 'rounded-lg p-5 border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm';
+                    
+                    let html = `<div class="font-extrabold text-lg mb-2">Success! Site Updated</div>`;
+                    html += `<p class="text-sm mb-4">Your file "${escapeHtml(file.name)}" was processed successfully.</p>`;
+                    
+                    if (data.updated) {
+                        html += `<div class="grid grid-cols-2 gap-3 mt-4">`;
+                        for (const [key, val] of Object.entries(data.updated)) {
+                            html += `
+                                <div class="bg-white/50 p-2.5 rounded border border-emerald-100 flex justify-between items-center">
+                                    <span class="text-[10px] font-black uppercase tracking-tighter opacity-60">${key}</span>
+                                    <span class="font-bold tabular-nums">${val} Items</span>
+                                </div>
+                            `;
+                        }
+                        html += `</div>`;
+                    }
+                    result.innerHTML = html;
+                } else {
+                    let message = data.error || 'Server processing failed';
+                    if (data.missing && Array.isArray(data.missing)) {
+                        message += `\nMissing sections: ${data.missing.join(', ')}`;
+                    }
+                    if (data.staged_file) {
+                        message += `\nStaged file saved: ${data.staged_file}`;
+                    }
+                    throw new Error(message);
+                }
+            } catch (err) {
+                loading.classList.add('hidden');
+                result.classList.remove('hidden');
+                result.className = 'rounded-lg p-5 border border-rose-200 bg-rose-50 text-rose-800 shadow-sm';
+                result.innerHTML = `
+                    <div class="font-extrabold text-lg mb-1 italic uppercase">Error Processing File</div>
+                    <p class="text-sm whitespace-pre-line">${escapeHtml(err.message)}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
+

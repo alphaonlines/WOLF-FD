@@ -263,6 +263,7 @@ ITEM_COLS = [
     "total_profit",
     "gross_margin",
     "delivery_confirmed_date",
+    "date_basis",
     "is_pro1st",
     "raw_source_file",
 ]
@@ -330,11 +331,12 @@ WHERE pos_sales.last_import_batch_id IS NULL
 """
 
 UPSERT_ITEMS_RAW = """
-INSERT INTO pos_sale_items_raw (row_hash, sale_id, sale_date, raw_source_file, import_batch_id, row_json)
+INSERT INTO pos_sale_items_raw (row_hash, sale_id, sale_date, date_basis, raw_source_file, import_batch_id, row_json)
 VALUES %s
 ON CONFLICT (row_hash) DO UPDATE SET
   sale_id = EXCLUDED.sale_id,
   sale_date = EXCLUDED.sale_date,
+  date_basis = EXCLUDED.date_basis,
   raw_source_file = EXCLUDED.raw_source_file,
   import_batch_id = EXCLUDED.import_batch_id,
   row_json = EXCLUDED.row_json
@@ -346,7 +348,7 @@ UPSERT_ITEMS = """
 INSERT INTO pos_sale_items (
   row_hash, sale_id, sale_date, location, manufacturer, category, item_no, item_description,
   qty_sold, total_cost, total_sale_price, total_profit, gross_margin, delivery_confirmed_date,
-  is_pro1st,
+  date_basis, is_pro1st,
   raw_source_file, import_batch_id
 )
 VALUES %s
@@ -364,6 +366,7 @@ ON CONFLICT (row_hash) DO UPDATE SET
   total_profit = EXCLUDED.total_profit,
   gross_margin = EXCLUDED.gross_margin,
   delivery_confirmed_date = EXCLUDED.delivery_confirmed_date,
+  date_basis = EXCLUDED.date_basis,
   is_pro1st = EXCLUDED.is_pro1st,
   raw_source_file = EXCLUDED.raw_source_file,
   import_batch_id = EXCLUDED.import_batch_id;
@@ -663,6 +666,96 @@ def row_hash_from_values(values: list, source_file: str, row_index: int, batch_k
     payload = _json.dumps([batch_key, source_file, row_index, values], default=str, sort_keys=False)
     return hashlib.md5(payload.encode("utf-8")).hexdigest()
 
+VALID_RECONCILE_DATE_FIELDS = {"sale_date", "delivery_confirmed_date"}
+
+
+def ensure_item_date_basis_schema(cur) -> None:
+    cur.execute(
+        """
+        SELECT table_name, column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name IN ('pos_sale_items', 'pos_sale_items_raw')
+          AND column_name = 'date_basis';
+        """
+    )
+    found = {(table_name, column_name) for table_name, column_name in cur.fetchall()}
+    missing = [
+        table
+        for table in ("pos_sale_items", "pos_sale_items_raw")
+        if (table, "date_basis") not in found
+    ]
+    if missing:
+        raise RuntimeError(
+            "POS item date-basis schema is not installed. Missing date_basis column on "
+            + ", ".join(missing)
+            + ". Apply pos-dashboard-backend/db/schema.sql with a DB owner before running the written/delivered item importer."
+        )
+
+
+def expected_date_field_for_basis(date_basis: str) -> str:
+    return "sale_date" if date_basis == "written" else "delivery_confirmed_date"
+
+
+def reconcile_stale_items(
+    cur,
+    *,
+    date_basis: str,
+    coverage_field: str,
+    range_start,
+    range_end,
+    sale_ids: list[str],
+    incoming_row_count: int,
+    dry_run: bool,
+    max_prune_rows: int,
+    max_prune_ratio: float,
+) -> None:
+    if coverage_field not in VALID_RECONCILE_DATE_FIELDS:
+        raise ValueError(f"Refusing item reconciliation for unsafe date field: {coverage_field}")
+    expected_field = expected_date_field_for_basis(date_basis)
+    if coverage_field != expected_field:
+        print(
+            f"Skipped item reconciliation: coverage field {coverage_field} does not match "
+            f"{date_basis} basis field {expected_field}."
+        )
+        return
+    if not range_start or not range_end or range_start > range_end:
+        print("Skipped item reconciliation: no valid coverage window.")
+        return
+
+    params = (date_basis, range_start, range_end, sale_ids)
+    where_sql = f"""
+        date_basis = %s
+        AND {coverage_field} >= %s
+        AND {coverage_field} <= %s
+        AND (sale_id IS NULL OR NOT (sale_id = ANY(%s)))
+    """
+    cur.execute(f"SELECT COUNT(*) FROM pos_sale_items WHERE {where_sql};", params)
+    prune_count = int(cur.fetchone()[0] or 0)
+    print(
+        f"Item reconciliation {date_basis}/{coverage_field} {range_start}..{range_end}: "
+        f"would prune {prune_count} stale rows outside {len(sale_ids)} incoming sales."
+    )
+
+    if prune_count <= 0:
+        return
+    if max_prune_rows >= 0 and prune_count > max_prune_rows:
+        raise RuntimeError(
+            f"Refusing item reconciliation: would prune {prune_count} rows, "
+            f"above --max-item-prune-rows={max_prune_rows}."
+        )
+    if incoming_row_count > 0 and max_prune_ratio >= 0 and prune_count > incoming_row_count * max_prune_ratio:
+        raise RuntimeError(
+            f"Refusing item reconciliation: would prune {prune_count} rows vs "
+            f"{incoming_row_count} incoming rows, above --max-item-prune-ratio={max_prune_ratio}."
+        )
+    if dry_run:
+        print("Dry run: stale item rows were not deleted.")
+        return
+
+    cur.execute(f"DELETE FROM pos_sale_items WHERE {where_sql};", params)
+    print(f"Pruned {cur.rowcount} stale {date_basis} item rows inside covered window.")
+
 def main():
     ap = argparse.ArgumentParser(description="Import POS export XLSX files into Postgres (upsert by sale_id).")
     ap.add_argument("--incoming", default=INCOMING, help="Folder to scan for XLSX files (default: %(default)s)")
@@ -676,7 +769,13 @@ def main():
         default="delivered",
         help="Coverage date basis: delivered=delivery_confirmed_date, written=sale_date",
     )
+    ap.add_argument("--dry-run", action="store_true", help="Run the import in one transaction, roll it back, and skip moving files")
+    ap.add_argument("--reconcile-items", action="store_true", help="Prune stale same-basis item rows inside the imported coverage window")
+    ap.add_argument("--max-item-prune-rows", type=int, default=250, help="Hard stop if item reconciliation would prune more rows than this")
+    ap.add_argument("--max-item-prune-ratio", type=float, default=0.5, help="Hard stop if item reconciliation would prune more than this ratio of incoming item rows")
     args = ap.parse_args()
+    if args.dry_run:
+        args.no_move = True
 
     preferred_date_field = "sale_date" if args.date_basis == "written" else "delivery_confirmed_date"
     fallback_date_field = "delivery_confirmed_date" if preferred_date_field == "sale_date" else "sale_date"
@@ -698,7 +797,7 @@ def main():
 
     conn = psycopg2.connect(**PG)
     try:
-        with conn, conn.cursor() as cur:
+        with conn.cursor() as cur:
             cur.execute(ENSURE_IMPORT_COVERAGE)
             batches = {}
             for path in files:
@@ -747,6 +846,7 @@ def main():
                         })
                     elif is_item_export(df):
                         df2 = clean_item_rows(df, source)
+                        df2["date_basis"] = args.date_basis
                         sale_ids = list({str(x).strip() for x in df2["sale_id"].tolist() if str(x).strip()})
                         entries.append({
                             "type": "items",
@@ -774,6 +874,8 @@ def main():
                     key=lambda e: (e.get("sale_count", 0), e.get("source", "")),
                     reverse=True,
                 )
+                if item_entries:
+                    ensure_item_date_basis_schema(cur)
                 other_entries = [e for e in entries if e.get("type") == "unknown"]
                 ordered_entries = sales_entries + item_entries + other_entries
 
@@ -838,21 +940,24 @@ def main():
                     elif entry_type == "items":
                         df2 = entry_info["df2"]
                         sale_ids = entry_info["sale_ids"]
+                        coverage_field, coverage_start, coverage_end = compute_date_range(df2, preferred_date_field, fallback_date_field)
                         if sale_ids:
-                            print(f"Replacing existing item data for {len(sale_ids)} sales (latest upload wins)...")
+                            print(f"Replacing existing {args.date_basis} item data for {len(sale_ids)} sales (same basis only; legacy NULL rows are claimed)...")
                             cur.execute(
                                 """
                                 DELETE FROM pos_sale_items_raw
-                                WHERE sale_id = ANY(%s);
+                                WHERE sale_id = ANY(%s)
+                                  AND (date_basis = %s OR date_basis IS NULL);
                                 """,
-                                (sale_ids,),
+                                (sale_ids, args.date_basis),
                             )
                             cur.execute(
                                 """
                                 DELETE FROM pos_sale_items
-                                WHERE sale_id = ANY(%s);
+                                WHERE sale_id = ANY(%s)
+                                  AND (date_basis = %s OR date_basis IS NULL);
                                 """,
-                                (sale_ids,),
+                                (sale_ids, args.date_basis),
                             )
                         raw_df = entry_info["df"].copy()
                         raw_df.columns = [str(c).strip() for c in raw_df.columns]
@@ -867,6 +972,7 @@ def main():
                                 row_hash,
                                 row["sale_id"],
                                 row["sale_date"],
+                                args.date_basis,
                                 source,
                                 batch_id,
                                 Json(raw_json),
@@ -876,14 +982,26 @@ def main():
                         execute_values(cur, UPSERT_ITEMS_RAW, raw_rows, page_size=2000)
                         execute_values(cur, UPSERT_ITEMS, clean_rows, page_size=2000)
 
-                        coverage_field, coverage_start, coverage_end = compute_date_range(df2, preferred_date_field, fallback_date_field)
                         if coverage_start and coverage_end and coverage_start <= coverage_end:
                             cur.execute(
                                 UPSERT_IMPORT_COVERAGE,
                                 ("items", batch_id, source, coverage_field, coverage_start, coverage_end, len(clean_rows)),
                             )
+                            if args.reconcile_items:
+                                reconcile_stale_items(
+                                    cur,
+                                    date_basis=args.date_basis,
+                                    coverage_field=coverage_field,
+                                    range_start=coverage_start,
+                                    range_end=coverage_end,
+                                    sale_ids=sale_ids,
+                                    incoming_row_count=len(clean_rows),
+                                    dry_run=args.dry_run,
+                                    max_prune_rows=args.max_item_prune_rows,
+                                    max_prune_ratio=args.max_item_prune_ratio,
+                                )
 
-                        print(f"Upserted: {len(clean_rows)} item rows")
+                        print(f"Upserted: {len(clean_rows)} {args.date_basis} item rows")
                     else:
                         print("Skipped: unrecognized export type.")
                         continue
@@ -898,7 +1016,15 @@ def main():
                         else:
                             print("File already in processed folder.")
 
-        print("\n✅ Done.")
+        if args.dry_run:
+            conn.rollback()
+            print("\n🧪 Dry run complete. Rolled back database changes; files were not moved.")
+        else:
+            conn.commit()
+            print("\n✅ Done.")
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 

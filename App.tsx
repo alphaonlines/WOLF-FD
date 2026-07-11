@@ -27,6 +27,7 @@ import {
   TrendingUp,
   FolderSearch,
   MapPin,
+  Headphones,
 } from 'lucide-react';
 import SalesDashboard from './components/SalesDashboard';
 import WorkAdvertising from './components/WorkAdvertising';
@@ -42,6 +43,7 @@ import OwnerSettings from './components/OwnerSettings';
 import PulseWorkspace, { PulseSubTab } from './components/PulseWorkspace';
 import AmpWorkspace, { AmpSubTab } from './components/AmpWorkspace';
 import ShopWorkspace, { ShopSubTab } from './components/ShopWorkspace';
+import TrainingWorkspace from './components/TrainingWorkspace';
 import WolfdenWorkspace, { WolfdenSubTab } from './components/WolfdenWorkspace';
 import { BotBotOrb, BotBotChatPanel, BotBotContextProvider } from './components/botbot';
 import BotBotTutorial, { BotBotTutorialStep } from './components/botbot/BotBotTutorial';
@@ -1049,6 +1051,7 @@ const App: React.FC = () => {
                 if (tab === 'SHOP_SEARCH' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('search');
                 if (tab === 'SHOP_CALCULATOR' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('calculator');
                 if (tab === 'SHOP_POS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.SHOP)) openShopSubTab('pos');
+                if (tab === 'TRAINING_PODCASTS' && canAccessTab(userRoles, userPermissions, permissionMode, Tab.TRAINING)) setActiveTab(Tab.TRAINING);
                 if (tab === 'UPDATE' && canUsePermission(FEATURE_PERMISSION_KEYS.UPDATE_DB_PANEL)) {
                   setUpdatePanelOpen(true);
                 }
@@ -1149,6 +1152,8 @@ const App: React.FC = () => {
             hideTabBar={true}
           />
         );
+      case Tab.TRAINING:
+        return <TrainingWorkspace isDarkMode={isDarkMode} requestedSubTab="podcasts" hideTabBar={false} />;
       default:
         return <SalesDashboard isDarkMode={isDarkMode} itemSortMetric={itemSortMetric} showTooltips={showTooltips} tourStorageKey={getModuleTourStorageKey('sales-analysis', authUser)} />;
     }
@@ -1374,6 +1379,20 @@ const App: React.FC = () => {
                 isActive={activeTab === Tab.SHOP}
                 onClick={() => {
                   setActiveTab(Tab.SHOP);
+                  closeSidebarForMobile();
+                }}
+                isOpen={sidebarOpen}
+                isDarkMode={isDarkMode}
+              />
+            )}
+            {canView(Tab.TRAINING) && (
+              <NavItem
+                tourId="sidebar-training-nav-item"
+                icon={<Headphones size={24} />}
+                label="Training"
+                isActive={activeTab === Tab.TRAINING}
+                onClick={() => {
+                  setActiveTab(Tab.TRAINING);
                   closeSidebarForMobile();
                 }}
                 isOpen={sidebarOpen}

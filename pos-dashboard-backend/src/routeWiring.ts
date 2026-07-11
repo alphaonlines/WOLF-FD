@@ -27,6 +27,7 @@ import { registerCustomObjectionsRoutes } from "./routes/customObjectionsRoutes"
 import { registerBotBotRoutes } from "./routes/botbotRoutes";
 import { registerCompetitorPricingRoutes } from "./routes/competitorPricingRoutes";
 import { registerCompetitorPricingLatestRoutes } from "./routes/competitorPricingLatestRoutes";
+import { registerTrainingRoutes } from "./routes/trainingRoutes";
 import {
   type AuthUserView,
   buildAuthUser,
@@ -200,6 +201,7 @@ export function registerAllRoutes({
   registerBotBotRoutes({ app, pool, requireOwner });
   registerCompetitorPricingRoutes(app);
   registerCompetitorPricingLatestRoutes(app);
+  registerTrainingRoutes(app);
   registerSystemRoutes({
     app,
     pool,

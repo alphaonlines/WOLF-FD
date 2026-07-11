@@ -19,6 +19,16 @@ Live static has been restored to `1.6.3.1554`, while repo metadata may still sho
 - `public/smartcalc/version.json` must match the displayed version produced during build.
 - Visible deploys should bump the display version using Anthony's timestamp style when appropriate.
 
+## Anthony Timestamp Version Style
+
+For WOLF-FD dashboard changes, bump the visible dashboard version on every change using:
+
+- Display/UI version: `0.M.D.HHMM`
+- Package/npm version: matching semver-safe prerelease `0.M.D-HHMM`
+- The last four digits are the local 24-hour change time.
+
+Example: July 4 at 11:48 = display `0.7.4.1148`, package `0.7.4-1148`.
+
 ## Required Checks
 
 ```bash

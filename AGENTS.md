@@ -1,10 +1,10 @@
 ---
-Last Modified: 2026-06-07 12:38 -0400
+Last Modified: 2026-07-10 17:05 EDT
 Modified By: Kali / gpt-5.5
 Related Kanban: t_6a73a6e3
 Project: WOLF FD Dashboard
 Machine: AlphaHS
-Version: 0.6.07.1238
+Version: 0.7.4.1148
 ---
 
 # WOLF FD Dashboard Agent Front Door
@@ -27,6 +27,78 @@ If another file points here, this file wins unless Anthony explicitly says other
 - Database: PostgreSQL-backed POS/reporting data.
 - Current branch when this guide was created: `botbot-tutorial-revive`.
 
+
+
+
+
+
+
+
+## Latest Change - FD Blog File Inventory Recorded
+
+- Timestamp: `2026-07-10 16:36 EDT`.
+- Inventory source: discovered new Furniture Distributors blog/resource-center files under live root `/srv/www/wolf.discount/furnituredistributors/blog/` and staging/temp root `/tmp/fd-blog-resource-center/`.
+- Live files recorded: `index.html`, `will-it-fit.html`, `furniture-style-quiz.html`, `sofa-cleaning-codes.html`, `measure-your-room.html`, `delivery-day-checklist.html`, `manufacturer-spotlights.html`, `styles.css`, `sitemap.xml`.
+- Public URLs verified: `https://furnituredistributors.wolf.discount/blog/` and `https://furnituredistributors.wolf.discount/blog/will-it-fit.html` returned HTTP 200.
+- Rollback/backup: AGENTS backup `/home/alphahs/backups/WOLF-FD-AGENTS-before-fd-blog-inventory-20260710-163643.md`; existing blog backups remain `/home/alphahs/backups/fd-blog-20260710-161611/` and `/home/alphahs/backups/fd-blog-fit-20260710-162050/`.
+- Risk: documentation/inventory update only; no live site files, services, nginx config, cron jobs, or databases changed.
+
+
+## Latest Change - Outdoor Deals Blog Page Added
+
+- Timestamp: `2026-07-10 17:05 EDT`.
+- Change: added `/srv/www/wolf.discount/furnituredistributors/blog/outdoor-furniture-deals-morehead-newport.html` with three outdoor product images, linked it from the Resource Center home page, and included it in the blog sitemap for the Furniture Distributors outdoor social/Google post.
+- Rollback/backup: `/home/alphahs/backups/fd-blog-outdoor-20260710-165703/` plus AGENTS backup `/home/alphahs/backups/WOLF-FD-AGENTS-before-outdoor-blog-20260710-1705.md`.
+- Validation: public blog page returned HTTP 200 and rendered cleanly with product photos; Resource Center home returned HTTP 200 and contains the outdoor deals link.
+- Risk: static files only; no services restarted or nginx config changed.
+
+## Latest Change - Will It Fit Calculator Added
+
+- Timestamp: `2026-07-10 16:23 EDT`.
+- Change: added a static `Will It Fit?` furniture fit calculator at `/srv/www/wolf.discount/furnituredistributors/blog/will-it-fit.html`, linked it from the Resource Center nav/home CTA, and updated `/srv/www/wolf.discount/furnituredistributors/blog/sitemap.xml`.
+- Rollback/backup: `/home/alphahs/backups/fd-blog-fit-20260710-162050/` plus AGENTS backup `/home/alphahs/backups/WOLF-FD-AGENTS-before-fd-fit-calculator-20260710-1623.md`.
+- Validation: public `https://furnituredistributors.wolf.discount/blog/will-it-fit.html` returned HTTP 200; browser DOM check confirmed the calculator JavaScript renders a result; updated blog sitemap returned HTTP 200.
+- Risk: static files only; no services restarted or nginx config changed.
+
+## Latest Change - Public Resource Center / Blog Added
+
+- Timestamp: `2026-07-10 16:19 EDT`.
+- Change: added a first-pass public Furniture Distributors Resource Center/blog under `/srv/www/wolf.discount/furnituredistributors/blog/` and added a `Resource Center` quick-link to `/srv/www/wolf.discount/furnituredistributors/index.html`.
+- Pages added: `index.html`, `sofa-cleaning-codes.html`, `measure-your-room.html`, `delivery-day-checklist.html`, `manufacturer-spotlights.html`, `furniture-style-quiz.html`, `styles.css`, `sitemap.xml`.
+- Rollback/backup: `/home/alphahs/backups/fd-blog-20260710-161611/` plus AGENTS backup `/home/alphahs/backups/WOLF-FD-AGENTS-before-fd-resource-center-20260710-1619.md`.
+- Validation: public `https://furnituredistributors.wolf.discount/blog/` and starter guide pages returned HTTP 200; stylesheet returned HTTP 200; browser render check showed the Resource Center page readable/polished; quiz JavaScript result display verified via browser DOM.
+- Risk: static files only; no services restarted or nginx config changed.
+
+## Latest Change - Manager Specials Upload Page Restored
+
+- Timestamp: `2026-07-07 10:12 EDT`.
+- Root cause: `/srv/www/wolf.discount/fd/manager-specials-upload.html` was missing, so nginx `location ^~ /fd/` fell back to `/fd/index.html`; the URL changed but the FD dashboard/login page rendered instead of the uploader.
+- Fix: restored known-good uploader HTML from `/home/alphahs/backups/wolf-fd-live-before-kiosk-detail-20260621-170625/manager-specials-upload.html` to live `/srv/www/wolf.discount/fd/manager-specials-upload.html` and copied it into source at `/home/alphahs/WOLF-FD/public/manager-specials-upload.html` so future Vite builds keep it.
+- Rollback/backup: `/home/alphahs/backups/manager-specials-upload-restore-20260707-101138/` and AGENTS backup `/home/alphahs/backups/WOLF-FD-AGENTS-before-manager-specials-upload-restore-20260707-101222.md`.
+- Validation: public `/fd/manager-specials-upload.html` returns `200`, title `Manager Specials Uploader | WOLF FD`, contains file input and posts to `/fd-upload-csv`; browser snapshot shows `Browse Files`; adjacent `/fd/` returns `200`; `/fd/api/health` returns `200`.
+
+## Latest Change - Training Podcast Media Playback Fixed
+
+- Version stamp: `1.6.24.1636` / package `0.6.24-1636`.
+- Root cause: the training page pointed at the podcast file, but the backend had no streaming route for the media asset; unauthenticated media probes returned 401/404 and the browser video player could not get byte ranges.
+- Fix: added allowlisted training media streaming route with `Range` support for `jackson-feature-catnapper.mp4`, allowed that media path through auth middleware, kept frontend source at the deployed nginx path `/fd/api/api/training/media/jackson-feature-catnapper.mp4`, rebuilt/redeployed frontend, rebuilt/restarted `pos-api`.
+- Validation: `npm run build`; `cd pos-dashboard-backend && npm run build`; live `/fd/smartcalc/version.json` returns `1.6.24.1636`; live `/fd/api/health` returns `{"ok":true,"db":1}`; live media request with `Range: bytes=0-1023` returns `206 Partial Content`, `Content-Type: video/mp4`, `Accept-Ranges: bytes`, and `Content-Range: bytes 0-1023/877780526`.
+
+## Latest Change - Dashboard Version + Training Module Enabled
+
+- Version stamp: `1.6.24.1614` / package `0.6.24-1614`.
+- Root cause: the dashboard display version was still old, and the Training podcast card had source/live markers but the Training module itself was not fully wired into the app shell/backend permission catalog.
+- Fix: bumped `package.json` display version, synced Smart Calc version files, wired `TRAINING_PODCASTS` dashboard navigation to `Tab.TRAINING`, added the Training sidebar item and `TrainingWorkspace` render case, added backend permission catalog entries for `module.training` and `card.dashboard.training_podcasts`, and enabled those permissions for Owner/Manager/Sales/Marketing roles in the live DB.
+- Live backup before deploy: `/home/alphahs/backups/wolf-fd-live-before-version-training-20260624-162530`.
+- Validation: `npm run build`; `cd pos-dashboard-backend && npm run build`; live `/fd/smartcalc/version.json` returns `1.6.24.1614`; live `/fd/api/health` returns `{"ok":true,"db":1}`; live asset `index-CONvJAAC.js` contains `1.6.24.1614`, `training-podcasts`, `TRAINING_PODCASTS`, `sidebar-training-nav-item`, and `Jackson & Catnapper`; live role permissions verified true for Owner/Manager/Sales/Marketing and false for Support.
+
+## Latest Change - Training Podcast Dashboard Card Forced Visible
+
+- Version stamp: 0.6.24.1609.
+- Root cause: the Training/Podcasts card existed and was default-visible in source, but older customized dashboard localStorage could keep it hidden for users who had saved card visibility before the podcast card was added.
+- Fix: `components/DashboardOverview.tsx` now forces `training-podcasts` into the visible-card set when the card is available.
+- Live backup before deploy: `/home/alphahs/backups/wolf-fd-live-before-training-card-force-20260624-160935`.
+- Validation: `npm run build`; deploy-marker checks for `Finance Cost`, `fd-sales-analysis-card-order`, `SHOP_CALCULATOR`, `AMP_FDCONNECT`, `AMP_KIOSKS`, `training-podcasts`, and `TRAINING_PODCASTS`; `git diff --check`; public `/fd/` returned 200; public `/fd/api/health` returned `{"ok":true,"db":1}`; live asset `index-Dwaphq9I.js` contains `training-podcasts`, `TRAINING_PODCASTS`, and `Jackson & Catnapper`.
 
 ## Latest Change - EZPro Import Date Basis Restored
 

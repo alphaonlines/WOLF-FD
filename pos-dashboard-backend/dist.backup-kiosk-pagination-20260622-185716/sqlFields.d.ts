@@ -1,0 +1,12 @@
+export declare const SAFE_GRAND_TOTAL = "\n  CASE\n    WHEN grand_total IS NULL OR grand_total <> grand_total THEN 0\n    ELSE grand_total\n  END\n";
+export declare const SAFE_PROFIT = "\n  CASE\n    WHEN profit IS NULL OR profit <> profit THEN 0\n    ELSE profit\n  END\n";
+export declare const SAFE_TOTAL_FINANCE_AMT = "\n  CASE\n    WHEN total_finance_amt IS NULL OR total_finance_amt <> total_finance_amt THEN 0\n    ELSE total_finance_amt\n  END\n";
+export declare const SAFE_FINANCE_FEE = "\n  CASE\n    WHEN finance_fee IS NULL OR finance_fee <> finance_fee THEN 0\n    ELSE finance_fee\n  END\n";
+export declare const SAFE_FINANCE_BALANCE = "\n  CASE\n    WHEN finance_balance IS NULL OR finance_balance <> finance_balance THEN 0\n    ELSE finance_balance\n  END\n";
+export type PosDateBasis = "delivered" | "written";
+export declare const ITEM_DATE_FIELD = "delivery_confirmed_date";
+export declare const WRITTEN_DATE_FIELD = "sale_date";
+export declare const normalizeDateBasis: (value: unknown) => PosDateBasis;
+export declare const dateFieldForBasis: (value: unknown) => string;
+export declare const prefixedDateField: (p: string) => string;
+export declare const prefixedDateFieldForBasis: (value: unknown, p: string) => string;

@@ -1,0 +1,14 @@
+export declare function parseDateParam(v: any, fallback: string): string;
+export declare function parseTextParam(v: any): string | null;
+export declare function parseTaskStatus(v: any): "TODO" | "IN_PROGRESS" | "DONE" | null;
+export declare function parseTaskPriority(v: any): "low" | "medium" | "high" | null;
+export declare function parseTaskDeadline(v: any): string | null;
+export declare function parseIntBody(v: any): number | null;
+export declare function parseTaskIdParam(v: any): number | null;
+export declare const CRM_STAGES: readonly ["New", "Contacted", "Appointment", "Quoted", "Won", "Lost"];
+export declare const CRM_CHANNELS: readonly ["SMS", "Webchat", "Facebook", "Instagram", "Phone"];
+export declare function parseCrmLeadId(v: any): string | null;
+export declare function parseCrmStage(v: any): (typeof CRM_STAGES)[number] | null;
+export declare function parseCrmChannel(v: any): (typeof CRM_CHANNELS)[number] | null;
+export declare function parseCrmDate(v: any): string | null;
+export declare function parseCrmBool(v: any): boolean | null;

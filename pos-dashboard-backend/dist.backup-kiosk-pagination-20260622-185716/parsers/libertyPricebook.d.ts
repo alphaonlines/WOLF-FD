@@ -1,0 +1,52 @@
+type ExecFileAsyncLike = (file: string, args?: readonly string[] | null, options?: {
+    timeout?: number;
+}) => Promise<{
+    stdout?: string | Buffer;
+    stderr?: string | Buffer;
+}>;
+export type ParsedManufacturerCatalogRow = {
+    manufacturer: string;
+    manufacturerSlug: string;
+    collectionCode: string;
+    collectionName: string;
+    category: string;
+    productType: string;
+    sku: string;
+    description: string;
+    colorFinish: string;
+    colorFamily: string;
+    material: string;
+    shape: string;
+    dimensionsText: string;
+    widthInches: number | null;
+    depthInches: number | null;
+    heightInches: number | null;
+    cubes: number | null;
+    weightLbs: number | null;
+    basePrice: number | null;
+    isSet: boolean;
+    setPieceCount: number | null;
+    isSwatch: boolean;
+    isSample: boolean;
+    isNewProduct: boolean;
+    upholsteryCover: string;
+    hardwareOptions: string[];
+    cushionOptions: string[];
+    featureTags: string[];
+    searchKeywords: string[];
+    imageUrls: string[];
+    sourceNote: string;
+    sourceSortOrder: number;
+};
+export type ParsedManufacturerReferenceNote = {
+    manufacturer: string;
+    manufacturerSlug: string;
+    noteType: string;
+    title: string;
+    content: string;
+    videoUrl?: string;
+    sourceSortOrder: number;
+};
+export declare function parseLibertyPricebookPdf(absolutePath: string, execFileAsync: ExecFileAsyncLike): Promise<ParsedManufacturerCatalogRow[]>;
+export declare function parseLibertyReferenceNotesFromPdf(absolutePath: string, execFileAsync: ExecFileAsyncLike): Promise<ParsedManufacturerReferenceNote[]>;
+export {};

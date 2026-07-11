@@ -49,3 +49,13 @@ export const dateFieldForBasis = (value: unknown): string => {
 
 export const prefixedDateField = (p: string) => `${p}.${ITEM_DATE_FIELD}`;
 export const prefixedDateFieldForBasis = (value: unknown, p: string) => `${p}.${dateFieldForBasis(value)}`;
+
+// Item imports are now stored by report basis so written-date and delivered-date
+// item reports can coexist for the same sale_id. Legacy rows may have NULL
+// date_basis until the next basis-specific import replaces them, so route SQL
+// keeps NULL rows visible as a compatibility fallback.
+export const itemDateBasisFilter = (value: unknown, tableAlias = ""): string => {
+  const prefix = tableAlias ? `${tableAlias}.` : "";
+  const basis = normalizeDateBasis(value);
+  return `(${prefix}date_basis = '${basis}' OR ${prefix}date_basis IS NULL)`;
+};

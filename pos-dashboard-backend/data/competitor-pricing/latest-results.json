@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-16T12:44:49.890775+00:00",
+  "generatedAt": "2026-06-23T08:32:08.163541+00:00",
   "results": [
     {
       "sourceRow": 4,
@@ -35,7 +35,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:31:17.973288+00:00"
+      "checkedAt": "2026-06-23T08:30:02.122317+00:00"
     },
     {
       "sourceRow": 5,
@@ -71,7 +71,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:32:33.415200+00:00"
+      "checkedAt": "2026-06-23T08:30:02.126832+00:00"
     },
     {
       "sourceRow": 6,
@@ -83,7 +83,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
-      "remarks": "Put on Floor",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -107,7 +107,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:32:49.203539+00:00"
+      "checkedAt": "2026-06-23T08:30:02.145762+00:00"
     },
     {
       "sourceRow": 7,
@@ -143,7 +143,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:33:02.511807+00:00"
+      "checkedAt": "2026-06-23T08:30:02.149920+00:00"
     },
     {
       "sourceRow": 8,
@@ -179,7 +179,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:33:15.875710+00:00"
+      "checkedAt": "2026-06-23T08:30:02.150730+00:00"
     },
     {
       "sourceRow": 9,
@@ -215,7 +215,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:33:32.907693+00:00"
+      "checkedAt": "2026-06-23T08:30:02.156166+00:00"
     },
     {
       "sourceRow": 10,
@@ -251,7 +251,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:34:00.610187+00:00"
+      "checkedAt": "2026-06-23T08:30:02.160254+00:00"
     },
     {
       "sourceRow": 11,
@@ -287,7 +287,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:34:17.504448+00:00"
+      "checkedAt": "2026-06-23T08:30:02.166301+00:00"
     },
     {
       "sourceRow": 12,
@@ -323,7 +323,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:34:33.444647+00:00"
+      "checkedAt": "2026-06-23T08:30:02.167837+00:00"
     },
     {
       "sourceRow": 13,
@@ -359,7 +359,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:34:49.321846+00:00"
+      "checkedAt": "2026-06-23T08:30:02.169187+00:00"
     },
     {
       "sourceRow": 14,
@@ -395,7 +395,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:35:04.885501+00:00"
+      "checkedAt": "2026-06-23T08:30:02.172411+00:00"
     },
     {
       "sourceRow": 15,
@@ -431,7 +431,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:35:21.129578+00:00"
+      "checkedAt": "2026-06-23T08:30:02.176057+00:00"
     },
     {
       "sourceRow": 16,
@@ -467,7 +467,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:35:37.484712+00:00"
+      "checkedAt": "2026-06-23T08:30:02.181212+00:00"
     },
     {
       "sourceRow": 17,
@@ -503,7 +503,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:35:54.519325+00:00"
+      "checkedAt": "2026-06-23T08:30:02.185573+00:00"
     },
     {
       "sourceRow": 18,
@@ -539,7 +539,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:35:57.612973+00:00"
+      "checkedAt": "2026-06-23T08:30:02.188431+00:00"
     },
     {
       "sourceRow": 19,
@@ -575,7 +575,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:36:14.498618+00:00"
+      "checkedAt": "2026-06-23T08:30:02.190261+00:00"
     },
     {
       "sourceRow": 23,
@@ -611,7 +611,7 @@
       "lowestReliableCompetitorPrice": "$449.99",
       "storeMinusLowest": "$-150.99",
       "recommendation": "you are $150.99 lower than competitor",
-      "checkedAt": "2026-06-16T08:36:14.510536+00:00"
+      "checkedAt": "2026-06-23T08:30:02.195278+00:00"
     },
     {
       "sourceRow": 24,
@@ -647,7 +647,7 @@
       "lowestReliableCompetitorPrice": "$179.99",
       "storeMinusLowest": "$19.01",
       "recommendation": "you are $19.01 higher than competitor",
-      "checkedAt": "2026-06-16T08:36:14.514705+00:00"
+      "checkedAt": "2026-06-23T08:30:02.199524+00:00"
     },
     {
       "sourceRow": 25,
@@ -683,7 +683,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:36:14.517149+00:00"
+      "checkedAt": "2026-06-23T08:30:02.200598+00:00"
     },
     {
       "sourceRow": 26,
@@ -719,7 +719,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:36:14.520079+00:00"
+      "checkedAt": "2026-06-23T08:30:02.202000+00:00"
     },
     {
       "sourceRow": 27,
@@ -755,7 +755,7 @@
       "lowestReliableCompetitorPrice": "$40.00",
       "storeMinusLowest": "$259.00",
       "recommendation": "you are $259.00 higher than competitor",
-      "checkedAt": "2026-06-16T08:36:14.548123+00:00"
+      "checkedAt": "2026-06-23T08:30:02.207327+00:00"
     },
     {
       "sourceRow": 28,
@@ -791,7 +791,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:36:14.571476+00:00"
+      "checkedAt": "2026-06-23T08:30:02.226203+00:00"
     },
     {
       "sourceRow": 29,
@@ -827,7 +827,7 @@
       "lowestReliableCompetitorPrice": "$499.99",
       "storeMinusLowest": "$899.01",
       "recommendation": "you are $899.01 higher than competitor",
-      "checkedAt": "2026-06-16T08:36:14.578498+00:00"
+      "checkedAt": "2026-06-23T08:30:02.234499+00:00"
     },
     {
       "sourceRow": 30,
@@ -863,7 +863,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:36:30.505632+00:00"
+      "checkedAt": "2026-06-23T08:30:02.235848+00:00"
     },
     {
       "sourceRow": 31,
@@ -899,7 +899,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:36:45.119742+00:00"
+      "checkedAt": "2026-06-23T08:30:02.236940+00:00"
     },
     {
       "sourceRow": 32,
@@ -935,7 +935,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:37:58.959065+00:00"
+      "checkedAt": "2026-06-23T08:30:02.240077+00:00"
     },
     {
       "sourceRow": 33,
@@ -971,7 +971,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:38:49.871948+00:00"
+      "checkedAt": "2026-06-23T08:30:02.244806+00:00"
     },
     {
       "sourceRow": 34,
@@ -1007,7 +1007,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:40:05.591641+00:00"
+      "checkedAt": "2026-06-23T08:30:02.247912+00:00"
     },
     {
       "sourceRow": 35,
@@ -1043,7 +1043,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:41:19.274341+00:00"
+      "checkedAt": "2026-06-23T08:30:02.250753+00:00"
     },
     {
       "sourceRow": 36,
@@ -1079,7 +1079,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:42:32.445622+00:00"
+      "checkedAt": "2026-06-23T08:30:02.256326+00:00"
     },
     {
       "sourceRow": 37,
@@ -1115,7 +1115,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:43:46.322578+00:00"
+      "checkedAt": "2026-06-23T08:30:02.262954+00:00"
     },
     {
       "sourceRow": 38,
@@ -1151,7 +1151,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:45:00.753790+00:00"
+      "checkedAt": "2026-06-23T08:30:02.266243+00:00"
     },
     {
       "sourceRow": 39,
@@ -1187,7 +1187,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:46:14.869222+00:00"
+      "checkedAt": "2026-06-23T08:30:02.269057+00:00"
     },
     {
       "sourceRow": 40,
@@ -1223,7 +1223,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:47:28.990122+00:00"
+      "checkedAt": "2026-06-23T08:30:02.272353+00:00"
     },
     {
       "sourceRow": 41,
@@ -1259,7 +1259,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:47:47.677972+00:00"
+      "checkedAt": "2026-06-23T08:30:02.273657+00:00"
     },
     {
       "sourceRow": 42,
@@ -1295,7 +1295,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:49:04.775956+00:00"
+      "checkedAt": "2026-06-23T08:30:02.281149+00:00"
     },
     {
       "sourceRow": 43,
@@ -1331,15 +1331,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:50:25.009220+00:00"
+      "checkedAt": "2026-06-23T08:30:02.285441+00:00"
     },
     {
       "sourceRow": 44,
       "vendor": "Ashley",
       "sku": "B251-31/46/64/67/98/92",
       "description": "Juraro",
-      "storePriceText": "7PC $1,299 K $1,499",
-      "storePrice": "$1,299",
+      "storePriceText": "6PC Queen $999",
+      "storePrice": "$999",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -1367,7 +1367,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:51:42.260829+00:00"
+      "checkedAt": "2026-06-23T08:30:02.289453+00:00"
     },
     {
       "sourceRow": 45,
@@ -1403,7 +1403,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:52:00.582734+00:00"
+      "checkedAt": "2026-06-23T08:30:02.291022+00:00"
     },
     {
       "sourceRow": 46,
@@ -1439,7 +1439,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:53:17.977325+00:00"
+      "checkedAt": "2026-06-23T08:30:02.297398+00:00"
     },
     {
       "sourceRow": 47,
@@ -1475,7 +1475,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:54:35.657158+00:00"
+      "checkedAt": "2026-06-23T08:30:02.300454+00:00"
     },
     {
       "sourceRow": 48,
@@ -1511,7 +1511,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:55:52.360394+00:00"
+      "checkedAt": "2026-06-23T08:30:02.304169+00:00"
     },
     {
       "sourceRow": 49,
@@ -1523,7 +1523,7 @@
       "regularPrice": "$459",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "Put on Floor",
-      "remarks": "Put on Floor",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -1547,7 +1547,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:55:52.366053+00:00"
+      "checkedAt": "2026-06-23T08:30:02.309525+00:00"
     },
     {
       "sourceRow": 50,
@@ -1559,7 +1559,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
-      "remarks": "X\nMissing: B440-99, B440-46 (on PO)",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -1583,7 +1583,7 @@
       "lowestReliableCompetitorPrice": "$1,149.98",
       "storeMinusLowest": "$349.02",
       "recommendation": "you are $349.02 higher than competitor",
-      "checkedAt": "2026-06-16T08:56:45.683504+00:00"
+      "checkedAt": "2026-06-23T08:30:02.314301+00:00"
     },
     {
       "sourceRow": 51,
@@ -1619,7 +1619,7 @@
       "lowestReliableCompetitorPrice": "$1,349.98",
       "storeMinusLowest": "$149.02",
       "recommendation": "you are $149.02 higher than competitor",
-      "checkedAt": "2026-06-16T08:56:45.692560+00:00"
+      "checkedAt": "2026-06-23T08:30:02.323833+00:00"
     },
     {
       "sourceRow": 52,
@@ -1655,7 +1655,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:58:04.031633+00:00"
+      "checkedAt": "2026-06-23T08:30:02.327572+00:00"
     },
     {
       "sourceRow": 53,
@@ -1691,7 +1691,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:58:22.752156+00:00"
+      "checkedAt": "2026-06-23T08:30:02.328972+00:00"
     },
     {
       "sourceRow": 54,
@@ -1727,7 +1727,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T08:59:39.943821+00:00"
+      "checkedAt": "2026-06-23T08:30:02.331788+00:00"
     },
     {
       "sourceRow": 55,
@@ -1739,7 +1739,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
-      "remarks": "X",
+      "remarks": "SOLD",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -1763,7 +1763,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:00:19.006426+00:00"
+      "checkedAt": "2026-06-23T08:30:02.335600+00:00"
     },
     {
       "sourceRow": 56,
@@ -1799,7 +1799,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:01:36.065655+00:00"
+      "checkedAt": "2026-06-23T08:30:02.342128+00:00"
     },
     {
       "sourceRow": 57,
@@ -1835,7 +1835,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:02:18.705865+00:00"
+      "checkedAt": "2026-06-23T08:30:02.345763+00:00"
     },
     {
       "sourceRow": 58,
@@ -1871,7 +1871,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:02:38.698264+00:00"
+      "checkedAt": "2026-06-23T08:30:02.350489+00:00"
     },
     {
       "sourceRow": 59,
@@ -1907,7 +1907,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:03:55.199075+00:00"
+      "checkedAt": "2026-06-23T08:30:02.359452+00:00"
     },
     {
       "sourceRow": 60,
@@ -1943,15 +1943,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:05:09.131413+00:00"
+      "checkedAt": "2026-06-23T08:30:02.362637+00:00"
     },
     {
       "sourceRow": 61,
       "vendor": "Ashley",
       "sku": "B647-131/146/36/56/58/97",
       "description": "Bolanburg",
-      "storePriceText": "7PC Q $1,999,          King $2,199",
-      "storePrice": "$1,999,",
+      "storePriceText": "7PC Q $2,299,          King $2,499",
+      "storePrice": "$2,299,",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -1979,7 +1979,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:06:02.525958+00:00"
+      "checkedAt": "2026-06-23T08:30:02.367160+00:00"
     },
     {
       "sourceRow": 62,
@@ -2015,7 +2015,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:07:08.620441+00:00"
+      "checkedAt": "2026-06-23T08:30:02.370722+00:00"
     },
     {
       "sourceRow": 63,
@@ -2051,7 +2051,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:08:25.423402+00:00"
+      "checkedAt": "2026-06-23T08:30:02.374537+00:00"
     },
     {
       "sourceRow": 64,
@@ -2087,7 +2087,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:09:42.766575+00:00"
+      "checkedAt": "2026-06-23T08:30:02.377697+00:00"
     },
     {
       "sourceRow": 65,
@@ -2123,7 +2123,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:10:59.839032+00:00"
+      "checkedAt": "2026-06-23T08:30:02.383955+00:00"
     },
     {
       "sourceRow": 66,
@@ -2159,7 +2159,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:12:17.284006+00:00"
+      "checkedAt": "2026-06-23T08:30:02.389065+00:00"
     },
     {
       "sourceRow": 67,
@@ -2195,7 +2195,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:13:34.436663+00:00"
+      "checkedAt": "2026-06-23T08:30:02.393303+00:00"
     },
     {
       "sourceRow": 68,
@@ -2231,15 +2231,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:13:50.298691+00:00"
+      "checkedAt": "2026-06-23T08:30:02.394237+00:00"
     },
     {
       "sourceRow": 69,
       "vendor": "Ashley",
       "sku": "B731-31/36/46/54S/57",
       "description": "Hyndell",
-      "storePriceText": "6PC Q $1,999",
-      "storePrice": "$1,999",
+      "storePriceText": "6PC Q $1,699",
+      "storePrice": "$1,699",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -2267,7 +2267,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:14:20.932921+00:00"
+      "checkedAt": "2026-06-23T08:30:02.397503+00:00"
     },
     {
       "sourceRow": 70,
@@ -2303,7 +2303,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:15:38.676425+00:00"
+      "checkedAt": "2026-06-23T08:30:02.403022+00:00"
     },
     {
       "sourceRow": 71,
@@ -2339,7 +2339,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:16:09.008984+00:00"
+      "checkedAt": "2026-06-23T08:30:02.407622+00:00"
     },
     {
       "sourceRow": 72,
@@ -2375,7 +2375,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:16:50.876380+00:00"
+      "checkedAt": "2026-06-23T08:30:02.411022+00:00"
     },
     {
       "sourceRow": 73,
@@ -2411,7 +2411,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:17:42.846107+00:00"
+      "checkedAt": "2026-06-23T08:30:02.415984+00:00"
     },
     {
       "sourceRow": 74,
@@ -2447,7 +2447,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:18:59.483971+00:00"
+      "checkedAt": "2026-06-23T08:30:02.419809+00:00"
     },
     {
       "sourceRow": 75,
@@ -2483,7 +2483,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:19:15.372274+00:00"
+      "checkedAt": "2026-06-23T08:30:02.420814+00:00"
     },
     {
       "sourceRow": 76,
@@ -2519,7 +2519,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:20:32.196642+00:00"
+      "checkedAt": "2026-06-23T08:30:02.427182+00:00"
     },
     {
       "sourceRow": 77,
@@ -2555,7 +2555,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:21:25.528512+00:00"
+      "checkedAt": "2026-06-23T08:30:02.435520+00:00"
     },
     {
       "sourceRow": 78,
@@ -2591,7 +2591,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:21:44.243273+00:00"
+      "checkedAt": "2026-06-23T08:30:02.437948+00:00"
     },
     {
       "sourceRow": 79,
@@ -2627,7 +2627,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:23:02.419698+00:00"
+      "checkedAt": "2026-06-23T08:30:02.441483+00:00"
     },
     {
       "sourceRow": 80,
@@ -2663,7 +2663,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:23:20.761524+00:00"
+      "checkedAt": "2026-06-23T08:30:02.442614+00:00"
     },
     {
       "sourceRow": 81,
@@ -2699,7 +2699,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:23:39.422933+00:00"
+      "checkedAt": "2026-06-23T08:30:02.443684+00:00"
     },
     {
       "sourceRow": 82,
@@ -2735,7 +2735,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:24:56.351478+00:00"
+      "checkedAt": "2026-06-23T08:30:02.446705+00:00"
     },
     {
       "sourceRow": 83,
@@ -2771,15 +2771,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:25:13.761445+00:00"
+      "checkedAt": "2026-06-23T08:30:02.447598+00:00"
     },
     {
       "sourceRow": 84,
       "vendor": "Ashley",
       "sku": "B777-31/36/46/56S/158/97",
       "description": "Kanwyn Upholstered Storage",
-      "storePriceText": "7PC Q $3,999/ K $4,199",
-      "storePrice": "$3,999",
+      "storePriceText": "7PC Q $3,699/ K $3,899",
+      "storePrice": "$3,699",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "X Q Bed",
@@ -2807,7 +2807,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:25:32.716289+00:00"
+      "checkedAt": "2026-06-23T08:30:02.449551+00:00"
     },
     {
       "sourceRow": 85,
@@ -2843,7 +2843,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:25:51.255721+00:00"
+      "checkedAt": "2026-06-23T08:30:02.450823+00:00"
     },
     {
       "sourceRow": 86,
@@ -2879,7 +2879,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:26:10.320056+00:00"
+      "checkedAt": "2026-06-23T08:30:02.451931+00:00"
     },
     {
       "sourceRow": 87,
@@ -2915,27 +2915,27 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:26:29.298804+00:00"
+      "checkedAt": "2026-06-23T08:30:02.453313+00:00"
     },
     {
       "sourceRow": 88,
       "vendor": "Ashley",
-      "sku": "B788-46/93",
+      "sku": "B788-93",
       "description": "",
-      "storePriceText": "Chest $899/ NS $349",
-      "storePrice": "$899",
+      "storePriceText": "NS $349",
+      "storePrice": "$349",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
-      "remarks": "Transfer from FD7 to FD5",
+      "remarks": "",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
         "competitor": "Ashley",
-        "title": "Site:ashleyfurniture.com B788-46 - Wikipedia",
+        "title": "",
         "price": "",
-        "url": "https://en.wikipedia.org/wiki/Site%3Aashleyfurniture.com_B788-46",
-        "confidence": "high",
+        "url": "",
+        "confidence": "none",
         "matchedTokens": [],
         "notes": []
       },
@@ -2943,7 +2943,7 @@
         "competitor": "Furniture4LessNC",
         "title": "Skip to content",
         "price": "",
-        "url": "https://furniture4lessnc.com/search?q=B788-46/93%20#site-main",
+        "url": "https://furniture4lessnc.com/search?q=B788-93+#site-main",
         "confidence": "none",
         "matchedTokens": [],
         "notes": []
@@ -2951,7 +2951,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:26:59.791548+00:00"
+      "checkedAt": "2026-06-23T08:30:14.569388+00:00"
     },
     {
       "sourceRow": 89,
@@ -2987,7 +2987,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:27:18.831978+00:00"
+      "checkedAt": "2026-06-23T08:30:14.572989+00:00"
     },
     {
       "sourceRow": 90,
@@ -3023,7 +3023,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:27:37.834897+00:00"
+      "checkedAt": "2026-06-23T08:30:14.575337+00:00"
     },
     {
       "sourceRow": 91,
@@ -3059,7 +3059,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:27:56.394989+00:00"
+      "checkedAt": "2026-06-23T08:30:14.577854+00:00"
     },
     {
       "sourceRow": 92,
@@ -3095,7 +3095,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:29:14.190887+00:00"
+      "checkedAt": "2026-06-23T08:30:14.581852+00:00"
     },
     {
       "sourceRow": 93,
@@ -3131,7 +3131,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:30:31.675260+00:00"
+      "checkedAt": "2026-06-23T08:30:14.607544+00:00"
     },
     {
       "sourceRow": 95,
@@ -3167,7 +3167,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:31:48.251892+00:00"
+      "checkedAt": "2026-06-23T08:30:14.613105+00:00"
     },
     {
       "sourceRow": 96,
@@ -3203,7 +3203,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:32:07.216957+00:00"
+      "checkedAt": "2026-06-23T08:30:14.616835+00:00"
     },
     {
       "sourceRow": 97,
@@ -3239,7 +3239,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:33:23.718785+00:00"
+      "checkedAt": "2026-06-23T08:30:14.629248+00:00"
     },
     {
       "sourceRow": 98,
@@ -3275,7 +3275,7 @@
       "lowestReliableCompetitorPrice": "$469.99",
       "storeMinusLowest": "$129.01",
       "recommendation": "you are $129.01 higher than competitor",
-      "checkedAt": "2026-06-16T09:33:23.724730+00:00"
+      "checkedAt": "2026-06-23T08:30:14.647037+00:00"
     },
     {
       "sourceRow": 99,
@@ -3311,7 +3311,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:33:23.728459+00:00"
+      "checkedAt": "2026-06-23T08:30:14.656874+00:00"
     },
     {
       "sourceRow": 100,
@@ -3347,7 +3347,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:33:23.757955+00:00"
+      "checkedAt": "2026-06-23T08:30:14.670887+00:00"
     },
     {
       "sourceRow": 101,
@@ -3383,7 +3383,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:33:23.769113+00:00"
+      "checkedAt": "2026-06-23T08:30:14.675501+00:00"
     },
     {
       "sourceRow": 102,
@@ -3419,7 +3419,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:33:23.778967+00:00"
+      "checkedAt": "2026-06-23T08:30:14.679871+00:00"
     },
     {
       "sourceRow": 103,
@@ -3455,7 +3455,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:34:04.126647+00:00"
+      "checkedAt": "2026-06-23T08:30:14.682924+00:00"
     },
     {
       "sourceRow": 104,
@@ -3491,7 +3491,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:34:04.127863+00:00"
+      "checkedAt": "2026-06-23T08:30:14.683462+00:00"
     },
     {
       "sourceRow": 105,
@@ -3527,7 +3527,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:35:20.782200+00:00"
+      "checkedAt": "2026-06-23T08:30:14.698934+00:00"
     },
     {
       "sourceRow": 106,
@@ -3563,15 +3563,15 @@
       "lowestReliableCompetitorPrice": "$999.99",
       "storeMinusLowest": "$-300.99",
       "recommendation": "you are $300.99 lower than competitor",
-      "checkedAt": "2026-06-16T09:35:20.788540+00:00"
+      "checkedAt": "2026-06-23T08:30:14.703874+00:00"
     },
     {
       "sourceRow": 107,
       "vendor": "Ashley",
       "sku": "D397-32/124 (4)",
       "description": "Rokane",
-      "storePriceText": "$699",
-      "storePrice": "$699",
+      "storePriceText": "$599",
+      "storePrice": "$599",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -3599,7 +3599,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:36:02.405814+00:00"
+      "checkedAt": "2026-06-23T08:30:14.707051+00:00"
     },
     {
       "sourceRow": 108,
@@ -3635,7 +3635,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:36:02.415267+00:00"
+      "checkedAt": "2026-06-23T08:30:14.710983+00:00"
     },
     {
       "sourceRow": 109,
@@ -3671,7 +3671,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:36:02.421931+00:00"
+      "checkedAt": "2026-06-23T08:30:14.717683+00:00"
     },
     {
       "sourceRow": 110,
@@ -3707,7 +3707,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:36:43.291234+00:00"
+      "checkedAt": "2026-06-23T08:30:14.729660+00:00"
     },
     {
       "sourceRow": 111,
@@ -3743,7 +3743,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:36:43.296130+00:00"
+      "checkedAt": "2026-06-23T08:30:14.735688+00:00"
     },
     {
       "sourceRow": 112,
@@ -3779,7 +3779,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:37:35.469566+00:00"
+      "checkedAt": "2026-06-23T08:30:14.738532+00:00"
     },
     {
       "sourceRow": 113,
@@ -3815,7 +3815,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:38:16.175260+00:00"
+      "checkedAt": "2026-06-23T08:30:14.746545+00:00"
     },
     {
       "sourceRow": 114,
@@ -3851,7 +3851,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:39:32.994441+00:00"
+      "checkedAt": "2026-06-23T08:30:14.752391+00:00"
     },
     {
       "sourceRow": 115,
@@ -3887,7 +3887,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:40:15.234148+00:00"
+      "checkedAt": "2026-06-23T08:30:14.755031+00:00"
     },
     {
       "sourceRow": 116,
@@ -3923,7 +3923,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:40:15.241191+00:00"
+      "checkedAt": "2026-06-23T08:30:14.758519+00:00"
     },
     {
       "sourceRow": 117,
@@ -3959,7 +3959,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:40:15.247351+00:00"
+      "checkedAt": "2026-06-23T08:30:14.761860+00:00"
     },
     {
       "sourceRow": 118,
@@ -3995,7 +3995,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:41:31.670255+00:00"
+      "checkedAt": "2026-06-23T08:30:14.775559+00:00"
     },
     {
       "sourceRow": 119,
@@ -4031,7 +4031,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:41:31.680366+00:00"
+      "checkedAt": "2026-06-23T08:30:14.785303+00:00"
     },
     {
       "sourceRow": 120,
@@ -4067,7 +4067,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:41:31.688887+00:00"
+      "checkedAt": "2026-06-23T08:30:14.798141+00:00"
     },
     {
       "sourceRow": 121,
@@ -4103,7 +4103,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:42:48.171878+00:00"
+      "checkedAt": "2026-06-23T08:30:14.803052+00:00"
     },
     {
       "sourceRow": 122,
@@ -4139,7 +4139,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:43:18.146057+00:00"
+      "checkedAt": "2026-06-23T08:30:14.810268+00:00"
     },
     {
       "sourceRow": 123,
@@ -4175,7 +4175,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:44:34.515435+00:00"
+      "checkedAt": "2026-06-23T08:30:14.818654+00:00"
     },
     {
       "sourceRow": 124,
@@ -4211,7 +4211,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:45:27.746713+00:00"
+      "checkedAt": "2026-06-23T08:30:14.824058+00:00"
     },
     {
       "sourceRow": 125,
@@ -4247,7 +4247,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:46:46.439857+00:00"
+      "checkedAt": "2026-06-23T08:30:14.832331+00:00"
     },
     {
       "sourceRow": 126,
@@ -4283,7 +4283,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:48:02.826166+00:00"
+      "checkedAt": "2026-06-23T08:30:14.837808+00:00"
     },
     {
       "sourceRow": 127,
@@ -4295,7 +4295,7 @@
       "regularPrice": "$755",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
-      "remarks": "Put on Floor",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -4319,7 +4319,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:48:21.090722+00:00"
+      "checkedAt": "2026-06-23T08:30:14.839809+00:00"
     },
     {
       "sourceRow": 128,
@@ -4331,7 +4331,7 @@
       "regularPrice": "$945",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
-      "remarks": "Put on Floor",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -4355,7 +4355,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:48:39.961221+00:00"
+      "checkedAt": "2026-06-23T08:30:14.841655+00:00"
     },
     {
       "sourceRow": 129,
@@ -4391,7 +4391,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:49:56.450528+00:00"
+      "checkedAt": "2026-06-23T08:30:14.845737+00:00"
     },
     {
       "sourceRow": 130,
@@ -4427,7 +4427,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:50:38.138479+00:00"
+      "checkedAt": "2026-06-23T08:30:14.848756+00:00"
     },
     {
       "sourceRow": 131,
@@ -4439,7 +4439,7 @@
       "regularPrice": "$800",
       "existingAhsCompPrice": "X",
       "existingFflCompPrice": "",
-      "remarks": "X\nMissing: D634-01 (on order)",
+      "remarks": "",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -4463,7 +4463,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:51:31.370629+00:00"
+      "checkedAt": "2026-06-23T08:30:14.862544+00:00"
     },
     {
       "sourceRow": 132,
@@ -4499,7 +4499,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:52:47.894034+00:00"
+      "checkedAt": "2026-06-23T08:30:14.871211+00:00"
     },
     {
       "sourceRow": 133,
@@ -4535,7 +4535,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:53:52.834546+00:00"
+      "checkedAt": "2026-06-23T08:30:14.879378+00:00"
     },
     {
       "sourceRow": 134,
@@ -4571,7 +4571,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:55:09.291651+00:00"
+      "checkedAt": "2026-06-23T08:30:14.885252+00:00"
     },
     {
       "sourceRow": 135,
@@ -4607,7 +4607,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:56:25.985071+00:00"
+      "checkedAt": "2026-06-23T08:30:14.891855+00:00"
     },
     {
       "sourceRow": 136,
@@ -4643,7 +4643,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:57:30.927611+00:00"
+      "checkedAt": "2026-06-23T08:30:14.896674+00:00"
     },
     {
       "sourceRow": 137,
@@ -4679,7 +4679,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T09:58:47.664490+00:00"
+      "checkedAt": "2026-06-23T08:30:14.900559+00:00"
     },
     {
       "sourceRow": 138,
@@ -4715,7 +4715,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:00:05.244521+00:00"
+      "checkedAt": "2026-06-23T08:30:14.914978+00:00"
     },
     {
       "sourceRow": 139,
@@ -4751,7 +4751,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:01:10.212263+00:00"
+      "checkedAt": "2026-06-23T08:30:14.921979+00:00"
     },
     {
       "sourceRow": 140,
@@ -4787,14 +4787,14 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:01:51.879518+00:00"
+      "checkedAt": "2026-06-23T08:30:14.924868+00:00"
     },
     {
       "sourceRow": 141,
       "vendor": "Ashley",
       "sku": "PCD824-25/09 (6) -376/476",
       "description": "Greddinton",
-      "storePriceText": "5PC $1,499, Display Cabinet $1,599",
+      "storePriceText": "5PC $1,499, Display Cabinet $1,599, Chairs $149",
       "storePrice": "$1,499,",
       "regularPrice": "N/A",
       "existingAhsCompPrice": "",
@@ -4823,14 +4823,14 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:02:22.224984+00:00"
+      "checkedAt": "2026-06-23T08:30:14.928291+00:00"
     },
     {
       "sourceRow": 142,
       "vendor": "Ashley",
       "sku": "PCD824-55B/55T/07 (8) -376/476",
       "description": "Greddinton",
-      "storePriceText": "5PC $1,599, Display Cabinet $1,599",
+      "storePriceText": "5PC $1,599, Display Cabinet $1,599, Chair $149",
       "storePrice": "$1,599,",
       "regularPrice": "$1,165",
       "existingAhsCompPrice": "",
@@ -4859,7 +4859,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:02:42.493144+00:00"
+      "checkedAt": "2026-06-23T08:30:14.930443+00:00"
     },
     {
       "sourceRow": 143,
@@ -4895,7 +4895,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:03:58.998074+00:00"
+      "checkedAt": "2026-06-23T08:30:14.934833+00:00"
     },
     {
       "sourceRow": 144,
@@ -4931,7 +4931,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:04:17.371753+00:00"
+      "checkedAt": "2026-06-23T08:30:14.939281+00:00"
     },
     {
       "sourceRow": 145,
@@ -4967,7 +4967,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:05:34.259258+00:00"
+      "checkedAt": "2026-06-23T08:30:14.953666+00:00"
     },
     {
       "sourceRow": 146,
@@ -5003,15 +5003,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:06:50.699874+00:00"
+      "checkedAt": "2026-06-23T08:30:14.959732+00:00"
     },
     {
       "sourceRow": 147,
       "vendor": "Ashley",
       "sku": "D980-55B/55T/01 (8)",
       "description": "Arlendyne",
-      "storePriceText": "9PC $2,999",
-      "storePrice": "$2,999",
+      "storePriceText": "9PC $2,499",
+      "storePrice": "$2,499",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -5039,7 +5039,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:07:09.126250+00:00"
+      "checkedAt": "2026-06-23T08:30:14.962233+00:00"
     },
     {
       "sourceRow": 148,
@@ -5075,7 +5075,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:08:25.966224+00:00"
+      "checkedAt": "2026-06-23T08:30:14.970654+00:00"
     },
     {
       "sourceRow": 149,
@@ -5111,7 +5111,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:09:30.873497+00:00"
+      "checkedAt": "2026-06-23T08:30:14.975892+00:00"
     },
     {
       "sourceRow": 151,
@@ -5147,7 +5147,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:09:48.038195+00:00"
+      "checkedAt": "2026-06-23T08:30:14.977113+00:00"
     },
     {
       "sourceRow": 152,
@@ -5159,7 +5159,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "Put on Floor When It Comes In",
       "existingFflCompPrice": "X 1080229",
-      "remarks": "X 1080229",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -5183,7 +5183,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:10:29.418265+00:00"
+      "checkedAt": "2026-06-23T08:30:14.982067+00:00"
     },
     {
       "sourceRow": 153,
@@ -5219,7 +5219,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:10:47.128861+00:00"
+      "checkedAt": "2026-06-23T08:30:14.983387+00:00"
     },
     {
       "sourceRow": 154,
@@ -5255,7 +5255,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:11:04.292389+00:00"
+      "checkedAt": "2026-06-23T08:30:14.984981+00:00"
     },
     {
       "sourceRow": 155,
@@ -5267,7 +5267,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
-      "remarks": "v",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -5291,7 +5291,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:11:44.978398+00:00"
+      "checkedAt": "2026-06-23T08:30:14.991376+00:00"
     },
     {
       "sourceRow": 156,
@@ -5327,7 +5327,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:12:00.903456+00:00"
+      "checkedAt": "2026-06-23T08:30:14.992147+00:00"
     },
     {
       "sourceRow": 157,
@@ -5363,7 +5363,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:12:41.972246+00:00"
+      "checkedAt": "2026-06-23T08:30:15.002638+00:00"
     },
     {
       "sourceRow": 158,
@@ -5399,7 +5399,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:12:59.071652+00:00"
+      "checkedAt": "2026-06-23T08:30:15.008526+00:00"
     },
     {
       "sourceRow": 159,
@@ -5435,7 +5435,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:13:40.137410+00:00"
+      "checkedAt": "2026-06-23T08:30:15.014969+00:00"
     },
     {
       "sourceRow": 160,
@@ -5447,7 +5447,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
-      "remarks": "b",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -5471,7 +5471,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:13:57.491017+00:00"
+      "checkedAt": "2026-06-23T08:30:15.015963+00:00"
     },
     {
       "sourceRow": 161,
@@ -5483,7 +5483,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "X",
-      "remarks": "X Missing Sectional",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -5507,7 +5507,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:15:14.389497+00:00"
+      "checkedAt": "2026-06-23T08:30:15.023586+00:00"
     },
     {
       "sourceRow": 162,
@@ -5543,15 +5543,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:15:31.570843+00:00"
+      "checkedAt": "2026-06-23T08:30:15.025529+00:00"
     },
     {
       "sourceRow": 163,
       "vendor": "Ashley",
       "sku": "2080112",
       "description": "Samir - H&M Lift",
-      "storePriceText": "$999",
-      "storePrice": "$999",
+      "storePriceText": "$799",
+      "storePrice": "$799",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -5579,7 +5579,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:15:49.112987+00:00"
+      "checkedAt": "2026-06-23T08:30:15.026667+00:00"
     },
     {
       "sourceRow": 164,
@@ -5615,7 +5615,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:16:06.422089+00:00"
+      "checkedAt": "2026-06-23T08:30:15.027712+00:00"
     },
     {
       "sourceRow": 165,
@@ -5651,7 +5651,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:16:47.976247+00:00"
+      "checkedAt": "2026-06-23T08:30:15.034140+00:00"
     },
     {
       "sourceRow": 166,
@@ -5687,7 +5687,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:17:29.105644+00:00"
+      "checkedAt": "2026-06-23T08:30:15.040196+00:00"
     },
     {
       "sourceRow": 167,
@@ -5723,7 +5723,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:17:46.367739+00:00"
+      "checkedAt": "2026-06-23T08:30:15.041639+00:00"
     },
     {
       "sourceRow": 168,
@@ -5735,7 +5735,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "X\nMissing: 2420438",
-      "remarks": "X",
+      "remarks": "X - LOVE",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -5759,7 +5759,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:18:15.135701+00:00"
+      "checkedAt": "2026-06-23T08:30:15.043847+00:00"
     },
     {
       "sourceRow": 169,
@@ -5771,7 +5771,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "Put on Floor",
       "existingFflCompPrice": "",
-      "remarks": "Put on Floor",
+      "remarks": "X -SOFA",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -5795,7 +5795,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:18:43.871685+00:00"
+      "checkedAt": "2026-06-23T08:30:15.045695+00:00"
     },
     {
       "sourceRow": 170,
@@ -5831,7 +5831,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:19:12.665368+00:00"
+      "checkedAt": "2026-06-23T08:30:15.048618+00:00"
     },
     {
       "sourceRow": 171,
@@ -5867,14 +5867,14 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:19:31.268344+00:00"
+      "checkedAt": "2026-06-23T08:30:15.049896+00:00"
     },
     {
       "sourceRow": 172,
       "vendor": "Ashley",
       "sku": "2850238/20/14",
       "description": "Stairatt",
-      "storePriceText": "S $549, C $399, O $199",
+      "storePriceText": "S $549, C $449, O $199",
       "storePrice": "$549,",
       "regularPrice": "$499/ $409",
       "existingAhsCompPrice": "",
@@ -5903,7 +5903,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:19:48.321094+00:00"
+      "checkedAt": "2026-06-23T08:30:15.051460+00:00"
     },
     {
       "sourceRow": 173,
@@ -5939,7 +5939,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:20:05.524244+00:00"
+      "checkedAt": "2026-06-23T08:30:15.052873+00:00"
     },
     {
       "sourceRow": 174,
@@ -5975,7 +5975,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:20:23.227006+00:00"
+      "checkedAt": "2026-06-23T08:30:15.054345+00:00"
     },
     {
       "sourceRow": 175,
@@ -6011,7 +6011,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:20:40.449854+00:00"
+      "checkedAt": "2026-06-23T08:30:15.055778+00:00"
     },
     {
       "sourceRow": 176,
@@ -6023,7 +6023,7 @@
       "regularPrice": "$3,969",
       "existingAhsCompPrice": "X\nMissing: 3090108 (on order)",
       "existingFflCompPrice": "",
-      "remarks": "X Otto",
+      "remarks": "X -OTTO",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -6047,7 +6047,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:21:10.500992+00:00"
+      "checkedAt": "2026-06-23T08:30:15.061047+00:00"
     },
     {
       "sourceRow": 177,
@@ -6083,15 +6083,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:21:27.672226+00:00"
+      "checkedAt": "2026-06-23T08:30:15.062708+00:00"
     },
     {
       "sourceRow": 178,
       "vendor": "Ashley",
       "sku": "3210117/34/55/77",
       "description": "Dellara",
-      "storePriceText": "4PC Sect $2,499  Otto $299",
-      "storePrice": "$2,499",
+      "storePriceText": "4PC Sect $2,299  Otto $299",
+      "storePrice": "$2,299",
       "regularPrice": "N/A",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -6119,46 +6119,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:21:44.810266+00:00"
+      "checkedAt": "2026-06-23T08:30:15.063722+00:00"
     },
     {
       "sourceRow": 179,
-      "vendor": "Ashley",
-      "sku": "3380288",
-      "description": "Boxberg",
-      "storePriceText": "S $899",
-      "storePrice": "$899",
-      "regularPrice": "",
-      "existingAhsCompPrice": "",
-      "existingFflCompPrice": "",
-      "remarks": "X",
-      "bucket": "non_ashley",
-      "rowNotes": [],
-      "ashley": {
-        "competitor": "Ashley",
-        "title": "",
-        "price": "",
-        "url": "",
-        "confidence": "none",
-        "matchedTokens": [],
-        "notes": []
-      },
-      "furniture4Less": {
-        "competitor": "Furniture4LessNC",
-        "title": "Skip to content",
-        "price": "",
-        "url": "https://furniture4lessnc.com/search?q=3380288%20Boxberg#site-main",
-        "confidence": "none",
-        "matchedTokens": [],
-        "notes": []
-      },
-      "lowestReliableCompetitorPrice": "",
-      "storeMinusLowest": "",
-      "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:22:01.933983+00:00"
-    },
-    {
-      "sourceRow": 180,
       "vendor": "Ashley",
       "sku": "3550417/66",
       "description": "Biddeford",
@@ -6191,15 +6155,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:22:19.146693+00:00"
+      "checkedAt": "2026-06-23T08:30:15.064715+00:00"
     },
     {
-      "sourceRow": 181,
+      "sourceRow": 180,
       "vendor": "Ashley",
       "sku": "3700315/18",
       "description": "Party Time",
-      "storePriceText": "S $1,899, L $1,299",
-      "storePrice": "$1,899,",
+      "storePriceText": "S $1,699, L $1,299",
+      "storePrice": "$1,699,",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "X",
@@ -6227,14 +6191,14 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:22:36.278188+00:00"
+      "checkedAt": "2026-06-23T08:30:15.068512+00:00"
     },
     {
-      "sourceRow": 182,
+      "sourceRow": 181,
       "vendor": "Ashley",
       "sku": "3740688/94/25",
       "description": "Frohn - Graphite",
-      "storePriceText": "S $799, L $779, R $499",
+      "storePriceText": "S $799, L $799, R $499",
       "storePrice": "$799,",
       "regularPrice": "$639",
       "existingAhsCompPrice": "",
@@ -6263,14 +6227,14 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:22:53.418644+00:00"
+      "checkedAt": "2026-06-23T08:30:15.069650+00:00"
     },
     {
-      "sourceRow": 183,
+      "sourceRow": 182,
       "vendor": "Ashley",
       "sku": "3740788/94/25",
       "description": "Frohn - Chocolate",
-      "storePriceText": "S $799, L $779, R $499",
+      "storePriceText": "S $799, L $799, R $499",
       "storePrice": "$799,",
       "regularPrice": "$639",
       "existingAhsCompPrice": "",
@@ -6299,10 +6263,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:23:10.636465+00:00"
+      "checkedAt": "2026-06-23T08:30:15.073576+00:00"
     },
     {
-      "sourceRow": 184,
+      "sourceRow": 183,
       "vendor": "Ashley",
       "sku": "3810488/94/25",
       "description": "Foreside",
@@ -6335,10 +6299,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:23:27.779569+00:00"
+      "checkedAt": "2026-06-23T08:30:15.077934+00:00"
     },
     {
-      "sourceRow": 185,
+      "sourceRow": 184,
       "vendor": "Ashley",
       "sku": "3990588/94/25",
       "description": "Stoneland",
@@ -6371,10 +6335,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:23:45.828037+00:00"
+      "checkedAt": "2026-06-23T08:30:15.082530+00:00"
     },
     {
-      "sourceRow": 186,
+      "sourceRow": 185,
       "vendor": "Ashley",
       "sku": "4060435",
       "description": "Cashton",
@@ -6407,10 +6371,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:24:04.059268+00:00"
+      "checkedAt": "2026-06-23T08:30:15.084748+00:00"
     },
     {
-      "sourceRow": 187,
+      "sourceRow": 186,
       "vendor": "Ashley",
       "sku": "4060538/35/20/14",
       "description": "Cashton",
@@ -6443,10 +6407,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:24:21.139283+00:00"
+      "checkedAt": "2026-06-23T08:30:15.085916+00:00"
     },
     {
-      "sourceRow": 188,
+      "sourceRow": 187,
       "vendor": "Ashley",
       "sku": "4090123",
       "description": "Brown",
@@ -6479,10 +6443,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:24:38.642050+00:00"
+      "checkedAt": "2026-06-23T08:30:15.094047+00:00"
     },
     {
-      "sourceRow": 189,
+      "sourceRow": 188,
       "vendor": "Ashley",
       "sku": "4460438/23/14",
       "description": "Heartcort",
@@ -6515,10 +6479,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:24:55.718703+00:00"
+      "checkedAt": "2026-06-23T08:30:15.095533+00:00"
     },
     {
-      "sourceRow": 190,
+      "sourceRow": 189,
       "vendor": "Ashley",
       "sku": "4640261",
       "description": "Riptyme - Swivel Glider",
@@ -6551,15 +6515,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:25:47.756461+00:00"
+      "checkedAt": "2026-06-23T08:30:15.098466+00:00"
     },
     {
-      "sourceRow": 191,
+      "sourceRow": 190,
       "vendor": "Ashley",
       "sku": "4710212",
       "description": "Shadowboxer - Lift",
-      "storePriceText": "$699",
-      "storePrice": "$699",
+      "storePriceText": "$599",
+      "storePrice": "$599",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "X",
@@ -6587,10 +6551,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:26:28.116993+00:00"
+      "checkedAt": "2026-06-23T08:30:15.101070+00:00"
     },
     {
-      "sourceRow": 192,
+      "sourceRow": 191,
       "vendor": "Ashley",
       "sku": "4770438/35",
       "description": "Genoa",
@@ -6623,15 +6587,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:26:45.316032+00:00"
+      "checkedAt": "2026-06-23T08:30:15.102402+00:00"
     },
     {
-      "sourceRow": 193,
+      "sourceRow": 192,
       "vendor": "Ashley",
       "sku": "4770538/23/14",
       "description": "Genoa",
-      "storePriceText": "S/2 C/O - $2,699  C $699, O $349",
-      "storePrice": "$2,699",
+      "storePriceText": "S/2 C/O - $1,999  C $699, O $349",
+      "storePrice": "$1,999",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -6659,10 +6623,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:27:02.414621+00:00"
+      "checkedAt": "2026-06-23T08:30:15.103742+00:00"
     },
     {
-      "sourceRow": 194,
+      "sourceRow": 193,
       "vendor": "Ashley",
       "sku": "4840416/34/49 - 08",
       "description": "Newellen",
@@ -6695,10 +6659,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:28:19.054631+00:00"
+      "checkedAt": "2026-06-23T08:30:15.108127+00:00"
     },
     {
-      "sourceRow": 195,
+      "sourceRow": 194,
       "vendor": "Ashley",
       "sku": "PC4840516/34/49 - 08",
       "description": "Clarington",
@@ -6731,10 +6695,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:29:24.030024+00:00"
+      "checkedAt": "2026-06-23T08:30:15.114686+00:00"
     },
     {
-      "sourceRow": 196,
+      "sourceRow": 195,
       "vendor": "Ashley",
       "sku": "5120435/25",
       "description": "Deltona",
@@ -6767,10 +6731,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:29:41.191448+00:00"
+      "checkedAt": "2026-06-23T08:30:15.118924+00:00"
     },
     {
-      "sourceRow": 197,
+      "sourceRow": 196,
       "vendor": "Ashley",
       "sku": "5360236/37/39",
       "description": "Rannis",
@@ -6779,7 +6743,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "X\n5360236",
       "existingFflCompPrice": "X\n5360239",
-      "remarks": "X 5360237/39",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -6803,10 +6767,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:30:22.028969+00:00"
+      "checkedAt": "2026-06-23T08:30:15.120661+00:00"
     },
     {
-      "sourceRow": 198,
+      "sourceRow": 197,
       "vendor": "Ashley",
       "sku": "5360336/37/39  -25",
       "description": "Rannis",
@@ -6815,7 +6779,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "Put 5360337 on Floor",
-      "remarks": "",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -6839,10 +6803,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:31:03.106421+00:00"
+      "checkedAt": "2026-06-23T08:30:15.122419+00:00"
     },
     {
-      "sourceRow": 199,
+      "sourceRow": 198,
       "vendor": "Ashley",
       "sku": "5360437",
       "description": "Rannis",
@@ -6875,10 +6839,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:31:22.226714+00:00"
+      "checkedAt": "2026-06-23T08:30:15.123386+00:00"
     },
     {
-      "sourceRow": 200,
+      "sourceRow": 199,
       "vendor": "Ashley",
       "sku": "5440531/46/57/58/77/97",
       "description": "Colleyville",
@@ -6911,10 +6875,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:31:39.423377+00:00"
+      "checkedAt": "2026-06-23T08:30:15.124472+00:00"
     },
     {
-      "sourceRow": 201,
+      "sourceRow": 200,
       "vendor": "Ashley",
       "sku": "5470523/14",
       "description": "Belziani",
@@ -6947,10 +6911,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:31:56.580877+00:00"
+      "checkedAt": "2026-06-23T08:30:15.125494+00:00"
     },
     {
-      "sourceRow": 202,
+      "sourceRow": 201,
       "vendor": "Ashley",
       "sku": "5470623/14",
       "description": "Belziani",
@@ -6959,7 +6923,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
-      "remarks": "",
+      "remarks": "Put Chair on Floor",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -6983,10 +6947,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:32:13.711978+00:00"
+      "checkedAt": "2026-06-23T08:30:15.126534+00:00"
     },
     {
-      "sourceRow": 203,
+      "sourceRow": 202,
       "vendor": "Ashley",
       "sku": "5490746/777/799",
       "description": "Pewter",
@@ -7019,10 +6983,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:32:31.145021+00:00"
+      "checkedAt": "2026-06-23T08:30:15.127590+00:00"
     },
     {
-      "sourceRow": 204,
+      "sourceRow": 203,
       "vendor": "Ashley",
       "sku": "5510418",
       "description": "Greaves",
@@ -7055,10 +7019,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:32:48.438399+00:00"
+      "checkedAt": "2026-06-23T08:30:15.131844+00:00"
     },
     {
-      "sourceRow": 205,
+      "sourceRow": 204,
       "vendor": "Ashley",
       "sku": "5560338/35/25",
       "description": "Bolsena",
@@ -7091,10 +7055,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:33:05.635944+00:00"
+      "checkedAt": "2026-06-23T08:30:15.133379+00:00"
     },
     {
-      "sourceRow": 206,
+      "sourceRow": 205,
       "vendor": "Ashley",
       "sku": "5760438/23/14",
       "description": "Carianna",
@@ -7127,10 +7091,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:33:22.839572+00:00"
+      "checkedAt": "2026-06-23T08:30:15.134979+00:00"
     },
     {
-      "sourceRow": 207,
+      "sourceRow": 206,
       "vendor": "Ashley",
       "sku": "5870223",
       "description": "Walnut",
@@ -7163,19 +7127,19 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:33:40.092026+00:00"
+      "checkedAt": "2026-06-23T08:30:15.136624+00:00"
     },
     {
-      "sourceRow": 208,
+      "sourceRow": 207,
       "vendor": "Ashley",
       "sku": "5930147/118/113",
       "description": "Next-Gen Durapella",
-      "storePriceText": "S or L $1,699, R $1,399",
-      "storePrice": "$1,699,",
+      "storePriceText": "S or L $1,999, R $1,599",
+      "storePrice": "$1,999,",
       "regularPrice": "$1,529",
       "existingAhsCompPrice": "X S",
       "existingFflCompPrice": "X S/L",
-      "remarks": "X S/R",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -7199,19 +7163,19 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:34:21.614095+00:00"
+      "checkedAt": "2026-06-23T08:30:15.147025+00:00"
     },
     {
-      "sourceRow": 209,
+      "sourceRow": 208,
       "vendor": "Ashley",
       "sku": "5930247/218/213",
       "description": "Next-Gen Durapella",
-      "storePriceText": "S or L $1,699, R $1,399",
-      "storePrice": "$1,699,",
+      "storePriceText": "S or L $1,999, R $1,599",
+      "storePrice": "$1,999,",
       "regularPrice": "$1,529",
       "existingAhsCompPrice": "X S/L",
       "existingFflCompPrice": "X R",
-      "remarks": "X L/R",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -7235,10 +7199,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:34:39.321629+00:00"
+      "checkedAt": "2026-06-23T08:30:15.153243+00:00"
     },
     {
-      "sourceRow": 210,
+      "sourceRow": 209,
       "vendor": "Ashley",
       "sku": "5950438/35/23/14",
       "description": "Stonemeade Taupe",
@@ -7271,10 +7235,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:34:56.529743+00:00"
+      "checkedAt": "2026-06-23T08:30:15.154891+00:00"
     },
     {
-      "sourceRow": 211,
+      "sourceRow": 210,
       "vendor": "Ashley",
       "sku": "5950538/35/23/14",
       "description": "Stonemeade Nutmeg",
@@ -7307,10 +7271,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:35:13.665511+00:00"
+      "checkedAt": "2026-06-23T08:30:15.156221+00:00"
     },
     {
-      "sourceRow": 212,
+      "sourceRow": 211,
       "vendor": "Ashley",
       "sku": "5950518",
       "description": "Stonemeade Nutmeg",
@@ -7343,10 +7307,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:35:54.664220+00:00"
+      "checkedAt": "2026-06-23T08:30:15.158668+00:00"
     },
     {
-      "sourceRow": 213,
+      "sourceRow": 212,
       "vendor": "Ashley",
       "sku": "5960366/67/77 -08",
       "description": "Lavernett",
@@ -7379,10 +7343,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:36:47.373416+00:00"
+      "checkedAt": "2026-06-23T08:30:15.165708+00:00"
     },
     {
-      "sourceRow": 214,
+      "sourceRow": 213,
       "vendor": "Ashley",
       "sku": "5990238/23/14",
       "description": "High Profile",
@@ -7415,10 +7379,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:37:04.591758+00:00"
+      "checkedAt": "2026-06-23T08:30:15.167261+00:00"
     },
     {
-      "sourceRow": 215,
+      "sourceRow": 214,
       "vendor": "Ashley",
       "sku": "6030529/629",
       "description": "Bladewood - Wall",
@@ -7451,10 +7415,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:37:21.797288+00:00"
+      "checkedAt": "2026-06-23T08:30:15.170644+00:00"
     },
     {
-      "sourceRow": 216,
+      "sourceRow": 215,
       "vendor": "Ashley",
       "sku": "6100331/46/57/58/62/77",
       "description": "Next-Gen Durapella Slate",
@@ -7487,10 +7451,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:37:50.977220+00:00"
+      "checkedAt": "2026-06-23T08:30:15.176232+00:00"
     },
     {
-      "sourceRow": 217,
+      "sourceRow": 216,
       "vendor": "Ashley",
       "sku": "6100431/46/57/58/62/77",
       "description": "Next-Gen Durapella Sand",
@@ -7523,10 +7487,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:38:20.118391+00:00"
+      "checkedAt": "2026-06-23T08:30:15.181855+00:00"
     },
     {
-      "sourceRow": 218,
+      "sourceRow": 217,
       "vendor": "Ashley",
       "sku": "6180782",
       "description": "Keensburg",
@@ -7559,10 +7523,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:38:37.314054+00:00"
+      "checkedAt": "2026-06-23T08:30:15.183883+00:00"
     },
     {
-      "sourceRow": 219,
+      "sourceRow": 218,
       "vendor": "Ashley",
       "sku": "6330689/94/25",
       "description": "Lavenhorne Umber",
@@ -7595,10 +7559,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:38:54.903655+00:00"
+      "checkedAt": "2026-06-23T08:30:15.185370+00:00"
     },
     {
-      "sourceRow": 220,
+      "sourceRow": 219,
       "vendor": "Ashley",
       "sku": "6330789/94/25",
       "description": "Lavenhorne Pebble",
@@ -7631,10 +7595,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:39:12.180805+00:00"
+      "checkedAt": "2026-06-23T08:30:15.186954+00:00"
     },
     {
-      "sourceRow": 221,
+      "sourceRow": 220,
       "vendor": "Ashley",
       "sku": "6380229/329",
       "description": "Movie Man - Wall",
@@ -7667,10 +7631,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:39:29.351220+00:00"
+      "checkedAt": "2026-06-23T08:30:15.190245+00:00"
     },
     {
-      "sourceRow": 222,
+      "sourceRow": 221,
       "vendor": "Ashley",
       "sku": "6570729",
       "description": "Camera Time - Wall",
@@ -7703,10 +7667,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:39:58.987291+00:00"
+      "checkedAt": "2026-06-23T08:30:15.194594+00:00"
     },
     {
-      "sourceRow": 223,
+      "sourceRow": 222,
       "vendor": "Ashley",
       "sku": "6590631/46/58/60 (2)/77/97",
       "description": "Modmax II",
@@ -7739,10 +7703,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:40:40.656555+00:00"
+      "checkedAt": "2026-06-23T08:30:15.197774+00:00"
     },
     {
-      "sourceRow": 224,
+      "sourceRow": 223,
       "vendor": "Ashley",
       "sku": "PC6920566/77/85",
       "description": "Pearce Pike",
@@ -7775,15 +7739,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:40:57.765005+00:00"
+      "checkedAt": "2026-06-23T08:30:15.199164+00:00"
     },
     {
-      "sourceRow": 225,
+      "sourceRow": 224,
       "vendor": "Ashley",
       "sku": "7500520",
       "description": "Darcy",
-      "storePriceText": "C $299",
-      "storePrice": "$299",
+      "storePriceText": "C $199",
+      "storePrice": "$199",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -7811,15 +7775,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:41:49.843235+00:00"
+      "checkedAt": "2026-06-23T08:30:15.209559+00:00"
     },
     {
-      "sourceRow": 226,
+      "sourceRow": 225,
       "vendor": "Ashley",
       "sku": "7500825",
       "description": "Darcy - Rocker",
-      "storePriceText": "R $299",
-      "storePrice": "$299",
+      "storePriceText": "R $249",
+      "storePrice": "$249",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -7847,15 +7811,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:43:05.292642+00:00"
+      "checkedAt": "2026-06-23T08:30:15.212854+00:00"
     },
     {
-      "sourceRow": 227,
+      "sourceRow": 226,
       "vendor": "Ashley",
       "sku": "7500935",
       "description": "Darcy",
-      "storePriceText": "L $379",
-      "storePrice": "$379",
+      "storePriceText": "L $299",
+      "storePrice": "$299",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -7883,10 +7847,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:43:22.509828+00:00"
+      "checkedAt": "2026-06-23T08:30:15.214006+00:00"
     },
     {
-      "sourceRow": 228,
+      "sourceRow": 227,
       "vendor": "Ashley",
       "sku": "7510517/34/55/77 -08",
       "description": "Laurelgrove",
@@ -7919,10 +7883,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:43:39.577186+00:00"
+      "checkedAt": "2026-06-23T08:30:15.215692+00:00"
     },
     {
-      "sourceRow": 229,
+      "sourceRow": 228,
       "vendor": "Ashley",
       "sku": "7540713",
       "description": "Warnerton",
@@ -7955,10 +7919,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:43:56.902025+00:00"
+      "checkedAt": "2026-06-23T08:30:15.216992+00:00"
     },
     {
-      "sourceRow": 230,
+      "sourceRow": 229,
       "vendor": "Ashley",
       "sku": "7550812",
       "description": "Chocolate - Lift",
@@ -7991,10 +7955,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:45:14.346160+00:00"
+      "checkedAt": "2026-06-23T08:30:15.225735+00:00"
     },
     {
-      "sourceRow": 231,
+      "sourceRow": 230,
       "vendor": "Ashley",
       "sku": "7590906/1006",
       "description": "McTeer - P1 Power",
@@ -8027,10 +7991,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:45:31.396241+00:00"
+      "checkedAt": "2026-06-23T08:30:15.227191+00:00"
     },
     {
-      "sourceRow": 232,
+      "sourceRow": 231,
       "vendor": "Ashley",
       "sku": "7720423",
       "description": "Dorsten",
@@ -8063,10 +8027,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:45:49.293720+00:00"
+      "checkedAt": "2026-06-23T08:30:15.228650+00:00"
     },
     {
-      "sourceRow": 233,
+      "sourceRow": 232,
       "vendor": "Ashley",
       "sku": "7720523",
       "description": "Dorsten",
@@ -8099,15 +8063,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:46:07.025395+00:00"
+      "checkedAt": "2026-06-23T08:30:15.229978+00:00"
     },
     {
-      "sourceRow": 234,
+      "sourceRow": 233,
       "vendor": "Ashley",
       "sku": "7960438",
       "description": "Velletri",
-      "storePriceText": "$449",
-      "storePrice": "$449",
+      "storePriceText": "$499",
+      "storePrice": "$499",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -8135,10 +8099,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:46:24.299995+00:00"
+      "checkedAt": "2026-06-23T08:30:15.231454+00:00"
     },
     {
-      "sourceRow": 235,
+      "sourceRow": 234,
       "vendor": "Ashley",
       "sku": "8070308",
       "description": "Ballinasloe",
@@ -8171,10 +8135,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:46:41.868396+00:00"
+      "checkedAt": "2026-06-23T08:30:15.232718+00:00"
     },
     {
-      "sourceRow": 236,
+      "sourceRow": 235,
       "vendor": "Ashley",
       "sku": "PC8281525/625",
       "description": "Hoyne Park",
@@ -8207,10 +8171,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:46:58.933806+00:00"
+      "checkedAt": "2026-06-23T08:30:15.233948+00:00"
     },
     {
-      "sourceRow": 237,
+      "sourceRow": 236,
       "vendor": "Ashley",
       "sku": "8390438/20/14",
       "description": "Abinger",
@@ -8243,10 +8207,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:47:16.152055+00:00"
+      "checkedAt": "2026-06-23T08:30:15.235206+00:00"
     },
     {
-      "sourceRow": 238,
+      "sourceRow": 237,
       "vendor": "Ashley",
       "sku": "8390417/66",
       "description": "Abinger",
@@ -8279,10 +8243,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:48:28.844593+00:00"
+      "checkedAt": "2026-06-23T08:30:15.238647+00:00"
     },
     {
-      "sourceRow": 239,
+      "sourceRow": 238,
       "vendor": "Ashley",
       "sku": "8390517/66",
       "description": "Abinger",
@@ -8315,10 +8279,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:48:43.357619+00:00"
+      "checkedAt": "2026-06-23T08:30:15.240051+00:00"
     },
     {
-      "sourceRow": 240,
+      "sourceRow": 239,
       "vendor": "Ashley",
       "sku": "8390535",
       "description": "Abinger",
@@ -8351,10 +8315,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:49:09.712215+00:00"
+      "checkedAt": "2026-06-23T08:30:15.244548+00:00"
     },
     {
-      "sourceRow": 241,
+      "sourceRow": 240,
       "vendor": "Ashley",
       "sku": "8460414",
       "description": "Mercado",
@@ -8387,10 +8351,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:49:24.649602+00:00"
+      "checkedAt": "2026-06-23T08:30:15.245817+00:00"
     },
     {
-      "sourceRow": 242,
+      "sourceRow": 241,
       "vendor": "Ashley",
       "sku": "8530612",
       "description": "Lorrenze - Lift",
@@ -8423,10 +8387,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:49:40.011713+00:00"
+      "checkedAt": "2026-06-23T08:30:15.246899+00:00"
     },
     {
-      "sourceRow": 243,
+      "sourceRow": 242,
       "vendor": "Ashley",
       "sku": "8670525",
       "description": "Jesolo",
@@ -8459,10 +8423,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:50:06.982694+00:00"
+      "checkedAt": "2026-06-23T08:30:15.253010+00:00"
     },
     {
-      "sourceRow": 244,
+      "sourceRow": 243,
       "vendor": "Ashley",
       "sku": "8721338/35/20/14 - 25",
       "description": "Altari",
@@ -8495,10 +8459,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:51:20.778917+00:00"
+      "checkedAt": "2026-06-23T08:30:15.262281+00:00"
     },
     {
-      "sourceRow": 245,
+      "sourceRow": 244,
       "vendor": "Ashley",
       "sku": "8721317/66 -08",
       "description": "Altari",
@@ -8531,10 +8495,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:51:35.759597+00:00"
+      "checkedAt": "2026-06-23T08:30:15.267883+00:00"
     },
     {
-      "sourceRow": 246,
+      "sourceRow": 245,
       "vendor": "Ashley",
       "sku": "8721417/66 -08",
       "description": "Altari",
@@ -8567,10 +8531,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:51:50.429971+00:00"
+      "checkedAt": "2026-06-23T08:30:15.270507+00:00"
     },
     {
-      "sourceRow": 247,
+      "sourceRow": 246,
       "vendor": "Ashley",
       "sku": "8721438/20/14 - 25",
       "description": "Altari",
@@ -8579,7 +8543,7 @@
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "X S/R",
-      "remarks": "X Sleeper",
+      "remarks": "",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -8603,15 +8567,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:52:06.413451+00:00"
+      "checkedAt": "2026-06-23T08:30:15.272795+00:00"
     },
     {
-      "sourceRow": 248,
+      "sourceRow": 247,
       "vendor": "Ashley",
       "sku": "8790135/23/14",
       "description": "Vintage",
-      "storePriceText": "3PC Set (L/C/O) $1,499",
-      "storePrice": "$1,499",
+      "storePriceText": "3PC Set (L/C/O) $999",
+      "storePrice": "$999",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -8639,10 +8603,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:52:20.992301+00:00"
+      "checkedAt": "2026-06-23T08:30:15.276652+00:00"
     },
     {
-      "sourceRow": 249,
+      "sourceRow": 248,
       "vendor": "Ashley",
       "sku": "PC9022042A",
       "description": "Lorrenton",
@@ -8675,19 +8639,19 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:52:35.793571+00:00"
+      "checkedAt": "2026-06-23T08:30:15.277958+00:00"
     },
     {
-      "sourceRow": 250,
+      "sourceRow": 249,
       "vendor": "Ashley",
       "sku": "9050315/13 -18",
       "description": "Biscoe",
-      "storePriceText": "S $1299, L $1299, R $999",
-      "storePrice": "$1299,",
+      "storePriceText": "S $1,499, L $1,499, R $999",
+      "storePrice": "$1,499,",
       "regularPrice": "$1,159",
       "existingAhsCompPrice": "X",
       "existingFflCompPrice": "X S/L",
-      "remarks": "X S/L",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -8711,15 +8675,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:52:50.378000+00:00"
+      "checkedAt": "2026-06-23T08:30:15.285616+00:00"
     },
     {
-      "sourceRow": 251,
+      "sourceRow": 250,
       "vendor": "Ashley",
       "sku": "9300313",
       "description": "HyllMont",
-      "storePriceText": "R $899",
-      "storePrice": "$899",
+      "storePriceText": "R $799",
+      "storePrice": "$799",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -8747,10 +8711,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:53:16.919053+00:00"
+      "checkedAt": "2026-06-23T08:30:15.288390+00:00"
     },
     {
-      "sourceRow": 252,
+      "sourceRow": 251,
       "vendor": "Ashley",
       "sku": "9360531/46/57/58/77/97",
       "description": "Acklen Place",
@@ -8759,7 +8723,7 @@
       "regularPrice": "$2,749",
       "existingAhsCompPrice": "Put on Floor",
       "existingFflCompPrice": "",
-      "remarks": "Put on Floor",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -8783,15 +8747,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:53:31.350403+00:00"
+      "checkedAt": "2026-06-23T08:30:15.289902+00:00"
     },
     {
-      "sourceRow": 253,
+      "sourceRow": 252,
       "vendor": "Ashley",
       "sku": "9510323/08",
       "description": "Soletran",
-      "storePriceText": "C/O $999",
-      "storePrice": "$999",
+      "storePriceText": "C/O $799",
+      "storePrice": "$799",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -8819,10 +8783,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:53:46.258206+00:00"
+      "checkedAt": "2026-06-23T08:30:15.290912+00:00"
     },
     {
-      "sourceRow": 254,
+      "sourceRow": 253,
       "vendor": "Ashley",
       "sku": "9510438/23/08",
       "description": "Soletran",
@@ -8855,10 +8819,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:54:01.145226+00:00"
+      "checkedAt": "2026-06-23T08:30:15.292305+00:00"
     },
     {
-      "sourceRow": 255,
+      "sourceRow": 254,
       "vendor": "Ashley",
       "sku": "9600621",
       "description": "Megginson",
@@ -8891,10 +8855,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:54:15.711623+00:00"
+      "checkedAt": "2026-06-23T08:30:15.293614+00:00"
     },
     {
-      "sourceRow": 256,
+      "sourceRow": 255,
       "vendor": "Ashley",
       "sku": "9760112",
       "description": "Ernestine - Lift",
@@ -8927,10 +8891,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:54:30.174861+00:00"
+      "checkedAt": "2026-06-23T08:30:15.294968+00:00"
     },
     {
-      "sourceRow": 257,
+      "sourceRow": 256,
       "vendor": "Ashley",
       "sku": "9810338/23",
       "description": "Midnight Madness Onyx",
@@ -8963,10 +8927,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:54:44.870794+00:00"
+      "checkedAt": "2026-06-23T08:30:15.296680+00:00"
     },
     {
-      "sourceRow": 258,
+      "sourceRow": 257,
       "vendor": "Ashley",
       "sku": "9810317/334/366/377 -08",
       "description": "Midnight Madness Onyx",
@@ -8999,10 +8963,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:54:59.282058+00:00"
+      "checkedAt": "2026-06-23T08:30:15.297850+00:00"
     },
     {
-      "sourceRow": 259,
+      "sourceRow": 258,
       "vendor": "Ashley",
       "sku": "9860688/86",
       "description": "Tulen",
@@ -9035,10 +8999,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:55:25.325402+00:00"
+      "checkedAt": "2026-06-23T08:30:15.299649+00:00"
     },
     {
-      "sourceRow": 260,
+      "sourceRow": 259,
       "vendor": "Ashley",
       "sku": "PC9930642A",
       "description": "Pineland",
@@ -9071,10 +9035,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:55:52.005364+00:00"
+      "checkedAt": "2026-06-23T08:30:15.301195+00:00"
     },
     {
-      "sourceRow": 261,
+      "sourceRow": 260,
       "vendor": "Ashley",
       "sku": "PCU1070031/46A/57/58/62/77",
       "description": "Magic Man",
@@ -9107,10 +9071,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:56:06.629791+00:00"
+      "checkedAt": "2026-06-23T08:30:15.308504+00:00"
     },
     {
-      "sourceRow": 262,
+      "sourceRow": 261,
       "vendor": "Ashley",
       "sku": "PCU1090015/18/13",
       "description": "5Z Comfort",
@@ -9119,7 +9083,7 @@
       "regularPrice": "$2,269",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
-      "remarks": "X\nMissing: PCU1090015 (on order)",
+      "remarks": "X",
       "bucket": "non_ashley",
       "rowNotes": [],
       "ashley": {
@@ -9143,10 +9107,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:56:44.995356+00:00"
+      "checkedAt": "2026-06-23T08:30:15.310205+00:00"
     },
     {
-      "sourceRow": 263,
+      "sourceRow": 262,
       "vendor": "Ashley",
       "sku": "U1520615/82",
       "description": "Game Plan",
@@ -9179,10 +9143,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:56:59.380643+00:00"
+      "checkedAt": "2026-06-23T08:30:15.311077+00:00"
     },
     {
-      "sourceRow": 264,
+      "sourceRow": 263,
       "vendor": "Ashley",
       "sku": "U2710515/18/13",
       "description": "Boyington",
@@ -9215,10 +9179,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:58:02.619146+00:00"
+      "checkedAt": "2026-06-23T08:30:15.314841+00:00"
     },
     {
-      "sourceRow": 265,
+      "sourceRow": 264,
       "vendor": "Ashley",
       "sku": "U2710615/18/13",
       "description": "Boytington",
@@ -9251,10 +9215,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:58:52.966575+00:00"
+      "checkedAt": "2026-06-23T08:30:15.322484+00:00"
     },
     {
-      "sourceRow": 266,
+      "sourceRow": 265,
       "vendor": "Ashley",
       "sku": "U4370218/82",
       "description": "Ricmen",
@@ -9287,13 +9251,13 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:59:07.547817+00:00"
+      "checkedAt": "2026-06-23T08:30:15.325219+00:00"
     },
     {
-      "sourceRow": 267,
+      "sourceRow": 266,
       "vendor": "Ashley",
       "sku": "U4380887/74/98",
-      "description": "Leesworth",
+      "description": "Leesworth - Chocolate",
       "storePriceText": "S $1,299, L $1,279, R $999",
       "storePrice": "$1,299,",
       "regularPrice": "$1,059",
@@ -9304,18 +9268,18 @@
       "rowNotes": [],
       "ashley": {
         "competitor": "Ashley",
-        "title": "",
+        "title": "Access to this page has been denied",
         "price": "",
-        "url": "",
+        "url": "https://www.ashleyfurniture.com/p/leesworth_power_reclining_sofa/U4380987.html",
         "confidence": "none",
         "matchedTokens": [],
         "notes": []
       },
       "furniture4Less": {
         "competitor": "Furniture4LessNC",
-        "title": "View all products",
-        "price": "",
-        "url": "https://furniture4lessnc.com/collections/all",
+        "title": "Leesworth Power Recliner",
+        "price": "$1,199.99",
+        "url": "https://furniture4lessnc.com/products/leesworth-power-recliner?_pos=1&_sid=77a32614f&_ss=r",
         "confidence": "none",
         "matchedTokens": [],
         "notes": []
@@ -9323,13 +9287,13 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:59:22.594068+00:00"
+      "checkedAt": "2026-06-23T08:31:19.360310+00:00"
     },
     {
-      "sourceRow": 268,
+      "sourceRow": 267,
       "vendor": "Ashley",
       "sku": "U4380987/74/98",
-      "description": "Leesworth",
+      "description": "Leesworth - Blue",
       "storePriceText": "S $1,299, L $1,279, R $999",
       "storePrice": "$1,299,",
       "regularPrice": "$1,059",
@@ -9359,10 +9323,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:59:37.011097+00:00"
+      "checkedAt": "2026-06-23T08:31:34.234218+00:00"
     },
     {
-      "sourceRow": 269,
+      "sourceRow": 268,
       "vendor": "Ashley",
       "sku": "U5460215",
       "description": "Wurstrow",
@@ -9395,10 +9359,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T10:59:51.994511+00:00"
+      "checkedAt": "2026-06-23T08:31:34.238720+00:00"
     },
     {
-      "sourceRow": 270,
+      "sourceRow": 269,
       "vendor": "Ashley",
       "sku": "U8530515/13",
       "description": "The Man-Den",
@@ -9431,10 +9395,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:00:06.520277+00:00"
+      "checkedAt": "2026-06-23T08:31:34.241810+00:00"
     },
     {
-      "sourceRow": 273,
+      "sourceRow": 272,
       "vendor": "Ashley",
       "sku": "T372-1/3",
       "description": "Budmore",
@@ -9467,10 +9431,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:00:45.907444+00:00"
+      "checkedAt": "2026-06-23T08:31:34.244687+00:00"
     },
     {
-      "sourceRow": 274,
+      "sourceRow": 273,
       "vendor": "Ashley",
       "sku": "T377-13",
       "description": "Bolanbrook",
@@ -9503,10 +9467,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:01:58.921570+00:00"
+      "checkedAt": "2026-06-23T08:31:34.250595+00:00"
     },
     {
-      "sourceRow": 275,
+      "sourceRow": 274,
       "vendor": "Ashley",
       "sku": "T459-1/3/7",
       "description": "Wystfield Cocktail/End",
@@ -9539,10 +9503,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:03:01.232052+00:00"
+      "checkedAt": "2026-06-23T08:31:34.256424+00:00"
     },
     {
-      "sourceRow": 276,
+      "sourceRow": 275,
       "vendor": "Ashley",
       "sku": "T471-1/2",
       "description": "Cariton Cocktail/End",
@@ -9575,10 +9539,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:04:15.267845+00:00"
+      "checkedAt": "2026-06-23T08:31:34.288777+00:00"
     },
     {
-      "sourceRow": 277,
+      "sourceRow": 276,
       "vendor": "Ashley",
       "sku": "T481-1/2",
       "description": "Watson Cocktail/End",
@@ -9611,10 +9575,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:05:05.857722+00:00"
+      "checkedAt": "2026-06-23T08:31:34.298431+00:00"
     },
     {
-      "sourceRow": 278,
+      "sourceRow": 277,
       "vendor": "Ashley",
       "sku": "T505-762",
       "description": "Mirimyn Accent Table",
@@ -9647,10 +9611,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:06:19.183252+00:00"
+      "checkedAt": "2026-06-23T08:31:34.307708+00:00"
     },
     {
-      "sourceRow": 279,
+      "sourceRow": 278,
       "vendor": "Ashley",
       "sku": "T523-9/7",
       "description": "Realyn Cocktail/End",
@@ -9683,10 +9647,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:07:21.587748+00:00"
+      "checkedAt": "2026-06-23T08:31:34.311548+00:00"
     },
     {
-      "sourceRow": 280,
+      "sourceRow": 279,
       "vendor": "Ashley",
       "sku": "T637-20/3/107 -4",
       "description": "Bolanburg Cocktail/End",
@@ -9719,10 +9683,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:08:24.006642+00:00"
+      "checkedAt": "2026-06-23T08:31:34.315007+00:00"
     },
     {
-      "sourceRow": 281,
+      "sourceRow": 280,
       "vendor": "Ashley",
       "sku": "T719-9/7",
       "description": "Cocktail/End",
@@ -9755,10 +9719,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:08:51.492799+00:00"
+      "checkedAt": "2026-06-23T08:31:34.317006+00:00"
     },
     {
-      "sourceRow": 282,
+      "sourceRow": 281,
       "vendor": "Ashley",
       "sku": "T736-20/3/107 -4",
       "description": "Tyler Creek Cocktail/End",
@@ -9791,10 +9755,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:09:30.719260+00:00"
+      "checkedAt": "2026-06-23T08:31:34.320414+00:00"
     },
     {
-      "sourceRow": 283,
+      "sourceRow": 282,
       "vendor": "Ashley",
       "sku": "T757-9/3",
       "description": "Carynhurst Cocktail/End",
@@ -9827,10 +9791,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:09:58.333717+00:00"
+      "checkedAt": "2026-06-23T08:31:34.323498+00:00"
     },
     {
-      "sourceRow": 284,
+      "sourceRow": 283,
       "vendor": "Ashley",
       "sku": "T901-9/3",
       "description": "Todoe Cocktail/End",
@@ -9863,10 +9827,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:10:49.531802+00:00"
+      "checkedAt": "2026-06-23T08:31:34.328402+00:00"
     },
     {
-      "sourceRow": 286,
+      "sourceRow": 285,
       "vendor": "Ashley",
       "sku": "W267-68/W100-101",
       "description": "Willowton TV Stand/Fireplace",
@@ -9899,10 +9863,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:12:04.013191+00:00"
+      "checkedAt": "2026-06-23T08:31:34.344547+00:00"
     },
     {
-      "sourceRow": 287,
+      "sourceRow": 286,
       "vendor": "Ashley",
       "sku": "W331-68/W100-101",
       "description": "Bellaby TV Stand/Fireplace",
@@ -9935,10 +9899,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:13:20.733877+00:00"
+      "checkedAt": "2026-06-23T08:31:34.355161+00:00"
     },
     {
-      "sourceRow": 288,
+      "sourceRow": 287,
       "vendor": "Ashley",
       "sku": "W440-68/W100-101",
       "description": "Wynnlow TV Stand/Fireplace",
@@ -9971,10 +9935,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:14:37.902227+00:00"
+      "checkedAt": "2026-06-23T08:31:34.362853+00:00"
     },
     {
-      "sourceRow": 289,
+      "sourceRow": 288,
       "vendor": "Ashley",
       "sku": "W647-60",
       "description": "Balanburg",
@@ -10007,10 +9971,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:14:55.406001+00:00"
+      "checkedAt": "2026-06-23T08:31:34.364358+00:00"
     },
     {
-      "sourceRow": 290,
+      "sourceRow": 289,
       "vendor": "Ashley",
       "sku": "W743-68",
       "description": "Realyn",
@@ -10043,10 +10007,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:16:10.687261+00:00"
+      "checkedAt": "2026-06-23T08:31:34.367902+00:00"
     },
     {
-      "sourceRow": 291,
+      "sourceRow": 290,
       "vendor": "Ashley",
       "sku": "W755-48",
       "description": "Carynhurst",
@@ -10079,10 +10043,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:16:40.487491+00:00"
+      "checkedAt": "2026-06-23T08:31:34.370365+00:00"
     },
     {
-      "sourceRow": 292,
+      "sourceRow": 291,
       "vendor": "Ashley",
       "sku": "W755-68",
       "description": "Carynhurst",
@@ -10115,10 +10079,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:17:09.614740+00:00"
+      "checkedAt": "2026-06-23T08:31:34.372438+00:00"
     },
     {
-      "sourceRow": 293,
+      "sourceRow": 292,
       "vendor": "Ashley",
       "sku": "W901-68",
       "description": "Todoe",
@@ -10151,10 +10115,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:18:24.785228+00:00"
+      "checkedAt": "2026-06-23T08:31:34.375888+00:00"
     },
     {
-      "sourceRow": 296,
+      "sourceRow": 295,
       "vendor": "Jackson",
       "sku": "1934/1935/1939/61936/61933/1938 1998/18",
       "description": "Abraxas",
@@ -10187,10 +10151,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:18:43.133016+00:00"
+      "checkedAt": "2026-06-23T08:31:34.377240+00:00"
     },
     {
-      "sourceRow": 297,
+      "sourceRow": 296,
       "vendor": "Jackson",
       "sku": "421503/01",
       "description": "Alyssa",
@@ -10223,10 +10187,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:19:00.195216+00:00"
+      "checkedAt": "2026-06-23T08:31:34.379764+00:00"
     },
     {
-      "sourceRow": 298,
+      "sourceRow": 297,
       "vendor": "Jackson",
       "sku": "3591/35907 1934/88",
       "description": "Ashland Granite Manual",
@@ -10259,10 +10223,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:19:18.619992+00:00"
+      "checkedAt": "2026-06-23T08:31:34.381425+00:00"
     },
     {
-      "sourceRow": 299,
+      "sourceRow": 298,
       "vendor": "Jackson",
       "sku": "63591/99/07-1934/88-2317/08",
       "description": "Ashland Granite",
@@ -10295,10 +10259,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:19:38.086904+00:00"
+      "checkedAt": "2026-06-23T08:31:34.383276+00:00"
     },
     {
-      "sourceRow": 300,
+      "sourceRow": 299,
       "vendor": "Jackson",
       "sku": "63591/99/07-1934/16-2317/48",
       "description": "Ashland Buff",
@@ -10331,10 +10295,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:19:56.577493+00:00"
+      "checkedAt": "2026-06-23T08:31:34.384878+00:00"
     },
     {
-      "sourceRow": 301,
+      "sourceRow": 300,
       "vendor": "Jackson",
       "sku": "449803",
       "description": "Ava",
@@ -10367,10 +10331,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:20:14.029985+00:00"
+      "checkedAt": "2026-06-23T08:31:34.386305+00:00"
     },
     {
-      "sourceRow": 302,
+      "sourceRow": 301,
       "vendor": "Jackson",
       "sku": "641054-1429-49",
       "description": "Benny",
@@ -10403,10 +10367,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:20:31.208349+00:00"
+      "checkedAt": "2026-06-23T08:31:34.387696+00:00"
     },
     {
-      "sourceRow": 303,
+      "sourceRow": 302,
       "vendor": "Jackson",
       "sku": "47742-1506/28",
       "description": "Brody",
@@ -10439,10 +10403,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:20:49.602354+00:00"
+      "checkedAt": "2026-06-23T08:31:34.388966+00:00"
     },
     {
-      "sourceRow": 304,
+      "sourceRow": 303,
       "vendor": "Jackson",
       "sku": "47742-1506/18",
       "description": "Slate",
@@ -10475,10 +10439,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:21:08.062035+00:00"
+      "checkedAt": "2026-06-23T08:31:34.390753+00:00"
     },
     {
-      "sourceRow": 305,
+      "sourceRow": 304,
       "vendor": "Jackson",
       "sku": "230659/63/73 -28",
       "description": "Bucktown",
@@ -10511,10 +10475,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:21:49.000446+00:00"
+      "checkedAt": "2026-06-23T08:31:34.392824+00:00"
     },
     {
-      "sourceRow": 306,
+      "sourceRow": 305,
       "vendor": "Jackson",
       "sku": "628107 -59/48 Colors",
       "description": "Burbank",
@@ -10547,10 +10511,10 @@
       "lowestReliableCompetitorPrice": "$2.00",
       "storeMinusLowest": "$697.00",
       "recommendation": "you are $697.00 higher than competitor",
-      "checkedAt": "2026-06-16T11:23:06.464204+00:00"
+      "checkedAt": "2026-06-23T08:31:34.396856+00:00"
     },
     {
-      "sourceRow": 307,
+      "sourceRow": 306,
       "vendor": "Jackson",
       "sku": "4863 -28/09 Colors",
       "description": "Chandler - Lift",
@@ -10583,10 +10547,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:24:23.218974+00:00"
+      "checkedAt": "2026-06-23T08:31:34.405822+00:00"
     },
     {
-      "sourceRow": 308,
+      "sourceRow": 307,
       "vendor": "Jackson",
       "sku": "26302-1760/26",
       "description": "Cirrus",
@@ -10619,10 +10583,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:24:42.094841+00:00"
+      "checkedAt": "2026-06-23T08:31:34.407991+00:00"
     },
     {
-      "sourceRow": 309,
+      "sourceRow": 308,
       "vendor": "Jackson",
       "sku": "626307-1760 -26/-48 Colors",
       "description": "Cirrus",
@@ -10655,10 +10619,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:25:00.414880+00:00"
+      "checkedAt": "2026-06-23T08:31:34.410052+00:00"
     },
     {
-      "sourceRow": 310,
+      "sourceRow": 309,
       "vendor": "Jackson",
       "sku": "65417-2334/36",
       "description": "Cloud",
@@ -10691,10 +10655,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:25:18.832249+00:00"
+      "checkedAt": "2026-06-23T08:31:34.411542+00:00"
     },
     {
-      "sourceRow": 311,
+      "sourceRow": 310,
       "vendor": "Jackson",
       "sku": "65412-2334/36",
       "description": "Cloud",
@@ -10727,10 +10691,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:25:37.198948+00:00"
+      "checkedAt": "2026-06-23T08:31:34.412910+00:00"
     },
     {
-      "sourceRow": 312,
+      "sourceRow": 311,
       "vendor": "Jackson",
       "sku": "304509 -18/09/08 Colors",
       "description": "Comfrey",
@@ -10763,10 +10727,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:26:07.526989+00:00"
+      "checkedAt": "2026-06-23T08:31:34.414913+00:00"
     },
     {
-      "sourceRow": 313,
+      "sourceRow": 312,
       "vendor": "Jackson",
       "sku": "304575/76 -18/09 Colors",
       "description": "Comfrey",
@@ -10799,10 +10763,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:26:24.963121+00:00"
+      "checkedAt": "2026-06-23T08:31:34.416848+00:00"
     },
     {
-      "sourceRow": 314,
+      "sourceRow": 313,
       "vendor": "Jackson",
       "sku": "4071/64072/40707 -56",
       "description": "Costa",
@@ -10835,10 +10799,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:27:06.435467+00:00"
+      "checkedAt": "2026-06-23T08:31:34.420002+00:00"
     },
     {
-      "sourceRow": 315,
+      "sourceRow": 314,
       "vendor": "Jackson",
       "sku": "47655 -29/28 Colors",
       "description": "Daly",
@@ -10871,10 +10835,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:28:23.837859+00:00"
+      "checkedAt": "2026-06-23T08:31:34.428415+00:00"
     },
     {
-      "sourceRow": 316,
+      "sourceRow": 315,
       "vendor": "Jackson",
       "sku": "647657-1622/14",
       "description": "Daly",
@@ -10907,10 +10871,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:28:42.640921+00:00"
+      "checkedAt": "2026-06-23T08:31:34.430820+00:00"
     },
     {
-      "sourceRow": 317,
+      "sourceRow": 316,
       "vendor": "Jackson",
       "sku": "4897-1207/28",
       "description": "Elsie - Lift",
@@ -10943,10 +10907,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:29:00.999002+00:00"
+      "checkedAt": "2026-06-23T08:31:34.433354+00:00"
     },
     {
-      "sourceRow": 318,
+      "sourceRow": 317,
       "vendor": "Jackson",
       "sku": "428303/01/77-1561/46",
       "description": "Farmington",
@@ -10979,10 +10943,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:29:33.715088+00:00"
+      "checkedAt": "2026-06-23T08:31:34.437002+00:00"
     },
     {
-      "sourceRow": 319,
+      "sourceRow": 318,
       "vendor": "Jackson",
       "sku": "11445/22/05 1953/38",
       "description": "Felix",
@@ -11015,10 +10979,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:29:52.139934+00:00"
+      "checkedAt": "2026-06-23T08:31:34.439558+00:00"
     },
     {
-      "sourceRow": 320,
+      "sourceRow": 319,
       "vendor": "Jackson",
       "sku": "61891/9/07/ 761891 -89/28 Colors",
       "description": "Ferrington",
@@ -11051,10 +11015,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:30:22.971469+00:00"
+      "checkedAt": "2026-06-23T08:31:34.442272+00:00"
     },
     {
-      "sourceRow": 321,
+      "sourceRow": 320,
       "vendor": "Jackson",
       "sku": "444703/01/11",
       "description": "Freemont",
@@ -11087,10 +11051,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:31:03.666113+00:00"
+      "checkedAt": "2026-06-23T08:31:34.445807+00:00"
     },
     {
-      "sourceRow": 322,
+      "sourceRow": 321,
       "vendor": "Jackson",
       "sku": "247730/62/76",
       "description": "Glacier",
@@ -11123,10 +11087,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:31:44.876929+00:00"
+      "checkedAt": "2026-06-23T08:31:34.449628+00:00"
     },
     {
-      "sourceRow": 323,
+      "sourceRow": 322,
       "vendor": "Jackson",
       "sku": "435002/28",
       "description": "Havana",
@@ -11159,15 +11123,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:32:01.976601+00:00"
+      "checkedAt": "2026-06-23T08:31:34.451788+00:00"
     },
     {
-      "sourceRow": 324,
+      "sourceRow": 323,
       "vendor": "Jackson",
       "sku": "41072-1176/18-1276/18",
       "description": "Hayden",
-      "storePriceText": "R $899",
-      "storePrice": "$899",
+      "storePriceText": "$799",
+      "storePrice": "$799",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -11195,10 +11159,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:32:20.370116+00:00"
+      "checkedAt": "2026-06-23T08:31:34.454518+00:00"
     },
     {
-      "sourceRow": 325,
+      "sourceRow": 324,
       "vendor": "Jackson",
       "sku": "47665 -29",
       "description": "Hoffner",
@@ -11231,10 +11195,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:32:37.804675+00:00"
+      "checkedAt": "2026-06-23T08:31:34.456199+00:00"
     },
     {
-      "sourceRow": 326,
+      "sourceRow": 325,
       "vendor": "Jackson",
       "sku": "62651/52/04",
       "description": "Hollins",
@@ -11267,10 +11231,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:32:56.336903+00:00"
+      "checkedAt": "2026-06-23T08:31:34.458127+00:00"
     },
     {
-      "sourceRow": 327,
+      "sourceRow": 326,
       "vendor": "Jackson",
       "sku": "230103/02",
       "description": "Hyde Park",
@@ -11303,15 +11267,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:33:13.523730+00:00"
+      "checkedAt": "2026-06-23T08:31:34.460813+00:00"
     },
     {
-      "sourceRow": 328,
+      "sourceRow": 327,
       "vendor": "Jackson",
       "sku": "762821/29/07",
       "description": "Joya",
-      "storePriceText": "S $1,899, L $1,899, R $1,099",
-      "storePrice": "$1,899,",
+      "storePriceText": "S $1,699, L $1,699, R $1,299",
+      "storePrice": "$1,699,",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -11339,10 +11303,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:33:54.819378+00:00"
+      "checkedAt": "2026-06-23T08:31:34.463382+00:00"
     },
     {
-      "sourceRow": 329,
+      "sourceRow": 328,
       "vendor": "Jackson",
       "sku": "2215-31 (3)/36/37/59 -12",
       "description": "Kimpton",
@@ -11375,10 +11339,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:34:13.154225+00:00"
+      "checkedAt": "2026-06-23T08:31:34.465708+00:00"
     },
     {
-      "sourceRow": 330,
+      "sourceRow": 329,
       "vendor": "Jackson",
       "sku": "409803/01/10",
       "description": "Lamar",
@@ -11411,10 +11375,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:34:54.107923+00:00"
+      "checkedAt": "2026-06-23T08:31:34.468083+00:00"
     },
     {
-      "sourceRow": 331,
+      "sourceRow": 330,
       "vendor": "Jackson",
       "sku": "62571/9/07 2530/09",
       "description": "Lenny",
@@ -11447,10 +11411,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:35:12.643866+00:00"
+      "checkedAt": "2026-06-23T08:31:34.470154+00:00"
     },
     {
-      "sourceRow": 332,
+      "sourceRow": 331,
       "vendor": "Jackson",
       "sku": "327912/74227-2086/18",
       "description": "Lewiston",
@@ -11483,10 +11447,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:35:31.126861+00:00"
+      "checkedAt": "2026-06-23T08:31:34.474773+00:00"
     },
     {
-      "sourceRow": 333,
+      "sourceRow": 332,
       "vendor": "Jackson",
       "sku": "4892-1792/28-2792/28",
       "description": "Longevity - Lift",
@@ -11519,10 +11483,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:35:49.468898+00:00"
+      "checkedAt": "2026-06-23T08:31:34.478779+00:00"
     },
     {
-      "sourceRow": 334,
+      "sourceRow": 333,
       "vendor": "Jackson",
       "sku": "642527 1916/01 -23/38",
       "description": "Lullaby",
@@ -11555,10 +11519,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:36:08.032616+00:00"
+      "checkedAt": "2026-06-23T08:31:34.481894+00:00"
     },
     {
-      "sourceRow": 335,
+      "sourceRow": 334,
       "vendor": "Jackson",
       "sku": "647852 - 28/26 Colors",
       "description": "Malloy",
@@ -11591,10 +11555,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:36:27.502533+00:00"
+      "checkedAt": "2026-06-23T08:31:34.485707+00:00"
     },
     {
-      "sourceRow": 336,
+      "sourceRow": 335,
       "vendor": "Jackson",
       "sku": "437630/72/92 3PC",
       "description": "Mammoth Chocolate",
@@ -11627,10 +11591,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:36:57.673142+00:00"
+      "checkedAt": "2026-06-23T08:31:34.489390+00:00"
     },
     {
-      "sourceRow": 337,
+      "sourceRow": 336,
       "vendor": "Jackson",
       "sku": "437630/62/96 3PC",
       "description": "Mammoth Smoke",
@@ -11663,10 +11627,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:37:42.166943+00:00"
+      "checkedAt": "2026-06-23T08:31:34.495439+00:00"
     },
     {
-      "sourceRow": 338,
+      "sourceRow": 337,
       "vendor": "Jackson",
       "sku": "2614/19/15/18/62613/16",
       "description": "McPherson",
@@ -11699,10 +11663,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:37:59.239491+00:00"
+      "checkedAt": "2026-06-23T08:31:34.499847+00:00"
     },
     {
-      "sourceRow": 339,
+      "sourceRow": 338,
       "vendor": "Jackson",
       "sku": "447830/62/76",
       "description": "Middleton",
@@ -11735,46 +11699,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:38:40.252362+00:00"
+      "checkedAt": "2026-06-23T08:31:34.508355+00:00"
     },
     {
-      "sourceRow": 340,
-      "vendor": "Jackson",
-      "sku": "47372",
-      "description": "Nettles",
-      "storePriceText": "$699",
-      "storePrice": "$699",
-      "regularPrice": "",
-      "existingAhsCompPrice": "",
-      "existingFflCompPrice": "",
-      "remarks": "",
-      "bucket": "non_ashley",
-      "rowNotes": [],
-      "ashley": {
-        "competitor": "Ashley",
-        "title": "",
-        "price": "",
-        "url": "",
-        "confidence": "none",
-        "matchedTokens": [],
-        "notes": []
-      },
-      "furniture4Less": {
-        "competitor": "Furniture4LessNC",
-        "title": "Google",
-        "price": "",
-        "url": "https://search.google.com/local/reviews?placeid=ChIJ7RDh1h4TqYkRI7pF2_msQUo&q=Furniture+4+Less&hl=en&gl=US",
-        "confidence": "none",
-        "matchedTokens": [],
-        "notes": []
-      },
-      "lowestReliableCompetitorPrice": "",
-      "storeMinusLowest": "",
-      "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:38:57.649468+00:00"
-    },
-    {
-      "sourceRow": 341,
+      "sourceRow": 339,
       "vendor": "Jackson",
       "sku": "442103/02/01/28",
       "description": "Newberg",
@@ -11807,10 +11735,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:39:14.897745+00:00"
+      "checkedAt": "2026-06-23T08:31:34.512530+00:00"
     },
     {
-      "sourceRow": 342,
+      "sourceRow": 340,
       "vendor": "Jackson",
       "sku": "47035-2792   -28/26",
       "description": "Niles",
@@ -11843,10 +11771,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:39:31.986171+00:00"
+      "checkedAt": "2026-06-23T08:31:34.517466+00:00"
     },
     {
-      "sourceRow": 343,
+      "sourceRow": 341,
       "vendor": "Jackson",
       "sku": "4827",
       "description": "Omni - Lift",
@@ -11879,10 +11807,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:39:49.359788+00:00"
+      "checkedAt": "2026-06-23T08:31:34.527744+00:00"
     },
     {
-      "sourceRow": 344,
+      "sourceRow": 342,
       "vendor": "Jackson",
       "sku": "42135 -26/29/38 Colors",
       "description": "Pendleton",
@@ -11915,10 +11843,10 @@
       "lowestReliableCompetitorPrice": "$2.00",
       "storeMinusLowest": "$997.00",
       "recommendation": "you are $997.00 higher than competitor",
-      "checkedAt": "2026-06-16T11:40:55.107957+00:00"
+      "checkedAt": "2026-06-23T08:31:34.533601+00:00"
     },
     {
-      "sourceRow": 345,
+      "sourceRow": 343,
       "vendor": "Jackson",
       "sku": "247030/62/76",
       "description": "Polaris",
@@ -11951,10 +11879,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:41:36.155539+00:00"
+      "checkedAt": "2026-06-23T08:31:34.536725+00:00"
     },
     {
-      "sourceRow": 346,
+      "sourceRow": 344,
       "vendor": "Jackson",
       "sku": "444559 (3)/ 444531 (2)/ 444528 -11",
       "description": "Posh",
@@ -11987,10 +11915,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:42:53.316626+00:00"
+      "checkedAt": "2026-06-23T08:31:34.542231+00:00"
     },
     {
-      "sourceRow": 347,
+      "sourceRow": 345,
       "vendor": "Jackson",
       "sku": "444559 (3)/ 444531 (2)/ 444528 -26",
       "description": "Posh",
@@ -12023,10 +11951,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:42:53.317507+00:00"
+      "checkedAt": "2026-06-23T08:31:34.543817+00:00"
     },
     {
-      "sourceRow": 348,
+      "sourceRow": 346,
       "vendor": "Jackson",
       "sku": "1536/1537/1538 1771/28",
       "description": "Quinn",
@@ -12059,10 +11987,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:43:11.675381+00:00"
+      "checkedAt": "2026-06-23T08:31:34.546739+00:00"
     },
     {
-      "sourceRow": 349,
+      "sourceRow": 347,
       "vendor": "Jackson",
       "sku": "7641067 -19/89 (Add Dark Brown)",
       "description": "Relaxer",
@@ -12095,10 +12023,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:44:28.242155+00:00"
+      "checkedAt": "2026-06-23T08:31:34.553411+00:00"
     },
     {
-      "sourceRow": 350,
+      "sourceRow": 348,
       "vendor": "Jackson",
       "sku": "7647957  -88/58 (2 Colors)",
       "description": "Reliever",
@@ -12131,10 +12059,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:44:58.233338+00:00"
+      "checkedAt": "2026-06-23T08:31:34.557548+00:00"
     },
     {
-      "sourceRow": 351,
+      "sourceRow": 349,
       "vendor": "Jackson",
       "sku": "2245-31(3)/36/59/76 1930/35 -12",
       "description": "Remington Pine",
@@ -12167,10 +12095,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:46:15.639530+00:00"
+      "checkedAt": "2026-06-23T08:31:34.565556+00:00"
     },
     {
-      "sourceRow": 352,
+      "sourceRow": 350,
       "vendor": "Jackson",
       "sku": "2245-31(3)/36/59/76 1930/23 -12",
       "description": "Remington Slate",
@@ -12203,10 +12131,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:46:34.482147+00:00"
+      "checkedAt": "2026-06-23T08:31:34.568001+00:00"
     },
     {
-      "sourceRow": 353,
+      "sourceRow": 351,
       "vendor": "Jackson",
       "sku": "2401/09/002",
       "description": "Reyes",
@@ -12239,10 +12167,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:46:51.597159+00:00"
+      "checkedAt": "2026-06-23T08:31:34.569561+00:00"
     },
     {
-      "sourceRow": 354,
+      "sourceRow": 352,
       "vendor": "Jackson",
       "sku": "849146/76",
       "description": "Salem",
@@ -12275,10 +12203,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:47:08.711253+00:00"
+      "checkedAt": "2026-06-23T08:31:34.570829+00:00"
     },
     {
-      "sourceRow": 355,
+      "sourceRow": 353,
       "vendor": "Jackson",
       "sku": "62221/62229/ 622207/7622207/762221 - 29/28 Colors",
       "description": "Sedona",
@@ -12311,10 +12239,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:47:27.494629+00:00"
+      "checkedAt": "2026-06-23T08:31:34.572611+00:00"
     },
     {
-      "sourceRow": 356,
+      "sourceRow": 354,
       "vendor": "Jackson",
       "sku": "763021/9 1176/18",
       "description": "Serenity",
@@ -12347,10 +12275,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:47:45.848465+00:00"
+      "checkedAt": "2026-06-23T08:31:34.574494+00:00"
     },
     {
-      "sourceRow": 357,
+      "sourceRow": 355,
       "vendor": "Jackson",
       "sku": "27202",
       "description": "Shaggy - Chocolate/Moonstruck",
@@ -12383,10 +12311,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:48:02.919289+00:00"
+      "checkedAt": "2026-06-23T08:31:34.578985+00:00"
     },
     {
-      "sourceRow": 358,
+      "sourceRow": 356,
       "vendor": "Jackson",
       "sku": "324103",
       "description": "Singletary",
@@ -12419,10 +12347,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:48:20.054272+00:00"
+      "checkedAt": "2026-06-23T08:31:34.583180+00:00"
     },
     {
-      "sourceRow": 359,
+      "sourceRow": 357,
       "vendor": "Jackson",
       "sku": "60098",
       "description": "Sploosh",
@@ -12455,10 +12383,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:48:37.715813+00:00"
+      "checkedAt": "2026-06-23T08:31:34.584820+00:00"
     },
     {
-      "sourceRow": 360,
+      "sourceRow": 358,
       "vendor": "Jackson",
       "sku": "7647887",
       "description": "Sterling",
@@ -12491,10 +12419,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:48:54.882298+00:00"
+      "checkedAt": "2026-06-23T08:31:34.586310+00:00"
     },
     {
-      "sourceRow": 361,
+      "sourceRow": 359,
       "vendor": "Jackson",
       "sku": "348030/62/76 - 28",
       "description": "Titan",
@@ -12527,10 +12455,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:50:12.290453+00:00"
+      "checkedAt": "2026-06-23T08:31:34.592142+00:00"
     },
     {
-      "sourceRow": 362,
+      "sourceRow": 360,
       "vendor": "Jackson",
       "sku": "645707-1273/89-3073/89",
       "description": "Toretta",
@@ -12563,10 +12491,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:50:30.629835+00:00"
+      "checkedAt": "2026-06-23T08:31:34.594194+00:00"
     },
     {
-      "sourceRow": 363,
+      "sourceRow": 361,
       "vendor": "Jackson",
       "sku": "1271/1272/12702",
       "description": "Tosh",
@@ -12599,10 +12527,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:50:47.953049+00:00"
+      "checkedAt": "2026-06-23T08:31:34.595810+00:00"
     },
     {
-      "sourceRow": 364,
+      "sourceRow": 362,
       "vendor": "Jackson",
       "sku": "43845/4389/43807 -49/29/53 Colors",
       "description": "Voyager",
@@ -12635,10 +12563,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:51:53.601135+00:00"
+      "checkedAt": "2026-06-23T08:31:34.600483+00:00"
     },
     {
-      "sourceRow": 365,
+      "sourceRow": 363,
       "vendor": "Jackson",
       "sku": "612107",
       "description": "Westport",
@@ -12671,10 +12599,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:52:11.514898+00:00"
+      "checkedAt": "2026-06-23T08:31:34.602483+00:00"
     },
     {
-      "sourceRow": 366,
+      "sourceRow": 364,
       "vendor": "Jackson",
       "sku": "447003/01/10",
       "description": "Zeller",
@@ -12707,10 +12635,46 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:52:52.272651+00:00"
+      "checkedAt": "2026-06-23T08:31:34.605530+00:00"
     },
     {
-      "sourceRow": 369,
+      "sourceRow": 367,
+      "vendor": "Liberty",
+      "sku": "104G-BR16FS/22H/90RSP/31/41/51/61",
+      "description": "Twin Lakes 7PC Bedroom",
+      "storePriceText": "Q $3,999, K $4,299",
+      "storePrice": "$3,999,",
+      "regularPrice": "",
+      "existingAhsCompPrice": "",
+      "existingFflCompPrice": "",
+      "remarks": "Put on Floor When It Comes In",
+      "bucket": "non_ashley",
+      "rowNotes": [],
+      "ashley": {
+        "competitor": "Ashley",
+        "title": "",
+        "price": "",
+        "url": "",
+        "confidence": "none",
+        "matchedTokens": [],
+        "notes": []
+      },
+      "furniture4Less": {
+        "competitor": "Furniture4LessNC",
+        "title": "Rusticott Bedroom Set",
+        "price": "$1,169.99",
+        "url": "https://furniture4lessnc.com/products/rusticott-bedroom-package?_pos=11&_sid=32c89f073&_ss=r",
+        "confidence": "none",
+        "matchedTokens": [],
+        "notes": []
+      },
+      "lowestReliableCompetitorPrice": "",
+      "storeMinusLowest": "",
+      "recommendation": "no reliable competitor match found",
+      "checkedAt": "2026-06-23T08:31:50.941955+00:00"
+    },
+    {
+      "sourceRow": 368,
       "vendor": "Liberty",
       "sku": "244-GT5454/ B400324",
       "description": "Magnolia Manor Pub + 4",
@@ -12743,10 +12707,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:53:11.036490+00:00"
+      "checkedAt": "2026-06-23T08:31:50.957344+00:00"
     },
     {
-      "sourceRow": 370,
+      "sourceRow": 369,
       "vendor": "Liberty",
       "sku": "244-T4490/ C2501S (4) / C2501A (2)",
       "description": "Magnolia Manor 7PC Dining Room",
@@ -12779,10 +12743,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:54:16.619256+00:00"
+      "checkedAt": "2026-06-23T08:31:50.967008+00:00"
     },
     {
-      "sourceRow": 371,
+      "sourceRow": 370,
       "vendor": "Liberty",
       "sku": "244-BR31/41/51/61/15HU/16/90",
       "description": "Magnolia Manor King 7PC King Bedroom",
@@ -12815,10 +12779,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:54:35.806077+00:00"
+      "checkedAt": "2026-06-23T08:31:50.973121+00:00"
     },
     {
-      "sourceRow": 372,
+      "sourceRow": 371,
       "vendor": "Liberty",
       "sku": "303W-T3872/C3001S (6)",
       "description": "Ocean Isle 7PC Dining Room",
@@ -12851,10 +12815,10 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:54:54.401778+00:00"
+      "checkedAt": "2026-06-23T08:31:50.978208+00:00"
     },
     {
-      "sourceRow": 373,
+      "sourceRow": 372,
       "vendor": "Liberty",
       "sku": "417-BR31/41/51/61/13/14/90",
       "description": "Allyson Park 7PC Bedroom",
@@ -12887,7 +12851,43 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:55:13.655192+00:00"
+      "checkedAt": "2026-06-23T08:31:50.980922+00:00"
+    },
+    {
+      "sourceRow": 373,
+      "vendor": "Liberty",
+      "sku": "457-BR15M/16FS/90M/31/41/51/61",
+      "description": "Ivy Hollow Mantle 7PC Storage Bedroom",
+      "storePriceText": "Q $5,499, K $5,799",
+      "storePrice": "$5,499,",
+      "regularPrice": "",
+      "existingAhsCompPrice": "",
+      "existingFflCompPrice": "",
+      "remarks": "",
+      "bucket": "non_ashley",
+      "rowNotes": [],
+      "ashley": {
+        "competitor": "Ashley",
+        "title": "",
+        "price": "",
+        "url": "",
+        "confidence": "none",
+        "matchedTokens": [],
+        "notes": []
+      },
+      "furniture4Less": {
+        "competitor": "Furniture4LessNC",
+        "title": "Ivy Hollow King Mantle Storage Bed",
+        "price": "$2,889.99",
+        "url": "https://furniture4lessnc.com/products/ivy-hollow-king-mantle-storage-bed-457-br-kms?_pos=5&_sid=9713f2c78&_ss=r",
+        "confidence": "low",
+        "matchedTokens": [],
+        "notes": []
+      },
+      "lowestReliableCompetitorPrice": "",
+      "storeMinusLowest": "",
+      "recommendation": "no reliable competitor match found",
+      "checkedAt": "2026-06-23T08:32:07.756342+00:00"
     },
     {
       "sourceRow": 374,
@@ -12923,7 +12923,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:55:32.596339+00:00"
+      "checkedAt": "2026-06-23T08:32:07.763729+00:00"
     },
     {
       "sourceRow": 375,
@@ -12959,7 +12959,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:55:52.064762+00:00"
+      "checkedAt": "2026-06-23T08:32:07.769549+00:00"
     },
     {
       "sourceRow": 376,
@@ -12995,7 +12995,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:56:11.251209+00:00"
+      "checkedAt": "2026-06-23T08:32:07.775386+00:00"
     },
     {
       "sourceRow": 377,
@@ -13031,7 +13031,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:56:30.044315+00:00"
+      "checkedAt": "2026-06-23T08:32:07.781390+00:00"
     },
     {
       "sourceRow": 378,
@@ -13067,7 +13067,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:57:37.525962+00:00"
+      "checkedAt": "2026-06-23T08:32:07.785923+00:00"
     },
     {
       "sourceRow": 379,
@@ -13103,7 +13103,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:58:19.309336+00:00"
+      "checkedAt": "2026-06-23T08:32:07.789922+00:00"
     },
     {
       "sourceRow": 380,
@@ -13139,7 +13139,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:59:24.454874+00:00"
+      "checkedAt": "2026-06-23T08:32:07.797472+00:00"
     },
     {
       "sourceRow": 381,
@@ -13175,7 +13175,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T11:59:45.122960+00:00"
+      "checkedAt": "2026-06-23T08:32:07.802991+00:00"
     },
     {
       "sourceRow": 382,
@@ -13211,7 +13211,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:00:16.429784+00:00"
+      "checkedAt": "2026-06-23T08:32:07.809766+00:00"
     },
     {
       "sourceRow": 383,
@@ -13247,7 +13247,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:00:35.163674+00:00"
+      "checkedAt": "2026-06-23T08:32:07.816225+00:00"
     },
     {
       "sourceRow": 384,
@@ -13283,7 +13283,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:00:53.811332+00:00"
+      "checkedAt": "2026-06-23T08:32:07.819430+00:00"
     },
     {
       "sourceRow": 385,
@@ -13319,7 +13319,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:01:12.388191+00:00"
+      "checkedAt": "2026-06-23T08:32:07.824847+00:00"
     },
     {
       "sourceRow": 389,
@@ -13355,7 +13355,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:01:32.600157+00:00"
+      "checkedAt": "2026-06-23T08:32:07.826466+00:00"
     },
     {
       "sourceRow": 390,
@@ -13391,7 +13391,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:01:51.416526+00:00"
+      "checkedAt": "2026-06-23T08:32:07.828360+00:00"
     },
     {
       "sourceRow": 391,
@@ -13427,7 +13427,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:02:10.700257+00:00"
+      "checkedAt": "2026-06-23T08:32:07.829802+00:00"
     },
     {
       "sourceRow": 392,
@@ -13463,7 +13463,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:02:41.158552+00:00"
+      "checkedAt": "2026-06-23T08:32:07.831667+00:00"
     },
     {
       "sourceRow": 393,
@@ -13499,7 +13499,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:02:59.899288+00:00"
+      "checkedAt": "2026-06-23T08:32:07.833447+00:00"
     },
     {
       "sourceRow": 394,
@@ -13535,7 +13535,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:03:18.890803+00:00"
+      "checkedAt": "2026-06-23T08:32:07.837075+00:00"
     },
     {
       "sourceRow": 395,
@@ -13571,7 +13571,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:03:37.260584+00:00"
+      "checkedAt": "2026-06-23T08:32:07.838571+00:00"
     },
     {
       "sourceRow": 396,
@@ -13607,7 +13607,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:03:55.778546+00:00"
+      "checkedAt": "2026-06-23T08:32:07.840269+00:00"
     },
     {
       "sourceRow": 397,
@@ -13643,7 +13643,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:04:14.291637+00:00"
+      "checkedAt": "2026-06-23T08:32:07.842253+00:00"
     },
     {
       "sourceRow": 398,
@@ -13679,7 +13679,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:04:45.144903+00:00"
+      "checkedAt": "2026-06-23T08:32:07.844387+00:00"
     },
     {
       "sourceRow": 399,
@@ -13715,7 +13715,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:05:04.398686+00:00"
+      "checkedAt": "2026-06-23T08:32:07.846302+00:00"
     },
     {
       "sourceRow": 400,
@@ -13751,7 +13751,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:05:21.596731+00:00"
+      "checkedAt": "2026-06-23T08:32:07.847725+00:00"
     },
     {
       "sourceRow": 401,
@@ -13787,7 +13787,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:05:40.111731+00:00"
+      "checkedAt": "2026-06-23T08:32:07.849160+00:00"
     },
     {
       "sourceRow": 402,
@@ -13823,7 +13823,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:05:58.839720+00:00"
+      "checkedAt": "2026-06-23T08:32:07.851128+00:00"
     },
     {
       "sourceRow": 403,
@@ -13859,7 +13859,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:06:16.931073+00:00"
+      "checkedAt": "2026-06-23T08:32:07.867484+00:00"
     },
     {
       "sourceRow": 406,
@@ -13895,7 +13895,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:07:21.975908+00:00"
+      "checkedAt": "2026-06-23T08:32:07.879017+00:00"
     },
     {
       "sourceRow": 407,
@@ -13931,7 +13931,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:08:15.342223+00:00"
+      "checkedAt": "2026-06-23T08:32:07.889011+00:00"
     },
     {
       "sourceRow": 408,
@@ -13967,7 +13967,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:08:32.858703+00:00"
+      "checkedAt": "2026-06-23T08:32:07.893155+00:00"
     },
     {
       "sourceRow": 409,
@@ -14003,7 +14003,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:08:50.052407+00:00"
+      "checkedAt": "2026-06-23T08:32:07.894993+00:00"
     },
     {
       "sourceRow": 410,
@@ -14039,7 +14039,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:09:07.229608+00:00"
+      "checkedAt": "2026-06-23T08:32:07.895934+00:00"
     },
     {
       "sourceRow": 411,
@@ -14075,7 +14075,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:09:23.083943+00:00"
+      "checkedAt": "2026-06-23T08:32:07.897750+00:00"
     },
     {
       "sourceRow": 412,
@@ -14111,7 +14111,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:10:40.963034+00:00"
+      "checkedAt": "2026-06-23T08:32:07.901952+00:00"
     },
     {
       "sourceRow": 413,
@@ -14147,7 +14147,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:11:58.660405+00:00"
+      "checkedAt": "2026-06-23T08:32:07.910592+00:00"
     },
     {
       "sourceRow": 414,
@@ -14183,7 +14183,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:12:15.872674+00:00"
+      "checkedAt": "2026-06-23T08:32:07.912187+00:00"
     },
     {
       "sourceRow": 415,
@@ -14219,7 +14219,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:13:00.121954+00:00"
+      "checkedAt": "2026-06-23T08:32:07.914679+00:00"
     },
     {
       "sourceRow": 416,
@@ -14255,7 +14255,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:14:19.995636+00:00"
+      "checkedAt": "2026-06-23T08:32:07.919344+00:00"
     },
     {
       "sourceRow": 417,
@@ -14291,7 +14291,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:14:50.623543+00:00"
+      "checkedAt": "2026-06-23T08:32:07.921686+00:00"
     },
     {
       "sourceRow": 419,
@@ -14327,7 +14327,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:15:09.722108+00:00"
+      "checkedAt": "2026-06-23T08:32:07.923141+00:00"
     },
     {
       "sourceRow": 420,
@@ -14363,7 +14363,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:15:28.674527+00:00"
+      "checkedAt": "2026-06-23T08:32:07.924933+00:00"
     },
     {
       "sourceRow": 421,
@@ -14399,7 +14399,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:15:47.147989+00:00"
+      "checkedAt": "2026-06-23T08:32:07.926516+00:00"
     },
     {
       "sourceRow": 422,
@@ -14435,7 +14435,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:16:05.565252+00:00"
+      "checkedAt": "2026-06-23T08:32:07.928082+00:00"
     },
     {
       "sourceRow": 423,
@@ -14471,7 +14471,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:16:22.651999+00:00"
+      "checkedAt": "2026-06-23T08:32:07.929337+00:00"
     },
     {
       "sourceRow": 427,
@@ -14507,7 +14507,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:17:41.179922+00:00"
+      "checkedAt": "2026-06-23T08:32:07.936429+00:00"
     },
     {
       "sourceRow": 428,
@@ -14543,7 +14543,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:17:45.188881+00:00"
+      "checkedAt": "2026-06-23T08:32:07.940398+00:00"
     },
     {
       "sourceRow": 434,
@@ -14579,7 +14579,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:18:00.742029+00:00"
+      "checkedAt": "2026-06-23T08:32:07.945289+00:00"
     },
     {
       "sourceRow": 435,
@@ -14615,7 +14615,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:18:18.325818+00:00"
+      "checkedAt": "2026-06-23T08:32:07.950290+00:00"
     },
     {
       "sourceRow": 436,
@@ -14651,7 +14651,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:18:35.889947+00:00"
+      "checkedAt": "2026-06-23T08:32:07.955698+00:00"
     },
     {
       "sourceRow": 437,
@@ -14687,7 +14687,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:18:53.595867+00:00"
+      "checkedAt": "2026-06-23T08:32:07.956928+00:00"
     },
     {
       "sourceRow": 438,
@@ -14723,7 +14723,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:19:10.867981+00:00"
+      "checkedAt": "2026-06-23T08:32:07.958136+00:00"
     },
     {
       "sourceRow": 444,
@@ -14759,7 +14759,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:19:40.290360+00:00"
+      "checkedAt": "2026-06-23T08:32:07.960283+00:00"
     },
     {
       "sourceRow": 445,
@@ -14795,15 +14795,15 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:19:58.234784+00:00"
+      "checkedAt": "2026-06-23T08:32:07.961380+00:00"
     },
     {
       "sourceRow": 449,
       "vendor": "Fusion",
       "sku": "340_STERLINGTON_BLUE",
       "description": "ACCENT CHAIR++",
-      "storePriceText": "$599",
-      "storePrice": "$599",
+      "storePriceText": "$399",
+      "storePrice": "$399",
       "regularPrice": "",
       "existingAhsCompPrice": "",
       "existingFflCompPrice": "",
@@ -14831,7 +14831,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:20:15.882788+00:00"
+      "checkedAt": "2026-06-23T08:32:07.966198+00:00"
     },
     {
       "sourceRow": 453,
@@ -14867,7 +14867,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:20:33.065677+00:00"
+      "checkedAt": "2026-06-23T08:32:07.967577+00:00"
     },
     {
       "sourceRow": 457,
@@ -14903,7 +14903,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:20:51.751570+00:00"
+      "checkedAt": "2026-06-23T08:32:07.970250+00:00"
     },
     {
       "sourceRow": 458,
@@ -14939,7 +14939,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:21:09.354578+00:00"
+      "checkedAt": "2026-06-23T08:32:07.974566+00:00"
     },
     {
       "sourceRow": 462,
@@ -14975,7 +14975,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:21:27.559777+00:00"
+      "checkedAt": "2026-06-23T08:32:07.978775+00:00"
     },
     {
       "sourceRow": 463,
@@ -15011,7 +15011,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:21:45.081505+00:00"
+      "checkedAt": "2026-06-23T08:32:07.983613+00:00"
     },
     {
       "sourceRow": 464,
@@ -15047,7 +15047,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:22:02.824242+00:00"
+      "checkedAt": "2026-06-23T08:32:07.988500+00:00"
     },
     {
       "sourceRow": 468,
@@ -15083,7 +15083,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:22:22.789608+00:00"
+      "checkedAt": "2026-06-23T08:32:07.994015+00:00"
     },
     {
       "sourceRow": 469,
@@ -15119,7 +15119,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:23:28.988210+00:00"
+      "checkedAt": "2026-06-23T08:32:08.000811+00:00"
     },
     {
       "sourceRow": 470,
@@ -15155,7 +15155,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:23:47.455416+00:00"
+      "checkedAt": "2026-06-23T08:32:08.002268+00:00"
     },
     {
       "sourceRow": 471,
@@ -15191,7 +15191,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:24:07.104511+00:00"
+      "checkedAt": "2026-06-23T08:32:08.003863+00:00"
     },
     {
       "sourceRow": 472,
@@ -15227,7 +15227,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:24:26.145914+00:00"
+      "checkedAt": "2026-06-23T08:32:08.005575+00:00"
     },
     {
       "sourceRow": 473,
@@ -15263,7 +15263,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:24:44.876617+00:00"
+      "checkedAt": "2026-06-23T08:32:08.007351+00:00"
     },
     {
       "sourceRow": 474,
@@ -15299,7 +15299,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:25:03.622856+00:00"
+      "checkedAt": "2026-06-23T08:32:08.008890+00:00"
     },
     {
       "sourceRow": 475,
@@ -15335,7 +15335,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:25:22.068012+00:00"
+      "checkedAt": "2026-06-23T08:32:08.010333+00:00"
     },
     {
       "sourceRow": 476,
@@ -15371,7 +15371,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:25:40.919305+00:00"
+      "checkedAt": "2026-06-23T08:32:08.011819+00:00"
     },
     {
       "sourceRow": 477,
@@ -15407,7 +15407,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:25:59.629036+00:00"
+      "checkedAt": "2026-06-23T08:32:08.013555+00:00"
     },
     {
       "sourceRow": 478,
@@ -15443,7 +15443,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:26:18.478032+00:00"
+      "checkedAt": "2026-06-23T08:32:08.016820+00:00"
     },
     {
       "sourceRow": 479,
@@ -15479,7 +15479,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:26:37.057504+00:00"
+      "checkedAt": "2026-06-23T08:32:08.018416+00:00"
     },
     {
       "sourceRow": 480,
@@ -15515,7 +15515,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:26:55.675870+00:00"
+      "checkedAt": "2026-06-23T08:32:08.023017+00:00"
     },
     {
       "sourceRow": 481,
@@ -15551,7 +15551,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:27:16.055542+00:00"
+      "checkedAt": "2026-06-23T08:32:08.027887+00:00"
     },
     {
       "sourceRow": 484,
@@ -15587,7 +15587,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:27:47.636664+00:00"
+      "checkedAt": "2026-06-23T08:32:08.030164+00:00"
     },
     {
       "sourceRow": 485,
@@ -15623,7 +15623,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:28:06.313407+00:00"
+      "checkedAt": "2026-06-23T08:32:08.031931+00:00"
     },
     {
       "sourceRow": 486,
@@ -15659,7 +15659,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:28:24.980264+00:00"
+      "checkedAt": "2026-06-23T08:32:08.033514+00:00"
     },
     {
       "sourceRow": 487,
@@ -15695,7 +15695,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:28:43.372213+00:00"
+      "checkedAt": "2026-06-23T08:32:08.035207+00:00"
     },
     {
       "sourceRow": 488,
@@ -15731,7 +15731,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:29:01.801763+00:00"
+      "checkedAt": "2026-06-23T08:32:08.036642+00:00"
     },
     {
       "sourceRow": 489,
@@ -15767,7 +15767,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:29:20.754041+00:00"
+      "checkedAt": "2026-06-23T08:32:08.038158+00:00"
     },
     {
       "sourceRow": 490,
@@ -15803,7 +15803,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:29:39.435141+00:00"
+      "checkedAt": "2026-06-23T08:32:08.039554+00:00"
     },
     {
       "sourceRow": 491,
@@ -15839,7 +15839,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:29:58.103394+00:00"
+      "checkedAt": "2026-06-23T08:32:08.042150+00:00"
     },
     {
       "sourceRow": 492,
@@ -15875,7 +15875,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:30:16.062492+00:00"
+      "checkedAt": "2026-06-23T08:32:08.050493+00:00"
     },
     {
       "sourceRow": 493,
@@ -15911,7 +15911,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:30:33.615136+00:00"
+      "checkedAt": "2026-06-23T08:32:08.055127+00:00"
     },
     {
       "sourceRow": 496,
@@ -15947,7 +15947,7 @@
       "lowestReliableCompetitorPrice": "$2.00",
       "storeMinusLowest": "$1,997.00",
       "recommendation": "you are $1,997.00 higher than competitor",
-      "checkedAt": "2026-06-16T12:31:53.528458+00:00"
+      "checkedAt": "2026-06-23T08:32:08.063028+00:00"
     },
     {
       "sourceRow": 497,
@@ -15983,7 +15983,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:33:11.596860+00:00"
+      "checkedAt": "2026-06-23T08:32:08.067330+00:00"
     },
     {
       "sourceRow": 498,
@@ -16019,7 +16019,7 @@
       "lowestReliableCompetitorPrice": "$2,199.96",
       "storeMinusLowest": "$-900.96",
       "recommendation": "you are $900.96 lower than competitor",
-      "checkedAt": "2026-06-16T12:34:18.732608+00:00"
+      "checkedAt": "2026-06-23T08:32:08.071262+00:00"
     },
     {
       "sourceRow": 499,
@@ -16055,7 +16055,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:35:26.163719+00:00"
+      "checkedAt": "2026-06-23T08:32:08.075239+00:00"
     },
     {
       "sourceRow": 503,
@@ -16091,7 +16091,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:35:44.826311+00:00"
+      "checkedAt": "2026-06-23T08:32:08.079820+00:00"
     },
     {
       "sourceRow": 504,
@@ -16127,7 +16127,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:36:03.509225+00:00"
+      "checkedAt": "2026-06-23T08:32:08.084324+00:00"
     },
     {
       "sourceRow": 505,
@@ -16163,7 +16163,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:36:22.387874+00:00"
+      "checkedAt": "2026-06-23T08:32:08.088923+00:00"
     },
     {
       "sourceRow": 508,
@@ -16199,7 +16199,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:36:41.946790+00:00"
+      "checkedAt": "2026-06-23T08:32:08.090445+00:00"
     },
     {
       "sourceRow": 509,
@@ -16235,7 +16235,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:37:01.297512+00:00"
+      "checkedAt": "2026-06-23T08:32:08.091912+00:00"
     },
     {
       "sourceRow": 510,
@@ -16271,7 +16271,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:37:19.795230+00:00"
+      "checkedAt": "2026-06-23T08:32:08.093437+00:00"
     },
     {
       "sourceRow": 511,
@@ -16307,7 +16307,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:37:37.111360+00:00"
+      "checkedAt": "2026-06-23T08:32:08.094534+00:00"
     },
     {
       "sourceRow": 515,
@@ -16343,7 +16343,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:37:54.811359+00:00"
+      "checkedAt": "2026-06-23T08:32:08.095760+00:00"
     },
     {
       "sourceRow": 516,
@@ -16379,7 +16379,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:38:00.096085+00:00"
+      "checkedAt": "2026-06-23T08:32:08.096658+00:00"
     },
     {
       "sourceRow": 517,
@@ -16415,7 +16415,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:38:14.672245+00:00"
+      "checkedAt": "2026-06-23T08:32:08.097795+00:00"
     },
     {
       "sourceRow": 518,
@@ -16451,7 +16451,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:38:32.007381+00:00"
+      "checkedAt": "2026-06-23T08:32:08.098906+00:00"
     },
     {
       "sourceRow": 522,
@@ -16487,7 +16487,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:38:49.879772+00:00"
+      "checkedAt": "2026-06-23T08:32:08.100010+00:00"
     },
     {
       "sourceRow": 523,
@@ -16523,7 +16523,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:39:07.211267+00:00"
+      "checkedAt": "2026-06-23T08:32:08.101129+00:00"
     },
     {
       "sourceRow": 524,
@@ -16559,7 +16559,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:39:24.417077+00:00"
+      "checkedAt": "2026-06-23T08:32:08.102389+00:00"
     },
     {
       "sourceRow": 527,
@@ -16595,7 +16595,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:39:42.781763+00:00"
+      "checkedAt": "2026-06-23T08:32:08.106492+00:00"
     },
     {
       "sourceRow": 528,
@@ -16631,7 +16631,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:39:58.624547+00:00"
+      "checkedAt": "2026-06-23T08:32:08.107375+00:00"
     },
     {
       "sourceRow": 531,
@@ -16667,7 +16667,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:40:16.088720+00:00"
+      "checkedAt": "2026-06-23T08:32:08.111745+00:00"
     },
     {
       "sourceRow": 535,
@@ -16703,7 +16703,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:40:33.423240+00:00"
+      "checkedAt": "2026-06-23T08:32:08.116114+00:00"
     },
     {
       "sourceRow": 536,
@@ -16739,7 +16739,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:40:50.642253+00:00"
+      "checkedAt": "2026-06-23T08:32:08.117632+00:00"
     },
     {
       "sourceRow": 537,
@@ -16775,7 +16775,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:41:08.124333+00:00"
+      "checkedAt": "2026-06-23T08:32:08.119105+00:00"
     },
     {
       "sourceRow": 538,
@@ -16811,7 +16811,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:41:26.479261+00:00"
+      "checkedAt": "2026-06-23T08:32:08.123589+00:00"
     },
     {
       "sourceRow": 539,
@@ -16847,7 +16847,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:41:43.621654+00:00"
+      "checkedAt": "2026-06-23T08:32:08.125822+00:00"
     },
     {
       "sourceRow": 540,
@@ -16883,7 +16883,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:42:01.570085+00:00"
+      "checkedAt": "2026-06-23T08:32:08.129932+00:00"
     },
     {
       "sourceRow": 541,
@@ -16919,7 +16919,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:42:19.502666+00:00"
+      "checkedAt": "2026-06-23T08:32:08.137055+00:00"
     },
     {
       "sourceRow": 542,
@@ -16955,7 +16955,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:42:36.985309+00:00"
+      "checkedAt": "2026-06-23T08:32:08.141633+00:00"
     },
     {
       "sourceRow": 543,
@@ -16991,7 +16991,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:42:54.405311+00:00"
+      "checkedAt": "2026-06-23T08:32:08.146145+00:00"
     },
     {
       "sourceRow": 547,
@@ -17027,7 +17027,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:43:12.523728+00:00"
+      "checkedAt": "2026-06-23T08:32:08.150218+00:00"
     },
     {
       "sourceRow": 552,
@@ -17063,7 +17063,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:43:55.727836+00:00"
+      "checkedAt": "2026-06-23T08:32:08.156060+00:00"
     },
     {
       "sourceRow": 553,
@@ -17099,7 +17099,7 @@
       "lowestReliableCompetitorPrice": "",
       "storeMinusLowest": "",
       "recommendation": "no reliable competitor match found",
-      "checkedAt": "2026-06-16T12:44:49.890637+00:00"
+      "checkedAt": "2026-06-23T08:32:08.163502+00:00"
     }
   ]
 }

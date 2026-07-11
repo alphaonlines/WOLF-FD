@@ -17,6 +17,10 @@ const csv = [
   ['Ashley', 'SS', '', '', 'REGULAR PRICE', '', 'B1050-31/36/46/54/57/96/92', 'Hyana', '7PC Q $1,399 K $1,599', '', '', '', '', '', 'Matches B200 BR', '', '$900', '$1,996', '$1,056', '', '', '', '$1,599', ''].join(','),
 ].join('\n');
 
+function openRunJobTab() {
+  fireEvent.click(screen.getByRole('button', { name: /Run Job/i }));
+}
+
 describe('CompetitorPricingWorkspace', () => {
   beforeEach(() => {
     vi.mocked(createCompetitorPricingJob).mockReset();
@@ -26,6 +30,7 @@ describe('CompetitorPricingWorkspace', () => {
 
   it('renders upload controls and starts disabled before rows are loaded', () => {
     render(<CompetitorPricingWorkspace />);
+    openRunJobTab();
     expect(screen.getByRole('heading', { name: 'Competitor Pricing' })).toBeInTheDocument();
     expect(screen.getByLabelText('Upload pricing CSV or workbook')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Run Non-Ashley First' })).toBeDisabled();
@@ -33,6 +38,7 @@ describe('CompetitorPricingWorkspace', () => {
 
   it('parses an uploaded CSV and shows bucket counts', async () => {
     render(<CompetitorPricingWorkspace />);
+    openRunJobTab();
     const file = new File([csv], 'pricing.csv', { type: 'text/csv' });
     fireEvent.change(screen.getByLabelText('Upload pricing CSV or workbook'), { target: { files: [file] } });
 
@@ -54,6 +60,7 @@ describe('CompetitorPricingWorkspace', () => {
       completedAt: 'later',
     });
     render(<CompetitorPricingWorkspace />);
+    openRunJobTab();
     const file = new File([csv], 'pricing.csv', { type: 'text/csv' });
     fireEvent.change(screen.getByLabelText('Upload pricing CSV or workbook'), { target: { files: [file] } });
 
@@ -92,6 +99,7 @@ describe('CompetitorPricingWorkspace', () => {
     });
 
     render(<CompetitorPricingWorkspace />);
+    openRunJobTab();
     const file = new File([csv], 'pricing.csv', { type: 'text/csv' });
     fireEvent.change(screen.getByLabelText('Upload pricing CSV or workbook'), { target: { files: [file] } });
 

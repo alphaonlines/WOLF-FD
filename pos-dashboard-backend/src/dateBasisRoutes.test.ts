@@ -35,6 +35,7 @@ describe("POS route date_basis handling", () => {
     const writtenSql = firstSql(query);
     expect(writtenSql).toContain("s.sale_date >= $1");
     expect(writtenSql).toContain("i.sale_date >= $1");
+    expect(writtenSql).toContain("(i.date_basis = 'written' OR i.date_basis IS NULL)");
     expect(writtenSql).not.toContain("s.delivery_confirmed_date >= $1");
     expect(writtenSql).not.toContain("i.delivery_confirmed_date >= $1");
   });
@@ -54,6 +55,7 @@ describe("POS route date_basis handling", () => {
     const sql = firstSql(query);
     expect(sql).toContain("i.sale_date >= $1");
     expect(sql).toContain("s.sale_date >= $1");
+    expect(sql).toContain("(i.date_basis = 'written' OR i.date_basis IS NULL)");
     expect(sql).not.toContain("i.delivery_confirmed_date >= $1");
     expect(sql).not.toContain("s.delivery_confirmed_date >= $1");
   });
@@ -72,6 +74,7 @@ describe("POS route date_basis handling", () => {
     expect(response.status).toBe(200);
     const sql = firstSql(query);
     expect(sql).toContain("WHERE sale_date >= $1");
+    expect(sql).toContain("(date_basis = 'written' OR date_basis IS NULL)");
     expect(sql).not.toContain("WHERE delivery_confirmed_date >= $1");
   });
 
@@ -88,6 +91,7 @@ describe("POS route date_basis handling", () => {
     expect(response.status).toBe(200);
     const combinedSql = allSql(query);
     expect(combinedSql).toContain("s.sale_date >= $1");
+    expect(combinedSql).toContain("(i.date_basis = 'written' OR i.date_basis IS NULL)");
     expect(combinedSql).not.toContain("s.delivery_confirmed_date >= $1");
   });
 });

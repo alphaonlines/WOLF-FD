@@ -38,6 +38,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 const ORDER_STORAGE_KEY = "fd_dashboard_card_order";
 const VISIBLE_STORAGE_KEY = "fd_dashboard_visible_cards";
+const FORCE_VISIBLE_CARD_IDS = ["training-podcasts"];
 
 type SnapshotCard = {
   id: string;
@@ -362,7 +363,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     const availableIds = new Set(availableCards.map((card) => card.id));
     setVisibleCardIds((current) => {
       const source = current && current.length ? current : defaultVisibleIds;
-      const next = source.filter((id) => availableIds.has(id));
+      // ponytail: force the training podcast card back on even for old customized dashboards.
+      const next = Array.from(new Set([...source, ...FORCE_VISIBLE_CARD_IDS])).filter((id) => availableIds.has(id));
       if (next.length === 0 && defaultVisibleIds.length) return defaultVisibleIds;
       return JSON.stringify(current) === JSON.stringify(next) ? current : next;
     });

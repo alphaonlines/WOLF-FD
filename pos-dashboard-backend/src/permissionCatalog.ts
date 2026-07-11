@@ -87,6 +87,12 @@ export const PERMISSION_CATALOG: PermissionCatalogEntry[] = [
     scope: "module",
     description: "Access the Shop workspace for product search and POS integrations.",
   },
+  {
+    key: "module.training",
+    label: "Training Module",
+    scope: "module",
+    description: "Access sales training, podcasts, and coaching resources.",
+  },
   // ── Dashboard Cards ───────────────────────────────────────────────────────
   {
     key: "card.dashboard.sales",
@@ -226,6 +232,12 @@ export const PERMISSION_CATALOG: PermissionCatalogEntry[] = [
     scope: "dashboard_card",
     description: "Show the Shop POS card.",
   },
+  {
+    key: "card.dashboard.training_podcasts",
+    label: "Training Card: Podcasts",
+    scope: "dashboard_card",
+    description: "Show the training podcast card on dashboard overview.",
+  },
   // ── Features ──────────────────────────────────────────────────────────────
   {
     key: "feature.update_db_panel",
@@ -252,6 +264,7 @@ export const ROLE_DEFAULT_PERMISSION_KEYS: Record<string, string[]> = {
     "module.pulse",
     "module.amp",
     "module.shop",
+    "module.training",
     ...PERMISSION_CATALOG.filter((e) => e.scope === "dashboard_card").map((e) => e.key),
     "feature.update_db_panel",
   ],
@@ -269,6 +282,8 @@ export const ROLE_DEFAULT_PERMISSION_KEYS: Record<string, string[]> = {
     "card.dashboard.crm",
     "card.dashboard.shop_search",
     "card.dashboard.shop_pos",
+    "module.training",
+    "card.dashboard.training_podcasts",
   ],
   Marketing: [
     "module.dashboard",
@@ -282,6 +297,8 @@ export const ROLE_DEFAULT_PERMISSION_KEYS: Record<string, string[]> = {
     "card.dashboard.pulse_reviews",
     "card.dashboard.amp_social",
     "card.dashboard.amp_bot",
+    "module.training",
+    "card.dashboard.training_podcasts",
   ],
   Support: [
     "module.dashboard",

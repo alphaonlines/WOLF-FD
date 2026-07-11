@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseDateParam, parseTextParam } from "../parsers";
-import { dateFieldForBasis, prefixedDateFieldForBasis } from "../sqlFields";
+import { dateFieldForBasis, itemDateBasisFilter, prefixedDateFieldForBasis } from "../sqlFields";
 
 type RegisterAnalyticsRoutesDeps = {
   app: Express;
@@ -30,6 +30,7 @@ export function registerAnalyticsRoutes({
     const manufacturerQ = parseTextParam(req.query.manufacturer);
     const itemDateField = dateFieldForBasis(req.query.date_basis);
     const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
+    const itemBasisFilter = itemDateBasisFilter(req.query.date_basis);
 
     const sql = `
       WITH item_totals AS (
@@ -40,6 +41,7 @@ export function registerAnalyticsRoutes({
         FROM pos_sale_items
         WHERE ${itemDateField} >= $1
           AND ${itemDateField} < $2
+          AND ${itemBasisFilter}
           AND sale_id IS NOT NULL
           AND sale_id <> ''
           AND (category IS NULL OR category NOT ILIKE '%mattress%')
@@ -135,6 +137,8 @@ export function registerAnalyticsRoutes({
     const locationQ = parseTextParam(req.query.location);
     const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
     const itemDateField = dateFieldForBasis(req.query.date_basis);
+    const aliasedItemBasisFilter = itemDateBasisFilter(req.query.date_basis, "i");
+    const itemBasisFilter = itemDateBasisFilter(req.query.date_basis);
 
     const sql = salespersonQ
       ? `
@@ -143,11 +147,13 @@ export function registerAnalyticsRoutes({
         FROM pos_sale_items i
         WHERE i.${itemDateField} >= $1
           AND i.${itemDateField} < $2
+          AND ${aliasedItemBasisFilter}
         GROUP BY i.sale_id
       ),
       item_profits AS (
         SELECT sale_id, SUM(total_profit) as item_profit
         FROM pos_sale_items
+        WHERE ${itemBasisFilter}
         GROUP BY sale_id
       ),
       people_counts AS (
@@ -180,6 +186,7 @@ export function registerAnalyticsRoutes({
         FROM pos_sale_items i
         WHERE i.${itemDateField} >= $1
           AND i.${itemDateField} < $2
+          AND ${aliasedItemBasisFilter}
         GROUP BY i.sale_id
       )
       SELECT
@@ -208,6 +215,8 @@ export function registerAnalyticsRoutes({
     const locationQ = parseTextParam(req.query.location);
     const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
     const itemDateField = dateFieldForBasis(req.query.date_basis);
+    const aliasedItemBasisFilter = itemDateBasisFilter(req.query.date_basis, "i");
+    const itemBasisFilter = itemDateBasisFilter(req.query.date_basis);
 
     const sql = `
       WITH item_rollup AS (
@@ -218,11 +227,13 @@ export function registerAnalyticsRoutes({
         FROM pos_sale_items i
         WHERE i.${itemDateField} >= $1
           AND i.${itemDateField} < $2
+          AND ${aliasedItemBasisFilter}
         GROUP BY i.sale_id
       ),
       item_profits AS (
         SELECT sale_id, SUM(total_profit) as item_profit
         FROM pos_sale_items
+        WHERE ${itemBasisFilter}
         GROUP BY sale_id
       ),
       people_counts AS (

@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS pos_sale_items_raw (
   raw_source_file TEXT,
   import_batch_id BIGINT,
   row_json        JSONB NOT NULL,
+  date_basis      TEXT,
   imported_at     TIMESTAMPTZ DEFAULT now()
 );
 
@@ -92,6 +93,7 @@ CREATE TABLE IF NOT EXISTS pos_sale_items (
   total_profit        NUMERIC,
   gross_margin        NUMERIC,
   delivery_confirmed_date DATE,
+  date_basis          TEXT,
   is_pro1st           BOOLEAN DEFAULT FALSE,
   raw_source_file     TEXT,
   import_batch_id     BIGINT,
@@ -101,10 +103,16 @@ CREATE TABLE IF NOT EXISTS pos_sale_items (
 ALTER TABLE pos_sales_raw ADD COLUMN IF NOT EXISTS import_batch_id BIGINT;
 ALTER TABLE pos_sales ADD COLUMN IF NOT EXISTS last_import_batch_id BIGINT;
 ALTER TABLE pos_sale_items_raw ADD COLUMN IF NOT EXISTS import_batch_id BIGINT;
+ALTER TABLE pos_sale_items_raw ADD COLUMN IF NOT EXISTS date_basis TEXT;
 ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS import_batch_id BIGINT;
+ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS date_basis TEXT;
 ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS is_pro1st BOOLEAN DEFAULT FALSE;
 
 CREATE INDEX IF NOT EXISTS idx_pos_sale_items_sale_id ON pos_sale_items(sale_id);
+CREATE INDEX IF NOT EXISTS idx_pos_sale_items_date_basis_sale_id ON pos_sale_items(date_basis, sale_id);
+CREATE INDEX IF NOT EXISTS idx_pos_sale_items_date_basis_sale_date ON pos_sale_items(date_basis, sale_date);
+CREATE INDEX IF NOT EXISTS idx_pos_sale_items_date_basis_delivery ON pos_sale_items(date_basis, delivery_confirmed_date);
+CREATE INDEX IF NOT EXISTS idx_pos_sale_items_raw_date_basis_sale_id ON pos_sale_items_raw(date_basis, sale_id);
 CREATE INDEX IF NOT EXISTS idx_pos_sale_items_category ON pos_sale_items(category);
 CREATE INDEX IF NOT EXISTS idx_pos_sale_items_item_no ON pos_sale_items(item_no);
 CREATE INDEX IF NOT EXISTS idx_pos_sale_items_batch ON pos_sale_items(import_batch_id);

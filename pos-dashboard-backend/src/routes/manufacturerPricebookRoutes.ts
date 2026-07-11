@@ -82,16 +82,46 @@ type GenericMappingField =
 
 type GenericColumnMapping = Record<string, number | string | null | undefined>;
 
+type ImageCandidateRun = {
+  manufacturerSlug: string;
+  runDir: string;
+  publicPathPrefix: string;
+};
+
+type KioskImageCandidate = {
+  id: string;
+  product_id: string;
+  manufacturer_slug: string;
+  image_url: string;
+  source_image_url: string;
+  detail_url: string;
+  score: number;
+  image_specificity: string;
+  reason: string;
+  review_image: string;
+  status: "pending";
+};
+
 type RegisterManufacturerPricebookRoutesDeps = {
   app: Express;
   pool: Pool;
   requireOwner: (req: any, res: any, next: any) => any;
   holdingDir: string;
   execFileAsync: ExecFileAsyncLike;
+  imageCandidateRuns?: ImageCandidateRun[];
 };
 
 const ACCEPTED_FILE_PATTERN = /\.(pdf|csv|xlsx|xls|zip)$/i;
 const SPREADSHEET_FILE_PATTERN = /\.(csv|xlsx|xls)$/i;
+const SHOP_KIOSK_IMAGE_APPROVAL_PERMISSION = "feature.shop_kiosk_image_approval";
+
+const DEFAULT_IMAGE_CANDIDATE_RUNS: ImageCandidateRun[] = [
+  {
+    manufacturerSlug: "catnapper",
+    runDir: "/home/alphahs/catalog-image-runs/catnapper-20260621-203920",
+    publicPathPrefix: "/fd/catalog-images/catnapper/candidates",
+  },
+];
 const CUSTOM_PARSER_MANUFACTURERS = new Set([
   "liberty",
   "best",
@@ -800,6 +830,138 @@ function mapCatalogRow(row: any) {
   };
 }
 
+function mapKioskProductRow(row: any) {
+  return {
+    id: String(row.id ?? ""),
+    manufacturer: String(row.manufacturer ?? ""),
+    manufacturer_slug: String(row.manufacturer_slug ?? ""),
+    collection_code: String(row.collection_code ?? ""),
+    collection_name: String(row.collection_name ?? ""),
+    category: String(row.category ?? ""),
+    product_type: String(row.product_type ?? ""),
+    sku: String(row.sku ?? ""),
+    description: String(row.description ?? ""),
+    color_finish: String(row.color_finish ?? ""),
+    color_family: String(row.color_family ?? ""),
+    material: String(row.material ?? ""),
+    dimensions_text: String(row.dimensions_text ?? ""),
+    width_inches: row.width_inches === null || row.width_inches === undefined ? null : Number(row.width_inches),
+    depth_inches: row.depth_inches === null || row.depth_inches === undefined ? null : Number(row.depth_inches),
+    height_inches: row.height_inches === null || row.height_inches === undefined ? null : Number(row.height_inches),
+    feature_tags: Array.isArray(row.feature_tags) ? row.feature_tags.map((value: any) => String(value)) : [],
+    search_keywords: Array.isArray(row.search_keywords) ? row.search_keywords.map((value: any) => String(value)) : [],
+    image_urls: Array.isArray(row.image_urls) ? row.image_urls.map((value: any) => String(value)) : [],
+    availability_label: String(row.availability_label ?? "Ask associate"),
+  };
+}
+
+function parseCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === '"') {
+      if (inQuotes && line[index + 1] === '"') {
+        current += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === "," && !inQuotes) {
+      out.push(current);
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+  out.push(current);
+  return out;
+}
+
+function parseCsvRows(csvText: string): Record<string, string>[] {
+  const lines = csvText.split(/\r?\n/).filter((line) => line.trim());
+  if (lines.length < 2) return [];
+  const headers = parseCsvLine(lines[0]).map((header) => header.trim());
+  return lines.slice(1).map((line) => {
+    const values = parseCsvLine(line);
+    const row: Record<string, string> = {};
+    headers.forEach((header, index) => {
+      row[header] = String(values[index] ?? "").trim();
+    });
+    return row;
+  });
+}
+
+function normalizePublicPathPrefix(prefix: string) {
+  return String(prefix || "").replace(/\/+$/, "");
+}
+
+function candidateIdFor(run: ImageCandidateRun, productId: string, reviewImage: string) {
+  const fileName = path.basename(reviewImage || "candidate.jpg");
+  return `${run.manufacturerSlug}:${productId}:${fileName}`;
+}
+
+function loadKioskImageCandidates(runs: ImageCandidateRun[], productIds?: Set<string>): KioskImageCandidate[] {
+  const rows: KioskImageCandidate[] = [];
+  for (const run of runs) {
+    const csvPath = path.join(run.runDir, "match_candidates.csv");
+    if (!fs.existsSync(csvPath)) continue;
+    const parsed = parseCsvRows(fs.readFileSync(csvPath, "utf8"));
+    const publicPrefix = normalizePublicPathPrefix(run.publicPathPrefix);
+    for (const raw of parsed) {
+      const productId = String(raw.row_id || "").trim();
+      const reviewImage = String(raw.review_image || "").trim();
+      if (!productId || !reviewImage) continue;
+      if (productIds && !productIds.has(productId)) continue;
+      const fileName = path.basename(reviewImage);
+      const localImagePath = path.join(run.runDir, reviewImage);
+      if (!fs.existsSync(localImagePath)) continue;
+      rows.push({
+        id: candidateIdFor(run, productId, reviewImage),
+        product_id: productId,
+        manufacturer_slug: run.manufacturerSlug,
+        image_url: `${publicPrefix}/${fileName}`,
+        source_image_url: String(raw.source_image_url || ""),
+        detail_url: String(raw.detail_url || ""),
+        score: Number(raw.score || 0),
+        image_specificity: String(raw.image_specificity || ""),
+        reason: String(raw.reason || ""),
+        review_image: reviewImage,
+        status: "pending",
+      });
+    }
+  }
+  return rows;
+}
+
+function parseProductIdList(raw: unknown): Set<string> {
+  const value = Array.isArray(raw) ? raw.join(",") : String(raw ?? "");
+  return new Set(
+    value
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .slice(0, 200)
+  );
+}
+
+
+function hasKioskImageApprovalAccess(req: any) {
+  const user = req?.authUser || {};
+  const roles = Array.isArray(user.roles) ? user.roles.map((role: any) => String(role)) : [];
+  const permissions = Array.isArray(user.permissions) ? user.permissions.map((permission: any) => String(permission)) : [];
+  return roles.includes("Owner") || permissions.includes(SHOP_KIOSK_IMAGE_APPROVAL_PERMISSION);
+}
+
+function requireKioskImageApproval(req: any, res: any, next: any) {
+  if (!hasKioskImageApprovalAccess(req)) return res.status(403).json({ ok: false, error: "forbidden" });
+  return next();
+}
+
+
 async function loadUploadByIdOr404(pool: Pool, uploadId: string, res: any) {
   const parsedId = Number(uploadId);
   if (!Number.isFinite(parsedId) || parsedId <= 0) {
@@ -1067,6 +1229,7 @@ export function registerManufacturerPricebookRoutes({
   requireOwner,
   holdingDir,
   execFileAsync,
+  imageCandidateRuns = DEFAULT_IMAGE_CANDIDATE_RUNS,
 }: RegisterManufacturerPricebookRoutesDeps) {
   const upload = multer({
     storage: multer.diskStorage({
@@ -1640,6 +1803,160 @@ export function registerManufacturerPricebookRoutes({
       res.status(500).json({ ok: false, error: message });
     }
   });
+
+  app.get("/api/shop/kiosk/products", async (req, res) => {
+    const manufacturer =
+      typeof req.query?.manufacturer === "string" ? String(req.query.manufacturer).trim() : "";
+    const category = typeof req.query?.category === "string" ? String(req.query.category).trim() : "";
+    const color = typeof req.query?.color === "string" ? String(req.query.color).trim() : "";
+    const productType = typeof req.query?.productType === "string" ? String(req.query.productType).trim() : "";
+    const query = typeof req.query?.query === "string" ? String(req.query.query).trim() : "";
+    const limit = Math.min(Math.max(Number(req.query?.limit ?? 200), 1), 5000);
+    const offset = Math.max(Number(req.query?.offset ?? 0), 0);
+
+    const values: any[] = [];
+    const where: string[] = [];
+
+    if (manufacturer) {
+      values.push(manufacturer);
+      where.push(`manufacturer = $${values.length}`);
+    }
+    if (category) {
+      values.push(category);
+      where.push(`category = $${values.length}`);
+    }
+    if (color) {
+      values.push(color.toLowerCase());
+      where.push(`(lower(color_family) = $${values.length} OR lower(color_finish) LIKE '%' || $${values.length} || '%')`);
+    }
+    if (productType) {
+      values.push(productType);
+      where.push(`product_type = $${values.length}`);
+    }
+    if (query) {
+      values.push(query.toLowerCase());
+      where.push(
+        `(lower(search_text) LIKE '%' || $${values.length} || '%' OR lower(sku) LIKE '%' || $${values.length} || '%')`
+      );
+    }
+    const countValues = [...values];
+    values.push(limit);
+    values.push(offset);
+
+    const [result, countResult] = await Promise.all([
+      pool.query(
+        `
+          SELECT
+            id,
+            manufacturer,
+            manufacturer_slug,
+            collection_code,
+            collection_name,
+            category,
+            product_type,
+            sku,
+            description,
+            color_finish,
+            color_family,
+            material,
+            dimensions_text,
+            width_inches,
+            depth_inches,
+            height_inches,
+            feature_tags,
+            search_keywords,
+            image_urls,
+            'Ask associate' AS availability_label
+          FROM manufacturer_catalog_items
+          ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+          ORDER BY
+            CASE WHEN COALESCE(cardinality(image_urls), 0) > 0 THEN 0 ELSE 1 END ASC,
+            manufacturer ASC,
+            category ASC,
+            collection_name ASC,
+            sku ASC
+          LIMIT $${values.length - 1}
+          OFFSET $${values.length}
+        `,
+        values
+      ),
+      pool.query(
+        `
+          SELECT COUNT(*)::int AS total
+          FROM manufacturer_catalog_items
+          ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+        `,
+        countValues
+      ),
+    ]);
+    const totalCount = Number(countResult.rows[0]?.total ?? result.rows.length);
+
+    res.json({
+      ok: true,
+      count: result.rows.length,
+      total: totalCount,
+      limit,
+      offset,
+      has_more: totalCount > offset + result.rows.length,
+      rows: result.rows.map(mapKioskProductRow),
+    });
+  });
+
+
+  app.get("/api/shop/kiosk/image-candidates", requireKioskImageApproval, async (req, res) => {
+    const productIds = parseProductIdList(req.query?.productIds ?? req.query?.product_ids);
+    if (!productIds.size) return res.json({ ok: true, rows: [] });
+    const rows = loadKioskImageCandidates(imageCandidateRuns, productIds);
+    res.json({ ok: true, rows });
+  });
+
+  app.post("/api/shop/kiosk/products/:productId/image-candidates/:candidateId/approve", requireKioskImageApproval, async (req, res) => {
+    const productId = String(req.params.productId || "").trim();
+    const candidateId = String(req.params.candidateId || "").trim();
+    if (!productId || !candidateId) return res.status(400).json({ ok: false, error: "product and candidate are required" });
+
+    const candidate = loadKioskImageCandidates(imageCandidateRuns, new Set([productId])).find((row) => row.id === candidateId);
+    if (!candidate) return res.status(404).json({ ok: false, error: "image candidate not found" });
+
+    const numericProductId = Number(productId);
+    if (!Number.isFinite(numericProductId) || numericProductId <= 0) {
+      return res.status(400).json({ ok: false, error: "invalid product id" });
+    }
+
+    const imageUrls = [candidate.image_url];
+    const result = await pool.query(
+      `
+        UPDATE manufacturer_catalog_items
+        SET image_urls = $2
+        WHERE id = $1
+        RETURNING
+          id,
+          manufacturer,
+          manufacturer_slug,
+          collection_code,
+          collection_name,
+          category,
+          product_type,
+          sku,
+          description,
+          color_finish,
+          color_family,
+          material,
+          dimensions_text,
+          width_inches,
+          depth_inches,
+          height_inches,
+          feature_tags,
+          search_keywords,
+          image_urls,
+          'Ask associate' AS availability_label
+      `,
+      [numericProductId, imageUrls]
+    );
+    if (!result.rows.length) return res.status(404).json({ ok: false, error: "product not found" });
+    res.json({ ok: true, row: mapKioskProductRow(result.rows[0]), candidate });
+  });
+
 
   app.get("/api/manufacturer-pricebooks/catalog", requireOwner, async (req, res) => {
     const manufacturer =

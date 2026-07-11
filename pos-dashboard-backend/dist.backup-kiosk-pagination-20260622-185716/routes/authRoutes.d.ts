@@ -1,0 +1,30 @@
+import type { Express } from "express";
+import type { Pool } from "pg";
+type AuthUserLike = {
+    id: string;
+    name: string;
+    email: string;
+    roles: string[];
+    permissions: string[];
+    permissionMode: "role" | "explicit";
+    tutorialCompletedAt: string | null;
+};
+type RegisterAuthRoutesDeps = {
+    app: Express;
+    pool: Pool;
+    authSessionDays: number;
+    authCookieName: string;
+    publicAuthPaths: Set<string>;
+    verifyPassword: (password: string, storedHash: string) => boolean;
+    hashPassword: (password: string) => string;
+    sha256Hex: (value: string) => string;
+    createSessionToken: () => string;
+    setAuthCookie: (res: any, token: string, req: any) => void;
+    clearAuthCookie: (res: any, req: any) => void;
+    parseCookies: (req: any) => Record<string, string>;
+    currentAuthUserFromReq: (req: any) => Promise<AuthUserLike | null>;
+    loadAuthUserById: (userId: number) => Promise<AuthUserLike | null>;
+    buildAuthUser: (row: any) => AuthUserLike;
+};
+export declare function registerAuthRoutes({ app, pool, authSessionDays, authCookieName, publicAuthPaths, verifyPassword, hashPassword, sha256Hex, createSessionToken, setAuthCookie, clearAuthCookie, parseCookies, currentAuthUserFromReq, loadAuthUserById, buildAuthUser, }: RegisterAuthRoutesDeps): void;
+export {};

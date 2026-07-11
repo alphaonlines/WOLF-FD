@@ -498,6 +498,8 @@ export function registerAuthRoutes({
   app.use("/api", async (req, res, next) => {
     if (req.method === "OPTIONS") return next();
     if (publicAuthPaths.has(req.path)) return next();
+    // ponytail: video elements do not always surface auth failures; media route itself is file-allowlisted.
+    if (req.path.startsWith("/training/media/")) return next();
     const user = await currentAuthUserFromReq(req);
     if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
     (req as any).authUser = user;

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import type { Pool } from "pg";
 import { parseDateParam, parseTextParam } from "../parsers";
-import { prefixedDateFieldForBasis } from "../sqlFields";
+import { itemDateBasisFilter, prefixedDateFieldForBasis } from "../sqlFields";
 import { buildQualifiedPro1stSql } from "../pro1stSql";
 
 type RegisterReportRoutesDeps = {
@@ -24,6 +24,7 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
     const categoryQ = parseTextParam(req.query.category);
     const manufacturerQ = parseTextParam(req.query.manufacturer);
     const prefixedDateField = (tableAlias: string) => prefixedDateFieldForBasis(req.query.date_basis, tableAlias);
+    const itemBasisFilter = itemDateBasisFilter(req.query.date_basis, "i");
 
     const baseParams = [start, end, locationQ, categoryQ, salespersonQ, manufacturerQ];
     const categoriesParams = [start, end, locationQ, salespersonQ, manufacturerQ];
@@ -40,6 +41,7 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
       JOIN pos_sales s ON s.sale_id = i.sale_id
       WHERE ${prefixedDateField("s")} >= $1
         AND ${prefixedDateField("s")} < $2
+        AND ${itemBasisFilter}
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3::text || '%'))
         AND ($4::text IS NULL OR i.sale_id IN (SELECT sale_id FROM salesperson_sales))
         AND ($5::text IS NULL OR i.manufacturer ILIKE ('%' || $5::text || '%'))
@@ -59,6 +61,7 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
       JOIN pos_sales s ON s.sale_id = i.sale_id
       WHERE ${prefixedDateField("s")} >= $1
         AND ${prefixedDateField("s")} < $2
+        AND ${itemBasisFilter}
         AND ($3::text IS NULL OR s.location ILIKE ('%' || $3::text || '%'))
         AND ($5::text IS NULL OR i.sale_id IN (SELECT sale_id FROM salesperson_sales))
         AND ($4::text IS NULL OR i.category ILIKE ('%' || $4::text || '%'))
@@ -92,6 +95,7 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
         JOIN pos_sales s ON s.sale_id = i.sale_id
         WHERE ${prefixedDateField("s")} >= $1
           AND ${prefixedDateField("s")} < $2
+          AND ${itemBasisFilter}
           AND ($3::text IS NULL OR s.location ILIKE ('%' || $3::text || '%'))
           AND ($4::text IS NULL OR i.category ILIKE ('%' || $4::text || '%'))
           AND ($6::text IS NULL OR i.manufacturer ILIKE ('%' || $6::text || '%'))
@@ -157,6 +161,7 @@ export function registerReportRoutes({ app, pool, prefixedDateField }: RegisterR
         JOIN pos_sales s ON s.sale_id = i.sale_id
         WHERE ${prefixedDateField("s")} >= $1
           AND ${prefixedDateField("s")} < $2
+          AND ${itemBasisFilter}
           AND ($3::text IS NULL OR s.location ILIKE ('%' || $3::text || '%'))
           AND ($4::text IS NULL OR i.category ILIKE ('%' || $4::text || '%'))
           AND ($6::text IS NULL OR i.manufacturer ILIKE ('%' || $6::text || '%'))

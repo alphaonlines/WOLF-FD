@@ -444,14 +444,14 @@
 
     </style>
 </head>
-<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="1.6.4.20260616">
+<body class="bg-brand-gray min-h-screen p-3 sm:p-4" data-smart-calc-version="0.7.4.1148">
 
     <!-- Pricing Tool Container -->
     <div class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-6 lg:p-8 rounded-xl shadow-lg">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-brand-brown">Smart Calc</h1>
             <p class="text-gray-600 mt-2">Calculate price, margin, and final ticket with add-ons.</p>
-            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v1.6.4.20260616</p>
+            <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Smart Calc v0.7.4.1148</p>
             <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <button id="smartcalc-tutorial-btn" type="button" class="inline-flex items-center justify-center rounded-md bg-brand-brown px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a2f28] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brown transition">Start guided tutorial</button>
                 <button id="top-reset-btn" type="button" class="inline-flex items-center justify-center rounded-md border border-brand-orange px-4 py-2 text-sm font-semibold text-brand-orange hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange transition">Reset / Clear Form</button>
@@ -608,6 +608,25 @@
                             <label for="add-ashley-express" class="ml-3 block text-sm font-medium text-gray-700">Add Ashley Express Fee</label>
                         </div>
                         <span id="ashley-express-fee-display" class="font-medium text-gray-900">$25.00</span>
+                    </div>
+                    <div class="space-y-3 border-t border-gray-200 pt-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <input id="add-special-order" name="add-special-order" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange">
+                                <label for="add-special-order" class="ml-3 block text-sm font-medium text-gray-700">Special Order</label>
+                            </div>
+                        </div>
+                        <div id="special-order-wrapper" class="hidden pl-7 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+                            <div>
+                                <label for="special-order-models" class="block text-sm font-medium text-gray-600">Model(s)</label>
+                                <input type="text" id="special-order-models" placeholder="e.g., B743-31, B743-36" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                            </div>
+                            <div>
+                                <label for="special-order-eta" class="block text-sm font-medium text-gray-600">ETA</label>
+                                <input type="text" id="special-order-eta" value="4-6 Weeks" placeholder="e.g., 4-6 Weeks" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm custom-focus sm:text-sm p-2">
+                            </div>
+                        </div>
+                        <p class="pl-7 text-xs leading-5 text-gray-500">Use this when the item is not normal in-stock merchandise. The model(s) and ETA are added to notes and quote copies; they do not affect pricing.</p>
                     </div>
                      <div class="flex items-center justify-between">
                         <div class="flex items-center">
@@ -1162,6 +1181,10 @@ function showLicenseLockScreen(message) {
                 assemblyCostDisplay: document.getElementById('assembly-cost-display'),
                 addAshleyExpressCheckbox: document.getElementById('add-ashley-express'),
                 ashleyExpressFeeDisplay: document.getElementById('ashley-express-fee-display'),
+                addSpecialOrderCheckbox: document.getElementById('add-special-order'),
+                specialOrderWrapper: document.getElementById('special-order-wrapper'),
+                specialOrderModelsInput: document.getElementById('special-order-models'),
+                specialOrderEtaInput: document.getElementById('special-order-eta'),
                 addPro1stCheckbox: document.getElementById('add-pro1st'),
                 pro1stOptionsWrapper: document.getElementById('pro1st-options-wrapper'),
                 pro1stPlanTypeSelect: document.getElementById('pro1st-plan-type'),
@@ -2036,6 +2059,19 @@ function showLicenseLockScreen(message) {
                 allElements.longDistanceMilesInput.addEventListener('input', updateAddonCosts);
                 allElements.addAssemblyCheckbox.addEventListener('change', updateAddonCosts);
                 allElements.addAshleyExpressCheckbox?.addEventListener('change', updateAddonCosts);
+                allElements.addSpecialOrderCheckbox?.addEventListener('change', () => {
+                    const selected = !!allElements.addSpecialOrderCheckbox.checked;
+                    allElements.specialOrderWrapper?.classList.toggle('hidden', !selected);
+                    if (selected) {
+                        if (allElements.specialOrderEtaInput && !allElements.specialOrderEtaInput.value.trim()) {
+                            allElements.specialOrderEtaInput.value = '4-6 Weeks';
+                        }
+                    } else {
+                        if (allElements.specialOrderModelsInput) allElements.specialOrderModelsInput.value = '';
+                        if (allElements.specialOrderEtaInput) allElements.specialOrderEtaInput.value = '';
+                    }
+                    updateSalesOrderNotes();
+                });
                 allElements.addPro1stCheckbox.addEventListener('change', () => {
                     allElements.pro1stOptionsWrapper?.classList.toggle('hidden', !allElements.addPro1stCheckbox.checked);
                     updateAddonCosts();
@@ -2105,6 +2141,8 @@ function showLicenseLockScreen(message) {
                     allElements.deliveryDiscountCommentInput,
                     allElements.pro1stDiscountCommentInput,
                     allElements.pro1stCoveredItemsInput,
+                    allElements.specialOrderModelsInput,
+                    allElements.specialOrderEtaInput,
                     allElements.percentageOffReasonInput,
                     allElements.advertisedPriceSourceSelect,
                     allElements.advertisedPriceItemsInput,
@@ -2589,6 +2627,23 @@ function showLicenseLockScreen(message) {
             return cleanValue || fallback;
         }
 
+        function getSpecialOrderDetails() {
+            if (!allElements.addSpecialOrderCheckbox?.checked) return null;
+            return {
+                description: 'Special Order',
+                models: (allElements.specialOrderModelsInput?.value || '').trim(),
+                eta: getCleanDetail(allElements.specialOrderEtaInput?.value, '[ETA needed]')
+            };
+        }
+
+        function formatSpecialOrderNote(details) {
+            if (!details) return '';
+            const detailSegments = [];
+            if (details.models) detailSegments.push(`Model(s): ${details.models}`);
+            detailSegments.push(`ETA: ${details.eta}`);
+            return `Special Order: ${detailSegments.join('; ')}.`;
+        }
+
         function getAdvertisedPriceDetail() {
             const source = getCleanDetail(allElements.advertisedPriceSourceSelect?.value, '[source needed]');
             const items = getCleanDetail(allElements.advertisedPriceItemsInput?.value, '[item(s) needed]');
@@ -2798,6 +2853,11 @@ function showLicenseLockScreen(message) {
             if (pro1stSelected) {
                 const coverageNote = getPro1stCoverageNote();
                 if (coverageNote) notes.push(coverageNote);
+            }
+
+            const specialOrderDetails = getSpecialOrderDetails();
+            if (specialOrderDetails) {
+                notes.push(formatSpecialOrderNote(specialOrderDetails));
             }
 
             discountReasons.forEach((reason) => notes.push(reason));
@@ -3202,6 +3262,7 @@ function showLicenseLockScreen(message) {
                         amount: roundMoney(entry.amount),
                         affects_subtotal: entry.affectsSubtotal !== false
                     }));
+                const specialOrderDetails = getSpecialOrderDetails();
                 return {
                     store: 'FD7',
                     source_context: 'shop-smart-calc',
@@ -3212,6 +3273,7 @@ function showLicenseLockScreen(message) {
                     quote_valid_days: getQuoteValidDays(),
                     quote_valid_until: getQuoteValidUntilIsoDate(),
                     sales_order_notes: allElements.salesOrderNotes?.value || '',
+                    special_order: specialOrderDetails,
                     quote_snapshot: {
                         pricing_input_mode: currentPricingInputMode,
                         target_margin: currentTargetMargin,
@@ -3222,6 +3284,7 @@ function showLicenseLockScreen(message) {
                         store_location: allElements.storeLocationSelect?.value || 'camp-greenville',
                         charges: buildCustomerCopyChargeSnapshot(),
                         discounts: discountEntries,
+                        special_order: specialOrderDetails,
                         cart_transfer: currentCartTransfer,
                         notes: allElements.salesOrderNotes?.value || ''
                     }
@@ -3354,6 +3417,7 @@ function showLicenseLockScreen(message) {
                 const removalDescription = (allElements.removalDescriptionInput?.value || '').trim();
                 const closeoutAsIsSelected = !!allElements.discountCloseoutAsIsCheckbox?.checked;
                 const closeoutAsIsDetail = (allElements.closeoutAsIsDetailInput?.value || '').trim();
+                const specialOrderDetails = getSpecialOrderDetails();
                 const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
                 const quoteValidDays = getQuoteValidDays();
                 const quoteExpirationDate = getQuoteExpirationDateLabel();
@@ -3367,7 +3431,7 @@ function showLicenseLockScreen(message) {
                 const salesNotesHtml = salesOrderNotes ? `<section class="panel notes-panel"><h2>Sales Order Notes</h2><p>${escapeHtml(salesOrderNotes).replace(/\n/g, '<br>')}</p></section>` : '';
                 const printRowCount = merchandiseRows.length + deliveryFeeRows.length + subtotalDiscountEntries.length
                     + 4 + transferredCartItems.length + (currentTaxAmount > 0 ? 1 : 0) + (salesTaxDiscountEntry ? 1 : 0);
-                const printNoteWeight = salesOrderNotes.length + removalDescription.length + closeoutAsIsDetail.length;
+                const printNoteWeight = salesOrderNotes.length + removalDescription.length + closeoutAsIsDetail.length + (specialOrderDetails?.models || '').length;
                 let quoteDensity = 'spacious';
                 if (printRowCount >= 18 || printNoteWeight > 850) {
                     quoteDensity = 'dense';
@@ -3411,7 +3475,10 @@ function showLicenseLockScreen(message) {
                 ` : '';
                 const removalDetailsHtml = removalDescription ? `<p><strong>Removal Details:</strong> ${escapeHtml(removalDescription)}</p>` : '';
                 const closeoutAsIsDetailsHtml = closeoutAsIsSelected ? `<p><strong>Closeout / AS IS:</strong> ${escapeHtml(closeoutAsIsDetail || 'Item sold Closeout / AS IS')}. Customer acknowledges item(s) are sold Closeout / AS IS.</p>` : '';
-                const orderDetailsHtml = [removalDetailsHtml, closeoutAsIsDetailsHtml].filter(Boolean).join('');
+                const specialOrderDetailsHtml = specialOrderDetails
+                    ? `<p><strong>Special Order:</strong>${specialOrderDetails.models ? ` <strong>Model(s):</strong> ${escapeHtml(specialOrderDetails.models)}.` : ''} <strong>ETA:</strong> ${escapeHtml(specialOrderDetails.eta)}.</p>`
+                    : '';
+                const orderDetailsHtml = [specialOrderDetailsHtml, removalDetailsHtml, closeoutAsIsDetailsHtml].filter(Boolean).join('');
 
                 const renderQuoteSheet = (copyType) => {
                     const isEmployeeCopy = copyType === 'employee';
@@ -3594,7 +3661,9 @@ function showLicenseLockScreen(message) {
                     marginPercentInput, retailPriceInput, vendorSelect, addDeliveryCheckbox,
                     deliveryTypeWrapper, deliveryTypeSelect, sleeperMotionMinimumNote,
                     powerBaseWrapper, addPowerBaseSetupCheckbox, addThresholdDeliveryCheckbox,
-                    addAssemblyCheckbox, addAshleyExpressCheckbox, addPro1stCheckbox, pro1stOptionsWrapper, pro1stPlanTypeSelect,
+                    addAssemblyCheckbox, addAshleyExpressCheckbox, addSpecialOrderCheckbox,
+                    specialOrderWrapper, specialOrderModelsInput, specialOrderEtaInput,
+                    addPro1stCheckbox, pro1stOptionsWrapper, pro1stPlanTypeSelect,
                     pro1stCoveredItemsInput, pro1stCoveredValueWrapper, pro1stCoveredValueInput,
                     pro1stPowerBaseWrapper, pro1stPowerBaseQuantityInput, addTaxCheckbox,
                     addLongDistanceCheckbox, longDistanceMilesInput, storeLocationWrapper,
@@ -3610,7 +3679,8 @@ function showLicenseLockScreen(message) {
                     pro1stDiscountAmountInput, discountPercentageOffCheckbox, percentageOffWrapper,
                     percentageOffReasonInput, percentageOffPercentInput, percentageOffAmountInput,
                     discountAdvertisedPriceCheckbox, advertisedPriceWrapper,
-                    advertisedPriceSourceSelect, advertisedPriceItemsInput, advertisedPriceAmountInput, discountOtherCheckbox,
+                    advertisedPriceSourceSelect, advertisedPriceItemsInput, advertisedPriceAmountInput,
+                    discountCloseoutAsIsCheckbox, discountOtherCheckbox,
                     closeoutAsIsDetailInput, closeoutAsIsAmountInput, closeoutAsIsWrapper,
                     otherDiscountExplanationInput, otherDiscountAmountInput, otherDiscountWrapper,
                     salesTaxDiscountWrapper, salesTaxDiscountCommentInput, salesTaxDiscountAmountInput,
@@ -3629,7 +3699,8 @@ function showLicenseLockScreen(message) {
                     deliveryDiscountAmountInput, pro1stDiscountAmountInput, pro1stCoveredItemsInput,
                     pro1stCoveredValueInput, percentageOffReasonInput,
                     percentageOffPercentInput, percentageOffAmountInput, advertisedPriceSourceSelect,
-                    advertisedPriceItemsInput, advertisedPriceAmountInput, customerQuoteFirstNameInput,
+                    advertisedPriceItemsInput, advertisedPriceAmountInput, specialOrderModelsInput,
+                    specialOrderEtaInput, customerQuoteFirstNameInput,
                     customerQuoteLastNameInput, customerQuotePhoneInput, customerQuoteEmailInput
                 ].filter(Boolean);
                 formElements.forEach(el => el.value = '');
@@ -3663,7 +3734,8 @@ function showLicenseLockScreen(message) {
                 closeCustomerQuoteModal();
 
                 [
-                    addDeliveryCheckbox, addPowerBaseSetupCheckbox, addThresholdDeliveryCheckbox, addAssemblyCheckbox, addAshleyExpressCheckbox, addPro1stCheckbox,
+                    addDeliveryCheckbox, addPowerBaseSetupCheckbox, addThresholdDeliveryCheckbox, addAssemblyCheckbox, addAshleyExpressCheckbox,
+                    addSpecialOrderCheckbox, addPro1stCheckbox,
                     addTaxCheckbox, addLongDistanceCheckbox, payTaxCheckbox, showFinancingCheckbox,
                     addRemovalCheckbox, discountCompetitionCheckbox, discountManagerApprovalCheckbox,
                     discountVendorAdCheckbox, discountDeliveryCheckbox, discountPro1stCheckbox,
@@ -3681,7 +3753,7 @@ function showLicenseLockScreen(message) {
                     allElements.calculatorSection, allElements.resultSection, allElements.addonsSection,
                     allElements.grandTotalSection, allElements.resetBtn, allElements.vendorInfoDiv,
                     storeLocationWrapper, deliveryTypeWrapper, sleeperMotionMinimumNote, powerBaseWrapper,
-                    pro1stOptionsWrapper, pro1stPowerBaseWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection,
+                    specialOrderWrapper, pro1stOptionsWrapper, pro1stPowerBaseWrapper, longDistanceWrapper, milesInputWrapper, allElements.financingSection,
                     allElements.financingBreakdown, allElements.salesNotesSection, removalWrapper,
                     competitionMatchWrapper, managerApprovalWrapper, vendorAdWrapper, deliveryDiscountWrapper,
                     pro1stDiscountWrapper, percentageOffWrapper, advertisedPriceWrapper, closeoutAsIsWrapper, otherDiscountWrapper,
