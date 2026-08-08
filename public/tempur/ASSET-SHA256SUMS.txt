@@ -1,0 +1,10 @@
+9dd3d2eb238f700dd0646ca97ceabcefd7e1bb01f947941da024aad430c1ac17  /tmp/fd-tempur-redesign-20260804/assets/adapt-profile.png
+9e0498095087fcead42590c6160a098265b4b906e7a50bbf1f40ef13a00a4f62  /tmp/fd-tempur-redesign-20260804/assets/adapt-room.jpg
+059aa18b65830b616bdb1a8d8a2f5c50390b850f55431cff4f08b4140efcfe21  /tmp/fd-tempur-redesign-20260804/assets/ergonomic-support.jpg
+0dd52c93f0190901c32b438cb15ad7438f08f72124ef7aa908533bcc6bb728fe  /tmp/fd-tempur-redesign-20260804/assets/hybrid-technology.jpg
+098a8ead064b0e0185a26665572d93f48760b3c762b6187a6488877a2a36abfe  /tmp/fd-tempur-redesign-20260804/assets/luxeadapt-profile.png
+9c10367811c7396d0bb3150c31591af54ce28cca72ff15b5dfdbfe71439ce3a2  /tmp/fd-tempur-redesign-20260804/assets/luxeadapt-room.jpg
+27b798b3e3d20e331ec4a67629fc355eb3b0d6c11b2808fabb40d6371223decc  /tmp/fd-tempur-redesign-20260804/assets/pressure-relief.jpg
+0b82b715f7a5a6cb4877404c9061ac1b612a6f6f3312103deb31b4de8303e008  /tmp/fd-tempur-redesign-20260804/assets/proadapt-profile.png
+bb94fe16b28784c4d7d0bf8e2220a6e1e737fd1fdb1c5d53f4cf8b1ca96203ca  /tmp/fd-tempur-redesign-20260804/assets/proadapt-room.jpg
+2a3d097dd4ae7c7278f5fc400e6266f10524d47d5b41b8ee8b7b72b7596a6a3f  /tmp/fd-tempur-redesign-20260804/assets/tempur-logo.svg
