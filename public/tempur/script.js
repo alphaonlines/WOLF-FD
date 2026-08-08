@@ -21,15 +21,15 @@ const models = {
     image: "assets/proadapt-room.jpg",
     alt: "TEMPUR-ProAdapt mattress in a styled bedroom",
   },
-  luxeadapt: {
-    label: "TEMPUR-LuxeAdapt®",
-    badge: "Ultimate",
-    badgeCopy: "conforming support",
+  luxebreeze: {
+    label: "TEMPUR-LuxeBreeze®",
+    badge: "Coolest",
+    badgeCopy: "all-night cooling",
     profile: "13 inches",
     cover: "Cool-to-the-touch · Removable · Washable",
     feels: "Soft · Medium Hybrid · Firm",
-    image: "assets/luxeadapt-room.jpg",
-    alt: "TEMPUR-LuxeAdapt mattress in a styled bedroom",
+    image: "assets/luxebreeze-room.jpg",
+    alt: "TEMPUR-LuxeBreeze mattress in a styled bedroom",
   },
 };
 
