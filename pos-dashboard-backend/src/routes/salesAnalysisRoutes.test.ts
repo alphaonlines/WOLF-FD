@@ -130,6 +130,8 @@ describe("canonical Sales Analysis routes", () => {
     db.query.mockResolvedValue({ rows: [] });
     await request(appWithUser(db, salesUser)).get("/api/sales-analysis/report?start=2026-07-01&end_exclusive=2026-08-01&salesperson=Smith%2C%20Jane");
     const seriesSql = String(db.query.mock.calls[1][0]);
+    const allSql = db.query.mock.calls.map((call: any[]) => String(call[0])).join("\n");
+    expect(allSql).toMatch(/CASE\s+WHEN\s+cardinality\s*\(\s*regexp_split_to_array[\s\S]*?\)\s*=\s*2\s+THEN\s+regexp_split_to_array[\s\S]*?ELSE\s+ARRAY/i);
     const itemSeries = seriesSql.slice(seriesSql.indexOf("item_series AS"), seriesSql.indexOf("people AS"));
     expect(itemSeries).toMatch(/sum\s*\(\s*CASE WHEN \$3::text IS NULL THEN sales ELSE/i);
     expect(itemSeries).toMatch(/sum\s*\(\s*CASE WHEN \$3::text IS NULL THEN quantity ELSE/i);

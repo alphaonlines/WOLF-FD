@@ -42,4 +42,12 @@ describe("Sales Analysis cost authority schema", () => {
     expect(importer).toMatch(/cost_imported_at\s*=\s*COALESCE\(pos_sale_items\.cost_imported_at/i);
     expect(importer).toMatch(/cost_source_file_sha256\s*=\s*COALESCE\(pos_sale_items\.cost_source_file_sha256/i);
   });
+
+  it("fails closed when the mandatory cost migration cannot run", () => {
+    const startup = fs.readFileSync(path.resolve(__dirname, "startupBootstrap.ts"), "utf8");
+    const server = fs.readFileSync(path.resolve(__dirname, "server.ts"), "utf8");
+    expect(startup).toMatch(/if\s*\(\s*!fs\.existsSync\(salesCostMigration\)\s*\)\s*throw new Error/i);
+    expect(server).toMatch(/startServer\(\)\.catch\s*\(/i);
+    expect(server).not.toMatch(/try\s*\{[\s\S]*?runStartupBootstrap[\s\S]*?catch\s*\([^)]*\)\s*\{[\s\S]*?Failed to ensure startup schema\/state[\s\S]*?\}[\s\S]*?httpServer\.listen/i);
+  });
 });

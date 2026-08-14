@@ -106,16 +106,12 @@ const { setUserRolesByKeys } = registerAllRoutes({
 const port = PORT;
 
 async function startServer() {
-  try {
-    await runStartupBootstrap({
-      pool,
-      envString,
-      hashPassword,
-      setUserRolesByKeys,
-    });
-  } catch (err) {
-    console.error("Failed to ensure startup schema/state:", err);
-  }
+  await runStartupBootstrap({
+    pool,
+    envString,
+    hashPassword,
+    setUserRolesByKeys,
+  });
 
   if (SOCIAL_SCHEDULER_ENABLED) {
     setInterval(() => {
@@ -140,7 +136,11 @@ async function startServer() {
 }
 
 if (require.main === module) {
-  void startServer();
+  void startServer().catch(async (err) => {
+    console.error("Failed to ensure startup schema/state:", err);
+    process.exitCode = 1;
+    await pool.end();
+  });
 }
 
 export { app };

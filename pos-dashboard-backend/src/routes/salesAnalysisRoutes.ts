@@ -24,7 +24,8 @@ const allocated = (column: string, scale = 100) => `CASE WHEN $3::text IS NULL T
 const COST = `CASE WHEN i.cost_authority='group_report' THEN i.total_cost WHEN o.id IS NOT NULL THEN o.total_cost ELSE NULL END`;
 const PROFIT = `CASE WHEN i.cost_authority='group_report' THEN i.total_profit WHEN o.id IS NOT NULL THEN i.total_sale_price-o.total_cost ELSE NULL END`;
 const COST_SOURCE = `CASE WHEN i.cost_authority='group_report' THEN 'group_report' WHEN o.id IS NOT NULL THEN 'manual_override' ELSE 'unknown' END`;
-const PEOPLE = `regexp_split_to_array(COALESCE(NULLIF(trim(s.salesperson),''),'Unassigned'),'\\s+and\\s+','i')`;
+const RAW_PEOPLE = `regexp_split_to_array(COALESCE(NULLIF(trim(s.salesperson),''),'Unassigned'),'\\s+and\\s+','i')`;
+const PEOPLE = `(CASE WHEN cardinality(${RAW_PEOPLE})=2 THEN ${RAW_PEOPLE} ELSE ARRAY[COALESCE(NULLIF(trim(s.salesperson),''),'Unassigned')] END)`;
 const PRO1ST = `concat_ws(' ',i.manufacturer,i.category,i.item_no,i.item_description) ~* '\\mpro[[:space:]]?1st\\M'`;
 const EXCLUDED = `concat_ws(' ',i.manufacturer,i.category,i.item_no,i.item_description) ~* '\\m(mattress(es)?|box[[:space:]]*springs?|foundations?|adjustable[[:space:]]*bases?|power[[:space:]]*bases?|bunkie[[:space:]]*boards?|bedding)\\M'`;
 
@@ -35,7 +36,7 @@ const baseCte = (extraWhere: string) => `WITH filtered AS (
  COALESCE(i.item_description,'') description,COALESCE(i.qty_sold,0)::numeric quantity,COALESCE(i.total_sale_price,0)::numeric sales,
  ${COST} total_cost,${PROFIT} total_profit,${COST_SOURCE} cost_source,COALESCE(s.grand_total,0)::numeric grand_total,
  COALESCE(s.total_finance_amt,0)::numeric finance_amount,COALESCE(s.finance_fee,0)::numeric finance_fee,
- cardinality(${PEOPLE}) person_count,
+ ${PEOPLE} people,cardinality(${PEOPLE}) person_count,
  CASE WHEN $3::text IS NULL THEN 1 ELSE array_position(ARRAY(SELECT lower(trim(p)) FROM unnest(${PEOPLE}) p),$3) END person_index,
  (${PRO1ST}) is_pro1st,(${EXCLUDED}) is_excluded
  FROM pos_sale_items i JOIN pos_sales s ON s.sale_id=i.sale_id AND s.location=i.location
@@ -75,7 +76,7 @@ const SERIES_SQL = (where: string) => `${baseCte(where)}, item_series AS (
  FROM (SELECT 'item' dimension,item_no label,* FROM filtered UNION ALL SELECT 'category',category,* FROM filtered UNION ALL
  SELECT 'manufacturer',manufacturer,* FROM filtered UNION ALL SELECT 'store',store,* FROM filtered UNION ALL SELECT 'day',delivered_date,* FROM filtered) d GROUP BY dimension,label
 ), people AS (
- SELECT p.person label,f.*,p.ordinality person_ordinality FROM filtered f CROSS JOIN LATERAL unnest(regexp_split_to_array(f.salesperson,'\\s+and\\s+','i')) WITH ORDINALITY p(person,ordinality)
+ SELECT p.person label,f.*,p.ordinality person_ordinality FROM filtered f CROSS JOIN LATERAL unnest(f.people) WITH ORDINALITY p(person,ordinality)
  WHERE $3::text IS NULL OR lower(trim(p.person))=$3
 ), person_items AS (
  SELECT 'salesperson' dimension,label,sum((trunc(round(sales*100)::numeric/person_count)+CASE WHEN person_ordinality<=mod(round(sales*100)::bigint,person_count) THEN 1 ELSE 0 END)/100.0) sales,
@@ -94,7 +95,7 @@ const SERIES_SQL = (where: string) => `${baseCte(where)}, item_series AS (
 
 const COUNT_SQL = (where: string) => `${baseCte(where)} SELECT COUNT(*)::text total FROM filtered`;
 const DETAIL_SQL = (where: string, limit: number, offset: number) => `${baseCte(where)} SELECT delivered_date,sale_id,status,store,
- CASE WHEN $3::text IS NULL THEN salesperson ELSE (regexp_split_to_array(salesperson,'\\s+and\\s+','i'))[person_index] END salesperson,
+ CASE WHEN $3::text IS NULL THEN salesperson ELSE people[person_index] END salesperson,
  manufacturer,category,item_no,description,${allocated("quantity",10000)} quantity,${allocated("sales")} sales,
  CASE WHEN total_cost IS NULL OR total_profit IS NULL THEN NULL ELSE ${allocated("total_cost")} END cost,
  CASE WHEN total_cost IS NULL OR total_profit IS NULL THEN NULL ELSE ${allocated("total_profit")} END profit,cost_source,
@@ -103,10 +104,10 @@ const DETAIL_SQL = (where: string, limit: number, offset: number) => `${baseCte(
 
 const LOW_MARGIN_SQL = (where: string) => `${baseCte(where)}, ticket_margin AS (
  SELECT delivered_date,sale_id,store,
- CASE WHEN $3::text IS NULL THEN salesperson ELSE (regexp_split_to_array(salesperson,'\\s+and\\s+','i'))[person_index] END salesperson,
+ CASE WHEN $3::text IS NULL THEN salesperson ELSE people[person_index] END salesperson,
  sum(${allocated("sales")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) grand_total,
  sum(${allocated("total_profit")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) profit
- FROM filtered GROUP BY delivered_date,sale_id,store,salesperson,person_count,person_index
+ FROM filtered GROUP BY delivered_date,sale_id,store,salesperson,people,person_count,person_index
 ) SELECT delivered_date,sale_id,store,salesperson,grand_total,profit,
  CASE WHEN grand_total IS NULL OR grand_total=0 OR profit IS NULL THEN NULL ELSE profit/grand_total*100 END margin_pct
  FROM ticket_margin WHERE grand_total IS NOT NULL AND grand_total<>0 AND profit IS NOT NULL

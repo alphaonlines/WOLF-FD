@@ -1709,6 +1709,7 @@ export async function runStartupBootstrap(deps: RunStartupBootstrapDeps) {
   await ensureSocialSchema(deps.pool);
   await ensureWebTrackingSchema(deps.pool);
   const salesCostMigration = path.resolve(__dirname, "..", "db", "2026-08-13-sales-cost-authority.sql");
-  if (fs.existsSync(salesCostMigration)) await deps.pool.query(fs.readFileSync(salesCostMigration, "utf8"));
+  if (!fs.existsSync(salesCostMigration)) throw new Error(`Required sales cost migration is missing: ${salesCostMigration}`);
+  await deps.pool.query(fs.readFileSync(salesCostMigration, "utf8"));
   await ensureBotBotSchema(deps.pool);
 }
