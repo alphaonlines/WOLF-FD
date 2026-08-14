@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 
 type SalesPrintDialogProps = {
   open: boolean;
@@ -33,9 +34,9 @@ const SalesPrintDialog: React.FC<SalesPrintDialogProps> = ({
   onClose,
   onPrint,
 }) => {
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div className="fd-print-hide fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-2xl rounded-2xl bg-white border border-slate-200 shadow-xl p-6">
         <div className="flex items-start justify-between">
@@ -121,7 +122,8 @@ const SalesPrintDialog: React.FC<SalesPrintDialogProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

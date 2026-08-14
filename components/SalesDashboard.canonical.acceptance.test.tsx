@@ -101,6 +101,7 @@ describe("SalesDashboard canonical acceptance", () => {
     expect(screen.getAllByRole("button", { name: "Expand" })).toHaveLength(expandCount + 1);
     window.dispatchEvent(new Event("fd-print-request"));
     expect(await screen.findByText("Print Options")).toBeInTheDocument();
+    expect(container).not.toHaveTextContent("Print Options");
     expect(mocks.legacy).not.toHaveBeenCalled();
   });
 
