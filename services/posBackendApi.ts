@@ -99,7 +99,7 @@ export async function fetchSalesAnalysisReport(params: {
   salesperson?: string;
   manufacturer?: string;
   store?: string;
-  category?: string;
+  category?: string | string[];
   item?: string;
 }): Promise<any> {
   const qs = new URLSearchParams({
@@ -109,8 +109,13 @@ export async function fetchSalesAnalysisReport(params: {
     page_size: String(params.pageSize ?? 100),
   });
   for (const key of ["salesperson", "manufacturer", "store", "category", "item"] as const) {
-    const value = params[key]?.trim();
-    if (value) qs.set(key, value);
+    const raw = params[key];
+    if (Array.isArray(raw)) {
+      raw.map((value) => value.trim()).filter(Boolean).forEach((value) => qs.append(key, value));
+    } else {
+      const value = raw?.trim();
+      if (value) qs.set(key, value);
+    }
   }
   return fetchJson(`/api/sales-analysis/report?${qs.toString()}`);
 }

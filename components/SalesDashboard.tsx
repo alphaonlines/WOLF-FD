@@ -30,12 +30,8 @@ import {
 import { Database, Loader2, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
 import {
   getPosApiBaseUrl,
-  fetchPro1stTrend,
-  fetchSalespeopleBySaleIds,
-  setActivePosDateBasis,
   fetchSalesAnalysisRange,
   fetchSalesAnalysisReport,
-  type PosDateBasis,
 } from "../services/posBackendApi";
 import { latestDeliveredRange } from "./salesAnalysisRange";
 import { SalesData, StoreData } from "../types";
@@ -118,6 +114,28 @@ const EMPTY_PRO1ST_STATS: Pro1stStats = {
   saleIdsLow: [],
   saleIdsMid: [],
   saleIdsHigh: [],
+};
+
+const canonicalTicketRows = (detailRows: any[]): SalespersonTicketRow[] => {
+  const tickets = new Map<string, SalespersonTicketRow & { knownSales: number; itemSales: number }>();
+  for (const row of detailRows || []) {
+    const key = `${row.store}\u0000${row.saleId}\u0000${row.salesperson}`;
+    const ticket = tickets.get(key) || {
+      saleId: String(row.saleId || ""), saleDate: String(row.deliveredDate || ""), salesperson: String(row.salesperson || ""),
+      location: String(row.store || ""), receiptNo: "", customerName: "", grandTotal: Number(row.ticketTotal || 0),
+      profit: 0, marginPct: null, pro1stSales: 0, pro1stPct: null, knownSales: 0, itemSales: 0,
+    };
+    ticket.grandTotal = Math.max(ticket.grandTotal, Number(row.ticketTotal || 0));
+    ticket.itemSales += Number(row.sales || 0);
+    if (row.profit != null) { ticket.profit += Number(row.profit || 0); ticket.knownSales += Number(row.sales || 0); }
+    if (row.isPro1st) ticket.pro1stSales += Number(row.sales || 0);
+    tickets.set(key, ticket);
+  }
+  return Array.from(tickets.values()).map(({ knownSales, itemSales, ...ticket }) => ({
+    ...ticket,
+    marginPct: knownSales ? ticket.profit / knownSales * 100 : null,
+    pro1stPct: itemSales ? ticket.pro1stSales / itemSales * 100 : null,
+  })).sort((a, b) => a.saleDate.localeCompare(b.saleDate) || a.location.localeCompare(b.location) || a.saleId.localeCompare(b.saleId));
 };
 
 type TrendPoint = {
@@ -273,9 +291,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   const trendPrevRangeRef = useRef<{ year: number; month: string; day: string } | null>(null);
   const [summary, setSummary] = useState<Summary>({ sales: 0, lines: 0 });
   const [summaryCompare, setSummaryCompare] = useState<Summary>({ sales: 0, lines: 0 });
-  const [dateBasis, setDateBasis] = useState<PosDateBasis>("delivered");
-  const dateBasisLabel = dateBasis === "written" ? "written sale date" : "delivered date";
-  const dateBasisShortLabel = dateBasis === "written" ? "Written" : "Delivered";
+  const dateBasis = "delivered" as const;
+  const dateBasisLabel = "delivered date";
+  const dateBasisShortLabel = "Delivered";
 
   useEffect(() => {
     window.dispatchEvent(
@@ -285,16 +303,6 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     );
   }, [dateBasis, dateBasisLabel, dateBasisShortLabel]);
 
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent).detail as { basis?: PosDateBasis } | undefined;
-      if (detail?.basis === "delivered" || detail?.basis === "written") {
-        setDateBasis(detail.basis);
-      }
-    };
-    window.addEventListener("fd-set-sales-basis", handler as EventListener);
-    return () => window.removeEventListener("fd-set-sales-basis", handler as EventListener);
-  }, []);
 
   const [initialMonthToDate] = useState(() => getCurrentMonthToDateRange());
   
@@ -528,7 +536,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   const [manufacturerLoading, setManufacturerLoading] = useState<Record<string, boolean>>({});
   const [pro1stStats, setPro1stStats] = useState<Pro1stStats>(EMPTY_PRO1ST_STATS);
   const [pro1stStatsCompare, setPro1stStatsCompare] = useState<Pro1stStats>(EMPTY_PRO1ST_STATS);
-  const [salePeopleMap, setSalePeopleMap] = useState<Record<string, string>>({});
+
   const salespersonDetailRef = useRef<HTMLDivElement | null>(null);
 
   const isCardCollapsed = (id: string) => !!collapsedCards[id];
@@ -856,7 +864,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   const loadData = async () => {
     setLoading(true);
     setError(null);
-    setActivePosDateBasis(dateBasis);
+
     try {
       const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
       const location = selectedStore ? selectedStore : undefined;
@@ -882,11 +890,11 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         start: currentRange.start,
         endInclusive: addDaysYmd(currentRange.endExclusive, -1),
         page: 1,
-        pageSize: 100,
+        pageSize: selectedSalesperson || selectedStore ? 500 : 100,
         salesperson,
         store: location,
         manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
-        category: activeReportCategories.length === 1 ? activeReportCategories[0] : undefined,
+        category: activeReportCategories.length ? activeReportCategories : undefined,
       };
       const [canonical, canonicalCompare] = await Promise.all([
         fetchSalesAnalysisReport(canonicalParams),
@@ -933,7 +941,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       setTopManufacturers(simpleRows("manufacturer", canonical) as TopManufacturerRow[]); setTopManufacturersCompare(simpleRows("manufacturer", canonicalCompare) as TopManufacturerRow[]);
       const proState = (payload: any): Pro1stStats => ({ totalSales: Number(payload?.pro1st?.eligibleSales || 0), proSales: Number(payload?.pro1st?.sales || 0), attachRate: Number(payload?.pro1st?.penetrationPct || 0), saleIds: [], saleIdsLow: [], saleIdsMid: [], saleIdsHigh: [] });
       setPro1stStats(proState(canonical)); setPro1stStatsCompare(proState(canonicalCompare));
-      setSalespersonTickets([]);
+      setSalespersonTickets(selectedSalesperson || selectedStore ? canonicalTicketRows(canonical.detail?.rows || []) : []);
       setTrendData((canonical.series.day || []).map((row: any) => ({ day: row.label, furnitureSales: Number(row.sales || 0), mattressBoxSpringAdjustableSales: 0, averageDailyAdSpend: null })));
       setTrendCompareData((canonicalCompare?.series?.day || []).map((row: any) => ({ day: row.label, furnitureSales: Number(row.sales || 0), mattressBoxSpringAdjustableSales: 0, averageDailyAdSpend: null })));
       setExpandedManufacturers({}); setManufacturerItems({}); setManufacturerLoading({}); setExpandedCategories({}); setCategoryItems({}); setCategoryLoading({});
@@ -1049,7 +1057,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
 
   const runPrint = async () => {
     setPrintLoading(true);
-    setActivePosDateBasis(dateBasis);
+
     const printWindow = openSalesPrintWindowShell();
     try {
       const currentRange = currentRangeInput;
@@ -1078,7 +1086,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       const [filteredReport, overallReport] = await Promise.all([
         canonicalRequest({
           manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
-          category: activeReportCategories.length === 1 ? activeReportCategories[0] : undefined,
+          category: activeReportCategories.length ? activeReportCategories : undefined,
         }),
         canonicalRequest(),
       ]);
@@ -1204,27 +1212,6 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     }
   };
 
-  const normalizeTrendRows = (proRows: Awaited<ReturnType<typeof fetchPro1stTrend>>): TrendPoint[] =>
-    proRows
-      .filter((r) => r.day)
-      .map((r) => ({
-        day: String(r.day).includes("T") ? String(r.day).slice(0, 10) : String(r.day),
-        furnitureSales: Number.isFinite(r.furnitureSales) ? r.furnitureSales : 0,
-        mattressBoxSpringAdjustableSales: Number.isFinite(r.mattressBoxSpringAdjustableSales)
-          ? r.mattressBoxSpringAdjustableSales
-          : 0,
-        averageDailyAdSpend:
-          r.averageDailyAdSpend === null || r.averageDailyAdSpend === undefined
-            ? null
-            : Number.isFinite(r.averageDailyAdSpend)
-              ? r.averageDailyAdSpend
-              : 0,
-      }))
-      .sort((a, b) => a.day.localeCompare(b.day));
-
-  useEffect(() => {
-    // Trend series is populated by the canonical report call in loadData.
-  }, [currentRangeInput, compareRangeInput, selectedSalesperson, selectedStore, dateBasis]);
 
   const displayTrendData = useMemo<DisplayTrendPoint[]>(() => {
     const rangeStart = currentRange.start;
@@ -1340,21 +1327,11 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     return { ids: unique.slice(0, max), remaining: Math.max(0, unique.length - max) };
   };
   const saleLabel = (saleId: string, salesperson?: string) => {
-    const name = salesperson ?? salePeopleMap[saleId] ?? "";
+    const name = salesperson ?? "";
     const initials = name ? salespersonLabel(name) : "";
     return initials ? `${saleId} · ${initials}` : saleId;
   };
-  const syncSalePeople = async (ids: string[]) => {
-    const unique = Array.from(new Set(ids.filter(Boolean)));
-    const missing = unique.filter((id) => !(id in salePeopleMap));
-    if (!missing.length) return;
-    try {
-      const map = await fetchSalespeopleBySaleIds(missing);
-      setSalePeopleMap((prev) => ({ ...prev, ...map }));
-    } catch (e) {
-      console.error(e);
-    }
-  };
+
   const normalizeName = (value: string | null | undefined) => String(value || "").trim();
   const selectSalesperson = (name: string) => {
     const next = normalizeName(name);
@@ -1390,7 +1367,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   useEffect(() => {
     if ((!selectedSalesperson && !selectedStore && !selectedTrendDay) || !salespersonDetailRef.current) return;
     window.requestAnimationFrame(() => {
-      salespersonDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const target = salespersonDetailRef.current;
+      if (target && typeof target.scrollIntoView === "function") target.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }, [selectedSalesperson, selectedStore, selectedTrendDay]);
 
@@ -1401,10 +1379,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       return;
     }
     let cancelled = false;
-    const dayEnd = addDaysYmd(selectedTrendDay, 1);
     setTrendDayTicketsLoading(true);
     setTrendDayTicketsError(null);
-    setActivePosDateBasis(dateBasis);
+
     fetchSalesAnalysisReport({
       start: selectedTrendDay,
       endInclusive: selectedTrendDay,
@@ -1413,10 +1390,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       pageSize: 500,
     })
       .then((payload) => {
-        const rows = (payload.detail?.rows || []).map((row: any) => ({ saleId: row.saleId, saleDate: row.deliveredDate,
-          salesperson: row.salesperson || "", location: row.store || "", receiptNo: "", customerName: "",
-          grandTotal: Number(row.sales || 0), profit: Number(row.profit || 0), marginPct: row.profit == null || !row.sales ? null : row.profit / row.sales * 100,
-          pro1stSales: 0, pro1stPct: null }));
+        const rows = canonicalTicketRows(payload.detail?.rows || []);
         if (!cancelled) setTrendDayTickets(rows);
       })
       .catch((error) => {
@@ -1477,8 +1451,6 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       const list = (payload.series?.item || []).slice(0, 10).map((row: any) => ({ itemNo: row.label, itemDescription: row.description || row.label,
         category: row.category || "(unknown)", manufacturer: name, qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: [] }));
       setManufacturerItems((prev) => ({ ...prev, [name]: list }));
-      const ids = list.flatMap((item) => item.saleIds || []);
-      void syncSalePeople(ids);
     } catch (e) {
       console.error(e);
     } finally {
@@ -1502,8 +1474,6 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       const list = (payload.series?.item || []).slice(0, 10).map((row: any) => ({ itemNo: row.label, itemDescription: row.description || row.label,
         category: name, manufacturer: row.manufacturer || "(unknown)", qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: [] }));
       setCategoryItems((prev) => ({ ...prev, [name]: list }));
-      const ids = list.flatMap((item) => item.saleIds || []);
-      void syncSalePeople(ids);
     } catch (e) {
       console.error(e);
     } finally {
@@ -1898,7 +1868,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         salesperson: selectedSalesperson || undefined,
         store: selectedStore || undefined,
         manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
-        category: activeReportCategories.length === 1 ? activeReportCategories[0] : undefined,
+        category: activeReportCategories.length ? activeReportCategories : undefined,
       });
       setCanonicalDetail({
         total: Number(payload?.detail?.total || 0),

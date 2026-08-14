@@ -100,15 +100,26 @@ describe("canonical Sales Analysis routes", () => {
       if (/COUNT\(\*\)::text total FROM filtered/.test(sql)) return { rows: [{ total: "1201" }] };
       if (/margin_pct/.test(sql)) return { rows: [{ delivered_date: "2026-07-30", sale_id: "lowest-ticket", store: "FD7", salesperson: "Solo", grand_total: "100", profit: "10", margin_pct: "10" }] };
       expect(params.slice(-2)).toEqual([25, 50]);
-      return { rows: [{ delivered_date: "2026-07-31", sale_id: "page-only", status: "Delivered", store: "FD7", salesperson: "Solo", manufacturer: "Acme", category: "Living", item_no: "S1", description: "Sofa", quantity: "1", sales: "50", cost: "25", profit: "25", cost_source: "group_report", duplicate_warning: false }] };
+      return { rows: [{ delivered_date: "2026-07-31", sale_id: "page-only", status: "Delivered", store: "FD7", salesperson: "Solo", manufacturer: "Acme", category: "Living", item_no: "S1", description: "Sofa", quantity: "1", sales: "50", ticket_total: "75", cost: "25", profit: "25", is_pro1st: true, cost_source: "group_report", duplicate_warning: false }] };
     });
     const response = await request(appWithUser(db, salesUser)).get("/api/sales-analysis/report?start=2026-07-01&end_exclusive=2026-08-01&page=3&page_size=25");
     expect(response.status).toBe(200);
     expect(response.body.summary).toMatchObject({ itemSales: 98765.43, itemCount: 1201, ticketCount: 801 });
     expect(response.body.detail).toMatchObject({ total: 1201, page: 3, pageSize: 25 });
     expect(response.body.detail.rows).toHaveLength(1);
+    expect(response.body.detail.rows[0]).toMatchObject({ ticketTotal: 75, isPro1st: true });
     expect(response.body.lowMargin).toEqual([{ deliveredDate: "2026-07-30", saleId: "lowest-ticket", store: "FD7", salesperson: "Solo", grandTotal: 100, profit: 10, marginPct: 10 }]);
     expect(db.query).toHaveBeenCalledTimes(5);
+  });
+
+  it("supports repeated categories as one parameterized set", async () => {
+    const db = pool([]);
+    db.query.mockResolvedValue({ rows: [] });
+    const response = await request(appWithUser(db, salesUser)).get("/api/sales-analysis/report?start=2026-07-01&end_exclusive=2026-08-01&category=Living&category=Bedroom");
+    expect(response.status).toBe(200);
+    const sql = String(db.query.mock.calls[0][0]);
+    expect(sql).toMatch(/lower\(trim\(COALESCE\(i\.category[\s\S]*=\s*ANY\(\$\d+::text\[\]\)/i);
+    expect(db.query.mock.calls[0][1]).toContainEqual(["living", "bedroom"]);
   });
 
   it("uses Group Report, override, then unknown cost and rejects provenance-only authority", async () => {

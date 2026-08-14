@@ -97,6 +97,7 @@ const COUNT_SQL = (where: string) => `${baseCte(where)} SELECT COUNT(*)::text to
 const DETAIL_SQL = (where: string, limit: number, offset: number) => `${baseCte(where)} SELECT delivered_date,sale_id,status,store,
  CASE WHEN $3::text IS NULL THEN salesperson ELSE people[person_index] END salesperson,
  manufacturer,category,item_no,description,${allocated("quantity",10000)} quantity,${allocated("sales")} sales,
+ ${allocated("grand_total")} ticket_total,(is_pro1st AND NOT is_excluded) is_pro1st,
  CASE WHEN total_cost IS NULL OR total_profit IS NULL THEN NULL ELSE ${allocated("total_cost")} END cost,
  CASE WHEN total_cost IS NULL OR total_profit IS NULL THEN NULL ELSE ${allocated("total_profit")} END profit,cost_source,
  COUNT(*) OVER (PARTITION BY sale_id,delivered_date,store,manufacturer,category,item_no,description,quantity,sales)>1 duplicate_warning
@@ -139,8 +140,9 @@ export function registerSalesAnalysisRoutes({ app, pool }: { app: Express; pool:
     const values: any[] = [start, endExclusive, salesperson];
     let where = "";
     const addExact = (column: string, value: unknown) => { if (typeof value === "string" && value.trim()) { values.push(value.trim().toLowerCase()); where += ` AND lower(trim(${column}))=$${values.length}`; } };
+    const addSet = (column: string, value: unknown) => { const entries = (Array.isArray(value) ? value : [value]).filter((entry): entry is string => typeof entry === "string" && Boolean(entry.trim())).map((entry) => entry.trim().toLowerCase()); if (entries.length) { values.push(entries); where += ` AND lower(trim(${column}))=ANY($${values.length}::text[])`; } };
     addExact("COALESCE(i.manufacturer,'(unknown)')", req.query.manufacturer); addExact("COALESCE(i.location,s.location,'(unknown)')", req.query.store);
-    addExact("COALESCE(i.category,'(unknown)')", req.query.category); addExact("COALESCE(i.item_no,'(unknown)')", req.query.item);
+    addSet("COALESCE(i.category,'(unknown)')", req.query.category); addExact("COALESCE(i.item_no,'(unknown)')", req.query.item);
     const limitIndex = values.length + 1, offsetIndex = values.length + 2;
     try {
       const [summaryResult, seriesResult, countResult, pageResult, lowMarginResult] = await Promise.all([
@@ -154,7 +156,7 @@ export function registerSalesAnalysisRoutes({ app, pool }: { app: Express; pool:
         pro1st: { sales: round(proSales), eligibleSales: round(eligible), penetrationPct: eligible ? round(proSales / eligible * 100) : null }, series: mapSeries(seriesResult.rows),
         warnings: { duplicateItemLines: num(a.duplicate_lines), openDeliveredTickets: num(a.open_tickets), twoPersonTickets: num(a.two_person_tickets), itemTicketDifference: round(itemSales - num(a.unallocated_ticket_total)) }, missingCosts: { count: num(a.missing_costs) },
         lowMargin: lowMarginResult.rows.map((row: any) => ({ deliveredDate: dateOnly(row.delivered_date), saleId: String(row.sale_id), store: String(row.store), salesperson: String(row.salesperson), grandTotal: round(num(row.grand_total)), profit: round(num(row.profit)), marginPct: nullableNum(row.margin_pct) })),
-        detail: { total: num(countResult.rows[0]?.total), page, pageSize, rows: pageResult.rows.map((row: any) => ({ deliveredDate: dateOnly(row.delivered_date), saleId: String(row.sale_id), status: String(row.status), store: String(row.store), salesperson: String(row.salesperson), manufacturer: String(row.manufacturer), category: String(row.category), itemNo: String(row.item_no), description: String(row.description), quantity: round(num(row.quantity)), sales: round(num(row.sales)), cost: nullableNum(row.cost), profit: nullableNum(row.profit), costSource: row.cost == null || row.profit == null ? "unknown" : String(row.cost_source), duplicateWarning: Boolean(row.duplicate_warning) })) } });
+        detail: { total: num(countResult.rows[0]?.total), page, pageSize, rows: pageResult.rows.map((row: any) => ({ deliveredDate: dateOnly(row.delivered_date), saleId: String(row.sale_id), status: String(row.status), store: String(row.store), salesperson: String(row.salesperson), manufacturer: String(row.manufacturer), category: String(row.category), itemNo: String(row.item_no), description: String(row.description), quantity: round(num(row.quantity)), sales: round(num(row.sales)), ticketTotal: round(num(row.ticket_total)), cost: nullableNum(row.cost), profit: nullableNum(row.profit), isPro1st: Boolean(row.is_pro1st), costSource: row.cost == null || row.profit == null ? "unknown" : String(row.cost_source), duplicateWarning: Boolean(row.duplicate_warning) })) } });
     } catch (error: any) { return res.status(400).json({ error: String(error?.message || "invalid_sales_analysis_filters") }); }
   };
   app.get("/api/sales-analysis/report", report); app.get("/api/sales-analysis/detail", report); app.get("/api/sales-analysis/direct", report);

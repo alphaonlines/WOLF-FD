@@ -23,11 +23,14 @@ const canonical = (page = 1) => ({
     salesperson: [{ label: "Smith, Jane", sales: 8000, quantity: 10, cost: 4000, profit: 4000, marginPct: 50, financeAmount: 3000, financeFee: 90, ticketCount: 8 }],
     store: [{ label: "FD7", sales: 12345, quantity: 18, cost: 7000, profit: 5345, marginPct: 43.3, financeAmount: 4000, financeFee: 120, ticketCount: 12 }],
     item: [{ label: "SOFA-1", description: "Canonical Sofa", manufacturer: "Acme", category: "Living Room", sales: 9000, quantity: 8 }],
-    category: [{ label: "Living Room", sales: 9000, quantity: 8 }], manufacturer: [{ label: "Acme", sales: 9000, quantity: 8 }], day: [],
+    category: [{ label: "Living Room", sales: 9000, quantity: 8 }, { label: "Bedroom", sales: 3345, quantity: 10 }], manufacturer: [{ label: "Acme", sales: 9000, quantity: 8 }], day: [],
   },
   warnings: { openDeliveredTickets: 2, duplicateItemLines: 3, twoPersonTickets: 1 }, missingCosts: { count: 2 },
   lowMargin: [{ deliveredDate: "2026-07-09", saleId: "lowest-ticket", store: "FD7", salesperson: "Smith, Jane", grandTotal: 200, profit: 10, marginPct: 5 }],
-  detail: { total: 101, page, pageSize: 100, rows: [{ deliveredDate: "2026-07-10", saleId: `sale-${page}`, store: "FD7", salesperson: "Smith, Jane", itemNo: "SOFA-1", description: "Canonical Sofa", quantity: 1, sales: 100, cost: null, profit: null, costSource: "unknown" }] },
+  detail: { total: 101, page, pageSize: 100, rows: [
+    { deliveredDate: "2026-07-10", saleId: `sale-${page}`, store: "FD7", salesperson: "Smith, Jane", itemNo: "SOFA-1", description: "Canonical Sofa", quantity: 1, sales: 100, ticketTotal: 125, cost: 60, profit: 40, isPro1st: true, costSource: "group_report" },
+    { deliveredDate: "2026-07-11", saleId: `unknown-${page}`, store: "FD7", salesperson: "Smith, Jane", itemNo: "UNK-1", description: "Unknown Cost Item", quantity: 1, sales: 25, ticketTotal: 25, cost: null, profit: null, isPro1st: false, costSource: "unknown" },
+  ] },
 });
 
 describe("SalesDashboard canonical acceptance", () => {
@@ -104,5 +107,31 @@ describe("SalesDashboard canonical acceptance", () => {
     await screen.findByText("Sales Overview");
     expect(screen.getAllByRole("option", { name: "All Manufacturers" })).toHaveLength(1);
     expect(screen.getAllByRole("option", { name: "Acme" })).toHaveLength(1);
+  });
+
+  it("keeps Sales Analysis delivered-only and populates canonical salesperson drilldown", async () => {
+    render(<SalesDashboard itemSortMetric="sales" enableTourAutoStart={false} />);
+    await screen.findByText("Canonical Sofa");
+    window.dispatchEvent(new CustomEvent("fd-set-sales-basis", { detail: { basis: "written" } }));
+    expect(screen.queryByText("Written")).not.toBeInTheDocument();
+    fireEvent.click(screen.getAllByText("Smith, Jane")[0]);
+    expect(await screen.findByText("Salesperson Detail: Smith, Jane")).toBeInTheDocument();
+    expect(screen.queryByText("No tickets found for this salesperson and range.")).not.toBeInTheDocument();
+    expect(mocks.legacy).not.toHaveBeenCalled();
+  });
+
+  it("applies multiple categories to both screen and print canonical requests", async () => {
+    vi.spyOn(window, "open").mockReturnValue(null);
+    render(<SalesDashboard itemSortMetric="sales" enableTourAutoStart={false} />);
+    await screen.findByText("Sales Overview");
+    fireEvent.click(screen.getAllByText("All Categories")[0]);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Living Room" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Bedroom" }));
+    await waitFor(() => expect(mocks.report).toHaveBeenCalledWith(expect.objectContaining({ category: ["Living Room", "Bedroom"] })));
+    mocks.report.mockClear();
+    window.dispatchEvent(new Event("fd-print-request"));
+    fireEvent.click(await screen.findByRole("button", { name: "Print" }));
+    await waitFor(() => expect(mocks.report).toHaveBeenCalledWith(expect.objectContaining({ category: ["Living Room", "Bedroom"] })));
+    expect(mocks.legacy).not.toHaveBeenCalled();
   });
 });
