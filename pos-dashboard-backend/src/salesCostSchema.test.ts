@@ -46,6 +46,8 @@ describe("Sales Analysis cost authority schema", () => {
   it("fails closed when the mandatory cost migration cannot run", () => {
     const startup = fs.readFileSync(path.resolve(__dirname, "startupBootstrap.ts"), "utf8");
     const server = fs.readFileSync(path.resolve(__dirname, "server.ts"), "utf8");
+    const dockerfile = fs.readFileSync(path.resolve(__dirname, "../../Dockerfile.backend"), "utf8");
+    expect(dockerfile).toMatch(/COPY\s+--from=builder\s+\/app\/db\s+\.\/db/i);
     expect(startup).toMatch(/if\s*\(\s*!fs\.existsSync\(salesCostMigration\)\s*\)\s*throw new Error/i);
     expect(server).toMatch(/startServer\(\)\.catch\s*\(/i);
     expect(server).not.toMatch(/try\s*\{[\s\S]*?runStartupBootstrap[\s\S]*?catch\s*\([^)]*\)\s*\{[\s\S]*?Failed to ensure startup schema\/state[\s\S]*?\}[\s\S]*?httpServer\.listen/i);

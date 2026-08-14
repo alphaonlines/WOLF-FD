@@ -38,6 +38,7 @@ ENV POS_IMPORT_PYTHON=/opt/venv/bin/python
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/importer ./importer
+COPY --from=builder /app/db ./db
 
 # Re-install production deps and python requirements
 RUN npm install --omit=dev && npm cache clean --force
