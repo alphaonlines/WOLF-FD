@@ -919,7 +919,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       setSummaryCompare({ sales: Number(canonicalCompare?.summary?.itemSales ?? canonical.summary.itemSales ?? 0), lines: Number(canonicalCompare?.summary?.ticketCount ?? canonical.summary.ticketCount ?? 0) });
       const financeState = (payload: any) => ({ financedLines: Number(payload?.summary?.financedTicketCount || 0), financedAmount: Number(payload?.summary?.financeAmount || 0), financeFee: Number(payload?.summary?.financeFee || 0), financeBalance: 0 });
       setFinance(financeState(canonical)); setFinanceCompare(financeState(canonicalCompare || canonical));
-      setLowMarginData((canonical.detail?.rows || []).filter((row: any) => row.profit != null && row.sales).map((row: any) => ({ saleId: row.saleId, saleDate: row.deliveredDate, salesperson: row.salesperson, grandTotal: row.sales, profit: row.profit, marginPct: row.profit / row.sales * 100 })).sort((a: any, b: any) => a.marginPct - b.marginPct));
+      setLowMarginData((canonical.lowMargin || []).map((row: any) => ({ saleId: row.saleId, saleDate: row.deliveredDate, salesperson: row.salesperson, grandTotal: row.grandTotal, profit: row.profit, marginPct: row.marginPct })).sort((a: any, b: any) => a.marginPct - b.marginPct));
       setReportDataSalesperson(stateFor(peopleRows)); setReportDataStore(stateFor(storeRows));
       setReportOverallRowsSalesperson(peopleRows); setReportOverallRowsStore(storeRows);
       setReportDataSalespersonCompare({ ...stateFor(comparePeopleRows), distinctTicketCount: Number(canonicalCompare?.summary?.ticketCount || 0) });
@@ -1086,10 +1086,10 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       const salespersonSummary = { rows: canonicalRows(filteredReport, "salesperson"), distinctTicketCount: Number(filteredReport.summary?.ticketCount || 0) };
       const storeOverallSummary = { rows: canonicalRows(overallReport, "store"), distinctTicketCount: Number(overallReport.summary?.ticketCount || 0) };
       const salespersonOverallSummary = { rows: canonicalRows(overallReport, "salesperson"), distinctTicketCount: Number(overallReport.summary?.ticketCount || 0) };
-      const lowMarginSummary = { rows: (filteredReport.detail?.rows || [])
-        .filter((row: any) => row.profit != null && row.sales)
-        .map((row: any) => ({ saleId: row.saleId, saleDate: row.deliveredDate, salesperson: row.salesperson,
-          grandTotal: Number(row.sales || 0), profit: Number(row.profit || 0), marginPct: Number(row.profit || 0) / Number(row.sales || 1) * 100 })) };
+      const lowMarginSummary = { rows: (filteredReport.lowMargin || []).map((row: any) => ({
+        saleId: row.saleId, saleDate: row.deliveredDate, salesperson: row.salesperson,
+        grandTotal: Number(row.grandTotal || 0), profit: Number(row.profit || 0), marginPct: row.marginPct == null ? null : Number(row.marginPct),
+      })) };
 
       const manufacturers = reportManufacturerOptions.filter((m) => m && m !== "ALL");
       const categories = reportCategoryOptions.filter((c) => c && c !== "ALL");

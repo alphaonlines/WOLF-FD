@@ -101,6 +101,17 @@ const DETAIL_SQL = (where: string, limit: number, offset: number) => `${baseCte(
  COUNT(*) OVER (PARTITION BY sale_id,delivered_date,store,manufacturer,category,item_no,description,quantity,sales)>1 duplicate_warning
  FROM filtered ORDER BY delivered_date,store,sale_id,row_id LIMIT $${limit} OFFSET $${offset}`;
 
+const LOW_MARGIN_SQL = (where: string) => `${baseCte(where)}, ticket_margin AS (
+ SELECT delivered_date,sale_id,store,
+ CASE WHEN $3::text IS NULL THEN salesperson ELSE (regexp_split_to_array(salesperson,'\\s+and\\s+','i'))[person_index] END salesperson,
+ sum(${allocated("sales")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) grand_total,
+ sum(${allocated("total_profit")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) profit
+ FROM filtered GROUP BY delivered_date,sale_id,store,salesperson,person_count,person_index
+) SELECT delivered_date,sale_id,store,salesperson,grand_total,profit,
+ CASE WHEN grand_total IS NULL OR grand_total=0 OR profit IS NULL THEN NULL ELSE profit/grand_total*100 END margin_pct
+ FROM ticket_margin WHERE grand_total IS NOT NULL AND grand_total<>0 AND profit IS NOT NULL
+ ORDER BY margin_pct ASC,delivered_date,store,sale_id LIMIT 200`;
+
 const mapSeries = (rows: any[]) => {
   const result: Record<string, any[]> = { item: [], category: [], manufacturer: [], salesperson: [], store: [], day: [] };
   for (const row of rows) {
@@ -131,15 +142,17 @@ export function registerSalesAnalysisRoutes({ app, pool }: { app: Express; pool:
     addExact("COALESCE(i.category,'(unknown)')", req.query.category); addExact("COALESCE(i.item_no,'(unknown)')", req.query.item);
     const limitIndex = values.length + 1, offsetIndex = values.length + 2;
     try {
-      const [summaryResult, seriesResult, countResult, pageResult] = await Promise.all([
+      const [summaryResult, seriesResult, countResult, pageResult, lowMarginResult] = await Promise.all([
         pool.query(SUMMARY_SQL(where), values), pool.query(SERIES_SQL(where), values), pool.query(COUNT_SQL(where), values),
         pool.query(DETAIL_SQL(where, limitIndex, offsetIndex), [...values, pageSize, (page - 1) * pageSize]),
+        pool.query(LOW_MARGIN_SQL(where), values),
       ]);
       const a = summaryResult.rows[0] || {}, itemSales = num(a.item_sales), known = num(a.known_cost_sales), profit = num(a.profit), eligible = num(a.eligible_sales), proSales = num(a.pro_sales);
       const filters = { start, endExclusive, page, pageSize, salesperson: salesperson || undefined, manufacturer: req.query.manufacturer, store: req.query.store, category: req.query.category, item: req.query.item };
       return res.json({ filters, summary: { itemSales: round(itemSales), ticketTotal: round(num(a.ticket_total)), ticketCount: round(num(a.ticket_count)), itemCount: num(a.item_count), quantity: round(num(a.quantity)), knownCostSales: round(known), cost: round(num(a.cost)), profit: round(profit), marginPct: known ? round(profit / known * 100) : null, costCoveragePct: itemSales ? round(known / itemSales * 100) : null, financeAmount: round(num(a.finance_amount)), financeFee: round(num(a.finance_fee)), financedTicketCount: round(num(a.financed_ticket_count)) },
         pro1st: { sales: round(proSales), eligibleSales: round(eligible), penetrationPct: eligible ? round(proSales / eligible * 100) : null }, series: mapSeries(seriesResult.rows),
         warnings: { duplicateItemLines: num(a.duplicate_lines), openDeliveredTickets: num(a.open_tickets), twoPersonTickets: num(a.two_person_tickets), itemTicketDifference: round(itemSales - num(a.unallocated_ticket_total)) }, missingCosts: { count: num(a.missing_costs) },
+        lowMargin: lowMarginResult.rows.map((row: any) => ({ deliveredDate: dateOnly(row.delivered_date), saleId: String(row.sale_id), store: String(row.store), salesperson: String(row.salesperson), grandTotal: round(num(row.grand_total)), profit: round(num(row.profit)), marginPct: nullableNum(row.margin_pct) })),
         detail: { total: num(countResult.rows[0]?.total), page, pageSize, rows: pageResult.rows.map((row: any) => ({ deliveredDate: dateOnly(row.delivered_date), saleId: String(row.sale_id), status: String(row.status), store: String(row.store), salesperson: String(row.salesperson), manufacturer: String(row.manufacturer), category: String(row.category), itemNo: String(row.item_no), description: String(row.description), quantity: round(num(row.quantity)), sales: round(num(row.sales)), cost: nullableNum(row.cost), profit: nullableNum(row.profit), costSource: row.cost == null || row.profit == null ? "unknown" : String(row.cost_source), duplicateWarning: Boolean(row.duplicate_warning) })) } });
     } catch (error: any) { return res.status(400).json({ error: String(error?.message || "invalid_sales_analysis_filters") }); }
   };

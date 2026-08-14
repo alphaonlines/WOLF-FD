@@ -26,6 +26,7 @@ const canonical = (page = 1) => ({
     category: [{ label: "Living Room", sales: 9000, quantity: 8 }], manufacturer: [{ label: "Acme", sales: 9000, quantity: 8 }], day: [],
   },
   warnings: { openDeliveredTickets: 2, duplicateItemLines: 3, twoPersonTickets: 1 }, missingCosts: { count: 2 },
+  lowMargin: [{ deliveredDate: "2026-07-09", saleId: "lowest-ticket", store: "FD7", salesperson: "Smith, Jane", grandTotal: 200, profit: 10, marginPct: 5 }],
   detail: { total: 101, page, pageSize: 100, rows: [{ deliveredDate: "2026-07-10", saleId: `sale-${page}`, store: "FD7", salesperson: "Smith, Jane", itemNo: "SOFA-1", description: "Canonical Sofa", quantity: 1, sales: 100, cost: null, profit: null, costSource: "unknown" }] },
 });
 
@@ -43,6 +44,8 @@ describe("SalesDashboard canonical acceptance", () => {
     expect(screen.getAllByText("$12,345").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Smith, Jane").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Canonical Sofa").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "Lowest Margins" }));
+    expect(await screen.findByText("5.0%")).toBeInTheDocument();
     expect(screen.getByText("Finance Overview")).toBeInTheDocument();
     expect(screen.getByText("Best Sellers")).toBeInTheDocument();
     expect(screen.getByText("Sales Trend")).toBeInTheDocument();

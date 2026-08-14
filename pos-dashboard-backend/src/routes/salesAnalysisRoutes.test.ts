@@ -98,6 +98,7 @@ describe("canonical Sales Analysis routes", () => {
       if (/item_sales/.test(sql)) return { rows: [{ item_sales: "98765.43", item_count: "1201", quantity: "1300", known_cost_sales: "90000", cost: "60000", profit: "30000", missing_costs: "7", eligible_sales: "80000", pro_sales: "8000", ticket_total: "99000", ticket_count: "801", finance_amount: "40000", finance_fee: "1000", financed_ticket_count: "300", open_tickets: "4", two_person_tickets: "12", unallocated_ticket_total: "99000", duplicate_lines: "3" }] };
       if (/SELECT dimension,label/.test(sql)) return { rows: [{ dimension: "store", label: "FD7", sales: "98765.43", quantity: "1300", cost: "60000", known_cost_sales: "90000", profit: "30000" }] };
       if (/COUNT\(\*\)::text total FROM filtered/.test(sql)) return { rows: [{ total: "1201" }] };
+      if (/margin_pct/.test(sql)) return { rows: [{ delivered_date: "2026-07-30", sale_id: "lowest-ticket", store: "FD7", salesperson: "Solo", grand_total: "100", profit: "10", margin_pct: "10" }] };
       expect(params.slice(-2)).toEqual([25, 50]);
       return { rows: [{ delivered_date: "2026-07-31", sale_id: "page-only", status: "Delivered", store: "FD7", salesperson: "Solo", manufacturer: "Acme", category: "Living", item_no: "S1", description: "Sofa", quantity: "1", sales: "50", cost: "25", profit: "25", cost_source: "group_report", duplicate_warning: false }] };
     });
@@ -106,7 +107,8 @@ describe("canonical Sales Analysis routes", () => {
     expect(response.body.summary).toMatchObject({ itemSales: 98765.43, itemCount: 1201, ticketCount: 801 });
     expect(response.body.detail).toMatchObject({ total: 1201, page: 3, pageSize: 25 });
     expect(response.body.detail.rows).toHaveLength(1);
-    expect(db.query).toHaveBeenCalledTimes(4);
+    expect(response.body.lowMargin).toEqual([{ deliveredDate: "2026-07-30", saleId: "lowest-ticket", store: "FD7", salesperson: "Solo", grandTotal: 100, profit: 10, marginPct: 10 }]);
+    expect(db.query).toHaveBeenCalledTimes(5);
   });
 
   it("uses Group Report, override, then unknown cost and rejects provenance-only authority", async () => {
