@@ -49,6 +49,9 @@ const baseCte = (extraWhere: string) => `WITH filtered AS (
 
 const SUMMARY_SQL = (where: string) => `${baseCte(where)}, tickets AS (
  SELECT store,sale_id,max(status) status,max(salesperson) salesperson,max(grand_total) grand_total,max(finance_amount) finance_amount,max(finance_fee) finance_fee,max(person_count) person_count,max(person_index) person_index FROM filtered GROUP BY store,sale_id
+) , pro_tickets AS (
+ SELECT store,sale_id,sum(${allocated("total_profit")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) profit
+ FROM filtered GROUP BY store,sale_id HAVING bool_or(is_pro1st AND NOT is_excluded)
 ) SELECT
  COALESCE(sum(${allocated("sales")}),0) item_sales,COUNT(*)::text item_count,COALESCE(sum(${allocated("quantity", 10000)}),0) quantity,
  COALESCE(sum(${allocated("sales")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL),0) known_cost_sales,
@@ -57,6 +60,10 @@ const SUMMARY_SQL = (where: string) => `${baseCte(where)}, tickets AS (
  COUNT(*) FILTER (WHERE total_cost IS NULL OR total_profit IS NULL)::text missing_costs,
  COALESCE(sum(${allocated("sales")}) FILTER (WHERE NOT is_excluded),0) eligible_sales,
  COALESCE(sum(${allocated("sales")}) FILTER (WHERE is_pro1st AND NOT is_excluded),0) pro_sales,
+ COALESCE((SELECT array_agg(DISTINCT sale_id ORDER BY sale_id) FROM pro_tickets),ARRAY[]::text[]) pro_sale_ids,
+ COALESCE((SELECT array_agg(DISTINCT sale_id ORDER BY sale_id) FROM pro_tickets WHERE profit<100),ARRAY[]::text[]) pro_sale_ids_low,
+ COALESCE((SELECT array_agg(DISTINCT sale_id ORDER BY sale_id) FROM pro_tickets WHERE profit>=100 AND profit<200),ARRAY[]::text[]) pro_sale_ids_mid,
+ COALESCE((SELECT array_agg(DISTINCT sale_id ORDER BY sale_id) FROM pro_tickets WHERE profit>=200),ARRAY[]::text[]) pro_sale_ids_high,
  (SELECT COALESCE(sum(${allocated("grand_total")}),0) FROM tickets) ticket_total,
  (SELECT COALESCE(sum(CASE WHEN $3::text IS NULL THEN 1 ELSE 1.0/person_count END),0) FROM tickets) ticket_count,
  (SELECT COALESCE(sum(${allocated("finance_amount")}),0) FROM tickets) finance_amount,
@@ -75,7 +82,9 @@ const SERIES_SQL = (where: string) => `${baseCte(where)}, item_series AS (
  sum(${allocated("total_cost")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) cost,
  sum(${allocated("sales")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) known_cost_sales,
  sum(${allocated("total_profit")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) profit,
- count(DISTINCT (store,sale_id))::numeric ticket_count
+ count(DISTINCT (store,sale_id))::numeric ticket_count,
+ sum(${allocated("sales")}) FILTER (WHERE NOT is_excluded) eligible_sales,
+ sum(${allocated("sales")}) FILTER (WHERE is_pro1st AND NOT is_excluded) pro_sales
  FROM (
   SELECT 'item' dimension,item_no label,description series_description,category series_category,manufacturer series_manufacturer,* FROM filtered
   UNION ALL SELECT 'category',category,NULL::text,NULL::text,NULL::text,* FROM filtered
@@ -91,15 +100,17 @@ const SERIES_SQL = (where: string) => `${baseCte(where)}, item_series AS (
  sum(${splitAllocated("quantity", "person_ordinality", 10000)}) quantity,
  sum(${splitAllocated("total_cost", "person_ordinality")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) cost,
  sum(${splitAllocated("sales", "person_ordinality")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) known_cost_sales,
- sum(${splitAllocated("total_profit", "person_ordinality")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) profit
+ sum(${splitAllocated("total_profit", "person_ordinality")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) profit,
+ sum(${splitAllocated("sales", "person_ordinality")}) FILTER (WHERE NOT is_excluded) eligible_sales,
+ sum(${splitAllocated("sales", "person_ordinality")}) FILTER (WHERE is_pro1st AND NOT is_excluded) pro_sales
  FROM people GROUP BY label
 ), person_tickets AS (
  SELECT label,sum(${splitAllocated("finance_amount", "person_ordinality")}) finance_amount,
  sum(${splitAllocated("finance_fee", "person_ordinality")}) finance_fee,
  sum(1.0/person_count) ticket_count
  FROM (SELECT DISTINCT ON (store,sale_id,label) store,sale_id,label,finance_amount,finance_fee,person_count,person_ordinality FROM people ORDER BY store,sale_id,label) t GROUP BY label
-) SELECT dimension,label,description,category,manufacturer,sale_ids,sales,quantity,COALESCE(cost,0) cost,COALESCE(known_cost_sales,0) known_cost_sales,COALESCE(profit,0) profit,0::numeric finance_amount,0::numeric finance_fee,ticket_count FROM item_series
- UNION ALL SELECT p.dimension,p.label,NULL::text,NULL::text,NULL::text,NULL::text[],p.sales,p.quantity,COALESCE(p.cost,0),COALESCE(p.known_cost_sales,0),COALESCE(p.profit,0),COALESCE(t.finance_amount,0),COALESCE(t.finance_fee,0),COALESCE(t.ticket_count,0) FROM person_items p LEFT JOIN person_tickets t ON t.label=p.label`;
+) SELECT dimension,label,description,category,manufacturer,sale_ids,sales,quantity,COALESCE(cost,0) cost,COALESCE(known_cost_sales,0) known_cost_sales,COALESCE(profit,0) profit,0::numeric finance_amount,0::numeric finance_fee,ticket_count,COALESCE(eligible_sales,0) eligible_sales,COALESCE(pro_sales,0) pro_sales FROM item_series
+ UNION ALL SELECT p.dimension,p.label,NULL::text,NULL::text,NULL::text,NULL::text[],p.sales,p.quantity,COALESCE(p.cost,0),COALESCE(p.known_cost_sales,0),COALESCE(p.profit,0),COALESCE(t.finance_amount,0),COALESCE(t.finance_fee,0),COALESCE(t.ticket_count,0),COALESCE(p.eligible_sales,0),COALESCE(p.pro_sales,0) FROM person_items p LEFT JOIN person_tickets t ON t.label=p.label`;
 
 const COUNT_SQL = (where: string) => `${baseCte(where)} SELECT COUNT(*)::text total FROM filtered`;
 const DETAIL_SQL = (where: string, limit: number, offset: number) => `${baseCte(where)} SELECT delivered_date,sale_id,status,store,
@@ -126,7 +137,7 @@ const mapSeries = (rows: any[]) => {
   const result: Record<string, any[]> = { item: [], category: [], manufacturer: [], salesperson: [], store: [], day: [] };
   for (const row of rows) {
     const known = num(row.known_cost_sales), profit = num(row.profit);
-    result[row.dimension]?.push({ label: String(row.label), description: row.description == null ? undefined : String(row.description), category: row.category == null ? undefined : String(row.category), manufacturer: row.manufacturer == null ? undefined : String(row.manufacturer), saleIds: Array.isArray(row.sale_ids) ? row.sale_ids.map(String) : [], sales: round(num(row.sales)), quantity: round(num(row.quantity)), cost: round(num(row.cost)), knownCostSales: round(known), profit: round(profit), marginPct: known ? round(profit / known * 100) : null, financeAmount: round(num(row.finance_amount)), financeFee: round(num(row.finance_fee)), ticketCount: round(num(row.ticket_count)) });
+    result[row.dimension]?.push({ label: String(row.label), description: row.description == null ? undefined : String(row.description), category: row.category == null ? undefined : String(row.category), manufacturer: row.manufacturer == null ? undefined : String(row.manufacturer), saleIds: Array.isArray(row.sale_ids) ? row.sale_ids.map(String) : [], sales: round(num(row.sales)), quantity: round(num(row.quantity)), cost: round(num(row.cost)), knownCostSales: round(known), profit: round(profit), marginPct: known ? round(profit / known * 100) : null, financeAmount: round(num(row.finance_amount)), financeFee: round(num(row.finance_fee)), ticketCount: round(num(row.ticket_count)), eligibleSales: round(num(row.eligible_sales)), pro1stSales: round(num(row.pro_sales)) });
   }
   Object.values(result).forEach((rows) => rows.sort((a, b) => b.sales - a.sales || a.label.localeCompare(b.label)));
   return result;
@@ -161,7 +172,7 @@ export function registerSalesAnalysisRoutes({ app, pool }: { app: Express; pool:
       const a = summaryResult.rows[0] || {}, itemSales = num(a.item_sales), known = num(a.known_cost_sales), profit = num(a.profit), eligible = num(a.eligible_sales), proSales = num(a.pro_sales);
       const filters = { start, endExclusive, page, pageSize, salesperson: salesperson || undefined, manufacturer: req.query.manufacturer, store: req.query.store, category: req.query.category, item: req.query.item };
       return res.json({ filters, summary: { itemSales: round(itemSales), ticketTotal: round(num(a.ticket_total)), ticketCount: round(num(a.ticket_count)), itemCount: num(a.item_count), quantity: round(num(a.quantity)), knownCostSales: round(known), cost: round(num(a.cost)), profit: round(profit), marginPct: known ? round(profit / known * 100) : null, costCoveragePct: itemSales ? round(known / itemSales * 100) : null, financeAmount: round(num(a.finance_amount)), financeFee: round(num(a.finance_fee)), financedTicketCount: round(num(a.financed_ticket_count)) },
-        pro1st: { sales: round(proSales), eligibleSales: round(eligible), penetrationPct: eligible ? round(proSales / eligible * 100) : null }, series: mapSeries(seriesResult.rows),
+        pro1st: { sales: round(proSales), eligibleSales: round(eligible), penetrationPct: eligible ? round(proSales / eligible * 100) : null, saleIds: Array.isArray(a.pro_sale_ids) ? a.pro_sale_ids.map(String) : [], saleIdsLow: Array.isArray(a.pro_sale_ids_low) ? a.pro_sale_ids_low.map(String) : [], saleIdsMid: Array.isArray(a.pro_sale_ids_mid) ? a.pro_sale_ids_mid.map(String) : [], saleIdsHigh: Array.isArray(a.pro_sale_ids_high) ? a.pro_sale_ids_high.map(String) : [] }, series: mapSeries(seriesResult.rows),
         warnings: { duplicateItemLines: num(a.duplicate_lines), openDeliveredTickets: num(a.open_tickets), twoPersonTickets: num(a.two_person_tickets), itemTicketDifference: round(itemSales - num(a.unallocated_ticket_total)) }, missingCosts: { count: num(a.missing_costs) },
         lowMargin: lowMarginResult.rows.map((row: any) => ({ deliveredDate: dateOnly(row.delivered_date), saleId: String(row.sale_id), store: String(row.store), salesperson: String(row.salesperson), grandTotal: round(num(row.grand_total)), profit: round(num(row.profit)), marginPct: nullableNum(row.margin_pct) })),
         detail: { total: num(countResult.rows[0]?.total), page, pageSize, rows: pageResult.rows.map((row: any) => ({ deliveredDate: dateOnly(row.delivered_date), saleId: String(row.sale_id), status: String(row.status), store: String(row.store), salesperson: String(row.salesperson), manufacturer: String(row.manufacturer), category: String(row.category), itemNo: String(row.item_no), description: String(row.description), quantity: round(num(row.quantity)), sales: round(num(row.sales)), ticketTotal: round(num(row.ticket_total)), cost: nullableNum(row.cost), profit: nullableNum(row.profit), isPro1st: Boolean(row.is_pro1st), costSource: row.cost == null || row.profit == null ? "unknown" : String(row.cost_source), duplicateWarning: Boolean(row.duplicate_warning) })) } });

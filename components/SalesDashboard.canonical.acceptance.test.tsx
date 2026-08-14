@@ -18,10 +18,10 @@ vi.mock("../services/posBackendApi", async (load) => {
 
 const canonical = (page = 1) => ({
   summary: { itemSales: 12345, ticketCount: 12, quantity: 18, cost: 7000, profit: 5345, marginPct: 43.3, costCoveragePct: 80, financeAmount: 4000, financeFee: 120, financedTicketCount: 4 },
-  pro1st: { sales: 500, eligibleSales: 10000, penetrationPct: 5 },
+  pro1st: { sales: 500, eligibleSales: 10000, penetrationPct: 5, saleIds: ["000123"], saleIdsLow: [], saleIdsMid: ["000123"], saleIdsHigh: [] },
   series: {
-    salesperson: [{ label: "Smith, Jane", sales: 8000, quantity: 10, cost: 4000, profit: 4000, marginPct: 50, financeAmount: 3000, financeFee: 90, ticketCount: 8 }],
-    store: [{ label: "FD7", sales: 12345, quantity: 18, cost: 7000, profit: 5345, marginPct: 43.3, financeAmount: 4000, financeFee: 120, ticketCount: 12 }],
+    salesperson: [{ label: "Smith, Jane", sales: 8000, quantity: 10, cost: 4000, profit: 4000, marginPct: 50, financeAmount: 3000, financeFee: 90, ticketCount: 8, eligibleSales: 8000, pro1stSales: 500 }],
+    store: [{ label: "FD7", sales: 12345, quantity: 18, cost: 7000, profit: 5345, marginPct: 43.3, financeAmount: 4000, financeFee: 120, ticketCount: 12, eligibleSales: 10000, pro1stSales: 500 }],
     item: [{ label: "SOFA-1", description: "Canonical Sofa", manufacturer: "Acme", category: "Living Room", saleIds: ["000123"], sales: 9000, quantity: 8 }],
     category: [{ label: "Living Room", sales: 9000, quantity: 8 }, { label: "Bedroom", sales: 3345, quantity: 10 }], manufacturer: [{ label: "Acme", sales: 9000, quantity: 8 }], day: [],
   },
@@ -64,6 +64,11 @@ describe("SalesDashboard canonical acceptance", () => {
     expect(screen.getByText("Finance Overview")).toBeInTheDocument();
     expect(screen.getByText("Best Sellers")).toBeInTheDocument();
     expect(screen.getByText("Sales Trend")).toBeInTheDocument();
+    const pro1stCard = screen.getByRole("heading", { name: /Pro1st Attach Rate/ }).closest("[data-print-id]");
+    expect(pro1stCard).not.toBeNull();
+    fireEvent.click(within(pro1stCard as HTMLElement).getByRole("button", { name: "Expand" }));
+    expect(await within(pro1stCard as HTMLElement).findByText("000123")).toBeInTheDocument();
+    expect(within(pro1stCard as HTMLElement).queryByText("No Pro1st sales detected for this range.")).not.toBeInTheDocument();
     expect(screen.queryByText("Written")).not.toBeInTheDocument();
     expect(mocks.legacy).not.toHaveBeenCalled();
     expect(mocks.report).toHaveBeenCalledTimes(3);

@@ -906,7 +906,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       const reportRows = (dimension: "salesperson" | "store", payload: any): ReportSummaryRow[] =>
         (payload?.series?.[dimension] || []).map((row: any) => ({
           label: row.label, ticketCount: Number(row.ticketCount || 0), totalRetail: Number(row.sales || 0),
-          pro1stSales: 0, units: Number(row.quantity || 0), avgMarginPct: row.marginPct == null ? null : Number(row.marginPct),
+          pro1stSales: Number(row.pro1stSales || 0), eligibleSales: Number(row.eligibleSales || 0), units: Number(row.quantity || 0), avgMarginPct: row.marginPct == null ? null : Number(row.marginPct),
         }));
       const sellerRows = (payload: any): BestSellerRow[] => rankCanonicalSeries(payload?.series?.item, itemSortMetric, 15).map((row: any) => ({
         itemDescription: row.description || row.label, category: row.category || "(unknown)", manufacturer: row.manufacturer || "(unknown)",
@@ -942,7 +942,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       setBestSellers(sellerRows(canonical)); setBestSellersCompare(sellerRows(canonicalCompare));
       setTopCategories(simpleRows("category", canonical) as TopCategoryRow[]); setTopCategoriesCompare(simpleRows("category", canonicalCompare) as TopCategoryRow[]);
       setTopManufacturers(simpleRows("manufacturer", canonical) as TopManufacturerRow[]); setTopManufacturersCompare(simpleRows("manufacturer", canonicalCompare) as TopManufacturerRow[]);
-      const proState = (payload: any): Pro1stStats => ({ totalSales: Number(payload?.pro1st?.eligibleSales || 0), proSales: Number(payload?.pro1st?.sales || 0), attachRate: Number(payload?.pro1st?.penetrationPct || 0), saleIds: [], saleIdsLow: [], saleIdsMid: [], saleIdsHigh: [] });
+      const proState = (payload: any): Pro1stStats => ({ totalSales: Number(payload?.pro1st?.eligibleSales || 0), proSales: Number(payload?.pro1st?.sales || 0), attachRate: Number(payload?.pro1st?.penetrationPct || 0), saleIds: Array.isArray(payload?.pro1st?.saleIds) ? payload.pro1st.saleIds.map(String) : [], saleIdsLow: Array.isArray(payload?.pro1st?.saleIdsLow) ? payload.pro1st.saleIdsLow.map(String) : [], saleIdsMid: Array.isArray(payload?.pro1st?.saleIdsMid) ? payload.pro1st.saleIdsMid.map(String) : [], saleIdsHigh: Array.isArray(payload?.pro1st?.saleIdsHigh) ? payload.pro1st.saleIdsHigh.map(String) : [] });
       setPro1stStats(proState(canonical)); setPro1stStatsCompare(proState(canonicalCompare));
       setSalespersonTickets(selectedSalesperson || selectedStore ? canonicalTicketRows(canonical.detail?.rows || []) : []);
       setTrendData((canonical.series.day || []).map((row: any) => ({ day: row.label, furnitureSales: Number(row.sales || 0), mattressBoxSpringAdjustableSales: 0, averageDailyAdSpend: null })));

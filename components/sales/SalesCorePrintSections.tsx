@@ -50,16 +50,11 @@ const SalesCorePrintSections: React.FC<SalesCorePrintSectionsProps> = ({
     })}`;
   };
 
-  const formatPro1stPct = (pro1stSales: number, totalRetail: number) => {
-    if (!Number.isFinite(pro1stSales) || !Number.isFinite(totalRetail) || totalRetail <= 0) {
+  const formatPro1stPct = (pro1stSales: number, eligibleSales: number) => {
+    if (!Number.isFinite(pro1stSales) || !Number.isFinite(eligibleSales) || eligibleSales <= 0) {
       return "0.0%";
     }
-    // Pro1st % should exclude Pro1st amount from denominator
-    const retailExcludingPro1st = totalRetail - pro1stSales;
-    if (retailExcludingPro1st <= 0) {
-      return "0.0%";
-    }
-    return `${((pro1stSales / retailExcludingPro1st) * 100).toFixed(1)}%`;
+    return `${((pro1stSales / eligibleSales) * 100).toFixed(1)}%`;
   };
 
   return (
@@ -131,7 +126,7 @@ const SalesCorePrintSections: React.FC<SalesCorePrintSectionsProps> = ({
                         {formatAverageTicket(Number(row.totalRetail || 0), Number(row.ticketCount || 0))}
                       </td>
                       <td className="px-3 py-2 text-right text-slate-600">
-                        {formatPro1stPct(Number(row.pro1stSales || 0), Number(row.totalRetail || 0))}
+                        {formatPro1stPct(Number(row.pro1stSales || 0), Number(row.eligibleSales || 0))}
                       </td>
                       <td className="px-3 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
                       <td className="px-3 py-2 text-right text-slate-600">{row.ownRetailPct.toFixed(1)}%</td>
@@ -151,7 +146,7 @@ const SalesCorePrintSections: React.FC<SalesCorePrintSectionsProps> = ({
                       {formatAverageTicket(Number(printTotalsStore.totalRetail || 0), Number(printTotalsStore.totalTickets || 0))}
                     </td>
                     <td className="px-3 py-2 text-right text-slate-700">
-                      {formatPro1stPct(Number(printTotalsStore.totalPro1stSales || 0), Number(printTotalsStore.totalRetail || 0))}
+                      {formatPro1stPct(Number(printTotalsStore.totalPro1stSales || 0), Number(printTotalsStore.totalEligibleSales || 0))}
                     </td>
                     <td className="px-3 py-2 text-right text-slate-700">{printTotalsStore.totalRetail > 0 ? "100.0%" : "0.0%"}</td>
                     <td className="px-3 py-2 text-right text-slate-700">--</td>
@@ -208,7 +203,7 @@ const SalesCorePrintSections: React.FC<SalesCorePrintSectionsProps> = ({
                         {formatAverageTicket(Number(row.totalRetail || 0), Number(row.ticketCount || 0))}
                       </td>
                       <td className="px-3 py-2 text-right text-slate-600">
-                        {formatPro1stPct(Number(row.pro1stSales || 0), Number(row.totalRetail || 0))}
+                        {formatPro1stPct(Number(row.pro1stSales || 0), Number(row.eligibleSales || 0))}
                       </td>
                       <td className="px-3 py-2 text-right text-slate-600">{row.retailPct.toFixed(1)}%</td>
                       <td className="px-3 py-2 text-right text-slate-600">{row.ownRetailPct.toFixed(1)}%</td>
@@ -233,7 +228,7 @@ const SalesCorePrintSections: React.FC<SalesCorePrintSectionsProps> = ({
                     <td className="px-3 py-2 text-right text-slate-700">
                       {formatPro1stPct(
                         Number(printTotalsSalesperson.totalPro1stSales || 0),
-                        Number(printTotalsSalesperson.totalRetail || 0)
+                        Number(printTotalsSalesperson.totalEligibleSales || 0)
                       )}
                     </td>
                     <td className="px-3 py-2 text-right text-slate-700">

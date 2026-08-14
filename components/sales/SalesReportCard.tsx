@@ -130,22 +130,16 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
     })}`;
   };
 
-  const formatPro1stPct = (pro1stSales: number, totalRetail: number) => {
-    if (!Number.isFinite(pro1stSales) || !Number.isFinite(totalRetail) || totalRetail <= 0) {
+  const formatPro1stPct = (pro1stSales: number, eligibleSales: number) => {
+    if (!Number.isFinite(pro1stSales) || !Number.isFinite(eligibleSales) || eligibleSales <= 0) {
       return "0.0%";
     }
-    // Pro1st % should exclude Pro1st amount from denominator
-    const retailExcludingPro1st = totalRetail - pro1stSales;
-    if (retailExcludingPro1st <= 0) {
-      return "0.0%";
-    }
-    return `${((pro1stSales / retailExcludingPro1st) * 100).toFixed(1)}%`;
+    return `${((pro1stSales / eligibleSales) * 100).toFixed(1)}%`;
   };
 
-  const pro1stPctValue = (pro1stSales: number, totalRetail: number) => {
-    if (!Number.isFinite(pro1stSales) || !Number.isFinite(totalRetail) || totalRetail <= 0) return 0;
-    const retailExcludingPro1st = totalRetail - pro1stSales;
-    return retailExcludingPro1st > 0 ? (pro1stSales / retailExcludingPro1st) * 100 : 0;
+  const pro1stPctValue = (pro1stSales: number, eligibleSales: number) => {
+    if (!Number.isFinite(pro1stSales) || !Number.isFinite(eligibleSales) || eligibleSales <= 0) return 0;
+    return (pro1stSales / eligibleSales) * 100;
   };
 
   const avgTicketValue = (totalRetail: number, ticketCount: number) => {
@@ -306,7 +300,7 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                     <th className="w-[12%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                       Pro1st %
                       {renderHelp(
-                        "Pro1st dollars divided by total retail for this row, shown as a percent of sale and excluding mattress, box spring, and foundation-related lines."
+                        "Pro1st dollars divided by eligible furniture sales for this row, excluding mattress, box spring, foundation, adjustable-base, and bedding lines."
                       )}
                     </th>
                     <th className="w-[18%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
@@ -368,11 +362,11 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                         )}
                       </td>
                       <td className="px-3 py-3 text-sm text-slate-500">
-                        <div>{formatPro1stPct(Number(row.pro1stSales || 0), Number(row.totalRetail || 0))}</div>
+                        <div>{formatPro1stPct(Number(row.pro1stSales || 0), Number(row.eligibleSales || 0))}</div>
                         {renderComparison(
-                          pro1stPctValue(Number(row.pro1stSales || 0), Number(row.totalRetail || 0)),
-                          pro1stPctValue(Number(compareRow?.pro1stSales || 0), Number(compareRow?.totalRetail || 0)),
-                          formatComparePct(pro1stPctValue(Number(compareRow?.pro1stSales || 0), Number(compareRow?.totalRetail || 0)))
+                          pro1stPctValue(Number(row.pro1stSales || 0), Number(row.eligibleSales || 0)),
+                          pro1stPctValue(Number(compareRow?.pro1stSales || 0), Number(compareRow?.eligibleSales || 0)),
+                          formatComparePct(pro1stPctValue(Number(compareRow?.pro1stSales || 0), Number(compareRow?.eligibleSales || 0)))
                         )}
                       </td>
                       <td className="px-3 py-3 align-top">
@@ -422,11 +416,11 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
                       )}
                     </td>
                     <td className="px-3 py-3 text-sm font-semibold text-slate-700">
-                      <div>{formatPro1stPct(Number(reportTotals.totalPro1stSales || 0), Number(reportTotals.totalRetail || 0))}</div>
+                      <div>{formatPro1stPct(Number(reportTotals.totalPro1stSales || 0), Number(reportTotals.totalEligibleSales || 0))}</div>
                       {renderComparison(
-                        pro1stPctValue(Number(reportTotals.totalPro1stSales || 0), Number(reportTotals.totalRetail || 0)),
-                        pro1stPctValue(Number(compareTotals?.totalPro1stSales || 0), Number(compareTotals?.totalRetail || 0)),
-                        formatComparePct(pro1stPctValue(Number(compareTotals?.totalPro1stSales || 0), Number(compareTotals?.totalRetail || 0)))
+                        pro1stPctValue(Number(reportTotals.totalPro1stSales || 0), Number(reportTotals.totalEligibleSales || 0)),
+                        pro1stPctValue(Number(compareTotals?.totalPro1stSales || 0), Number(compareTotals?.totalEligibleSales || 0)),
+                        formatComparePct(pro1stPctValue(Number(compareTotals?.totalPro1stSales || 0), Number(compareTotals?.totalEligibleSales || 0)))
                       )}
                     </td>
                     <td className="px-3 py-3 align-top">

@@ -5,6 +5,7 @@ export type ReportSummaryRow = {
   ticketCount: number;
   totalRetail: number;
   pro1stSales: number;
+  eligibleSales?: number;
   units: number;
   avgMarginPct: number | null;
 };
@@ -21,6 +22,7 @@ export type ReportRowWithPct = ReportSummaryRow & {
 export type ReportTotals = {
   totalRetail: number;
   totalPro1stSales: number;
+  totalEligibleSales: number;
   totalUnits: number;
   totalTickets: number;
   marginWeighted: number;
@@ -32,6 +34,7 @@ export const computeReportTotals = (rows: ReportSummaryRow[], distinctTicketCoun
     (acc, row) => {
       acc.totalRetail += Number.isFinite(row.totalRetail) ? row.totalRetail : 0;
       acc.totalPro1stSales += Number.isFinite(row.pro1stSales) ? row.pro1stSales : 0;
+      acc.totalEligibleSales += Number.isFinite(row.eligibleSales) ? Number(row.eligibleSales) : row.totalRetail;
       acc.totalUnits += Number.isFinite(row.units) ? row.units : 0;
       acc.totalTickets += Number.isFinite(row.ticketCount) ? row.ticketCount : 0;
       if (row.avgMarginPct !== null && Number.isFinite(row.avgMarginPct)) {
@@ -39,7 +42,7 @@ export const computeReportTotals = (rows: ReportSummaryRow[], distinctTicketCoun
       }
       return acc;
     },
-    { totalRetail: 0, totalPro1stSales: 0, totalUnits: 0, totalTickets: 0, marginWeighted: 0 }
+    { totalRetail: 0, totalPro1stSales: 0, totalEligibleSales: 0, totalUnits: 0, totalTickets: 0, marginWeighted: 0 }
   );
   if (distinctTicketCount !== null && distinctTicketCount !== undefined && Number.isFinite(distinctTicketCount)) {
     totals.totalTickets = Number(distinctTicketCount);
