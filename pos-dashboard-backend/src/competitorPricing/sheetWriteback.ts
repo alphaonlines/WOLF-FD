@@ -5,6 +5,7 @@ import type { CompetitorPricingCompetitorMatch, CompetitorPricingResultRow } fro
 const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 const DEFAULT_AHS_HEADER = 'AHS COMP PRICE';
 const DEFAULT_FFL_HEADER = 'FFL/ OTHER COMP PRICE';
+const DEFAULT_FURNITURE_FAIR_HEADER = 'FURNITURE FAIR COMP PRICE';
 const UPDATED_CELL_COLOR = { red: 0.85, green: 0.94, blue: 0.83 };
 const HEADER_CELL_COLOR = { red: 0.65, green: 0.82, blue: 0.58 };
 
@@ -24,6 +25,7 @@ export type CompetitorPricingSheetWritebackRequest = {
   sheetName?: string;
   ahsCompHeader?: string;
   fflCompHeader?: string;
+  furnitureFairCompHeader?: string;
   dryRun?: boolean;
 };
 
@@ -38,6 +40,7 @@ export type CompetitorPricingSheetWritebackSummary = {
   columns: {
     ahsCompColumn: string;
     fflCompColumn: string;
+    furnitureFairCompColumn: string;
   };
 };
 
@@ -206,12 +209,14 @@ async function ensureCompColumns(args: {
   headers: string[];
   ahsHeader: string;
   fflHeader: string;
+  furnitureFairHeader: string;
   dryRun: boolean;
   fetchImpl: FetchLike;
-}): Promise<{ ahsIndex: number; fflIndex: number }> {
+}): Promise<{ ahsIndex: number; fflIndex: number; furnitureFairIndex: number }> {
   let headers = [...args.headers];
   let ahsIndex = findHeaderIndex(headers, args.ahsHeader, [/ahs\s*comp/i]);
   let fflIndex = findHeaderIndex(headers, args.fflHeader, [/ffl/i, /other\s*comp/i, /furniture\s*4\s*less/i]);
+  let furnitureFairIndex = findHeaderIndex(headers, args.furnitureFairHeader, [/furniture\s*fair\s*comp/i, /furniture\s*fair\s*price/i]);
   const headerUpdates: Array<{ range: string; values: string[][] }> = [];
 
   const reserveColumn = (header: string) => {
@@ -223,8 +228,9 @@ async function ensureCompColumns(args: {
 
   if (ahsIndex < 0) ahsIndex = reserveColumn(args.ahsHeader);
   if (fflIndex < 0) fflIndex = reserveColumn(args.fflHeader);
+  if (furnitureFairIndex < 0) furnitureFairIndex = reserveColumn(args.furnitureFairHeader);
 
-  const requiredColumns = Math.max(ahsIndex, fflIndex) + 1;
+  const requiredColumns = Math.max(ahsIndex, fflIndex, furnitureFairIndex) + 1;
   const columnCount = args.sheet.gridProperties?.columnCount || headers.length || requiredColumns;
   if (!args.dryRun && requiredColumns > columnCount) {
     await batchUpdate(args.spreadsheetId, args.token, [{
@@ -240,10 +246,13 @@ async function ensureCompColumns(args: {
     await batchValuesUpdate(args.spreadsheetId, args.token, headerUpdates, args.fetchImpl);
   }
 
-  return { ahsIndex, fflIndex };
+  return { ahsIndex, fflIndex, furnitureFairIndex };
 }
 
-function planCellUpdates(results: CompetitorPricingResultRow[], columns: { ahsIndex: number; fflIndex: number }): { updates: CellUpdate[]; skippedRows: Array<{ sourceRow: number; sku: string; reason: string }> } {
+function planCellUpdates(
+  results: CompetitorPricingResultRow[],
+  columns: { ahsIndex: number; fflIndex: number; furnitureFairIndex: number }
+): { updates: CellUpdate[]; skippedRows: Array<{ sourceRow: number; sku: string; reason: string }> } {
   const updates: CellUpdate[] = [];
   const skippedRows: Array<{ sourceRow: number; sku: string; reason: string }> = [];
 
@@ -269,6 +278,16 @@ function planCellUpdates(results: CompetitorPricingResultRow[], columns: { ahsIn
       });
       rowUpdateCount += 1;
     }
+    if (isReliableMatch(result.furnitureFair)) {
+      updates.push({
+        sourceRow: result.sourceRow,
+        sku: result.sku,
+        columnIndex: columns.furnitureFairIndex,
+        price: result.furnitureFair.price,
+        note: matchNote(result.furnitureFair, result),
+      });
+      rowUpdateCount += 1;
+    }
     if (!rowUpdateCount) {
       skippedRows.push({ sourceRow: result.sourceRow, sku: result.sku, reason: 'no high/medium confidence competitor price' });
     }
@@ -277,8 +296,12 @@ function planCellUpdates(results: CompetitorPricingResultRow[], columns: { ahsIn
   return { updates, skippedRows };
 }
 
-function formatRequests(sheetId: number, updates: CellUpdate[], columns: { ahsIndex: number; fflIndex: number }): any[] {
-  const headerColumns = Array.from(new Set([columns.ahsIndex, columns.fflIndex]));
+function formatRequests(
+  sheetId: number,
+  updates: CellUpdate[],
+  columns: { ahsIndex: number; fflIndex: number; furnitureFairIndex: number }
+): any[] {
+  const headerColumns = Array.from(new Set([columns.ahsIndex, columns.fflIndex, columns.furnitureFairIndex]));
   const headerRequests = headerColumns.map((columnIndex) => ({
     repeatCell: {
       range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },
@@ -323,6 +346,7 @@ export async function writeCompetitorPricingResultsToSheet(
   const fetchImpl = context.fetchImpl || fetch;
   const ahsHeader = request.ahsCompHeader || DEFAULT_AHS_HEADER;
   const fflHeader = request.fflCompHeader || DEFAULT_FFL_HEADER;
+  const furnitureFairHeader = request.furnitureFairCompHeader || DEFAULT_FURNITURE_FAIR_HEADER;
 
   const sheet = await getSheetProperties(spreadsheetId, request.sheetName, token, fetchImpl);
   const headers = await readHeaders(spreadsheetId, sheet.title, token, fetchImpl);
@@ -333,6 +357,7 @@ export async function writeCompetitorPricingResultsToSheet(
     headers,
     ahsHeader,
     fflHeader,
+    furnitureFairHeader,
     dryRun: Boolean(request.dryRun),
     fetchImpl,
   });
@@ -358,6 +383,7 @@ export async function writeCompetitorPricingResultsToSheet(
     columns: {
       ahsCompColumn: columnLetter(columns.ahsIndex),
       fflCompColumn: columnLetter(columns.fflIndex),
+      furnitureFairCompColumn: columnLetter(columns.furnitureFairIndex),
     },
   };
 }

@@ -3,7 +3,7 @@ import { Search, ArrowUpDown, ArrowUp, ArrowDown, RefreshCw, Tag, ExternalLink, 
 import type { CompetitorPricingCompetitorMatch, CompetitorPricingResultRow } from '../types/competitorPricing';
 import { getLatestCompetitorPricingResults } from '../services/competitorPricingLatestApi';
 
-type SortField = 'vendor' | 'sku' | 'description' | 'storePrice' | 'ashleyPrice' | 'fflPrice' | 'lowestComp' | 'diff' | 'confidence';
+type SortField = 'vendor' | 'sku' | 'description' | 'storePrice' | 'ashleyPrice' | 'fflPrice' | 'furnitureFairPrice' | 'lowestComp' | 'diff' | 'confidence';
 type SortDir = 'asc' | 'desc';
 
 type Props = {
@@ -24,6 +24,11 @@ function fmtPrice(p: number): string {
 
 const CONFIDENCE_ORDER: Record<string, number> = { high: 3, medium: 2, low: 1, none: 0 };
 
+function reliableMatchPrice(match: CompetitorPricingCompetitorMatch | undefined): number {
+  if (!match || !['high', 'medium'].includes(match.confidence)) return -1;
+  return parsePrice(match.price || '');
+}
+
 
 const GENERIC_MATCH_TITLE_RE = /^(skip to content|view all products|read more reviews at:?|google|access to this page has been denied)$/i;
 
@@ -33,7 +38,7 @@ function cleanMatchTitle(title: string | undefined): string {
   return cleaned;
 }
 
-function competitorLinkLabel(competitor: 'Ashley' | 'Furniture4Less', match: CompetitorPricingCompetitorMatch | undefined): string {
+function competitorLinkLabel(competitor: 'Ashley' | 'Furniture4Less' | 'FurnitureFair', match: CompetitorPricingCompetitorMatch | undefined): string {
   const title = cleanMatchTitle(match?.title);
   if (title) return title;
   const url = String(match?.url || '');
@@ -95,7 +100,8 @@ export default function CompetitorPricingResultsViewer({ isDarkMode = false }: P
       rows = rows.filter(r => {
         const aConf = r.ashley?.confidence || 'none';
         const fConf = r.furniture4Less?.confidence || 'none';
-        const best = CONFIDENCE_ORDER[aConf] >= CONFIDENCE_ORDER[fConf] ? aConf : fConf;
+        const fairConf = r.furnitureFair?.confidence || 'none';
+        const best = [aConf, fConf, fairConf].sort((a, b) => CONFIDENCE_ORDER[b] - CONFIDENCE_ORDER[a])[0];
         return best === confidenceFilter;
       });
     }
@@ -106,13 +112,14 @@ export default function CompetitorPricingResultsViewer({ isDarkMode = false }: P
         case 'sku': cmp = a.sku.localeCompare(b.sku); break;
         case 'description': cmp = a.description.localeCompare(b.description); break;
         case 'storePrice': cmp = parsePrice(a.storePrice) - parsePrice(b.storePrice); break;
-        case 'ashleyPrice': cmp = parsePrice(a.ashley?.price || '') - parsePrice(b.ashley?.price || ''); break;
-        case 'fflPrice': cmp = parsePrice(a.furniture4Less?.price || '') - parsePrice(b.furniture4Less?.price || ''); break;
+        case 'ashleyPrice': cmp = reliableMatchPrice(a.ashley) - reliableMatchPrice(b.ashley); break;
+        case 'fflPrice': cmp = reliableMatchPrice(a.furniture4Less) - reliableMatchPrice(b.furniture4Less); break;
+        case 'furnitureFairPrice': cmp = reliableMatchPrice(a.furnitureFair) - reliableMatchPrice(b.furnitureFair); break;
         case 'lowestComp': cmp = parsePrice(a.lowestReliableCompetitorPrice) - parsePrice(b.lowestReliableCompetitorPrice); break;
         case 'diff': cmp = parsePrice(a.storeMinusLowest) - parsePrice(b.storeMinusLowest); break;
         case 'confidence': {
-          const aBest = Math.max(CONFIDENCE_ORDER[a.ashley?.confidence || 'none'] || 0, CONFIDENCE_ORDER[a.furniture4Less?.confidence || 'none'] || 0);
-          const bBest = Math.max(CONFIDENCE_ORDER[b.ashley?.confidence || 'none'] || 0, CONFIDENCE_ORDER[b.furniture4Less?.confidence || 'none'] || 0);
+          const aBest = Math.max(CONFIDENCE_ORDER[a.ashley?.confidence || 'none'] || 0, CONFIDENCE_ORDER[a.furniture4Less?.confidence || 'none'] || 0, CONFIDENCE_ORDER[a.furnitureFair?.confidence || 'none'] || 0);
+          const bBest = Math.max(CONFIDENCE_ORDER[b.ashley?.confidence || 'none'] || 0, CONFIDENCE_ORDER[b.furniture4Less?.confidence || 'none'] || 0, CONFIDENCE_ORDER[b.furnitureFair?.confidence || 'none'] || 0);
           cmp = aBest - bBest;
           break;
         }
@@ -151,7 +158,7 @@ export default function CompetitorPricingResultsViewer({ isDarkMode = false }: P
   const rowCls = isDarkMode ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50/80';
   const linkCls = isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-600 hover:text-sky-700';
 
-  const withComp = results.filter(r => r.ashley?.confidence === 'high' || r.ashley?.confidence === 'medium' || r.furniture4Less?.confidence === 'high' || r.furniture4Less?.confidence === 'medium').length;
+  const withComp = results.filter(r => r.ashley?.confidence === 'high' || r.ashley?.confidence === 'medium' || r.furniture4Less?.confidence === 'high' || r.furniture4Less?.confidence === 'medium' || r.furnitureFair?.confidence === 'high' || r.furnitureFair?.confidence === 'medium').length;
   const higherCount = results.filter(r => { const d = parsePrice(r.storeMinusLowest); return d > 0; }).length;
   const lowerCount = results.filter(r => { const d = parsePrice(r.storeMinusLowest); return d < 0; }).length;
 
@@ -275,18 +282,22 @@ export default function CompetitorPricingResultsViewer({ isDarkMode = false }: P
               <tbody className="divide-y divide-slate-200/10">
                 {filtered.slice(0, 500).map((row, i) => {
                   const storeP = parsePrice(row.storePrice);
-                  const aPrice = parsePrice(row.ashley?.price || '');
-                  const fPrice = parsePrice(row.furniture4Less?.price || '');
+                  const aPrice = reliableMatchPrice(row.ashley);
+                  const fPrice = reliableMatchPrice(row.furniture4Less);
+                  const fairPrice = reliableMatchPrice(row.furnitureFair);
                   const lowP = parsePrice(row.lowestReliableCompetitorPrice);
                   const diff = parsePrice(row.storeMinusLowest);
                   const aConf = row.ashley?.confidence || 'none';
                   const fConf = row.furniture4Less?.confidence || 'none';
-                  const bestConf = CONFIDENCE_ORDER[aConf] >= CONFIDENCE_ORDER[fConf] ? aConf : fConf;
+                  const fairConf = row.furnitureFair?.confidence || 'none';
+                  const bestConf = [aConf, fConf, fairConf].sort((a, b) => CONFIDENCE_ORDER[b] - CONFIDENCE_ORDER[a])[0];
                   const diffColor = diff > 0 ? 'text-rose-500' : diff < 0 ? 'text-emerald-500' : muted;
                   const ashleyUrl = row.ashley?.url || '';
                   const fflUrl = row.furniture4Less?.url || '';
+                  const fairUrl = row.furnitureFair?.url || '';
                   const ashleyTitle = cleanMatchTitle(row.ashley?.title);
                   const fflTitle = cleanMatchTitle(row.furniture4Less?.title);
+                  const fairTitle = cleanMatchTitle(row.furnitureFair?.title);
                   return (
                     <tr key={`${row.sku}-${i}`} className={rowCls}>
                       <td className="px-3 py-3 align-top">
@@ -333,6 +344,23 @@ export default function CompetitorPricingResultsViewer({ isDarkMode = false }: P
                               </a>
                             ) : fflTitle ? (
                               <div className={`mt-1 text-[11px] leading-4 whitespace-normal break-words ${muted}`}>{fflTitle}</div>
+                            ) : (
+                              <div className={`mt-1 text-[11px] leading-4 ${muted}`}>No competitor page found</div>
+                            )}
+                          </div>
+                          <div className={`rounded-xl border px-2.5 py-2 ${isDarkMode ? 'border-slate-700 bg-slate-950/40' : 'border-slate-200 bg-slate-50/70'}`}>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-[11px] font-bold uppercase tracking-wide">Furniture Fair</span>
+                              {confidenceBadge(fairConf)}
+                            </div>
+                            <div className="mt-1 font-semibold">{fairPrice >= 0 ? fmtPrice(fairPrice) : '—'}</div>
+                            {fairUrl ? (
+                              <a href={fairUrl} target="_blank" rel="noreferrer" className={`mt-1 inline-flex max-w-full items-start gap-1 text-[11px] leading-4 whitespace-normal break-words ${linkCls}`}>
+                                <span className="min-w-0 break-words">{competitorLinkLabel('FurnitureFair', row.furnitureFair)}</span>
+                                <ExternalLink size={11} className="mt-0.5 shrink-0" />
+                              </a>
+                            ) : fairTitle ? (
+                              <div className={`mt-1 text-[11px] leading-4 whitespace-normal break-words ${muted}`}>{fairTitle}</div>
                             ) : (
                               <div className={`mt-1 text-[11px] leading-4 ${muted}`}>No competitor page found</div>
                             )}

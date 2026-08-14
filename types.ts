@@ -375,6 +375,22 @@ export interface ManufacturerCatalogItem {
   imageUrls: string[];
   sourceNote: string;
   sourceSortOrder: number;
+  hasInventory?: boolean;
+  inventoryQtyAvailable?: number | null;
+  inventoryQtyInStockDam?: number | null;
+  inventoryQtyReserved?: number | null;
+  inventoryQtyOnorder?: number | null;
+  inventoryUpdatedAt?: string | null;
+  ezproItemImageUrl?: string;
+  inventoryLocations?: Array<{ locationName: string; qty: number }>;
+  inventoryVariants?: Array<{
+    itemNumber: string;
+    qtyAvailable: number;
+    finish?: string;
+    fabric?: string;
+    pillow1Set?: string;
+    pillow2Set?: string;
+  }>;
 }
 
 export type UserRole = "Owner" | "Manager" | "Sales" | "Marketing" | "Support";

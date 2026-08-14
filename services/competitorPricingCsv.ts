@@ -19,6 +19,7 @@ const HEADER_ALIASES: Record<keyof CompetitorPricingColumnMap, RegExp[]> = {
   regularPrice: [/reg\s*price/i, /regular\s*price/i],
   ahsCompPrice: [/ahs\s*comp/i],
   fflCompPrice: [/ffl/i, /other\s*comp/i, /furniture\s*4\s*less/i],
+  furnitureFairCompPrice: [/furniture\s*fair\s*comp/i, /furniture\s*fair\s*price/i],
   remarks: [/remarks?/i, /notes?/i],
 };
 
@@ -57,6 +58,7 @@ export function detectCompetitorPricingColumns(headers: string[]): CompetitorPri
     regularPrice: firstMatchingHeader(headers, 'regularPrice'),
     ahsCompPrice: firstMatchingHeader(headers, 'ahsCompPrice'),
     fflCompPrice: firstMatchingHeader(headers, 'fflCompPrice'),
+    furnitureFairCompPrice: firstMatchingHeader(headers, 'furnitureFairCompPrice'),
     remarks: firstMatchingHeader(headers, 'remarks'),
   };
 }
@@ -136,6 +138,7 @@ export function extractCompetitorPricingRows(
       regularPrice: valueAt(row, headerIndex, map.regularPrice),
       existingAhsCompPrice: valueAt(row, headerIndex, map.ahsCompPrice),
       existingFflCompPrice: valueAt(row, headerIndex, map.fflCompPrice),
+      existingFurnitureFairCompPrice: valueAt(row, headerIndex, map.furnitureFairCompPrice),
       remarks: valueAt(row, headerIndex, map.remarks),
       bucket: 'non_ashley' as CompetitorPricingInputRow['bucket'],
       rowNotes: [] as string[],
@@ -163,6 +166,7 @@ export function competitorPricingRowsToCsv(rows: CompetitorPricingInputRow[]): s
     'regularPrice',
     'existingAhsCompPrice',
     'existingFflCompPrice',
+    'existingFurnitureFairCompPrice',
     'remarks',
     'rowNotes',
   ];

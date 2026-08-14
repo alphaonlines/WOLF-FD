@@ -4,8 +4,10 @@ import {
   classifyCompetitorMatch,
   cleanSku,
   expandSkuTokens,
+  hasExactNormalizedSkuToken,
   hasManualReviewSignals,
   parseFirstPrice,
+  priceMatchLookupSkuTokens,
   priceToNumber,
   strongestSkuToken,
 } from './matching';
@@ -15,6 +17,14 @@ describe('competitorPricing matching', () => {
     expect(cleanSku(' B070-71/96  -32 ')).toBe('B070-71/96');
     expect(expandSkuTokens('B070-71/96')).toEqual(['B070-71/96', 'B070-71', 'B070-96']);
     expect(strongestSkuToken('B070-71/96')).toBe('B070-71');
+    expect(priceMatchLookupSkuTokens('B070-71/96')).toEqual(['B070-71/96']);
+    expect(priceMatchLookupSkuTokens('CAT-100')).toEqual(['CAT-100']);
+  });
+
+  it('matches punctuation-normalized SKU identity without prefix collisions', () => {
+    expect(hasExactNormalizedSkuToken('Ashley B070-71-96 queen bed', 'B070-71/96')).toBe(true);
+    expect(hasExactNormalizedSkuToken('Jackson CAT-100 recliner', 'CAT-100')).toBe(true);
+    expect(hasExactNormalizedSkuToken('Jackson CAT-1000 recliner', 'CAT-100')).toBe(false);
   });
 
   it('extracts base tokens', () => {
@@ -35,13 +45,13 @@ describe('competitorPricing matching', () => {
     })).toMatchObject({ confidence: 'high', matchedTokens: ['B076-280'] });
   });
 
-  it('scores base token plus description as medium confidence', () => {
+  it('keeps a selected set base/description result below reliable confidence', () => {
     expect(classifyCompetitorMatch({
       sourceSku: 'B070-71/96',
       sourceDescription: 'Culverbach',
       candidateText: 'Culverbach queen bed collection B070 $449.99',
       price: '$449.99',
-    })).toMatchObject({ confidence: 'medium', matchedTokens: ['B070'] });
+    })).toMatchObject({ confidence: 'low', matchedTokens: ['B070'] });
   });
 
   it('scores description-only as low confidence', () => {

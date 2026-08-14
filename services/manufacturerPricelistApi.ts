@@ -72,6 +72,41 @@ const mapCatalogItem = (row: any): ManufacturerCatalogItem => ({
   imageUrls: Array.isArray(row.image_urls) ? row.image_urls.map((value: any) => String(value)) : [],
   sourceNote: String(row.source_note ?? ""),
   sourceSortOrder: Number(row.source_sort_order ?? 0),
+  hasInventory: Boolean(row.has_inventory),
+  inventoryQtyAvailable:
+    row.inventory_qty_available === null || row.inventory_qty_available === undefined
+      ? null
+      : Number(row.inventory_qty_available),
+  inventoryQtyInStockDam:
+    row.inventory_qty_in_stock_dam === null || row.inventory_qty_in_stock_dam === undefined
+      ? null
+      : Number(row.inventory_qty_in_stock_dam),
+  inventoryQtyReserved:
+    row.inventory_qty_reserved === null || row.inventory_qty_reserved === undefined
+      ? null
+      : Number(row.inventory_qty_reserved),
+  inventoryQtyOnorder:
+    row.inventory_qty_onorder === null || row.inventory_qty_onorder === undefined
+      ? null
+      : Number(row.inventory_qty_onorder),
+  inventoryUpdatedAt: row.inventory_updated_at ? String(row.inventory_updated_at) : null,
+  ezproItemImageUrl: String(row.ezpro_item_image_url ?? ""),
+  inventoryLocations: Array.isArray(row.inventory_locations)
+    ? row.inventory_locations.map((location: any) => ({
+        locationName: String(location?.location_name ?? location?.locationName ?? ""),
+        qty: Number(location?.qty ?? 0),
+      }))
+    : [],
+  inventoryVariants: Array.isArray(row.inventory_variants)
+    ? row.inventory_variants.map((variant: any) => ({
+        itemNumber: String(variant?.item_number ?? variant?.itemNumber ?? ""),
+        qtyAvailable: Number(variant?.qty_available ?? variant?.qtyAvailable ?? 0),
+        finish: String(variant?.finish ?? ""),
+        fabric: String(variant?.fabric ?? ""),
+        pillow1Set: String(variant?.pillow1_set ?? variant?.pillow1Set ?? ""),
+        pillow2Set: String(variant?.pillow2_set ?? variant?.pillow2Set ?? ""),
+      }))
+    : [],
 });
 
 const mapReferenceNote = (row: any): ManufacturerReferenceNote => ({
@@ -268,6 +303,7 @@ export async function fetchManufacturerCatalog(input?: {
   color?: string;
   query?: string;
   limit?: number;
+  inStockOnly?: boolean;
 }): Promise<{
   rows: ManufacturerCatalogItem[];
   total: number;
@@ -281,6 +317,7 @@ export async function fetchManufacturerCatalog(input?: {
   if (input?.color) params.set("color", input.color);
   if (input?.query) params.set("query", input.query);
   if (input?.limit) params.set("limit", String(input.limit));
+  if (input?.inStockOnly) params.set("in_stock_only", "1");
   const search = params.toString();
   const json = await fetchJson(`/api/manufacturer-pricebooks/catalog${search ? `?${search}` : ""}`);
   const rows = Array.isArray((json as any)?.rows) ? (json as any).rows : [];

@@ -6,6 +6,7 @@ export type CompetitorPricingColumnMap = {
   regularPrice?: string;
   ahsCompPrice?: string;
   fflCompPrice?: string;
+  furnitureFairCompPrice?: string;
   remarks?: string;
 };
 
@@ -19,6 +20,7 @@ export type CompetitorPricingInputRow = {
   regularPrice: string;
   existingAhsCompPrice: string;
   existingFflCompPrice: string;
+  existingFurnitureFairCompPrice?: string;
   remarks: string;
   bucket: 'non_ashley' | 'ashley' | 'manual_review';
   rowNotes: string[];
@@ -33,7 +35,7 @@ export type CompetitorPricingRunMode =
 export type CompetitorPricingMatchConfidence = 'high' | 'medium' | 'low' | 'none';
 
 export type CompetitorPricingCompetitorMatch = {
-  competitor: 'Ashley' | 'Furniture4LessNC';
+  competitor: 'Ashley' | 'Furniture4LessNC' | 'FurnitureFairNC';
   title: string;
   price: string;
   url: string;
@@ -45,6 +47,7 @@ export type CompetitorPricingCompetitorMatch = {
 export type CompetitorPricingResultRow = CompetitorPricingInputRow & {
   ashley?: CompetitorPricingCompetitorMatch;
   furniture4Less?: CompetitorPricingCompetitorMatch;
+  furnitureFair?: CompetitorPricingCompetitorMatch;
   lowestReliableCompetitorPrice: string;
   storeMinusLowest: string;
   recommendation: string;
@@ -75,5 +78,6 @@ export type CompetitorPricingSheetWritebackSummary = {
   columns: {
     ahsCompColumn: string;
     fflCompColumn: string;
+    furnitureFairCompColumn: string;
   };
 };

@@ -28,6 +28,7 @@ const header = [
   'WHSE COST',
   'AHS COMP PRICE',
   'FFL/ OTHER COMP PRICE',
+  'FURNITURE FAIR COMP PRICE',
   'STAR BURST',
   'STARBURST PRICE',
   'STAR BURST GPM%',
@@ -49,6 +50,7 @@ describe('competitorPricingCsv', () => {
       regularPrice: 'REG PRICE',
       ahsCompPrice: 'AHS COMP PRICE',
       fflCompPrice: 'FFL/ OTHER COMP PRICE',
+      furnitureFairCompPrice: 'FURNITURE FAIR COMP PRICE',
       remarks: 'REMARKS',
     });
   });
@@ -76,13 +78,13 @@ describe('competitorPricingCsv', () => {
     const rows = extractCompetitorPricingRows([
       header,
       ['NEW PRODUCT', '', '', 'X', 'FTD', '', 'CLEARANCE', 'BEST SELLER', 'NEWEST PRICE CHANGES'],
-      ['Albany', 'SS', '', '', 'X', '', '8642-61', 'Groovy Navy', '$1,499', '', '', '', '', '', 'Need movement', '', '$714', 'N/A', 'FF $1,399', '', '', '', '$1,799'],
-      ['Ashley', 'S', '', '', 'X', '', 'B076-280', 'Trentlore', 'Twin Metal DayBed $199', '', '', '', '', '', "DISCO'D", '', '$100', 'N/A', 'N/A', '', '', '', '$299'],
-      ['Ashley', 'SS', '', '', 'REGULAR PRICE', '', 'B1050-31/36/46/54/57/96/92', 'Hyana', '7PC Q $1,399 K $1,599', '', '', '', '', '', 'Matches B200 BR', '', '$900', '$1,996', '$1,056', '', '', '', '$1,599'],
+      ['Albany', 'SS', '', '', 'X', '', '8642-61', 'Groovy Navy', '$1,499', '', '', '', '', '', 'Need movement', '', '$714', 'N/A', 'FF $1,399', 'FAIR $1,299', '', '', '', '$1,799'],
+      ['Ashley', 'S', '', '', 'X', '', 'B076-280', 'Trentlore', 'Twin Metal DayBed $199', '', '', '', '', '', "DISCO'D", '', '$100', 'N/A', 'N/A', 'N/A', '', '', '', '$299'],
+      ['Ashley', 'SS', '', '', 'REGULAR PRICE', '', 'B1050-31/36/46/54/57/96/92', 'Hyana', '7PC Q $1,399 K $1,599', '', '', '', '', '', 'Matches B200 BR', '', '$900', '$1,996', '$1,056', '$1,049', '', '', '', '$1,599'],
     ]);
 
     expect(rows).toHaveLength(3);
-    expect(rows[0]).toMatchObject({ sourceRow: 3, vendor: 'Albany', sku: '8642-61', bucket: 'non_ashley', storePrice: '$1,499' });
+    expect(rows[0]).toMatchObject({ sourceRow: 3, vendor: 'Albany', sku: '8642-61', bucket: 'non_ashley', storePrice: '$1,499', existingFurnitureFairCompPrice: 'FAIR $1,299' });
     expect(rows[1]).toMatchObject({ sourceRow: 4, vendor: 'Ashley', sku: 'B076-280', bucket: 'ashley', storePrice: '$199' });
     expect(rows[2].bucket).toBe('manual_review');
     expect(rows[2].rowNotes.join(' ')).toMatch(/slash-combined|multiple prices|set/i);
@@ -91,7 +93,7 @@ describe('competitorPricingCsv', () => {
   it('exports normalized rows as CSV', () => {
     const rows = extractCompetitorPricingRows([
       header,
-      ['Albany', 'SS', '', '', 'X', '', '8642-61', 'Groovy Navy', '$1,499', '', '', '', '', '', 'Need, movement', '', '$714', 'N/A', 'FF $1,399', '', '', '', '$1,799'],
+      ['Albany', 'SS', '', '', 'X', '', '8642-61', 'Groovy Navy', '$1,499', '', '', '', '', '', 'Need, movement', '', '$714', 'N/A', 'FF $1,399', 'FAIR $1,299', '', '', '', '$1,799'],
     ]);
     const csv = competitorPricingRowsToCsv(rows);
     expect(csv).toContain('sourceRow,bucket,vendor,sku');

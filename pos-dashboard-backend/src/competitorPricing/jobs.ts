@@ -9,7 +9,7 @@ import type {
   CompetitorPricingRunMode,
 } from './types';
 import { ensureDir, getCompetitorPricingDataDir } from './cache';
-import { lookupAshley, lookupFurniture4Less } from './competitors';
+import { lookupAshley, lookupFurniture4Less, lookupFurnitureFair } from './competitors';
 import { priceToNumber } from './matching';
 
 function jobDir(jobId: string): string {
@@ -32,6 +32,10 @@ function resultsCsvPath(jobId: string): string {
   return path.join(jobDir(jobId), 'results.csv');
 }
 
+function latestResultsPath(): string {
+  return path.join(getCompetitorPricingDataDir(), 'latest-results.json');
+}
+
 function inputRowsPath(jobId: string): string {
   return path.join(uploadsDir(jobId), 'normalized-input.json');
 }
@@ -43,6 +47,18 @@ async function writeJson(file: string, value: unknown): Promise<void> {
 
 async function readJson<T>(file: string): Promise<T> {
   return JSON.parse(await fs.readFile(file, 'utf8')) as T;
+}
+
+async function publishLatestResults(results: CompetitorPricingResultRow[]): Promise<void> {
+  const destination = latestResultsPath();
+  const temporary = `${destination}.${process.pid}.${crypto.randomUUID()}.tmp`;
+  await ensureDir(path.dirname(destination));
+  try {
+    await fs.writeFile(temporary, JSON.stringify({ generatedAt: new Date().toISOString(), results }, null, 2));
+    await fs.rename(temporary, destination);
+  } finally {
+    await fs.rm(temporary, { force: true }).catch(() => undefined);
+  }
 }
 
 function selectRows(rows: CompetitorPricingInputRow[], mode: CompetitorPricingRunMode): CompetitorPricingInputRow[] {
@@ -60,7 +76,7 @@ function selectRows(rows: CompetitorPricingInputRow[], mode: CompetitorPricingRu
   }
 }
 
-function emptyMatch(competitor: 'Ashley' | 'Furniture4LessNC', notes: string[]): CompetitorPricingCompetitorMatch {
+function emptyMatch(competitor: 'Ashley' | 'Furniture4LessNC' | 'FurnitureFairNC', notes: string[]): CompetitorPricingCompetitorMatch {
   return { competitor, title: '', price: '', url: '', confidence: 'none', matchedTokens: [], notes };
 }
 
@@ -112,6 +128,7 @@ export function resultRowsToCsv(rows: CompetitorPricingResultRow[]): string {
     'regular_price',
     'existing_ahs_comp_price',
     'existing_ffl_comp_price',
+    'existing_furniture_fair_comp_price',
     'ashley_title',
     'ashley_price',
     'ashley_confidence',
@@ -120,6 +137,10 @@ export function resultRowsToCsv(rows: CompetitorPricingResultRow[]): string {
     'furniture4less_price',
     'furniture4less_confidence',
     'furniture4less_url',
+    'furniture_fair_title',
+    'furniture_fair_price',
+    'furniture_fair_confidence',
+    'furniture_fair_url',
     'lowest_reliable_competitor_price',
     'store_minus_lowest',
     'recommendation',
@@ -139,6 +160,7 @@ export function resultRowsToCsv(rows: CompetitorPricingResultRow[]): string {
       row.regularPrice,
       row.existingAhsCompPrice,
       row.existingFflCompPrice,
+      row.existingFurnitureFairCompPrice || '',
       row.ashley?.title || '',
       row.ashley?.price || '',
       row.ashley?.confidence || '',
@@ -147,10 +169,14 @@ export function resultRowsToCsv(rows: CompetitorPricingResultRow[]): string {
       row.furniture4Less?.price || '',
       row.furniture4Less?.confidence || '',
       row.furniture4Less?.url || '',
+      row.furnitureFair?.title || '',
+      row.furnitureFair?.price || '',
+      row.furnitureFair?.confidence || '',
+      row.furnitureFair?.url || '',
       row.lowestReliableCompetitorPrice,
       row.storeMinusLowest,
       row.recommendation,
-      [...(row.rowNotes || []), ...(row.ashley?.notes || []), ...(row.furniture4Less?.notes || [])].join('; '),
+      [...(row.rowNotes || []), ...(row.ashley?.notes || []), ...(row.furniture4Less?.notes || []), ...(row.furnitureFair?.notes || [])].join('; '),
       row.checkedAt,
     ].map(csvEscape).join(','));
   }
@@ -198,7 +224,7 @@ async function updateStatus(jobId: string, patch: Partial<CompetitorPricingJobSt
   return next;
 }
 
-export async function runCompetitorPricingJob(jobId: string): Promise<void> {
+export async function runCompetitorPricingJob(jobId: string, options: { publishLatest?: boolean } = {}): Promise<void> {
   await updateStatus(jobId, { status: 'running' });
   const rows = await readJson<CompetitorPricingInputRow[]>(inputRowsPath(jobId));
   const results: CompetitorPricingResultRow[] = [];
@@ -209,15 +235,20 @@ export async function runCompetitorPricingJob(jobId: string): Promise<void> {
       const furniture4Less = row.bucket === 'manual_review'
         ? emptyMatch('Furniture4LessNC', ['manual-review row skipped for automatic lookup'])
         : await lookupFurniture4Less(row);
+      const furnitureFair = row.bucket === 'manual_review'
+        ? emptyMatch('FurnitureFairNC', ['manual-review row skipped for automatic lookup'])
+        : await lookupFurnitureFair(row);
       const reliable = [
         { name: 'Ashley', price: reliablePrice(ashley) },
         { name: 'Furniture4LessNC', price: reliablePrice(furniture4Less) },
+        { name: 'Furniture Fair', price: reliablePrice(furnitureFair) },
       ].filter((entry): entry is { name: string; price: number } => typeof entry.price === 'number' && Number.isFinite(entry.price));
       const comparison = buildRecommendation(priceToNumber(row.storePrice), reliable);
       results.push({
         ...row,
         ashley,
         furniture4Less,
+        furnitureFair,
         ...comparison,
         checkedAt: new Date().toISOString(),
       });
@@ -226,6 +257,7 @@ export async function runCompetitorPricingJob(jobId: string): Promise<void> {
 
     await writeJson(resultsJsonPath(jobId), results);
     await fs.writeFile(resultsCsvPath(jobId), resultRowsToCsv(results));
+    if (options.publishLatest) await publishLatestResults(results);
     await updateStatus(jobId, {
       status: 'completed',
       processedRows: results.length,
@@ -240,4 +272,4 @@ export async function runCompetitorPricingJob(jobId: string): Promise<void> {
   }
 }
 
-export const __testing = { selectRows, jobDir, inputRowsPath, statusPath, resultsCsvPath, resultsJsonPath };
+export const __testing = { selectRows, jobDir, inputRowsPath, statusPath, resultsCsvPath, resultsJsonPath, latestResultsPath };

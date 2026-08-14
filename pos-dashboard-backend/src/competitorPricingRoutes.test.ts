@@ -67,7 +67,7 @@ describe('competitorPricingRoutes', () => {
     const res = await request(app()).post('/api/competitor-pricing/jobs').send({ mode: 'non_ashley_first', rows: [row] });
     expect(res.status).toBe(200);
     expect(res.body.job.jobId).toBe('job-1');
-    expect(runCompetitorPricingJob).toHaveBeenCalledWith('job-1');
+    expect(runCompetitorPricingJob).toHaveBeenCalledWith('job-1', { publishLatest: true });
   });
 
   it('returns job status', async () => {
@@ -101,7 +101,7 @@ describe('competitorPricingRoutes', () => {
       updatedRows: 1,
       updatedCells: 1,
       skippedRows: [],
-      columns: { ahsCompColumn: 'R', fflCompColumn: 'S' },
+      columns: { ahsCompColumn: 'R', fflCompColumn: 'S', furnitureFairCompColumn: 'T' },
     });
 
     const res = await request(app())

@@ -95,7 +95,7 @@ describe('CompetitorPricingWorkspace', () => {
       updatedRows: 1,
       updatedCells: 1,
       skippedRows: [],
-      columns: { ahsCompColumn: 'R', fflCompColumn: 'S' },
+      columns: { ahsCompColumn: 'R', fflCompColumn: 'S', furnitureFairCompColumn: 'T' },
     });
 
     render(<CompetitorPricingWorkspace />);

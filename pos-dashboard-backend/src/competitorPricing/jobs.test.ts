@@ -3,11 +3,12 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CompetitorPricingInputRow } from './types';
 import { createCompetitorPricingJob, getCompetitorPricingJob, resultRowsToCsv, runCompetitorPricingJob } from './jobs';
-import { lookupAshley, lookupFurniture4Less } from './competitors';
+import { lookupAshley, lookupFurniture4Less, lookupFurnitureFair } from './competitors';
 
 vi.mock('./competitors', () => ({
   lookupAshley: vi.fn(),
   lookupFurniture4Less: vi.fn(),
+  lookupFurnitureFair: vi.fn(),
 }));
 
 const tmpRoot = path.join(process.cwd(), 'tmp-competitor-pricing-jobs-test');
@@ -62,6 +63,7 @@ describe('competitorPricing jobs', () => {
   beforeEach(() => {
     vi.mocked(lookupAshley).mockReset();
     vi.mocked(lookupFurniture4Less).mockReset();
+    vi.mocked(lookupFurnitureFair).mockReset();
     vi.mocked(lookupFurniture4Less).mockResolvedValue({
       competitor: 'Furniture4LessNC',
       title: 'Groovy Navy sofa 8642-61',
@@ -80,6 +82,15 @@ describe('competitorPricing jobs', () => {
       matchedTokens: ['B076-280'],
       notes: [],
     });
+    vi.mocked(lookupFurnitureFair).mockResolvedValue({
+      competitor: 'FurnitureFairNC',
+      title: '',
+      price: '',
+      url: '',
+      confidence: 'none',
+      matchedTokens: [],
+      notes: ['no Furniture Fair match'],
+    });
   });
 
   afterEach(async () => {
@@ -95,6 +106,7 @@ describe('competitorPricing jobs', () => {
     expect(status.processedRows).toBe(1);
     expect(lookupAshley).not.toHaveBeenCalled();
     expect(lookupFurniture4Less).toHaveBeenCalledTimes(1);
+    expect(lookupFurnitureFair).toHaveBeenCalledTimes(1);
   });
 
   it('ashley_only mode selects only Ashley rows and uses high/medium matches for lowest price', async () => {
@@ -123,9 +135,69 @@ describe('competitorPricing jobs', () => {
     expect(results[0].recommendation).toMatch(/no reliable/i);
   });
 
-  it('writes result CSV with source row and recommendation columns', () => {
-    const csv = resultRowsToCsv([{ ...rows[0], lowestReliableCompetitorPrice: '$499.00', storeMinusLowest: '$100.00', recommendation: 'you are higher', checkedAt: 'now' }]);
+  it('includes reliable Furniture Fair prices in the lowest-price calculation', async () => {
+    vi.mocked(lookupFurnitureFair).mockResolvedValueOnce({
+      competitor: 'FurnitureFairNC',
+      title: 'Liberty Summer House Door Dresser & Mirror',
+      price: '$449.00',
+      url: 'https://furniture-fair.net/products/607-br32',
+      confidence: 'high',
+      matchedTokens: ['607-BR32'],
+      notes: [],
+    });
+    const job = await createCompetitorPricingJob({ rows, mode: 'non_ashley_first' });
+    await runCompetitorPricingJob(job.jobId);
+    const results = JSON.parse(await fs.readFile(path.join(tmpRoot, 'jobs', job.jobId, 'results.json'), 'utf8'));
+    expect(results[0].furnitureFair.price).toBe('$449.00');
+    expect(results[0].lowestReliableCompetitorPrice).toBe('$449.00');
+    expect(results[0].storeMinusLowest).toBe('$150.00');
+  });
+
+  it('does not publish Shop-style jobs as the bulk latest results', async () => {
+    const latest = path.join(tmpRoot, 'latest-results.json');
+    await fs.mkdir(tmpRoot, { recursive: true });
+    await fs.writeFile(latest, JSON.stringify({ generatedAt: 'old', results: [{ sku: 'BULK-OLD' }] }));
+    const job = await createCompetitorPricingJob({ rows, mode: 'non_ashley_first' });
+
+    await runCompetitorPricingJob(job.jobId);
+
+    expect(JSON.parse(await fs.readFile(latest, 'utf8'))).toEqual({
+      generatedAt: 'old',
+      results: [{ sku: 'BULK-OLD' }],
+    });
+  });
+
+  it('atomically publishes bulk job results when explicitly requested', async () => {
+    const job = await createCompetitorPricingJob({ rows, mode: 'non_ashley_first' });
+
+    await runCompetitorPricingJob(job.jobId, { publishLatest: true });
+
+    const latest = JSON.parse(await fs.readFile(path.join(tmpRoot, 'latest-results.json'), 'utf8'));
+    expect(latest.generatedAt).toBeTruthy();
+    expect(latest.results).toHaveLength(1);
+    expect(latest.results[0].sku).toBe('8642-61');
+  });
+
+  it('writes result CSV with source row, Furniture Fair, and recommendation columns', () => {
+    const csv = resultRowsToCsv([{
+      ...rows[0],
+      furnitureFair: {
+        competitor: 'FurnitureFairNC',
+        title: 'Liberty Summer House Door Dresser & Mirror',
+        price: '$449.00',
+        url: 'https://furniture-fair.net/products/607-br32',
+        confidence: 'high',
+        matchedTokens: ['607-BR32'],
+        notes: [],
+      },
+      lowestReliableCompetitorPrice: '$449.00',
+      storeMinusLowest: '$150.00',
+      recommendation: 'you are higher',
+      checkedAt: 'now',
+    }]);
     expect(csv).toContain('source_row,bucket,vendor,sku');
+    expect(csv).toContain('furniture_fair_title,furniture_fair_price,furniture_fair_confidence,furniture_fair_url');
+    expect(csv).toContain('Liberty Summer House Door Dresser & Mirror');
     expect(csv).toContain('you are higher');
   });
 });

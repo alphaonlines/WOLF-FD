@@ -23,6 +23,28 @@ const TRAINING_EPISODES = [
     posterSrc: "/fd/training/media/jackson-feature-catnapper-poster.jpg",
     tags: ["Jackson", "Catnapper", "Seat Cushions", "Wallhugger", "Floor Training"],
   },
+  {
+    id: "archbold-deep-dive",
+    title: "Deep Dive: Archbold Furniture",
+    series: "Furniture Store Training Podcast",
+    description:
+      "An Archbold Furniture deep dive for building product knowledge and practical showroom talking points.",
+    duration: "38:10",
+    videoSrc: "/fd/api/api/training/media/archbold-deep-dive.mp4",
+    posterSrc: undefined,
+    tags: ["Archbold", "Bedroom Furniture", "Product Knowledge", "Floor Training"],
+  },
+  {
+    id: "tempur-pedic-deep-dive",
+    title: "From Rocket Science to the Bedroom: Tempur-Pedic",
+    series: "Furniture Store Training Podcast",
+    description:
+      "A Tempur-Pedic deep dive into the material story, feel, support, and practical showroom language.",
+    duration: "55:39",
+    videoSrc: "/fd/api/api/training/media/tempur-pedic-deep-dive.mp4",
+    posterSrc: undefined,
+    tags: ["Tempur-Pedic", "Mattresses", "Sleep", "Product Knowledge"],
+  },
 ];
 
 const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
@@ -32,6 +54,8 @@ const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
   hideTabBar = false,
 }) => {
   const [subTab, setSubTab] = React.useState<TrainingSubTab>(requestedSubTab);
+  const [selectedEpisodeId, setSelectedEpisodeId] = React.useState(TRAINING_EPISODES[0].id);
+  const episode = TRAINING_EPISODES.find((item) => item.id === selectedEpisodeId) ?? TRAINING_EPISODES[0];
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const [pictureInPictureActive, setPictureInPictureActive] = React.useState(false);
   const [pictureInPictureError, setPictureInPictureError] = React.useState<string | null>(null);
@@ -58,6 +82,12 @@ const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
       video.removeEventListener("leavepictureinpicture", handleLeave);
     };
   }, []);
+
+  React.useEffect(() => {
+    videoRef.current?.load();
+    setPictureInPictureActive(false);
+    setPictureInPictureError(null);
+  }, [selectedEpisodeId]);
 
   const handleTogglePictureInPicture = async () => {
     const video = videoRef.current;
@@ -90,7 +120,6 @@ const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
   const pictureInPictureSupported =
     typeof document !== "undefined" && Boolean(document.pictureInPictureEnabled);
 
-  const episode = TRAINING_EPISODES[0];
   const pageBg = isDarkMode ? "bg-[#111827] text-slate-100" : "bg-slate-50 text-slate-900";
   const panel = isDarkMode ? "border-slate-800 bg-slate-950/78" : "border-slate-200 bg-white";
   const muted = isDarkMode ? "text-slate-400" : "text-slate-600";
@@ -130,6 +159,45 @@ const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
           <ObjectionsDrawer isDarkMode={isDarkMode} mode="panel" />
         ) : (
         <section className={`overflow-hidden rounded-3xl border shadow-sm ${panel}`}>
+          <div className={`border-b p-5 lg:p-7 ${isDarkMode ? "border-slate-800 bg-slate-950/45" : "border-slate-200 bg-slate-50/80"}`}>
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <div>
+                <div className="text-xs font-bold uppercase tracking-[0.18em] text-amber-500">Podcast Library</div>
+                <h2 className="mt-1 text-2xl font-bold">Choose an episode</h2>
+              </div>
+              <span className={`rounded-full border px-3 py-1 text-xs font-bold ${subtlePanel}`}>
+                {TRAINING_EPISODES.length} episodes
+              </span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              {TRAINING_EPISODES.map((item, index) => {
+                const selected = item.id === selectedEpisodeId;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => setSelectedEpisodeId(item.id)}
+                    className={`rounded-2xl border p-4 text-left transition ${
+                      selected
+                        ? isDarkMode
+                          ? "border-amber-400/50 bg-amber-500/14 text-amber-100 shadow-lg shadow-amber-950/20"
+                          : "border-amber-400 bg-amber-50 text-amber-950 shadow-sm"
+                        : isDarkMode
+                          ? "border-slate-800 bg-slate-900/70 text-slate-200 hover:border-slate-600"
+                          : "border-slate-200 bg-white text-slate-800 hover:border-slate-400"
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.12em]">
+                      <span>Episode {index + 1}</span>
+                      <span>{item.duration}</span>
+                    </span>
+                    <span className="mt-3 block text-base font-bold leading-5">{item.title}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className={`grid gap-0 lg:grid-cols-[minmax(0,1.5fr)_minmax(360px,0.85fr)]`}>
             <div className="p-5 lg:p-7">
               <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -204,7 +272,7 @@ const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
               <div className="mt-6 space-y-3">
                 {[
                   ["Training goal", "Give the floor clear product language they can use with customers today."],
-                  ["Key topic", "Jackson/Catnapper cushion feel, Comfor-Gel, support, and wallhugger mechanics."],
+                  ["Key topic", `Product and sales takeaways from ${episode.title}.`],
                   ["Use on floor", "Play before a shift, then have each salesperson practice one simple customer explanation."],
                 ].map(([label, body]) => (
                   <div key={label} className={`rounded-2xl border p-4 ${subtlePanel}`}>
@@ -220,7 +288,7 @@ const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
                   Customer-safe line
                 </div>
                 <p className={`mt-2 text-sm leading-6 ${muted}`}>
-                  Explain the feel first, then connect it to the construction: soft comfort on top, steady support underneath.
+                  Lead with what the customer can feel or use, then explain the product story in plain language.
                 </p>
               </div>
 
@@ -230,7 +298,7 @@ const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
                   Suggested floor prompt
                 </div>
                 <p className={`text-sm leading-6 ${muted}`}>
-                  After watching, ask: how would you explain the cushion and wallhugger system to a customer in one sentence?
+                  After watching, ask: what are the three clearest customer benefits from this episode?
                 </p>
               </div>
             </aside>

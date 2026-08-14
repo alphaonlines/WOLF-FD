@@ -5,6 +5,8 @@ import type { Express } from "express";
 const MEDIA_DIR = path.resolve(process.cwd(), "training-media");
 const ALLOWED_MEDIA = new Map<string, string>([
   ["jackson-feature-catnapper.mp4", "video/mp4"],
+  ["archbold-deep-dive.mp4", "video/mp4"],
+  ["tempur-pedic-deep-dive.mp4", "video/mp4"],
 ]);
 
 export function registerTrainingRoutes(app: Express) {

@@ -28,6 +28,7 @@ import { registerBotBotRoutes } from "./routes/botbotRoutes";
 import { registerCompetitorPricingRoutes } from "./routes/competitorPricingRoutes";
 import { registerCompetitorPricingLatestRoutes } from "./routes/competitorPricingLatestRoutes";
 import { registerTrainingRoutes } from "./routes/trainingRoutes";
+import { registerProductPriceMatchRoutes } from "./routes/productPriceMatchRoutes";
 import {
   type AuthUserView,
   buildAuthUser,
@@ -177,6 +178,7 @@ export function registerAllRoutes({
     holdingDir: manufacturerPricebookHoldingDir,
     execFileAsync,
   });
+  registerProductPriceMatchRoutes({ app, pool });
   registerSocialRoutes({
     app,
     pool,

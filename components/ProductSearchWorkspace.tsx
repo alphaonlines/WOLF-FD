@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Calculator, ChevronDown, ChevronLeft, PlayCircle, Plus, RefreshCw, Search, ShoppingCart, Trash2, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Calculator, PlayCircle, Plus, RefreshCw, Search, ShoppingCart, Trash2, X } from "lucide-react";
 import type { ManufacturerCatalogItem, ManufacturerReferenceNote } from "../types";
 import { CANONICAL_PRODUCT_MANUFACTURERS, calcSuggestedRetail, calcFloorRetail } from "../constants/productCatalog";
 import { fetchManufacturerCatalog, fetchManufacturerReferenceNotes } from "../services/manufacturerPricelistApi";
+import ProductPriceMatchPanel from "./ProductPriceMatchPanel";
 
 type ProductSearchWorkspaceProps = {
   isDarkMode: boolean;
@@ -10,6 +12,7 @@ type ProductSearchWorkspaceProps = {
 };
 
 type ProductSort = "relevance" | "manufacturer" | "category" | "item" | "price_low" | "price_high";
+type ItemDialogMode = "details" | "price-match";
 
 type CartItem = { item: ManufacturerCatalogItem; qty: number };
 type Cart = { id: string; name: string; items: CartItem[] };
@@ -71,14 +74,18 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
   const [catalogLimit, setCatalogLimit] = useState(CATALOG_FETCH_LIMIT);
   const [notes, setNotes] = useState<ManufacturerReferenceNote[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dialogMode, setDialogMode] = useState<ItemDialogMode | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const dialogCloseRef = useRef<HTMLButtonElement | null>(null);
+  const backgroundRef = useRef<HTMLDivElement | null>(null);
+  const dialogOpenerRef = useRef<HTMLElement | null>(null);
 
   // UI toggles
   const [showCosts, setShowCosts] = useState(false);
-  const [detailOpen, setDetailOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
 
   // Cart state
@@ -98,7 +105,6 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
   const badgeClassName = isDarkMode
     ? "rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-200"
     : "rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-800";
-  const drawerBg = isDarkMode ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200";
   // Cart helpers
   const activeCart = carts.find((c) => c.id === activeCartId) ?? carts[0];
   const totalCartItems = carts.reduce((sum, c) => sum + c.items.reduce((s, i) => s + i.qty, 0), 0);
@@ -240,6 +246,59 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
   const canLoadMore = catalogHasMore && catalogLimit < cappedCatalogTotal;
   const nextBatchSize = Math.min(CATALOG_FETCH_INCREMENT, Math.max(cappedCatalogTotal - catalogLimit, 0));
 
+  const openItemDialog = (itemId: string, mode: ItemDialogMode) => {
+    dialogOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setSelectedId(itemId);
+    setDialogMode(mode);
+  };
+
+  const closeItemDialog = () => {
+    const opener = dialogOpenerRef.current;
+    setDialogMode(null);
+    setSelectedId(null);
+    window.setTimeout(() => opener?.focus(), 0);
+  };
+
+  useEffect(() => {
+    if (!selectedItem || !dialogMode) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    backgroundRef.current?.setAttribute("inert", "");
+    backgroundRef.current?.setAttribute("aria-hidden", "true");
+    window.setTimeout(() => dialogCloseRef.current?.focus(), 0);
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeItemDialog();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      ).filter((element) => !element.hasAttribute("hidden"));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      backgroundRef.current?.removeAttribute("inert");
+      backgroundRef.current?.removeAttribute("aria-hidden");
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [selectedItem, dialogMode]);
+
   const handleLoadMore = () => {
     if (!canLoadMore || loading || loadingMore) return;
     const nextLimit = Math.min(catalogLimit + CATALOG_FETCH_INCREMENT, cappedCatalogTotal);
@@ -351,11 +410,7 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
     });
   }, [items, sortBy, productType, featureTag, priceMin, priceMax]);
 
-  const handleSelectItem = (id: string) => {
-    setSelectedId((current) => current === id ? null : id);
-  };
-
-  const renderSelectedItemDropdown = (detailItem: ManufacturerCatalogItem) => {
+  const renderSelectedItemDetails = (detailItem: ManufacturerCatalogItem) => {
     const itemSearchUrl = buildExternalItemSearchUrl(detailItem.sku);
     const selectedRetail = calcSuggestedRetail(detailItem.basePrice, detailItem.manufacturerSlug);
     const selectedFloor = calcFloorRetail(detailItem.basePrice, detailItem.manufacturerSlug);
@@ -490,61 +545,42 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
               ))}
             </div>
           )}
+
+          {productVideos.length > 0 && (
+            <div className={`rounded-2xl border p-4 ${isDarkMode ? "border-amber-700/50 bg-amber-950/30" : "border-amber-200 bg-amber-50"}`}>
+              <div className="flex items-center gap-2 text-sm font-bold text-amber-500"><PlayCircle size={17} /> Product videos</div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {productVideos.map((note) => (
+                  <a key={note.id} href={note.videoUrl} target="_blank" rel="noreferrer"
+                    className={`rounded-full px-3 py-1.5 text-xs font-bold ${isDarkMode ? "bg-amber-400/10 text-amber-200" : "bg-white text-amber-900"}`}>
+                    {note.title}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {relevantNotes.length > 0 && (
+            <div className={`rounded-2xl border p-4 ${isDarkMode ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
+              <div className={`text-xs font-semibold uppercase tracking-wide ${subtleTextClassName}`}>Feature notes</div>
+              <div className="mt-3 space-y-3">
+                {relevantNotes.map((note) => (
+                  <div key={note.id}>
+                    <div className={`text-sm font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{note.title}</div>
+                    <div className={`mt-1 text-sm leading-6 ${subtleTextClassName}`}>{note.content}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
   };
 
-  const renderCartSummaryPanel = () => {
-    const { totalCost, totalRetail, totalFloor } = cartTotals(activeCart);
-    return (
-      <section className={`${panelClassName} p-5`}>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className={`text-xs font-semibold uppercase tracking-[0.18em] ${subtleTextClassName}`}>Cart</div>
-            <h3 className={`mt-1 text-base font-bold ${isDarkMode ? "text-white" : "text-slate-950"}`}>{activeCart.name}</h3>
-          </div>
-          <button type="button" onClick={addCart}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${isDarkMode ? "border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"}`}>
-            <Plus size={13} /> New
-          </button>
-        </div>
-
-        <div className="mt-4 space-y-2">
-          {activeCart.items.length ? activeCart.items.slice(0, 5).map(({ item, qty }) => (
-            <div key={item.id} className={`flex items-center gap-3 rounded-2xl border px-3 py-2 ${isDarkMode ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
-              <div className="min-w-0 flex-1">
-                <div className={`truncate text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{item.description || item.sku}</div>
-                <div className={`text-xs ${subtleTextClassName}`}>Qty {qty} | {formatCurrency(calcSuggestedRetail(item.basePrice, item.manufacturerSlug))}</div>
-              </div>
-              <button type="button" onClick={() => removeFromCart(activeCart.id, item.id)}
-                className={`rounded-full p-1.5 transition ${isDarkMode ? "text-slate-600 hover:text-rose-400" : "text-slate-400 hover:text-rose-600"}`}>
-                <Trash2 size={13} />
-              </button>
-            </div>
-          )) : (
-            <div className={`rounded-2xl border px-4 py-5 text-center text-sm ${isDarkMode ? "border-slate-800 bg-slate-900 text-slate-400" : "border-slate-200 bg-white text-slate-500"}`}>
-              Cart is empty.
-            </div>
-          )}
-          {activeCart.items.length > 5 && (
-            <div className={`text-center text-xs ${subtleTextClassName}`}>+{activeCart.items.length - 5} more items</div>
-          )}
-        </div>
-
-        <div className={`mt-4 grid gap-2 rounded-2xl border px-4 py-3 text-sm ${isDarkMode ? "border-slate-800 bg-slate-900 text-slate-200" : "border-slate-200 bg-white text-slate-700"}`}>
-          <div className="flex justify-between"><span>Items</span><strong>{activeCart.items.reduce((s, i) => s + i.qty, 0)}</strong></div>
-          {showCosts && totalCost !== null && <div className="flex justify-between"><span>Total cost</span><strong>{formatCurrency(totalCost)}</strong></div>}
-          {totalRetail !== null && <div className="flex justify-between"><span>Total retail</span><strong>{formatCurrency(totalRetail)}</strong></div>}
-          {totalFloor !== null && <div className="flex justify-between"><span>Floor total</span><strong>{formatCurrency(totalFloor)}</strong></div>}
-        </div>
-      </section>
-    );
-  };
-
   return (
     <>
-      <div className="space-y-5">
+      <div ref={backgroundRef} className="space-y-5">
         {/* Header & filters */}
         <section className={`${panelClassName} p-4 md:p-5`}>
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -806,7 +842,7 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className={`text-lg font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Catalog Results</h3>
-              <p className={`text-sm ${subtleTextClassName}`}>Click any item to open its detail dropdown.</p>
+              <p className={`text-sm ${subtleTextClassName}`}>Use Details for product information or Price Match for a one-SKU competitor check.</p>
             </div>
             <label className={`flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${isDarkMode ? "border border-slate-700 bg-slate-900 text-slate-300" : "border border-slate-300 bg-white text-slate-700"}`}>
               <span>Sort</span>
@@ -826,19 +862,18 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
               <div className={`rounded-2xl px-4 py-6 text-sm ${subtleTextClassName}`}>Loading product catalog…</div>
             ) : sortedItems.length ? (
               sortedItems.map((item) => {
-                const active = item.id === selectedId;
                 const inCart = isInActiveCart(item.id);
                 const itemSearchUrl = buildExternalItemSearchUrl(item.sku);
                 const thumbnailUrl = getPrimaryImageUrl(item);
                 return (
                   <div
                     key={item.id}
-                    className={`rounded-2xl border px-4 py-3 transition ${active ? (isDarkMode ? "border-sky-400/40 bg-sky-400/10" : "border-sky-300 bg-sky-100/80") : (isDarkMode ? "border-slate-800 bg-slate-950 hover:bg-slate-900" : "border-slate-200 bg-white hover:bg-slate-50")}`}
+                    className={`rounded-2xl border px-4 py-3 transition ${isDarkMode ? "border-slate-800 bg-slate-950 hover:bg-slate-900" : "border-slate-200 bg-white hover:bg-slate-50"}`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <button
                         type="button"
-                        onClick={() => handleSelectItem(item.id)}
+                        onClick={() => openItemDialog(item.id, "details")}
                         className={`flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border transition ${isDarkMode ? "border-slate-800 bg-slate-900 hover:border-sky-400/40" : "border-slate-200 bg-white hover:border-sky-300"}`}
                         title={thumbnailUrl ? "Open larger product image" : "Open item detail"}
                       >
@@ -848,8 +883,8 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
                           <span className={`px-2 text-center text-[11px] font-semibold ${subtleTextClassName}`}>No image</span>
                         )}
                       </button>
-                      {/* Clickable area for inline detail dropdown */}
-                      <button type="button" onClick={() => handleSelectItem(item.id)} className="flex-1 min-w-[220px] text-left">
+                      {/* Product summary stays compact; detail actions are explicit. */}
+                      <div className="flex-1 min-w-[220px] text-left">
                         <div className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                           {item.description || item.collectionName || item.sku}
                         </div>
@@ -859,18 +894,12 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
                         <div className={`mt-1 text-xs ${subtleTextClassName}`}>
                           SKU {item.sku || "—"} · {formatDimensions(item)} · {item.material || item.colorFinish || "—"}
                         </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          {item.hasInventory && (
-                            <div className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${isDarkMode ? "bg-emerald-400/15 text-emerald-200" : "bg-emerald-100 text-emerald-800"}`}>
-                              In stock: {item.inventoryQtyAvailable ?? item.inventoryQtyInStockDam ?? 0}
-                            </div>
-                          )}
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${active ? (isDarkMode ? "bg-sky-400/15 text-sky-200" : "bg-sky-100 text-sky-800") : (isDarkMode ? "bg-slate-900 text-slate-400" : "bg-slate-100 text-slate-600")}`}>
-                            {active ? "Hide detail" : "View detail"}
-                            <ChevronDown size={13} className={`transition-transform ${active ? "rotate-180" : ""}`} />
-                          </span>
-                        </div>
-                      </button>
+                        {item.hasInventory && (
+                          <div className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${isDarkMode ? "bg-emerald-400/15 text-emerald-200" : "bg-emerald-100 text-emerald-800"}`}>
+                            In stock: {item.inventoryQtyAvailable ?? item.inventoryQtyInStockDam ?? 0}
+                          </div>
+                        )}
+                      </div>
                       {/* Prices + cart button */}
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right">
@@ -893,6 +922,16 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
                             </>
                           )}
                         </div>
+                        <div className="flex shrink-0 flex-col gap-2">
+                          <button type="button" onClick={() => openItemDialog(item.id, "details")}
+                            className={`rounded-xl px-3 py-2 text-xs font-bold transition ${isDarkMode ? "border border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/20" : "border border-sky-300 bg-sky-100 text-sky-900 hover:bg-sky-200"}`}>
+                            Details
+                          </button>
+                          <button type="button" onClick={() => openItemDialog(item.id, "price-match")}
+                            className={`rounded-xl px-3 py-2 text-xs font-bold transition ${isDarkMode ? "border border-violet-400/30 bg-violet-400/10 text-violet-100 hover:bg-violet-400/20" : "border border-violet-300 bg-violet-100 text-violet-900 hover:bg-violet-200"}`}>
+                            Price Match
+                          </button>
+                        </div>
                         {inCart ? (() => {
                           const cartQty = activeCart.items.find((ci) => ci.item.id === item.id)?.qty ?? 1;
                           return (
@@ -914,7 +953,7 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
                         )}
                       </div>
                     </div>
-                    {itemSearchUrl && !active && (
+                    {itemSearchUrl && (
                       <div className="mt-2">
                         <a href={itemSearchUrl} target="_blank" rel="noreferrer"
                           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition ${isDarkMode ? "border border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/18" : "border border-sky-300 bg-sky-100 text-sky-900 hover:bg-sky-200"}`}>
@@ -922,7 +961,6 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
                         </a>
                       </div>
                     )}
-                    {active && renderSelectedItemDropdown(item)}
                   </div>
                 );
               })
@@ -970,190 +1008,92 @@ const ProductSearchWorkspace: React.FC<ProductSearchWorkspaceProps> = ({ isDarkM
         </div>
       </div>
 
-      {false && (
-        <>
-      {/* Pull tab — always visible on right edge */}
-      <button
-        type="button"
-        onClick={() => setDetailOpen((v) => !v)}
-        className={`fixed top-1/2 right-0 z-40 flex -translate-y-1/2 flex-col items-center gap-2 rounded-l-xl border-y border-l px-2.5 py-5 shadow-lg transition-all ${
-          isDarkMode ? "border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-        }`}
-        title="Product Detail"
-      >
-        <ChevronLeft size={16} className={`transition-transform ${detailOpen ? "rotate-180" : ""}`} />
-        <span className="text-xs font-bold uppercase tracking-wider [writing-mode:vertical-rl]">
-          {selectedItem ? (selectedItem.sku || "Detail") : "Detail"}
-        </span>
-        {selectedItem && isInActiveCart(selectedItem.id) && (
-          <span className={`h-2 w-2 rounded-full ${isDarkMode ? "bg-amber-400" : "bg-amber-500"}`} />
-        )}
-      </button>
-
-      {/* Backdrop */}
-      {detailOpen && (
-        <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]" onClick={() => setDetailOpen(false)} />
-      )}
-
-      {/* Detail drawer */}
-      <div className={`fixed top-0 right-0 z-50 h-full w-full max-w-lg overflow-y-auto border-l shadow-2xl transition-transform duration-300 ${drawerBg} ${detailOpen ? "translate-x-0" : "translate-x-full"}`}>
-        {/* Drawer header */}
-        <div className={`sticky top-0 z-10 flex items-center justify-between border-b px-5 py-4 ${isDarkMode ? "border-slate-800 bg-slate-950" : "border-slate-100 bg-white"}`}>
-          <div className="min-w-0">
-            <div className={`text-base font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-              {selectedItem ? (selectedItem.description || selectedItem.collectionName || selectedItem.sku) : "Product Detail"}
-            </div>
-            {selectedItem && (
-              <div className={`text-xs ${subtleTextClassName}`}>{selectedItem.manufacturer} · SKU {selectedItem.sku || "—"}</div>
-            )}
-          </div>
-          <button type="button" onClick={() => setDetailOpen(false)} className={`ml-3 shrink-0 rounded-full p-1.5 transition ${isDarkMode ? "text-slate-400 hover:bg-slate-800 hover:text-white" : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"}`}>
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Drawer content */}
-        <div className="p-5 space-y-5">
-          {selectedItem ? (
-            <>
-              {/* Action buttons */}
-              <div className="flex flex-wrap gap-2">
-                {buildExternalItemSearchUrl(selectedItem.sku) && (
-                  <a href={buildExternalItemSearchUrl(selectedItem.sku)} target="_blank" rel="noreferrer"
-                    className={`inline-flex items-center rounded-full px-3 py-2 text-sm font-semibold transition ${isDarkMode ? "border border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/18" : "border border-sky-300 bg-sky-100 text-sky-900 hover:bg-sky-200"}`}>
-                    Item Search: {selectedItem.sku}
-                  </a>
-                )}
-                <button type="button"
-                  onClick={() => isInActiveCart(selectedItem.id) ? removeFromCart(activeCart.id, selectedItem.id) : addToCart(selectedItem)}
-                  className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition ${isInActiveCart(selectedItem.id) ? (isDarkMode ? "border border-amber-400/40 bg-amber-400/15 text-amber-200 hover:bg-rose-400/15 hover:text-rose-300" : "border border-amber-400 bg-amber-100 text-amber-800 hover:bg-rose-100 hover:text-rose-700") : (isDarkMode ? "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-amber-400/15 hover:text-amber-300" : "border border-slate-300 bg-white text-slate-600 hover:bg-amber-100 hover:text-amber-800")}`}>
-                  <ShoppingCart size={14} />
-                  {isInActiveCart(selectedItem.id) ? "Remove from Cart" : `Add to ${activeCart?.name ?? "Cart"}`}
-                </button>
-              </div>
-
-              {/* Description */}
-              <div>
-                <div className={`text-xs font-semibold uppercase tracking-[0.22em] ${isDarkMode ? "text-sky-300" : "text-sky-700"}`}>{selectedItem.manufacturer}</div>
-                <div className={`mt-1 text-xl font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+      {selectedItem && dialogMode && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/65 p-0 backdrop-blur-sm sm:items-center sm:p-5"
+          onMouseDown={(event) => { if (event.currentTarget === event.target) closeItemDialog(); }}
+        >
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="shop-item-dialog-title"
+            className={`flex h-[100dvh] w-full flex-col overflow-hidden shadow-2xl sm:h-auto sm:max-h-[92vh] sm:max-w-5xl sm:rounded-3xl sm:border ${isDarkMode ? "border-slate-700 bg-slate-950" : "border-slate-200 bg-slate-50"}`}
+          >
+            <div className={`flex items-start justify-between gap-4 border-b px-4 py-4 sm:px-6 ${isDarkMode ? "border-slate-800 bg-slate-950" : "border-slate-200 bg-white"}`}>
+              <div className="min-w-0">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-500">Shop item</div>
+                <h2 id="shop-item-dialog-title" className={`mt-1 truncate text-lg font-bold ${isDarkMode ? "text-white" : "text-slate-950"}`}>
                   {selectedItem.description || selectedItem.collectionName || selectedItem.sku}
-                </div>
-                {selectedItem.description && selectedItem.collectionName && (
-                  <div className={`mt-1 text-sm ${subtleTextClassName}`}>Collection: {selectedItem.collectionName}</div>
-                )}
-                <div className={`mt-1 text-sm ${subtleTextClassName}`}>Item # {selectedItem.sku || "—"} · {selectedItem.collectionCode || "—"}</div>
+                </h2>
+                <div className={`mt-1 text-xs ${subtleTextClassName}`}>{selectedItem.manufacturer} · SKU {selectedItem.sku || "—"}</div>
               </div>
-
-              {/* Prices */}
-              <div className="grid grid-cols-2 gap-3">
-                {calcSuggestedRetail(selectedItem.basePrice, selectedItem.manufacturerSlug) !== null && (
-                  <div className={`rounded-2xl border px-4 py-3 ${isDarkMode ? "border-emerald-800 bg-emerald-950" : "border-emerald-200 bg-emerald-50"}`}>
-                    <div className={`text-xs uppercase tracking-wide ${isDarkMode ? "text-emerald-400" : "text-emerald-700"}`}>Retail <span className="opacity-60">(60%)</span></div>
-                    <div className={`mt-1 text-lg font-semibold ${isDarkMode ? "text-emerald-200" : "text-emerald-900"}`}>{formatCurrency(calcSuggestedRetail(selectedItem.basePrice, selectedItem.manufacturerSlug))}</div>
-                  </div>
-                )}
-                {calcFloorRetail(selectedItem.basePrice, selectedItem.manufacturerSlug) !== null && (
-                  <div className={`rounded-2xl border px-4 py-3 ${isDarkMode ? "border-orange-800 bg-orange-950" : "border-orange-200 bg-orange-50"}`}>
-                    <div className={`text-xs uppercase tracking-wide ${isDarkMode ? "text-orange-400" : "text-orange-700"}`}>Floor <span className="opacity-60">(50%)</span></div>
-                    <div className={`mt-1 text-lg font-semibold ${isDarkMode ? "text-orange-200" : "text-orange-900"}`}>{formatCurrency(calcFloorRetail(selectedItem.basePrice, selectedItem.manufacturerSlug))}</div>
-                  </div>
-                )}
-                {showCosts && selectedItem.basePrice !== null && (
-                  <div className={`rounded-2xl border px-4 py-3 ${isDarkMode ? "border-sky-800 bg-sky-950" : "border-sky-200 bg-sky-50"}`}>
-                    <div className={`text-xs uppercase tracking-wide ${isDarkMode ? "text-sky-400" : "text-sky-700"}`}>Cost</div>
-                    <div className={`mt-1 text-lg font-semibold ${isDarkMode ? "text-sky-200" : "text-sky-900"}`}>{formatCurrency(selectedItem.basePrice)}</div>
-                  </div>
-                )}
-                <div className={`rounded-2xl border px-4 py-3 ${isDarkMode ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
-                  <div className={`text-xs uppercase tracking-wide ${subtleTextClassName}`}>Dimensions</div>
-                  <div className={`mt-1 text-base font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{formatDimensions(selectedItem)}</div>
-                </div>
-              </div>
-
-              {/* Details grid */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className={`rounded-2xl border px-4 py-3 ${isDarkMode ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
-                  <div className={`text-xs uppercase tracking-wide ${subtleTextClassName}`}>Color / Finish</div>
-                  <div className={`mt-1 text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedItem.colorFinish || selectedItem.colorFamily || "—"}</div>
-                </div>
-                <div className={`rounded-2xl border px-4 py-3 ${isDarkMode ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
-                  <div className={`text-xs uppercase tracking-wide ${subtleTextClassName}`}>Material / Shape</div>
-                  <div className={`mt-1 text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{[selectedItem.material, selectedItem.shape].filter(Boolean).join(" · ") || "—"}</div>
-                </div>
-              </div>
-
-              {/* Feature tags */}
-              {[...selectedItem.featureTags, ...selectedItem.searchKeywords].length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {[...selectedItem.featureTags, ...selectedItem.searchKeywords].slice(0, 16).map((tag) => (
-                    <span key={tag} className={badgeClassName}>{tag}</span>
-                  ))}
-                </div>
-              )}
-
-              {/* Videos */}
-              {productVideos.length > 0 && (
-                <div className={`rounded-2xl border-2 border-amber-500/40 bg-amber-500/8 px-4 py-4`}>
-                  <div className="flex items-center gap-2">
-                    <PlayCircle className="text-amber-500" size={18} />
-                    <div className="text-sm font-semibold uppercase tracking-wide text-amber-500">Product Demo Videos</div>
-                  </div>
-                  <div className="mt-3 space-y-2">
-                    {productVideos.map((note) => {
-                      const vid = note.videoUrl.includes("youtube.com") ? note.videoUrl.split("v=")[1]?.split("&")[0] : note.videoUrl.split("/").pop();
-                      return (
-                        <a key={note.id} href={`https://www.youtube.com/watch?v=${vid}`} target="_blank" rel="noreferrer"
-                          className={`flex items-center gap-3 rounded-xl border px-3 py-2 transition hover:bg-amber-500/12 ${isDarkMode ? "border-amber-600/40 bg-amber-900/20" : "border-amber-300 bg-amber-50"}`}>
-                          <PlayCircle className="text-amber-500 shrink-0" size={20} />
-                          <span className={`text-sm font-semibold ${isDarkMode ? "text-amber-200" : "text-amber-900"}`}>{note.title}</span>
-                        </a>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Options */}
-              <div className={`rounded-2xl border px-4 py-3 ${isDarkMode ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
-                <div className={`text-xs uppercase tracking-wide ${subtleTextClassName}`}>Options</div>
-                <div className={`mt-2 text-sm ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>Hardware: {selectedItem.hardwareOptions.length ? selectedItem.hardwareOptions.join(", ") : "—"}</div>
-                <div className={`mt-1 text-sm ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>Cushions: {selectedItem.cushionOptions.length ? selectedItem.cushionOptions.join(", ") : "—"}</div>
-                <div className={`mt-1 text-sm ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>Upholstery: {selectedItem.upholsteryCover || "—"}</div>
-              </div>
-
-              {/* Relevant feature notes */}
-              {relevantNotes.length > 0 && (
-                <div className={`rounded-2xl border px-4 py-3 ${isDarkMode ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
-                  <div className={`text-xs uppercase tracking-wide ${subtleTextClassName}`}>Feature Notes</div>
-                  <div className="mt-2 space-y-4">
-                    {relevantNotes.map((note) => {
-                      const vid = note.videoUrl?.includes("youtube.com") ? note.videoUrl.split("v=")[1]?.split("&")[0] : note.videoUrl?.split("/").pop();
-                      return (
-                        <div key={note.id}>
-                          <div className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{note.title}</div>
-                          <div className={`mt-1 text-sm leading-6 ${subtleTextClassName}`}>{note.content}</div>
-                          {vid && (
-                            <a href={`https://www.youtube.com/watch?v=${vid}`} target="_blank" rel="noreferrer"
-                              className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${isDarkMode ? "border border-red-400/30 bg-red-400/10 text-red-300 hover:bg-red-400/20" : "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"}`}>
-                              <PlayCircle size={13} /> Watch Video Demo
-                            </a>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className={`rounded-2xl px-4 py-10 text-center text-sm ${subtleTextClassName}`}>
-              Click any product in the list to see its detail here.
+              <button ref={dialogCloseRef} type="button" onClick={closeItemDialog} aria-label="Close item dialog"
+                className={`shrink-0 rounded-full p-2 transition ${isDarkMode ? "text-slate-400 hover:bg-slate-800 hover:text-white" : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"}`}>
+                <X size={20} />
+              </button>
             </div>
-          )}
-        </div>
-      </div>
-        </>
+
+            <div className={`flex gap-2 border-b px-4 py-3 sm:px-6 ${isDarkMode ? "border-slate-800 bg-slate-950" : "border-slate-200 bg-white"}`} role="tablist" aria-label="Item view">
+              <button
+                id="shop-item-details-tab"
+                type="button"
+                role="tab"
+                aria-controls="shop-item-details-panel"
+                aria-selected={dialogMode === "details"}
+                tabIndex={dialogMode === "details" ? 0 : -1}
+                onClick={() => setDialogMode("details")}
+                onKeyDown={(event) => {
+                  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                  event.preventDefault();
+                  setDialogMode("price-match");
+                  window.requestAnimationFrame(() => document.getElementById("shop-item-price-match-tab")?.focus());
+                }}
+                className={`rounded-xl px-4 py-2 text-sm font-bold transition ${dialogMode === "details" ? (isDarkMode ? "bg-sky-400/15 text-sky-100" : "bg-sky-100 text-sky-900") : subtleTextClassName}`}
+              >
+                Details
+              </button>
+              <button
+                id="shop-item-price-match-tab"
+                type="button"
+                role="tab"
+                aria-controls="shop-item-price-match-panel"
+                aria-selected={dialogMode === "price-match"}
+                tabIndex={dialogMode === "price-match" ? 0 : -1}
+                onClick={() => setDialogMode("price-match")}
+                onKeyDown={(event) => {
+                  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                  event.preventDefault();
+                  setDialogMode("details");
+                  window.requestAnimationFrame(() => document.getElementById("shop-item-details-tab")?.focus());
+                }}
+                className={`rounded-xl px-4 py-2 text-sm font-bold transition ${dialogMode === "price-match" ? (isDarkMode ? "bg-violet-400/15 text-violet-100" : "bg-violet-100 text-violet-900") : subtleTextClassName}`}
+              >
+                Price Match
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+              {dialogMode === "details" ? (
+                <div id="shop-item-details-panel" role="tabpanel" aria-labelledby="shop-item-details-tab">
+                  {renderSelectedItemDetails(selectedItem)}
+                </div>
+              ) : (
+                <div id="shop-item-price-match-panel" role="tabpanel" aria-labelledby="shop-item-price-match-tab">
+                  <ProductPriceMatchPanel
+                    item={selectedItem}
+                    sellingPrice={calcSuggestedRetail(selectedItem.basePrice, selectedItem.manufacturerSlug)}
+                    isDarkMode={isDarkMode}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
+
+
     </>
   );
 };

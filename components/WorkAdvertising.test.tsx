@@ -59,6 +59,8 @@ const post = (overrides: Partial<SocialPostRecord>): SocialPostRecord => ({
 
 describe("WorkAdvertising social calendar", () => {
   beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date("2026-06-06T16:00:00.000Z"));
     vi.mocked(fetchSocialAccounts).mockResolvedValue([]);
     vi.mocked(fetchSocialPosts).mockResolvedValue([
       post({ id: "scheduled-1", title: "Weekend sofa", status: "scheduled", scheduledFor: "2026-06-06T13:00:00.000Z" }),
@@ -68,6 +70,7 @@ describe("WorkAdvertising social calendar", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.clearAllMocks();
     vi.unstubAllGlobals();
   });

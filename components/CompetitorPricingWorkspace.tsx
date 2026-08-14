@@ -274,12 +274,12 @@ export default function CompetitorPricingWorkspace({ isDarkMode = false }: Props
                       </button>
                     </div>
                     <p className={`mt-3 text-xs leading-5 ${mutedText}`}>
-                      Writes high/medium confidence Ashley prices to the AHS COMP PRICE column and Furniture4LessNC prices to the FFL/OTHER COMP PRICE column, then colors those comp-price cells green and adds source notes.
+                      Writes high/medium confidence Ashley, Furniture4LessNC, and Furniture Fair prices to dedicated comp-price columns, then colors those cells green and adds source notes.
                     </p>
                     {writeback && (
                       <div className="mt-3 rounded-xl bg-white/70 px-3 py-2 text-sm font-semibold text-emerald-800">
                         Updated {writeback.updatedCells} comp-price cells across {writeback.updatedRows} rows on {writeback.sheetName}.
-                        {' '}AHS column: {writeback.columns.ahsCompColumn}; FFL/other column: {writeback.columns.fflCompColumn}.
+                        {' '}AHS column: {writeback.columns.ahsCompColumn}; FFL/other column: {writeback.columns.fflCompColumn}; Furniture Fair column: {writeback.columns.furnitureFairCompColumn}.
                         {!!writeback.skippedRows.length && ` Skipped ${writeback.skippedRows.length} rows without reliable prices.`}
                       </div>
                     )}
@@ -301,7 +301,7 @@ export default function CompetitorPricingWorkspace({ isDarkMode = false }: Props
               <table className="min-w-full divide-y divide-slate-200/20 text-left text-sm">
                 <thead className={isDarkMode ? 'bg-slate-950/60 text-slate-300' : 'bg-slate-50 text-slate-600'}>
                   <tr>
-                    {['Row', 'Bucket', 'Vendor', 'SKU', 'Description', 'Store Price', 'Reg Price', 'AHS Comp', 'FFL Comp', 'Notes'].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}
+                    {['Row', 'Bucket', 'Vendor', 'SKU', 'Description', 'Store Price', 'Reg Price', 'AHS Comp', 'FFL Comp', 'Furniture Fair Comp', 'Notes'].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200/10">
@@ -316,12 +316,13 @@ export default function CompetitorPricingWorkspace({ isDarkMode = false }: Props
                       <td className="px-4 py-3">{row.regularPrice}</td>
                       <td className="px-4 py-3">{row.existingAhsCompPrice}</td>
                       <td className="px-4 py-3">{row.existingFflCompPrice}</td>
+                      <td className="px-4 py-3">{row.existingFurnitureFairCompPrice}</td>
                       <td className="px-4 py-3">{row.rowNotes.join('; ')}</td>
                     </tr>
                   ))}
                   {!previewRows.length && (
                     <tr>
-                      <td colSpan={10} className={`px-4 py-10 text-center ${mutedText}`}>No rows loaded yet.</td>
+                      <td colSpan={11} className={`px-4 py-10 text-center ${mutedText}`}>No rows loaded yet.</td>
                     </tr>
                   )}
                 </tbody>

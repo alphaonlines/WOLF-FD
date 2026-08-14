@@ -1342,6 +1342,48 @@ async function ensureManufacturerPricebookSchema(pool: Pool) {
   await pool.query(
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_manufacturer_pricebook_mapping_profiles_unique ON manufacturer_pricebook_mapping_profiles(manufacturer_slug, profile_name);`
   );
+
+  // One durable row per Shop price-match attempt. A failed refresh never overwrites
+  // the previous completed result; the API derives last_success from this history.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS product_price_match_runs (
+      id                    TEXT PRIMARY KEY,
+      catalog_item_id       BIGINT REFERENCES manufacturer_catalog_items(id) ON DELETE SET NULL,
+      manufacturer          TEXT NOT NULL,
+      manufacturer_slug     TEXT NOT NULL DEFAULT '',
+      sku                   TEXT NOT NULL,
+      normalized_sku        TEXT NOT NULL,
+      description           TEXT NOT NULL DEFAULT '',
+      selling_price         NUMERIC(12, 2) NOT NULL,
+      status                TEXT NOT NULL DEFAULT 'queued',
+      job_id                TEXT,
+      result_json           JSONB,
+      error                 TEXT,
+      requested_by_user_id  BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+      started_at            TIMESTAMPTZ,
+      completed_at          TIMESTAMPTZ,
+      checked_at            TIMESTAMPTZ
+    );
+  `);
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_product_price_match_runs_item_created ON product_price_match_runs(catalog_item_id, created_at DESC);`
+  );
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_product_price_match_runs_status ON product_price_match_runs(status, created_at);`
+  );
+  await pool.query(`
+    UPDATE product_price_match_runs
+    SET status = 'failed',
+        error = COALESCE(error, 'Interrupted before completion'),
+        completed_at = COALESCE(completed_at, now())
+    WHERE status IN ('queued', 'running');
+  `);
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_product_price_match_runs_one_active
+    ON product_price_match_runs ((1))
+    WHERE status IN ('queued', 'running');
+  `);
 }
 
 async function ensureBotBotSchema(pool: Pool) {

@@ -47,7 +47,7 @@ export function registerCompetitorPricingRoutes(app: Express): void {
     }
 
     const status = await createCompetitorPricingJob({ rows, mode });
-    Promise.resolve(runCompetitorPricingJob(status.jobId)).catch((err) => {
+    Promise.resolve(runCompetitorPricingJob(status.jobId, { publishLatest: true })).catch((err) => {
       console.error('[competitor-pricing] job failed', status.jobId, err);
     });
     res.json({ ok: true, job: status });

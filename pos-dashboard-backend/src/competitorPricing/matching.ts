@@ -36,6 +36,35 @@ export function strongestSkuToken(sku: string): string {
   return tokens.find((token) => token.includes('-') && !token.includes('/')) || tokens[0] || cleanSku(sku);
 }
 
+export function priceMatchLookupSkuTokens(sku: string): string[] {
+  const tokens = expandSkuTokens(sku);
+  if (!tokens.length) {
+    const cleaned = cleanSku(sku);
+    return cleaned ? [cleaned] : [];
+  }
+
+  const selectedSetSku = tokens.find((token) => token.includes('/'));
+  if (!selectedSetSku) return [strongestSkuToken(sku)].filter(Boolean);
+
+  // A set SKU must be priced as the selected set. A component-only match can
+  // materially understate the competitor price, so never promote component
+  // tokens to independent Price Match lookups.
+  return [selectedSetSku];
+}
+
+function regexEscape(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export function hasExactNormalizedSkuToken(candidateText: string, skuToken: string): boolean {
+  const normalized = String(skuToken || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (normalized.length < 4 || !/\d/.test(normalized)) return false;
+  const flexible = Array.from(normalized)
+    .map((character) => regexEscape(character))
+    .join('[^a-z0-9]*');
+  return new RegExp(`(^|[^a-z0-9])${flexible}(?=$|[^a-z0-9])`, 'i').test(String(candidateText || ''));
+}
+
 export function baseTokens(tokens: string[]): string[] {
   return Array.from(
     new Set(
@@ -85,19 +114,24 @@ export function classifyCompetitorMatch(args: {
   const price = args.price || parseFirstPrice(args.candidateText);
   if (!price) notes.push('no price found near candidate');
 
-  const tokens = expandSkuTokens(args.sourceSku);
+  const tokens = priceMatchLookupSkuTokens(args.sourceSku);
   const bases = baseTokens(tokens);
   const haystack = String(args.candidateText || '').toLowerCase();
-  const exact = tokens.filter((token) => token.includes('-') && haystack.includes(token.toLowerCase()));
-  const base = bases.filter((token) => haystack.includes(token.toLowerCase()));
+  const exact = tokens.filter((token) => hasExactNormalizedSkuToken(haystack, token));
+  const base = bases.filter((token) => hasExactNormalizedSkuToken(haystack, token));
   const description = String(args.sourceDescription || '').trim().toLowerCase();
   const descriptionHit = Boolean(description && haystack.includes(description));
+  const requiresExactSetMatch = cleanSku(args.sourceSku).includes('/');
 
   if (exact.length) {
     return { confidence: price ? 'high' : 'low', matchedTokens: exact, notes };
   }
   if (base.length && descriptionHit) {
-    return { confidence: price ? 'medium' : 'low', matchedTokens: base, notes: [...notes, 'base collection plus description match'] };
+    return {
+      confidence: requiresExactSetMatch ? 'low' : price ? 'medium' : 'low',
+      matchedTokens: base,
+      notes: [...notes, requiresExactSetMatch ? 'set SKU requires exact full-set identity' : 'base collection plus description match'],
+    };
   }
   if (descriptionHit) {
     return { confidence: 'low', matchedTokens: [], notes: [...notes, 'description-only match'] };
