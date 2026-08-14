@@ -70,6 +70,7 @@ const SUMMARY_SQL = (where: string) => `${baseCte(where)}, tickets AS (
 
 const SERIES_SQL = (where: string) => `${baseCte(where)}, item_series AS (
  SELECT dimension,label,series_description description,series_category category,series_manufacturer manufacturer,
+ array_agg(DISTINCT sale_id ORDER BY sale_id) sale_ids,
  sum(${allocated("sales")})::numeric sales,sum(${allocated("quantity", 10000)})::numeric quantity,
  sum(${allocated("total_cost")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) cost,
  sum(${allocated("sales")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) known_cost_sales,
@@ -97,8 +98,8 @@ const SERIES_SQL = (where: string) => `${baseCte(where)}, item_series AS (
  sum(${splitAllocated("finance_fee", "person_ordinality")}) finance_fee,
  sum(1.0/person_count) ticket_count
  FROM (SELECT DISTINCT ON (store,sale_id,label) store,sale_id,label,finance_amount,finance_fee,person_count,person_ordinality FROM people ORDER BY store,sale_id,label) t GROUP BY label
-) SELECT dimension,label,description,category,manufacturer,sales,quantity,COALESCE(cost,0) cost,COALESCE(known_cost_sales,0) known_cost_sales,COALESCE(profit,0) profit,0::numeric finance_amount,0::numeric finance_fee,ticket_count FROM item_series
- UNION ALL SELECT p.dimension,p.label,NULL::text,NULL::text,NULL::text,p.sales,p.quantity,COALESCE(p.cost,0),COALESCE(p.known_cost_sales,0),COALESCE(p.profit,0),COALESCE(t.finance_amount,0),COALESCE(t.finance_fee,0),COALESCE(t.ticket_count,0) FROM person_items p LEFT JOIN person_tickets t ON t.label=p.label`;
+) SELECT dimension,label,description,category,manufacturer,sale_ids,sales,quantity,COALESCE(cost,0) cost,COALESCE(known_cost_sales,0) known_cost_sales,COALESCE(profit,0) profit,0::numeric finance_amount,0::numeric finance_fee,ticket_count FROM item_series
+ UNION ALL SELECT p.dimension,p.label,NULL::text,NULL::text,NULL::text,NULL::text[],p.sales,p.quantity,COALESCE(p.cost,0),COALESCE(p.known_cost_sales,0),COALESCE(p.profit,0),COALESCE(t.finance_amount,0),COALESCE(t.finance_fee,0),COALESCE(t.ticket_count,0) FROM person_items p LEFT JOIN person_tickets t ON t.label=p.label`;
 
 const COUNT_SQL = (where: string) => `${baseCte(where)} SELECT COUNT(*)::text total FROM filtered`;
 const DETAIL_SQL = (where: string, limit: number, offset: number) => `${baseCte(where)} SELECT delivered_date,sale_id,status,store,
@@ -125,7 +126,7 @@ const mapSeries = (rows: any[]) => {
   const result: Record<string, any[]> = { item: [], category: [], manufacturer: [], salesperson: [], store: [], day: [] };
   for (const row of rows) {
     const known = num(row.known_cost_sales), profit = num(row.profit);
-    result[row.dimension]?.push({ label: String(row.label), description: row.description == null ? undefined : String(row.description), category: row.category == null ? undefined : String(row.category), manufacturer: row.manufacturer == null ? undefined : String(row.manufacturer), sales: round(num(row.sales)), quantity: round(num(row.quantity)), cost: round(num(row.cost)), knownCostSales: round(known), profit: round(profit), marginPct: known ? round(profit / known * 100) : null, financeAmount: round(num(row.finance_amount)), financeFee: round(num(row.finance_fee)), ticketCount: round(num(row.ticket_count)) });
+    result[row.dimension]?.push({ label: String(row.label), description: row.description == null ? undefined : String(row.description), category: row.category == null ? undefined : String(row.category), manufacturer: row.manufacturer == null ? undefined : String(row.manufacturer), saleIds: Array.isArray(row.sale_ids) ? row.sale_ids.map(String) : [], sales: round(num(row.sales)), quantity: round(num(row.quantity)), cost: round(num(row.cost)), knownCostSales: round(known), profit: round(profit), marginPct: known ? round(profit / known * 100) : null, financeAmount: round(num(row.finance_amount)), financeFee: round(num(row.finance_fee)), ticketCount: round(num(row.ticket_count)) });
   }
   Object.values(result).forEach((rows) => rows.sort((a, b) => b.sales - a.sales || a.label.localeCompare(b.label)));
   return result;

@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SalesDashboard from "./SalesDashboard";
 
@@ -22,7 +22,7 @@ const canonical = (page = 1) => ({
   series: {
     salesperson: [{ label: "Smith, Jane", sales: 8000, quantity: 10, cost: 4000, profit: 4000, marginPct: 50, financeAmount: 3000, financeFee: 90, ticketCount: 8 }],
     store: [{ label: "FD7", sales: 12345, quantity: 18, cost: 7000, profit: 5345, marginPct: 43.3, financeAmount: 4000, financeFee: 120, ticketCount: 12 }],
-    item: [{ label: "SOFA-1", description: "Canonical Sofa", manufacturer: "Acme", category: "Living Room", sales: 9000, quantity: 8 }],
+    item: [{ label: "SOFA-1", description: "Canonical Sofa", manufacturer: "Acme", category: "Living Room", saleIds: ["000123"], sales: 9000, quantity: 8 }],
     category: [{ label: "Living Room", sales: 9000, quantity: 8 }, { label: "Bedroom", sales: 3345, quantity: 10 }], manufacturer: [{ label: "Acme", sales: 9000, quantity: 8 }], day: [],
   },
   warnings: { openDeliveredTickets: 2, duplicateItemLines: 3, twoPersonTickets: 1 }, missingCosts: { count: 2 },
@@ -54,6 +54,11 @@ describe("SalesDashboard canonical acceptance", () => {
     expect(screen.getAllByText("$12,345").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Smith, Jane").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Canonical Sofa").length).toBeGreaterThan(0);
+    const manufacturerCard = screen.getByRole("heading", { name: /Top Manufacturers/ }).closest("[data-print-id]");
+    expect(manufacturerCard).not.toBeNull();
+    fireEvent.click(within(manufacturerCard as HTMLElement).getByRole("button", { name: "Expand" }));
+    fireEvent.click(screen.getByRole("button", { name: "Drill down into Acme" }));
+    expect(await screen.findByText("000123")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Lowest Margins" }));
     expect(await screen.findByText("5.0%")).toBeInTheDocument();
     expect(screen.getByText("Finance Overview")).toBeInTheDocument();
@@ -61,7 +66,8 @@ describe("SalesDashboard canonical acceptance", () => {
     expect(screen.getByText("Sales Trend")).toBeInTheDocument();
     expect(screen.queryByText("Written")).not.toBeInTheDocument();
     expect(mocks.legacy).not.toHaveBeenCalled();
-    expect(mocks.report.mock.calls.length).toBeLessThanOrEqual(2);
+    expect(mocks.report).toHaveBeenCalledTimes(3);
+    expect(mocks.report.mock.calls[2][0]).toMatchObject({ manufacturer: "Acme" });
   });
 
   it("renders canonical diagnostics, unavailable cost, and replaces detail rows on the next server page", async () => {

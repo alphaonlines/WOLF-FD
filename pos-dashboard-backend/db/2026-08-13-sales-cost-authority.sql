@@ -2,6 +2,7 @@
 -- Group Report is the sole automatic authority. Import provenance is retained
 -- for audit only and never makes a legacy or Top Items cost authoritative.
 -- Audited overrides are lower precedence and fill only Group-cost gaps.
+BEGIN;
 ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS cost_authority TEXT;
 ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS cost_import_batch_id BIGINT;
 ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS cost_imported_at TIMESTAMPTZ;
@@ -27,6 +28,9 @@ BEGIN
     END IF;
     RETURN OLD;
   END IF;
+  IF OLD.cost_authority = 'group_report' AND NEW IS DISTINCT FROM OLD THEN
+    RAISE EXCEPTION 'Group-authoritative sales cost rows are immutable';
+  END IF;
   IF OLD.cost_import_batch_id IS NOT NULL AND
      (NEW.cost_import_batch_id IS DISTINCT FROM OLD.cost_import_batch_id
       OR NEW.cost_imported_at IS DISTINCT FROM OLD.cost_imported_at
@@ -38,6 +42,10 @@ END; $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS sales_cost_provenance_immutable ON pos_sale_items;
 CREATE TRIGGER sales_cost_provenance_immutable
   BEFORE UPDATE OF cost_import_batch_id,cost_imported_at,cost_source_file_sha256 ON pos_sale_items
+  FOR EACH ROW EXECUTE FUNCTION prevent_sales_cost_provenance_mutation();
+DROP TRIGGER IF EXISTS sales_cost_group_update_protected ON pos_sale_items;
+CREATE TRIGGER sales_cost_group_update_protected
+  BEFORE UPDATE ON pos_sale_items
   FOR EACH ROW EXECUTE FUNCTION prevent_sales_cost_provenance_mutation();
 DROP TRIGGER IF EXISTS sales_cost_group_delete_protected ON pos_sale_items;
 CREATE TRIGGER sales_cost_group_delete_protected
@@ -121,9 +129,70 @@ CREATE TRIGGER sales_cost_group_supersedes_override
   AFTER INSERT OR UPDATE OF cost_authority ON pos_sale_items
   FOR EACH ROW EXECUTE FUNCTION supersede_override_when_group_cost_arrives();
 
+CREATE TABLE IF NOT EXISTS sales_cost_authority_attestations (
+  package_sha256 TEXT PRIMARY KEY CHECK (package_sha256 ~ '^[0-9a-f]{64}$'),
+  rowset_md5 TEXT NOT NULL CHECK (rowset_md5 ~ '^[0-9a-f]{32}$'),
+  row_count INTEGER NOT NULL,
+  known_cost_row_count INTEGER NOT NULL,
+  unknown_cost_row_count INTEGER NOT NULL,
+  known_cost_sales NUMERIC(18,2) NOT NULL,
+  total_cost NUMERIC(18,2) NOT NULL,
+  total_profit NUMERIC(18,2) NOT NULL,
+  attested_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE OR REPLACE FUNCTION prevent_sales_cost_authority_attestation_mutation() RETURNS trigger AS $$
+BEGIN
+  RAISE EXCEPTION 'sales cost authority attestations are immutable';
+END; $$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS sales_cost_authority_attestation_immutable ON sales_cost_authority_attestations;
+CREATE TRIGGER sales_cost_authority_attestation_immutable
+  BEFORE UPDATE OR DELETE ON sales_cost_authority_attestations
+  FOR EACH ROW EXECUTE FUNCTION prevent_sales_cost_authority_attestation_mutation();
+
 -- Backfill only the validated July adapter batch whose costs were joined from
 -- the audited Group Report digest below. Its 672 non-null costs are Group
 -- authority; the eight null-cost rows intentionally remain unknown.
+DO $$
+DECLARE
+  actual_rows INTEGER;
+  actual_known_rows INTEGER;
+  actual_unknown_rows INTEGER;
+  actual_known_sales NUMERIC(18,2);
+  actual_cost NUMERIC(18,2);
+  actual_profit NUMERIC(18,2);
+  actual_rowset_md5 TEXT;
+BEGIN
+  SELECT count(*)::integer,
+         count(*) FILTER (WHERE total_cost IS NOT NULL)::integer,
+         count(*) FILTER (WHERE total_cost IS NULL)::integer,
+         COALESCE(round(sum(total_sale_price) FILTER (WHERE total_cost IS NOT NULL),2),0),
+         COALESCE(round(sum(total_cost),2),0),
+         COALESCE(round(sum(total_profit) FILTER (WHERE total_cost IS NOT NULL),2),0),
+         COALESCE(md5(string_agg(concat_ws(chr(31),coalesce(location,''),coalesce(sale_id,''),coalesce(row_hash,''),
+           coalesce(total_sale_price::text,''),coalesce(total_cost::text,''),coalesce(total_profit::text,'')),
+           chr(30) ORDER BY coalesce(location,''),coalesce(sale_id,''),coalesce(row_hash,''))), '')
+  INTO actual_rows,actual_known_rows,actual_unknown_rows,actual_known_sales,actual_cost,actual_profit,actual_rowset_md5
+  FROM pos_sale_items
+  WHERE import_batch_id=586
+    AND delivery_confirmed_date >= DATE '2026-07-01'
+    AND delivery_confirmed_date < DATE '2026-08-01';
+
+  IF actual_rows <> 0 THEN
+    IF actual_rows <> 680 OR actual_known_rows <> 672 OR actual_unknown_rows <> 8
+       OR actual_known_sales <> 423987.48 OR actual_cost <> 194102.96 OR actual_profit <> 229884.52
+       OR actual_rowset_md5 <> 'a98f0bf0d86bfa6c73a665c4b5a73a33' THEN
+      RAISE EXCEPTION 'Group authority attestation mismatch';
+    END IF;
+    INSERT INTO sales_cost_authority_attestations(
+      package_sha256,rowset_md5,row_count,known_cost_row_count,unknown_cost_row_count,known_cost_sales,total_cost,total_profit
+    ) VALUES (
+      '19960c6a1b0b8df8259854a5c63bfda11a1021882656f0a829e7be258d6d801f',actual_rowset_md5,
+      actual_rows,actual_known_rows,actual_unknown_rows,actual_known_sales,actual_cost,actual_profit
+    ) ON CONFLICT (package_sha256) DO NOTHING;
+  END IF;
+END $$;
+
 UPDATE pos_sale_items
 SET cost_authority = 'group_report',
     cost_import_batch_id = import_batch_id,
@@ -136,3 +205,4 @@ WHERE import_batch_id = 586
 
 ALTER TABLE pos_sale_items VALIDATE CONSTRAINT pos_sale_items_cost_authority_check;
 ALTER TABLE pos_sale_items VALIDATE CONSTRAINT pos_sale_items_cost_provenance_check;
+COMMIT;

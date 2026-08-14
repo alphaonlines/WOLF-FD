@@ -910,7 +910,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         }));
       const sellerRows = (payload: any): BestSellerRow[] => rankCanonicalSeries(payload?.series?.item, itemSortMetric, 15).map((row: any) => ({
         itemDescription: row.description || row.label, category: row.category || "(unknown)", manufacturer: row.manufacturer || "(unknown)",
-        itemNo: row.label, qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: [],
+        itemNo: row.label, qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: Array.isArray(row.saleIds) ? row.saleIds.map(String) : [],
       }));
       const simpleRows = (dimension: "category" | "manufacturer", payload: any) =>
         rankCanonicalSeries(payload?.series?.[dimension], itemSortMetric, 8).map((row: any) => ({ [dimension]: row.label, qty: Number(row.quantity || 0), sales: Number(row.sales || 0) }));
@@ -1452,7 +1452,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         salesperson: selectedSalesperson || undefined,
       });
       const list = rankCanonicalSeries(payload.series?.item, itemSortMetric, 10).map((row: any) => ({ itemNo: row.label, itemDescription: row.description || row.label,
-        category: row.category || "(unknown)", manufacturer: name, qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: [] }));
+        category: row.category || "(unknown)", manufacturer: name, qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: Array.isArray(row.saleIds) ? row.saleIds.map(String) : [] }));
       setManufacturerItems((prev) => ({ ...prev, [name]: list }));
     } catch (e) {
       console.error(e);
@@ -1475,7 +1475,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         salesperson: selectedSalesperson || undefined,
       });
       const list = rankCanonicalSeries(payload.series?.item, itemSortMetric, 10).map((row: any) => ({ itemNo: row.label, itemDescription: row.description || row.label,
-        category: name, manufacturer: row.manufacturer || "(unknown)", qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: [] }));
+        category: name, manufacturer: row.manufacturer || "(unknown)", qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: Array.isArray(row.saleIds) ? row.saleIds.map(String) : [] }));
       setCategoryItems((prev) => ({ ...prev, [name]: list }));
     } catch (e) {
       console.error(e);

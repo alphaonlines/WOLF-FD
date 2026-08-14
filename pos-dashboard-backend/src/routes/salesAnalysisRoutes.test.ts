@@ -99,7 +99,7 @@ describe("canonical Sales Analysis routes", () => {
       if (/item_sales/.test(sql)) return { rows: [{ item_sales: "98765.43", item_count: "1201", quantity: "1300", known_cost_sales: "90000", cost: "60000", profit: "30000", missing_costs: "7", eligible_sales: "80000", pro_sales: "8000", ticket_total: "99000", ticket_count: "801", finance_amount: "40000", finance_fee: "1000", financed_ticket_count: "300", open_tickets: "4", two_person_tickets: "12", unallocated_ticket_total: "99000", duplicate_lines: "3" }] };
       if (/SELECT dimension,label/.test(sql)) return { rows: [
         { dimension: "store", label: "FD7", sales: "98765.43", quantity: "1300", cost: "60000", known_cost_sales: "90000", profit: "30000" },
-        { dimension: "item", label: "S1", description: "Canonical Sofa", category: "Living", manufacturer: "Acme", sales: "50", quantity: "1", cost: "25", known_cost_sales: "50", profit: "25" },
+        { dimension: "item", label: "S1", description: "Canonical Sofa", category: "Living", manufacturer: "Acme", sale_ids: ["000123", "000124"], sales: "50", quantity: "1", cost: "25", known_cost_sales: "50", profit: "25" },
       ] };
       if (/COUNT\(\*\)::text total FROM filtered/.test(sql)) return { rows: [{ total: "1201" }] };
       if (/margin_pct/.test(sql)) return { rows: [{ delivered_date: "2026-07-30", sale_id: "lowest-ticket", store: "FD7", salesperson: "Solo", grand_total: "100", profit: "10", margin_pct: "10" }] };
@@ -112,7 +112,8 @@ describe("canonical Sales Analysis routes", () => {
     expect(response.body.detail).toMatchObject({ total: 1201, page: 3, pageSize: 25 });
     expect(response.body.detail.rows).toHaveLength(1);
     expect(response.body.detail.rows[0]).toMatchObject({ ticketTotal: 75, isPro1st: true });
-    expect(response.body.series.item[0]).toMatchObject({ label: "S1", description: "Canonical Sofa", category: "Living", manufacturer: "Acme" });
+    expect(response.body.series.item[0]).toMatchObject({ label: "S1", description: "Canonical Sofa", category: "Living", manufacturer: "Acme", saleIds: ["000123", "000124"] });
+    expect(String(db.query.mock.calls[1][0])).toMatch(/array_agg\s*\(\s*DISTINCT\s+sale_id/i);
     expect(response.body.lowMargin).toEqual([{ deliveredDate: "2026-07-30", saleId: "lowest-ticket", store: "FD7", salesperson: "Solo", grandTotal: 100, profit: 10, marginPct: 10 }]);
     expect(db.query).toHaveBeenCalledTimes(5);
   });
