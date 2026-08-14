@@ -105,28 +105,19 @@ describe('App sales date-basis toggle', () => {
     expect(screen.getByText('Competitor Pricing')).toBeInTheDocument();
   });
 
-  it('shows the Written/Delivered switch on the Pulse sales page and dispatches basis changes', async () => {
+  it('shows Delivered as a fixed label on the Pulse sales page without a Written selector', async () => {
     const { container } = render(<App />);
 
     await screen.findByText('Dashboard overview');
 
     const pulseNav = container.querySelector('[data-tour-id="sidebar-pulse-nav-item"]');
-    expect(pulseNav).toBeTruthy();
-    fireEvent.click(pulseNav as HTMLElement);
+    expect(pulseNav).not.toBeNull();
+    fireEvent.click(pulseNav as Element);
 
     await screen.findByText('Pulse workspace: sales');
 
-    expect(screen.getByRole('button', { name: 'Delivered' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Written' })).toBeInTheDocument();
-
-    const basisEvents: string[] = [];
-    const handler = (event: Event) => {
-      basisEvents.push(((event as CustomEvent).detail || {}).basis);
-    };
-    window.addEventListener('fd-set-sales-basis', handler as EventListener);
-    fireEvent.click(screen.getByRole('button', { name: 'Written' }));
-    window.removeEventListener('fd-set-sales-basis', handler as EventListener);
-
-    await waitFor(() => expect(basisEvents).toEqual(['written']));
+    expect(screen.getByText('Delivered')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Written' })).not.toBeInTheDocument();
+    expect(container.querySelector('[data-tour-id="sales-date-basis-toggle"]')).toBeNull();
   });
 });

@@ -1,4 +1,5 @@
-import os, glob, shutil, argparse
+import os, glob, shutil, argparse, hashlib
+from datetime import datetime, timezone
 import pandas as pd
 import psycopg2
 from psycopg2.extras import execute_values, Json
@@ -268,6 +269,13 @@ ITEM_COLS = [
     "raw_source_file",
 ]
 
+def file_sha256(path: str) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
 UPSERT_RAW = """
 INSERT INTO pos_sales_raw (sale_id, sale_date, raw_source_file, import_batch_id, row_json)
 VALUES %s
@@ -349,7 +357,8 @@ INSERT INTO pos_sale_items (
   row_hash, sale_id, sale_date, location, manufacturer, category, item_no, item_description,
   qty_sold, total_cost, total_sale_price, total_profit, gross_margin, delivery_confirmed_date,
   date_basis, is_pro1st,
-  raw_source_file, import_batch_id
+  raw_source_file, import_batch_id,
+  cost_import_batch_id, cost_imported_at, cost_source_file_sha256
 )
 VALUES %s
 ON CONFLICT (row_hash) DO UPDATE SET
@@ -369,7 +378,10 @@ ON CONFLICT (row_hash) DO UPDATE SET
   date_basis = EXCLUDED.date_basis,
   is_pro1st = EXCLUDED.is_pro1st,
   raw_source_file = EXCLUDED.raw_source_file,
-  import_batch_id = EXCLUDED.import_batch_id;
+  import_batch_id = EXCLUDED.import_batch_id,
+  cost_import_batch_id = COALESCE(pos_sale_items.cost_import_batch_id, EXCLUDED.cost_import_batch_id),
+  cost_imported_at = COALESCE(pos_sale_items.cost_imported_at, EXCLUDED.cost_imported_at),
+  cost_source_file_sha256 = COALESCE(pos_sale_items.cost_source_file_sha256, EXCLUDED.cost_source_file_sha256);
 """
 
 ENSURE_IMPORT_COVERAGE = """
@@ -847,6 +859,7 @@ def main():
                     elif is_item_export(df):
                         df2 = clean_item_rows(df, source)
                         df2["date_basis"] = args.date_basis
+                        source_file_sha256 = file_sha256(path)
                         sale_ids = list({str(x).strip() for x in df2["sale_id"].tolist() if str(x).strip()})
                         entries.append({
                             "type": "items",
@@ -856,6 +869,7 @@ def main():
                             "df2": df2,
                             "sale_ids": sale_ids,
                             "sale_count": len(sale_ids),
+                            "source_file_sha256": source_file_sha256,
                         })
                     else:
                         entries.append({
@@ -963,6 +977,7 @@ def main():
                         raw_df.columns = [str(c).strip() for c in raw_df.columns]
                         raw_rows = []
                         clean_rows = []
+                        cost_imported_at = datetime.now(timezone.utc)
 
                         for idx, row in df2.iterrows():
                             raw_json = {k: json_safe(v) for k, v in (raw_df.loc[idx].to_dict() if idx in raw_df.index else {}).items()}
@@ -977,7 +992,13 @@ def main():
                                 batch_id,
                                 Json(raw_json),
                             ))
-                            clean_rows.append((row_hash,) + tuple(row[c] for c in ITEM_COLS) + (batch_id,))
+                            has_cost = row["total_cost"] is not None
+                            clean_rows.append((row_hash,) + tuple(row[c] for c in ITEM_COLS) + (
+                                batch_id,
+                                batch_id if has_cost else None,
+                                cost_imported_at if has_cost else None,
+                                entry_info["source_file_sha256"] if has_cost else None,
+                            ))
 
                         execute_values(cur, UPSERT_ITEMS_RAW, raw_rows, page_size=2000)
                         execute_values(cur, UPSERT_ITEMS, clean_rows, page_size=2000)

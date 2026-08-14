@@ -16,6 +16,7 @@ import { registerAuthRoutes } from "./routes/authRoutes";
 import { registerReportRoutes } from "./routes/reportRoutes";
 import { registerAnalyticsRoutes } from "./routes/analyticsRoutes";
 import { registerSalesDetailRoutes } from "./routes/salesDetailRoutes";
+import { registerSalesAnalysisRoutes } from "./routes/salesAnalysisRoutes";
 import { registerInsightsRoutes } from "./routes/insightsRoutes";
 import { registerSystemRoutes } from "./routes/systemRoutes";
 import { registerTrackingRoutes } from "./routes/trackingRoutes";
@@ -189,6 +190,7 @@ export function registerAllRoutes({
   registerReportRoutes({ app, pool, prefixedDateField });
   registerAnalyticsRoutes({ app, pool, itemDateField: ITEM_DATE_FIELD, prefixedDateField });
   registerSalesDetailRoutes({ app, pool, itemDateField: ITEM_DATE_FIELD, prefixedDateField });
+  registerSalesAnalysisRoutes({ app, pool });
   registerInsightsRoutes({
     app,
     pool,

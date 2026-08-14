@@ -1,4 +1,6 @@
 import type { Pool } from "pg";
+import fs from "fs";
+import path from "path";
 import { BOTBOT_SKILL_CATALOG } from "./botbotAccess";
 import { PERMISSION_CATALOG, getRoleDefaultPermissionKeys } from "./permissionCatalog";
 import {
@@ -1706,5 +1708,7 @@ export async function runStartupBootstrap(deps: RunStartupBootstrapDeps) {
   await ensureCrmSchema(deps.pool);
   await ensureSocialSchema(deps.pool);
   await ensureWebTrackingSchema(deps.pool);
+  const salesCostMigration = path.resolve(__dirname, "..", "db", "2026-08-13-sales-cost-authority.sql");
+  if (fs.existsSync(salesCostMigration)) await deps.pool.query(fs.readFileSync(salesCostMigration, "utf8"));
   await ensureBotBotSchema(deps.pool);
 }

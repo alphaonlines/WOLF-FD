@@ -107,6 +107,10 @@ ALTER TABLE pos_sale_items_raw ADD COLUMN IF NOT EXISTS date_basis TEXT;
 ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS import_batch_id BIGINT;
 ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS date_basis TEXT;
 ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS is_pro1st BOOLEAN DEFAULT FALSE;
+ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS cost_authority TEXT;
+ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS cost_import_batch_id BIGINT;
+ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS cost_imported_at TIMESTAMPTZ;
+ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS cost_source_file_sha256 TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_pos_sale_items_sale_id ON pos_sale_items(sale_id);
 CREATE INDEX IF NOT EXISTS idx_pos_sale_items_date_basis_sale_id ON pos_sale_items(date_basis, sale_id);

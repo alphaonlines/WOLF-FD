@@ -1,7 +1,29 @@
 import importlib.util
 import pathlib
 import unittest
+import tempfile
+import sys
+import types
 from datetime import date
+
+try:
+    import pandas  # noqa: F401
+except ModuleNotFoundError:
+    pandas_stub = types.ModuleType("pandas")
+    pandas_stub.DataFrame = object
+    pandas_stub.Timestamp = type("Timestamp", (), {})
+    sys.modules["pandas"] = pandas_stub
+
+try:
+    import psycopg2  # noqa: F401
+except ModuleNotFoundError:
+    psycopg2_stub = types.ModuleType("psycopg2")
+    extras_stub = types.ModuleType("psycopg2.extras")
+    extras_stub.execute_values = object()
+    extras_stub.Json = object
+    psycopg2_stub.extras = extras_stub
+    sys.modules["psycopg2"] = psycopg2_stub
+    sys.modules["psycopg2.extras"] = extras_stub
 
 MODULE_PATH = pathlib.Path(__file__).with_name("import_pos_xlsx.py")
 spec = importlib.util.spec_from_file_location("import_pos_xlsx", MODULE_PATH)
@@ -27,6 +49,15 @@ class FakeCursor:
 
 
 class ItemReconciliationTests(unittest.TestCase):
+    def test_file_sha256_reads_real_file_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = pathlib.Path(directory) / "items.xlsx"
+            source.write_bytes(b"cost provenance\n")
+            self.assertEqual(
+                import_pos_xlsx.file_sha256(str(source)),
+                "b19dc07d1945c756993853181c2476dffecb49d069043becf7c650ba45a8192e",
+            )
+
     def test_expected_date_field_for_basis(self):
         self.assertEqual(import_pos_xlsx.expected_date_field_for_basis("written"), "sale_date")
         self.assertEqual(import_pos_xlsx.expected_date_field_for_basis("delivered"), "delivery_confirmed_date")

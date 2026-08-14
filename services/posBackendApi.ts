@@ -1,6 +1,12 @@
 type JsonValue = null | boolean | number | string | JsonValue[] | { [k: string]: JsonValue };
 export type PosDateBasis = "delivered" | "written";
 
+const addDaysYmd = (value: string, days: number): string => {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
 type PosDateBasisOption = { dateBasis?: PosDateBasis };
 
 let activePosDateBasis: PosDateBasis = "delivered";
@@ -75,6 +81,38 @@ async function postJson(path: string, body: any): Promise<JsonValue> {
     throw new Error(`POS API ${res.status} for ${path}`);
   }
   return (await res.json()) as JsonValue;
+}
+
+export async function fetchSalesAnalysisRange(): Promise<{ deliveredDateMin: string | null; deliveredDateMax: string | null }> {
+  const json = await fetchJson("/api/sales-analysis/range");
+  return {
+    deliveredDateMin: typeof (json as any)?.deliveredDateMin === "string" ? (json as any).deliveredDateMin : null,
+    deliveredDateMax: typeof (json as any)?.deliveredDateMax === "string" ? (json as any).deliveredDateMax : null,
+  };
+}
+
+export async function fetchSalesAnalysisReport(params: {
+  start: string;
+  endInclusive: string;
+  page?: number;
+  pageSize?: number;
+  salesperson?: string;
+  manufacturer?: string;
+  store?: string;
+  category?: string;
+  item?: string;
+}): Promise<any> {
+  const qs = new URLSearchParams({
+    start: params.start,
+    end_exclusive: addDaysYmd(params.endInclusive, 1),
+    page: String(params.page ?? 1),
+    page_size: String(params.pageSize ?? 100),
+  });
+  for (const key of ["salesperson", "manufacturer", "store", "category", "item"] as const) {
+    const value = params[key]?.trim();
+    if (value) qs.set(key, value);
+  }
+  return fetchJson(`/api/sales-analysis/report?${qs.toString()}`);
 }
 
 export async function fetchAvailableYears(): Promise<number[]> {

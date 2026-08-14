@@ -1620,34 +1620,12 @@ const App: React.FC = () => {
             <div data-tour-id="top-right-controls" className="ml-auto flex flex-wrap items-center justify-end gap-2 sm:gap-3 lg:gap-4">
               {isSalesHeaderView && (
                 <div
-                  data-tour-id="sales-date-basis-toggle"
-                  className={`inline-flex items-center gap-1 rounded-full p-1 text-xs ${
-                    isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-slate-100'
+                  className={`inline-flex items-center rounded-full px-3 py-2 text-xs font-semibold ${
+                    isDarkMode ? 'bg-slate-900 border border-slate-700 text-sky-300' : 'bg-slate-100 text-sky-700'
                   }`}
-                  title="Switch Sales Analysis between delivered-date and written-date sales"
+                  title="Sales Analysis uses delivered dates only"
                 >
-                  {(['delivered', 'written'] as const).map((basis) => (
-                    <button
-                      key={basis}
-                      type="button"
-                      aria-pressed={salesDateBasis === basis}
-                      onClick={() => {
-                        setSalesDateBasis(basis);
-                        window.dispatchEvent(new CustomEvent('fd-set-sales-basis', { detail: { basis } }));
-                      }}
-                      className={`px-3 py-1 rounded-full font-semibold ${
-                        salesDateBasis === basis
-                          ? isDarkMode
-                            ? 'bg-sky-400 text-slate-950 shadow-sm'
-                            : 'bg-white text-sky-700 shadow-sm'
-                          : isDarkMode
-                            ? 'text-slate-400 hover:text-slate-200'
-                            : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      {basis === 'delivered' ? 'Delivered' : 'Written'}
-                    </button>
-                  ))}
+                  Delivered
                 </div>
               )}
               {isSalesHeaderView && showRange && rangeLabel && (

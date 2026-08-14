@@ -48,6 +48,12 @@ type SalesReportCardProps = {
   selectedStore: string | null;
   onSelectSalesperson: (salesperson: string) => void;
   onSelectStore: (store: string) => void;
+  canonicalMonthLabel: string;
+  canonicalWarnings: { openDeliveredTickets: number; duplicateItemLines: number; twoPersonTickets: number };
+  canonicalMissingCostCount: number;
+  canonicalDetail: { total: number; page: number; pageSize: number; rows: any[] };
+  canonicalDetailLoading: boolean;
+  onCanonicalDetailPage: (page: number) => void;
 };
 
 const SalesReportCard: React.FC<SalesReportCardProps> = ({
@@ -82,6 +88,12 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
   selectedStore,
   onSelectSalesperson,
   onSelectStore,
+  canonicalMonthLabel,
+  canonicalWarnings,
+  canonicalMissingCostCount,
+  canonicalDetail,
+  canonicalDetailLoading,
+  onCanonicalDetailPage,
 }) => {
   const hasCompare = compareHint.trim().length > 0;
   const categoryValues = React.useMemo(
@@ -520,6 +532,37 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
         ) : (
           <p className="text-sm text-slate-500">No low margin data available.</p>
         ))}
+      {!collapsed && (
+        <section className="mt-6 border-t border-slate-200 pt-5" aria-label="Canonical diagnostics and detail">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h4 className="font-semibold text-slate-800">Canonical diagnostics &amp; detail</h4>
+              <p className="text-xs text-slate-500">Latest available month: {canonicalMonthLabel}</p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs text-slate-700">
+              <span>Open delivered tickets: {canonicalWarnings.openDeliveredTickets}</span>
+              <span>Duplicate item lines: {canonicalWarnings.duplicateItemLines}</span>
+              <span>Two-person tickets: {canonicalWarnings.twoPersonTickets}</span>
+              <span>Missing costs: {canonicalMissingCostCount}</span>
+            </div>
+          </div>
+          <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead className="bg-slate-50"><tr>{["Delivered", "Sale", "Store", "Salesperson", "Item", "Description", "Sales", "Cost"].map((label) => <th key={label} className="px-3 py-2 text-left text-xs font-medium uppercase text-slate-500">{label}</th>)}</tr></thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {canonicalDetail.rows.map((row, index) => <tr key={`${row.store}-${row.saleId}-${row.itemNo}-${index}`}>
+                  <td className="px-3 py-2">{formatShortDate(String(row.deliveredDate || ""))}</td><td className="px-3 py-2">{row.saleId}</td><td className="px-3 py-2">{row.store}</td><td className="px-3 py-2">{row.salesperson}</td><td className="px-3 py-2">{row.itemNo}</td><td className="px-3 py-2">{row.description}</td><td className="px-3 py-2">${Number(row.sales || 0).toLocaleString()}</td><td className="px-3 py-2">{row.cost == null ? "Unavailable" : `$${Number(row.cost).toLocaleString()}`}</td>
+                </tr>)}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-3 flex items-center justify-end gap-3 text-sm">
+            <span>Page {canonicalDetail.page} of {Math.max(1, Math.ceil(canonicalDetail.total / canonicalDetail.pageSize))}</span>
+            <button type="button" aria-label="Previous detail page" disabled={canonicalDetailLoading || canonicalDetail.page <= 1} onClick={() => onCanonicalDetailPage(canonicalDetail.page - 1)} className="rounded border px-3 py-1 disabled:opacity-40">Previous</button>
+            <button type="button" aria-label="Next detail page" disabled={canonicalDetailLoading || canonicalDetail.page * canonicalDetail.pageSize >= canonicalDetail.total} onClick={() => onCanonicalDetailPage(canonicalDetail.page + 1)} className="rounded border px-3 py-1 disabled:opacity-40">Next</button>
+          </div>
+        </section>
+      )}
     </div>
   );
 };

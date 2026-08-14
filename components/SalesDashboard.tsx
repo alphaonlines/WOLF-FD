@@ -30,28 +30,16 @@ import {
 import { Database, Loader2, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
 import {
   getPosApiBaseUrl,
-  fetchAvailableYears,
-  fetchLeaderboard,
-  fetchFinanceSummary,
   fetchLowMargin,
-  fetchSalesByLocation,
-  fetchSalesDaily,
   fetchPro1stTrend,
-  fetchSummary,
-  fetchBestSellers,
-  fetchTopCategories,
-  fetchTopManufacturers,
-  fetchPro1stAttachRate,
-  fetchSalespersonTickets,
-  fetchStoreTickets,
-  fetchDayTickets,
   fetchSalesReport,
-  fetchManufacturerTopItems,
-  fetchCategoryTopItems,
   fetchSalespeopleBySaleIds,
   setActivePosDateBasis,
+  fetchSalesAnalysisRange,
+  fetchSalesAnalysisReport,
   type PosDateBasis,
 } from "../services/posBackendApi";
+import { latestDeliveredRange } from "./salesAnalysisRange";
 import { SalesData, StoreData } from "../types";
 import {
   addDaysYmd,
@@ -406,6 +394,11 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     endExclusive: "2100-01-01",
   });
   const [error, setError] = useState<string | null>(null);
+  const [canonicalMonthLabel, setCanonicalMonthLabel] = useState("");
+  const [canonicalWarnings, setCanonicalWarnings] = useState({ openDeliveredTickets: 0, duplicateItemLines: 0, twoPersonTickets: 0 });
+  const [canonicalMissingCostCount, setCanonicalMissingCostCount] = useState(0);
+  const [canonicalDetail, setCanonicalDetail] = useState<{ total: number; page: number; pageSize: number; rows: any[] }>({ total: 0, page: 1, pageSize: 100, rows: [] });
+  const [canonicalDetailLoading, setCanonicalDetailLoading] = useState(false);
   const [finance, setFinance] = useState({
     financedLines: 0,
     financedAmount: 0,
@@ -843,17 +836,17 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   }, [currentRangeInput, trendFocusDay]);
 
   useEffect(() => {
-    setActivePosDateBasis(dateBasis);
-    fetchAvailableYears()
-      .then((years) => {
-        if (!years.length) return;
-        setAvailableYears(years);
-        const currentYear = new Date().getFullYear();
-        if (years.includes(currentYear)) {
-          setYearA(currentYear);
-        } else {
-          setYearA(years[years.length - 1]);
-        }
+    fetchSalesAnalysisRange()
+      .then(({ deliveredDateMin, deliveredDateMax }) => {
+        if (!deliveredDateMax) return;
+        setCanonicalMonthLabel(new Date(`${deliveredDateMax}T00:00:00`).toLocaleDateString("en-US", { month: "long", year: "numeric" }));
+        const latest = latestDeliveredRange(deliveredDateMax, new Date().toLocaleDateString("en-CA"));
+        if (!latest) return;
+        setAvailableYears(Array.from(new Set([deliveredDateMin, deliveredDateMax].filter(Boolean).map((value) => Number(String(value).slice(0, 4))))).sort());
+        setYearA(Number(deliveredDateMax.slice(0, 4)));
+        setRangeModeA("custom");
+        setCustomStartA(latest.start);
+        setCustomEndA(latest.endInclusive);
         setYearB(null);
       })
       .catch(() => {
@@ -883,327 +876,75 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         setCompareHint("");
       }
 
-      const [
-        leaderRows,
-        locationRows,
-        curSummary,
-        financeSummary,
-        prevSummary,
-        prevFinanceSummary,
-        lowMarginRows,
-        reportSummarySalesperson,
-        reportSummaryStore,
-        reportSummaryOverallSalesperson,
-        reportSummaryOverallStore,
-        bestSellerRows,
-        categoryRows,
-        manufacturerRows,
-        pro1stSummary,
-        salespersonTicketsRows,
-        compareLeaderRows,
-        compareLocationRows,
-        compareReportSummarySalesperson,
-        compareReportSummaryStore,
-        compareReportSummaryOverallSalesperson,
-        compareReportSummaryOverallStore,
-        compareBestSellerRows,
-        compareCategoryRows,
-        compareManufacturerRows,
-        comparePro1stSummary,
-      ] = await Promise.all([
-        fetchLeaderboard({
-          start: currentRange.start,
-          end: currentRange.endExclusive,
-          limit: salesperson ? 100 : 20,
-          salesperson,
-          location,
-        }),
-        fetchSalesByLocation({ start: currentRange.start, end: currentRange.endExclusive, salesperson, location }),
-        fetchSummary({ start: currentRange.start, end: currentRange.endExclusive, salesperson, location }),
-        fetchFinanceSummary({ start: currentRange.start, end: currentRange.endExclusive, salesperson, location }),
-        compareRange
-          ? fetchSummary({ start: compareRange.start, end: compareRange.endExclusive, salesperson, location })
-          : Promise.resolve(null),
-        compareRange
-          ? fetchFinanceSummary({ start: compareRange.start, end: compareRange.endExclusive, salesperson, location })
-          : Promise.resolve(null),
-        fetchLowMargin({
-          start: currentRange.start,
-          end: currentRange.endExclusive,
-          limitPer: 10,
-          limitTotal: 200,
-          salesperson,
-          location,
-          categories: activeReportCategories.length ? activeReportCategories : undefined,
-          manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
-        }),
-        fetchSalesReport({
-          start: currentRange.start,
-          end: currentRange.endExclusive,
-          dimension: "salesperson",
-          salesperson,
-          location,
-          categories: activeReportCategories.length ? activeReportCategories : undefined,
-          manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
-        }),
-        fetchSalesReport({
-          start: currentRange.start,
-          end: currentRange.endExclusive,
-          dimension: "store",
-          salesperson,
-          location,
-          categories: activeReportCategories.length ? activeReportCategories : undefined,
-          manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
-        }),
-        fetchSalesReport({
-          start: currentRange.start,
-          end: currentRange.endExclusive,
-          dimension: "salesperson",
-          salesperson,
-          location,
-        }),
-        fetchSalesReport({
-          start: currentRange.start,
-          end: currentRange.endExclusive,
-          dimension: "store",
-          salesperson,
-          location,
-        }),
-        fetchBestSellers({ start: currentRange.start, end: currentRange.endExclusive, limit: 15, sort: itemSortMetric, location, salesperson }),
-        fetchTopCategories({ start: currentRange.start, end: currentRange.endExclusive, limit: 8, sort: itemSortMetric, location, salesperson }),
-        fetchTopManufacturers({ start: currentRange.start, end: currentRange.endExclusive, limit: 8, sort: itemSortMetric, location, salesperson }),
-        fetchPro1stAttachRate({ start: currentRange.start, end: currentRange.endExclusive, location, salesperson }),
-        salesperson
-          ? fetchSalespersonTickets({
-              start: currentRange.start,
-              end: currentRange.endExclusive,
-              salesperson,
-              limit: 5000,
-              location,
-            })
-          : location
-            ? fetchStoreTickets({
-                start: currentRange.start,
-                end: currentRange.endExclusive,
-                location,
-                limit: 5000,
-              })
-            : Promise.resolve([]),
-        compareRange
-          ? fetchLeaderboard({
-              start: compareRange.start,
-              end: compareRange.endExclusive,
-              limit: salesperson ? 100 : 20,
-              salesperson,
-              location,
-            })
-          : Promise.resolve([]),
-        compareRange
-          ? fetchSalesByLocation({ start: compareRange.start, end: compareRange.endExclusive, salesperson, location })
-          : Promise.resolve([]),
-        compareRange
-          ? fetchSalesReport({
-              start: compareRange.start,
-              end: compareRange.endExclusive,
-              dimension: "salesperson",
-              salesperson,
-              location,
-              categories: activeReportCategories.length ? activeReportCategories : undefined,
-              manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
-            })
-          : Promise.resolve(null),
-        compareRange
-          ? fetchSalesReport({
-              start: compareRange.start,
-              end: compareRange.endExclusive,
-              dimension: "store",
-              salesperson,
-              location,
-              categories: activeReportCategories.length ? activeReportCategories : undefined,
-              manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
-            })
-          : Promise.resolve(null),
-        compareRange
-          ? fetchSalesReport({
-              start: compareRange.start,
-              end: compareRange.endExclusive,
-              dimension: "salesperson",
-              salesperson,
-              location,
-            })
-          : Promise.resolve(null),
-        compareRange
-          ? fetchSalesReport({
-              start: compareRange.start,
-              end: compareRange.endExclusive,
-              dimension: "store",
-              salesperson,
-              location,
-            })
-          : Promise.resolve(null),
-        compareRange
-          ? fetchBestSellers({ start: compareRange.start, end: compareRange.endExclusive, limit: 15, sort: itemSortMetric, location, salesperson })
-          : Promise.resolve([]),
-        compareRange
-          ? fetchTopCategories({ start: compareRange.start, end: compareRange.endExclusive, limit: 8, sort: itemSortMetric, location, salesperson })
-          : Promise.resolve([]),
-        compareRange
-          ? fetchTopManufacturers({ start: compareRange.start, end: compareRange.endExclusive, limit: 8, sort: itemSortMetric, location, salesperson })
-          : Promise.resolve([]),
-        compareRange
-          ? fetchPro1stAttachRate({ start: compareRange.start, end: compareRange.endExclusive, location, salesperson })
-          : Promise.resolve(null),
-
+      // Canonical Sales Analysis replaces the legacy endpoint fan-out while the
+      // established card rendering and interactions below continue to consume
+      // their existing view models.
+      const canonicalParams = {
+        start: currentRange.start,
+        endInclusive: addDaysYmd(currentRange.endExclusive, -1),
+        page: 1,
+        pageSize: 100,
+        salesperson,
+        store: location,
+        manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
+        category: activeReportCategories.length === 1 ? activeReportCategories[0] : undefined,
+      };
+      const [canonical, canonicalCompare] = await Promise.all([
+        fetchSalesAnalysisReport(canonicalParams),
+        compareRange ? fetchSalesAnalysisReport({ ...canonicalParams, start: compareRange.start, endInclusive: addDaysYmd(compareRange.endExclusive, -1) }) : Promise.resolve(null),
       ]);
+      const reportRows = (dimension: "salesperson" | "store", payload: any): ReportSummaryRow[] =>
+        (payload?.series?.[dimension] || []).map((row: any) => ({
+          label: row.label, ticketCount: Number(row.ticketCount || 0), totalRetail: Number(row.sales || 0),
+          pro1stSales: 0, units: Number(row.quantity || 0), avgMarginPct: row.marginPct == null ? null : Number(row.marginPct),
+        }));
+      const sellerRows = (payload: any): BestSellerRow[] => (payload?.series?.item || []).slice(0, 15).map((row: any) => ({
+        itemDescription: row.description || row.label, category: row.category || "(unknown)", manufacturer: row.manufacturer || "(unknown)",
+        itemNo: row.label, qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: [],
+      }));
+      const simpleRows = (dimension: "category" | "manufacturer", payload: any) =>
+        (payload?.series?.[dimension] || []).slice(0, 8).map((row: any) => ({ [dimension]: row.label, qty: Number(row.quantity || 0), sales: Number(row.sales || 0) }));
+      const peopleRows = reportRows("salesperson", canonical);
+      const storeRows = reportRows("store", canonical);
+      const comparePeopleRows = reportRows("salesperson", canonicalCompare);
+      const compareStoreRows = reportRows("store", canonicalCompare);
+      const categories = (canonical?.series?.category || []).map((row: any) => row.label);
+      const manufacturers = (canonical?.series?.manufacturer || []).map((row: any) => row.label);
+      const stateFor = (rows: ReportSummaryRow[]) => ({ rows, distinctTicketCount: Number(canonical?.summary?.ticketCount || 0), availableCategories: categories, availableManufacturers: manufacturers });
       setCurrentRange(currentRange);
-      setSalesData(
-        leaderRows
-          .map((r) => ({
-            name: salespersonLabel(r.salesperson),
-            fullName: r.salesperson,
-            sales: Number.isFinite(r.sales) ? r.sales : 0,
-            margin: 0,
-            itemsSold: Number.isFinite(r.lines) ? r.lines : 0,
-          }))
-          .filter((r) => r.fullName)
-      );
-      setSalesDataCompare(
-        compareLeaderRows
-          .map((r) => ({
-            name: salespersonLabel(r.salesperson),
-            fullName: r.salesperson,
-            sales: Number.isFinite(r.sales) ? r.sales : 0,
-            margin: 0,
-            itemsSold: Number.isFinite(r.lines) ? r.lines : 0,
-          }))
-          .filter((r) => r.fullName)
-      );
-
-      setStoreData(
-        locationRows
-          .map((r) => ({
-            storeName: r.location || "(unknown)",
-            revenue: Number.isFinite(r.sales) ? r.sales : 0,
-            profit: Number.isFinite(r.profit) ? r.profit : 0,
-          }))
-          .filter((r) => r.storeName)
-      );
-      setStoreDataCompare(
-        compareLocationRows
-          .map((r) => ({
-            storeName: r.location || "(unknown)",
-            revenue: Number.isFinite(r.sales) ? r.sales : 0,
-            profit: Number.isFinite(r.profit) ? r.profit : 0,
-          }))
-          .filter((r) => r.storeName)
-      );
-
-      setSummary({
-        sales: Number.isFinite(curSummary.sales) ? curSummary.sales : 0,
-        lines: Number.isFinite(curSummary.lines) ? curSummary.lines : 0,
+      setSalesData(peopleRows.map((r) => ({ name: salespersonLabel(r.label), fullName: r.label, sales: r.totalRetail, margin: r.avgMarginPct || 0, itemsSold: r.units })));
+      setSalesDataCompare(comparePeopleRows.map((r) => ({ name: salespersonLabel(r.label), fullName: r.label, sales: r.totalRetail, margin: r.avgMarginPct || 0, itemsSold: r.units })));
+      setStoreData(storeRows.map((r) => ({ storeName: r.label, revenue: r.totalRetail, profit: Number(canonical.series.store.find((x: any) => x.label === r.label)?.profit || 0) })));
+      setStoreDataCompare(compareStoreRows.map((r) => ({ storeName: r.label, revenue: r.totalRetail, profit: Number(canonicalCompare?.series?.store?.find((x: any) => x.label === r.label)?.profit || 0) })));
+      setSummary({ sales: Number(canonical.summary.itemSales || 0), lines: Number(canonical.summary.ticketCount || 0) });
+      setSummaryCompare({ sales: Number(canonicalCompare?.summary?.itemSales ?? canonical.summary.itemSales ?? 0), lines: Number(canonicalCompare?.summary?.ticketCount ?? canonical.summary.ticketCount ?? 0) });
+      const financeState = (payload: any) => ({ financedLines: Number(payload?.summary?.financedTicketCount || 0), financedAmount: Number(payload?.summary?.financeAmount || 0), financeFee: Number(payload?.summary?.financeFee || 0), financeBalance: 0 });
+      setFinance(financeState(canonical)); setFinanceCompare(financeState(canonicalCompare || canonical));
+      setLowMarginData((canonical.detail?.rows || []).filter((row: any) => row.profit != null && row.sales).map((row: any) => ({ saleId: row.saleId, saleDate: row.deliveredDate, salesperson: row.salesperson, grandTotal: row.sales, profit: row.profit, marginPct: row.profit / row.sales * 100 })).sort((a: any, b: any) => a.marginPct - b.marginPct));
+      setReportDataSalesperson(stateFor(peopleRows)); setReportDataStore(stateFor(storeRows));
+      setReportOverallRowsSalesperson(peopleRows); setReportOverallRowsStore(storeRows);
+      setReportDataSalespersonCompare({ ...stateFor(comparePeopleRows), distinctTicketCount: Number(canonicalCompare?.summary?.ticketCount || 0) });
+      setReportDataStoreCompare({ ...stateFor(compareStoreRows), distinctTicketCount: Number(canonicalCompare?.summary?.ticketCount || 0) });
+      setReportOverallRowsSalespersonCompare(comparePeopleRows); setReportOverallRowsStoreCompare(compareStoreRows);
+      setReportOverallTotals({ totalRetail: Number(canonical.summary.itemSales || 0), totalUnits: Number(canonical.summary.quantity || 0) });
+      setReportOverallTotalsCompare({ totalRetail: Number(canonicalCompare?.summary?.itemSales || 0), totalUnits: Number(canonicalCompare?.summary?.quantity || 0) });
+      setReportData(reportDimension === "store" ? stateFor(storeRows) : stateFor(peopleRows));
+      setBestSellers(sellerRows(canonical)); setBestSellersCompare(sellerRows(canonicalCompare));
+      setTopCategories(simpleRows("category", canonical) as TopCategoryRow[]); setTopCategoriesCompare(simpleRows("category", canonicalCompare) as TopCategoryRow[]);
+      setTopManufacturers(simpleRows("manufacturer", canonical) as TopManufacturerRow[]); setTopManufacturersCompare(simpleRows("manufacturer", canonicalCompare) as TopManufacturerRow[]);
+      const proState = (payload: any): Pro1stStats => ({ totalSales: Number(payload?.pro1st?.eligibleSales || 0), proSales: Number(payload?.pro1st?.sales || 0), attachRate: Number(payload?.pro1st?.penetrationPct || 0), saleIds: [], saleIdsLow: [], saleIdsMid: [], saleIdsHigh: [] });
+      setPro1stStats(proState(canonical)); setPro1stStatsCompare(proState(canonicalCompare));
+      setSalespersonTickets([]);
+      setTrendData((canonical.series.day || []).map((row: any) => ({ day: row.label, furnitureSales: Number(row.sales || 0), mattressBoxSpringAdjustableSales: 0, averageDailyAdSpend: null })));
+      setTrendCompareData((canonicalCompare?.series?.day || []).map((row: any) => ({ day: row.label, furnitureSales: Number(row.sales || 0), mattressBoxSpringAdjustableSales: 0, averageDailyAdSpend: null })));
+      setExpandedManufacturers({}); setManufacturerItems({}); setManufacturerLoading({}); setExpandedCategories({}); setCategoryItems({}); setCategoryLoading({});
+      setCanonicalWarnings({
+        openDeliveredTickets: Number(canonical?.warnings?.openDeliveredTickets || 0),
+        duplicateItemLines: Number(canonical?.warnings?.duplicateItemLines || 0),
+        twoPersonTickets: Number(canonical?.warnings?.twoPersonTickets || 0),
       });
-      if (prevSummary) {
-        setSummaryCompare({
-          sales: Number.isFinite(prevSummary.sales) ? prevSummary.sales : 0,
-          lines: Number.isFinite(prevSummary.lines) ? prevSummary.lines : 0,
-        });
-      } else {
-        // No comparison selected: keep charts for A and hide comparison UI bits.
-        setSummaryCompare({
-          sales: Number.isFinite(curSummary.sales) ? curSummary.sales : 0,
-          lines: Number.isFinite(curSummary.lines) ? curSummary.lines : 0,
-        });
-      }
-
-      setFinance({
-        financedLines: Number.isFinite(financeSummary.financedLines) ? financeSummary.financedLines : 0,
-        financedAmount: Number.isFinite(financeSummary.financedAmount) ? financeSummary.financedAmount : 0,
-        financeFee: Number.isFinite(financeSummary.financeFee) ? financeSummary.financeFee : 0,
-        financeBalance: Number.isFinite(financeSummary.financeBalance) ? financeSummary.financeBalance : 0,
-      });
-      if (prevFinanceSummary) {
-        setFinanceCompare({
-          financedLines: Number.isFinite(prevFinanceSummary.financedLines) ? prevFinanceSummary.financedLines : 0,
-          financedAmount: Number.isFinite(prevFinanceSummary.financedAmount) ? prevFinanceSummary.financedAmount : 0,
-          financeFee: Number.isFinite(prevFinanceSummary.financeFee) ? prevFinanceSummary.financeFee : 0,
-          financeBalance: Number.isFinite(prevFinanceSummary.financeBalance) ? prevFinanceSummary.financeBalance : 0,
-        });
-      } else {
-        setFinanceCompare({
-          financedLines: Number.isFinite(financeSummary.financedLines) ? financeSummary.financedLines : 0,
-          financedAmount: Number.isFinite(financeSummary.financedAmount) ? financeSummary.financedAmount : 0,
-          financeFee: Number.isFinite(financeSummary.financeFee) ? financeSummary.financeFee : 0,
-          financeBalance: Number.isFinite(financeSummary.financeBalance) ? financeSummary.financeBalance : 0,
-        });
-      }
-
-      setLowMarginData(lowMarginRows.rows);
-      setReportDataSalesperson({
-        rows: reportSummarySalesperson.rows,
-        distinctTicketCount: reportSummarySalesperson.distinctTicketCount,
-        availableCategories: reportSummarySalesperson.availableCategories,
-        availableManufacturers: reportSummarySalesperson.availableManufacturers,
-      });
-      setReportDataStore({
-        rows: reportSummaryStore.rows,
-        distinctTicketCount: reportSummaryStore.distinctTicketCount,
-        availableCategories: reportSummaryStore.availableCategories,
-        availableManufacturers: reportSummaryStore.availableManufacturers,
-      });
-      setReportOverallRowsSalesperson(reportSummaryOverallSalesperson.rows);
-      setReportOverallRowsStore(reportSummaryOverallStore.rows);
-      setReportDataSalespersonCompare({
-        rows: compareReportSummarySalesperson?.rows ?? [],
-        distinctTicketCount: compareReportSummarySalesperson?.distinctTicketCount ?? 0,
-        availableCategories: compareReportSummarySalesperson?.availableCategories ?? [],
-        availableManufacturers: compareReportSummarySalesperson?.availableManufacturers ?? [],
-      });
-      setReportDataStoreCompare({
-        rows: compareReportSummaryStore?.rows ?? [],
-        distinctTicketCount: compareReportSummaryStore?.distinctTicketCount ?? 0,
-        availableCategories: compareReportSummaryStore?.availableCategories ?? [],
-        availableManufacturers: compareReportSummaryStore?.availableManufacturers ?? [],
-      });
-      setReportOverallRowsSalespersonCompare(compareReportSummaryOverallSalesperson?.rows ?? []);
-      setReportOverallRowsStoreCompare(compareReportSummaryOverallStore?.rows ?? []);
-      {
-        const overallTotals = computeReportTotals(reportSummaryOverallStore.rows);
-        setReportOverallTotals({ totalRetail: overallTotals.totalRetail, totalUnits: overallTotals.totalUnits });
-        const compareOverallTotals = computeReportTotals(compareReportSummaryOverallStore?.rows ?? []);
-        setReportOverallTotalsCompare({
-          totalRetail: compareOverallTotals.totalRetail,
-          totalUnits: compareOverallTotals.totalUnits,
-        });
-      }
-      const activeReport = reportDimension === "store" ? reportSummaryStore : reportSummarySalesperson;
-      setReportData({
-        rows: activeReport.rows,
-        distinctTicketCount: activeReport.distinctTicketCount,
-        availableCategories: activeReport.availableCategories,
-        availableManufacturers: activeReport.availableManufacturers,
-      });
-      setBestSellers(bestSellerRows);
-      setBestSellersCompare(compareBestSellerRows);
-      setTopCategories(categoryRows);
-      setTopCategoriesCompare(compareCategoryRows);
-      setTopManufacturers(manufacturerRows);
-      setTopManufacturersCompare(compareManufacturerRows);
-      setPro1stStats(pro1stSummary);
-      setPro1stStatsCompare(comparePro1stSummary ?? EMPTY_PRO1ST_STATS);
-      setSalespersonTickets(salespersonTicketsRows);
-      setExpandedManufacturers({});
-      setManufacturerItems({});
-      setManufacturerLoading({});
-      setExpandedCategories({});
-      setCategoryItems({});
-      setCategoryLoading({});
-      const proIds = [
-        ...pro1stSummary.saleIdsLow,
-        ...pro1stSummary.saleIdsMid,
-        ...pro1stSummary.saleIdsHigh,
-      ];
-      const bestIds = bestSellerRows.flatMap((b) => b.saleIds || []);
-      void syncSalePeople([...proIds, ...bestIds]);
+      setCanonicalMissingCostCount(Number(canonical?.missingCosts?.count || 0));
+      setCanonicalDetail({ total: Number(canonical?.detail?.total || 0), page: Number(canonical?.detail?.page || 1), pageSize: Number(canonical?.detail?.pageSize || 100), rows: canonical?.detail?.rows || [] });
     } catch (e) {
       console.error(e);
       setError(`Couldn’t load POS data. Confirm the backend API is running at ${getPosApiBaseUrl()}`);
@@ -1530,35 +1271,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       .sort((a, b) => a.day.localeCompare(b.day));
 
   useEffect(() => {
-    const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
-    const location = selectedStore ? selectedStore : undefined;
-
-    const range = currentRangeInput;
-    if (!range) return;
-    const { start, endExclusive } = range;
-    const compareRange = compareRangeInput;
-
-    Promise.all([
-      fetchPro1stTrend({ start, end: endExclusive, salesperson, location, dateBasis }),
-      compareRange
-        ? fetchPro1stTrend({
-            start: compareRange.start,
-            end: compareRange.endExclusive,
-            salesperson,
-            location,
-            dateBasis,
-          })
-        : Promise.resolve([]),
-    ])
-      .then(([proRows, compareRows]) => {
-        setTrendData(normalizeTrendRows(proRows));
-        setTrendCompareData(normalizeTrendRows(compareRows));
-      })
-      .catch((e) => {
-        console.error(e);
-        setTrendData([]);
-        setTrendCompareData([]);
-      });
+    // Trend series is populated by the canonical report call in loadData.
   }, [currentRangeInput, compareRangeInput, selectedSalesperson, selectedStore, dateBasis]);
 
   const displayTrendData = useMemo<DisplayTrendPoint[]>(() => {
@@ -1740,14 +1453,18 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     setTrendDayTicketsLoading(true);
     setTrendDayTicketsError(null);
     setActivePosDateBasis(dateBasis);
-    fetchDayTickets({
+    fetchSalesAnalysisReport({
       start: selectedTrendDay,
-      end: dayEnd,
+      endInclusive: selectedTrendDay,
       salesperson: selectedSalesperson || undefined,
-      location: selectedStore || undefined,
-      limit: 5000,
+      store: selectedStore || undefined,
+      pageSize: 500,
     })
-      .then((rows) => {
+      .then((payload) => {
+        const rows = (payload.detail?.rows || []).map((row: any) => ({ saleId: row.saleId, saleDate: row.deliveredDate,
+          salesperson: row.salesperson || "", location: row.store || "", receiptNo: "", customerName: "",
+          grandTotal: Number(row.sales || 0), profit: Number(row.profit || 0), marginPct: row.profit == null || !row.sales ? null : row.profit / row.sales * 100,
+          pro1stSales: 0, pro1stPct: null }));
         if (!cancelled) setTrendDayTickets(rows);
       })
       .catch((error) => {
@@ -1797,15 +1514,16 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     if (manufacturerItems[name]) return;
     setManufacturerLoading((prev) => ({ ...prev, [name]: true }));
     try {
-      const list = await fetchManufacturerTopItems({
+      const payload = await fetchSalesAnalysisReport({
         start: currentRange.start,
-        end: currentRange.endExclusive,
+        endInclusive: addDaysYmd(currentRange.endExclusive, -1),
         manufacturer: name,
-        limit: 10,
-        sort: itemSortMetric,
-        location: selectedStore || undefined,
+        pageSize: 500,
+        store: selectedStore || undefined,
         salesperson: selectedSalesperson || undefined,
       });
+      const list = (payload.series?.item || []).slice(0, 10).map((row: any) => ({ itemNo: row.label, itemDescription: row.description || row.label,
+        category: row.category || "(unknown)", manufacturer: name, qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: [] }));
       setManufacturerItems((prev) => ({ ...prev, [name]: list }));
       const ids = list.flatMap((item) => item.saleIds || []);
       void syncSalePeople(ids);
@@ -1821,15 +1539,16 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     if (categoryItems[name]) return;
     setCategoryLoading((prev) => ({ ...prev, [name]: true }));
     try {
-      const list = await fetchCategoryTopItems({
+      const payload = await fetchSalesAnalysisReport({
         start: currentRange.start,
-        end: currentRange.endExclusive,
+        endInclusive: addDaysYmd(currentRange.endExclusive, -1),
         category: name,
-        limit: 10,
-        sort: itemSortMetric,
-        location: selectedStore || undefined,
+        pageSize: 500,
+        store: selectedStore || undefined,
         salesperson: selectedSalesperson || undefined,
       });
+      const list = (payload.series?.item || []).slice(0, 10).map((row: any) => ({ itemNo: row.label, itemDescription: row.description || row.label,
+        category: name, manufacturer: row.manufacturer || "(unknown)", qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: [] }));
       setCategoryItems((prev) => ({ ...prev, [name]: list }));
       const ids = list.flatMap((item) => item.saleIds || []);
       void syncSalePeople(ids);
@@ -2214,6 +1933,35 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
     }
   };
 
+  const loadCanonicalDetailPage = async (page: number) => {
+    const range = currentRangeInput;
+    if (!range || page < 1) return;
+    setCanonicalDetailLoading(true);
+    try {
+      const payload = await fetchSalesAnalysisReport({
+        start: range.start,
+        endInclusive: addDaysYmd(range.endExclusive, -1),
+        page,
+        pageSize: canonicalDetail.pageSize,
+        salesperson: selectedSalesperson || undefined,
+        store: selectedStore || undefined,
+        manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
+        category: activeReportCategories.length === 1 ? activeReportCategories[0] : undefined,
+      });
+      setCanonicalDetail({
+        total: Number(payload?.detail?.total || 0),
+        page: Number(payload?.detail?.page || page),
+        pageSize: Number(payload?.detail?.pageSize || canonicalDetail.pageSize),
+        rows: payload?.detail?.rows || [],
+      });
+    } catch (e) {
+      console.error(e);
+      setError(`Couldnâ€™t load sales detail from ${getPosApiBaseUrl()}`);
+    } finally {
+      setCanonicalDetailLoading(false);
+    }
+  };
+
   const renderDashboardCard = (id: string) => {
     switch (id) {
       case "range-selector":
@@ -2255,6 +2003,12 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
           selectedStore={selectedStore}
           onSelectSalesperson={openSalespersonDetail}
           onSelectStore={openStoreDetail}
+          canonicalMonthLabel={canonicalMonthLabel}
+          canonicalWarnings={canonicalWarnings}
+          canonicalMissingCostCount={canonicalMissingCostCount}
+          canonicalDetail={canonicalDetail}
+          canonicalDetailLoading={canonicalDetailLoading}
+          onCanonicalDetailPage={loadCanonicalDetailPage}
         />
       </div>
         );
