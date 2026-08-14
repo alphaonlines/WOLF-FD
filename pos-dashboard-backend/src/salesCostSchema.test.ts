@@ -21,6 +21,9 @@ describe("Sales Analysis cost authority schema", () => {
     expect(sql).toMatch(/cost_import_batch_id[\s\S]*cost_imported_at[\s\S]*cost_source_file_sha256/i);
     expect(sql).toMatch(/prevent_sales_cost_provenance_mutation/i);
     expect(sql).toMatch(/OLD\.cost_import_batch_id IS NOT NULL[\s\S]*sales cost import provenance is immutable/i);
+    expect(sql).toMatch(/BEFORE DELETE ON pos_sale_items[\s\S]*prevent_sales_cost_provenance_mutation/i);
+    expect(sql).toMatch(/SELECT cost_authority INTO target_authority[\s\S]*FROM pos_sale_items[\s\S]*row_hash\s*=\s*p_row_id[\s\S]*FOR UPDATE/i);
+    expect(sql).toMatch(/IF target_authority\s*=\s*'group_report'[\s\S]*RAISE EXCEPTION/i);
     expect(sql).not.toMatch(/REFERENCES\s+users/i);
     expect(sql).toMatch(/import_batch_id\s*=\s*586/i);
     expect(sql).toMatch(/WHERE import_batch_id\s*=\s*586[\s\S]*total_cost IS NOT NULL/i);
@@ -32,7 +35,8 @@ describe("Sales Analysis cost authority schema", () => {
 
   it("populates immutable provenance only for imported rows that have cost", () => {
     const importer = fs.readFileSync(path.resolve(__dirname, "../importer/import_pos_xlsx.py"), "utf8");
-    expect(importer).not.toMatch(/cost_authority/);
+    expect(importer).toMatch(/assert_no_group_authority_replacement/i);
+    expect(importer).toMatch(/cost_authority\s*=\s*'group_report'/i);
     expect(importer).toMatch(/sha256/i);
     expect(importer).toMatch(/cost_import_batch_id/i);
     expect(importer).toMatch(/cost_imported_at/i);

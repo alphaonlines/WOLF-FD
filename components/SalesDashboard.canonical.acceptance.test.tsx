@@ -40,6 +40,13 @@ describe("SalesDashboard canonical acceptance", () => {
     mocks.report.mockImplementation(({ page = 1 }: any) => Promise.resolve(canonical(page)));
   });
 
+  it("labels a current newest delivered range as Month to date", async () => {
+    const today = new Date().toLocaleDateString("en-CA");
+    mocks.range.mockResolvedValue({ deliveredDateMin: `${today.slice(0, 7)}-01`, deliveredDateMax: today });
+    render(<SalesDashboard itemSortMetric="sales" enableTourAutoStart={false} />);
+    expect(await screen.findByText(/Month to date:/)).toBeInTheDocument();
+  });
+
   it("renders the established cards from canonical values without legacy fanout", async () => {
     render(<SalesDashboard itemSortMetric="sales" enableTourAutoStart={false} />);
     expect(await screen.findByText("Sales Overview")).toBeInTheDocument();

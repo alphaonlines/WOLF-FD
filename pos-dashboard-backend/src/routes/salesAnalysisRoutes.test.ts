@@ -32,6 +32,7 @@ describe("canonical Sales Analysis routes", () => {
     const app = appWithUser(db, salesUser);
     expect((await request(app).get("/api/sales-analysis/report?start=2026-07-01&end_exclusive=2026-07-01&page=1&page_size=100")).status).toBe(400);
     expect((await request(app).get("/api/sales-analysis/report?start=2026-07-01&end_exclusive=2026-08-01&page=0&page_size=100")).status).toBe(400);
+    expect((await request(app).get("/api/sales-analysis/report?start=2026-07-01&end_exclusive=2026-08-01&page=100001&page_size=100")).status).toBe(400);
     expect(db.query).not.toHaveBeenCalled();
   });
 
@@ -96,7 +97,10 @@ describe("canonical Sales Analysis routes", () => {
     db.query.mockImplementation(async (sql: string, params: any[]) => {
       if (/SELECT\s+delivered_date,sale_id,status,store/i.test(sql) && !/LIMIT\s+\$\d+\s+OFFSET\s+\$\d+/i.test(sql)) throw new Error("unbounded raw ITEM_SELECT");
       if (/item_sales/.test(sql)) return { rows: [{ item_sales: "98765.43", item_count: "1201", quantity: "1300", known_cost_sales: "90000", cost: "60000", profit: "30000", missing_costs: "7", eligible_sales: "80000", pro_sales: "8000", ticket_total: "99000", ticket_count: "801", finance_amount: "40000", finance_fee: "1000", financed_ticket_count: "300", open_tickets: "4", two_person_tickets: "12", unallocated_ticket_total: "99000", duplicate_lines: "3" }] };
-      if (/SELECT dimension,label/.test(sql)) return { rows: [{ dimension: "store", label: "FD7", sales: "98765.43", quantity: "1300", cost: "60000", known_cost_sales: "90000", profit: "30000" }] };
+      if (/SELECT dimension,label/.test(sql)) return { rows: [
+        { dimension: "store", label: "FD7", sales: "98765.43", quantity: "1300", cost: "60000", known_cost_sales: "90000", profit: "30000" },
+        { dimension: "item", label: "S1", description: "Canonical Sofa", category: "Living", manufacturer: "Acme", sales: "50", quantity: "1", cost: "25", known_cost_sales: "50", profit: "25" },
+      ] };
       if (/COUNT\(\*\)::text total FROM filtered/.test(sql)) return { rows: [{ total: "1201" }] };
       if (/margin_pct/.test(sql)) return { rows: [{ delivered_date: "2026-07-30", sale_id: "lowest-ticket", store: "FD7", salesperson: "Solo", grand_total: "100", profit: "10", margin_pct: "10" }] };
       expect(params.slice(-2)).toEqual([25, 50]);
@@ -108,6 +112,7 @@ describe("canonical Sales Analysis routes", () => {
     expect(response.body.detail).toMatchObject({ total: 1201, page: 3, pageSize: 25 });
     expect(response.body.detail.rows).toHaveLength(1);
     expect(response.body.detail.rows[0]).toMatchObject({ ticketTotal: 75, isPro1st: true });
+    expect(response.body.series.item[0]).toMatchObject({ label: "S1", description: "Canonical Sofa", category: "Living", manufacturer: "Acme" });
     expect(response.body.lowMargin).toEqual([{ deliveredDate: "2026-07-30", saleId: "lowest-ticket", store: "FD7", salesperson: "Solo", grandTotal: 100, profit: 10, marginPct: 10 }]);
     expect(db.query).toHaveBeenCalledTimes(5);
   });
@@ -149,6 +154,17 @@ describe("canonical Sales Analysis routes", () => {
     expect(itemSeries).toMatch(/sum\s*\(\s*CASE WHEN \$3::text IS NULL THEN total_cost ELSE/i);
     expect(itemSeries).toMatch(/sum\s*\(\s*CASE WHEN \$3::text IS NULL THEN total_profit ELSE/i);
     expect(itemSeries).toMatch(/count\s*\(\s*distinct\s*\(\s*store\s*,\s*sale_id\s*\)\s*\)\s*::numeric\s+ticket_count/i);
+    expect(seriesSql).toMatch(/sign\s*\(\s*round\s*\(/i);
+    expect(seriesSql).toMatch(/abs\s*\(\s*round\s*\(/i);
+  });
+
+  it("rejects unsafe admin paging and override values before querying", async () => {
+    const owner = { id: "1", roles: ["Owner"], permissions: ["module.sales"] };
+    const db = pool([]);
+    expect((await request(appWithUser(db, owner)).get("/api/sales-analysis/admin/cost-overrides?page=1.5&page_size=50")).status).toBe(400);
+    const invalid = { store: "FD7", saleId: "100", rowId: "row-1", totalCost: "12.345", reason: "x" };
+    expect((await request(appWithUser(db, owner)).post("/api/sales-analysis/admin/cost-overrides").set("Origin", "http://example.test").set("Host", "example.test").send(invalid)).status).toBe(400);
+    expect(db.query).not.toHaveBeenCalled();
   });
 
   it("restricts audited override mutation to Admin/Owner and same origin", async () => {

@@ -22,7 +22,7 @@ export type SalesAnalysisItem = {
   sales: number;
   totalCost: number | null;
   totalProfit: number | null;
-  costSource?: "group_report" | "imported" | "manual_override" | "unknown";
+  costSource?: "group_report" | "manual_override" | "unknown";
 };
 
 export type SalesAnalysisOptions = {
@@ -55,10 +55,15 @@ const normalized = (value: string) => value.trim().toLocaleLowerCase();
 const identity = (store: string, saleId: string) => `${normalized(store)}\u0000${saleId.trim()}`;
 const allocated = (value: number, partIndex: number, partCount: number, scale = 100) => {
   const units = Math.round(value * scale);
-  const base = Math.trunc(units / partCount);
-  const remainder = units - base * partCount;
-  return (base + (partIndex < remainder ? 1 : 0)) / scale;
+  const sign = units < 0 ? -1 : 1;
+  const absoluteUnits = Math.abs(units);
+  const base = Math.trunc(absoluteUnits / partCount);
+  const remainder = absoluteUnits - base * partCount;
+  return sign * (base + (partIndex < remainder ? 1 : 0)) / scale;
 };
+
+const hasAuthoritativeCost = (item: SalesAnalysisItem) =>
+  (item.costSource === "group_report" || item.costSource === "manual_override") && item.totalCost !== null && item.totalProfit !== null;
 
 export function splitSalespeople(raw: string): string[] {
   const parts = String(raw || "").trim().split(/\s+and\s+/i);
@@ -123,7 +128,7 @@ export function aggregateSalesAnalysis(tickets: SalesAnalysisTicket[], items: Sa
     const row = getBucket(dimension, label);
     row.sales += allocated(item.sales, partIndex, partCount);
     row.quantity += allocated(item.quantity, partIndex, partCount, 10000);
-    if (item.totalCost !== null && item.totalProfit !== null) {
+    if (hasAuthoritativeCost(item)) {
       row.cost += allocated(item.totalCost, partIndex, partCount);
       row.profit += allocated(item.totalProfit, partIndex, partCount);
       row.knownCostSales += allocated(item.sales, partIndex, partCount);
@@ -161,7 +166,7 @@ export function aggregateSalesAnalysis(tickets: SalesAnalysisTicket[], items: Sa
     row.marginPct = row.knownCostSales ? round((row.profit / row.knownCostSales) * 100) : null;
   }));
 
-  const known = selected.filter((row) => row.totalCost !== null && row.totalProfit !== null);
+  const known = selected.filter(hasAuthoritativeCost);
   const share = (value: number, ticket: SalesAnalysisTicket, scale = 100) => requestedPerson
     ? allocated(value, splitSalespeople(ticket.salesperson).findIndex((person) => normalized(person) === requestedPerson), splitSalespeople(ticket.salesperson).length, scale)
     : value;
@@ -179,7 +184,7 @@ export function aggregateSalesAnalysis(tickets: SalesAnalysisTicket[], items: Sa
     const people = splitSalespeople(ticket.salesperson);
     const partIndex = requestedPerson ? people.findIndex((person) => normalized(person) === requestedPerson) : 0;
     const divisor = requestedPerson ? people.length : 1;
-    const knownCost = row.totalCost !== null && row.totalProfit !== null;
+    const knownCost = hasAuthoritativeCost(row);
     return {
       deliveredDate: row.deliveredDate, saleId: row.saleId, status: ticket.status, store: row.store,
       salesperson: requestedPerson ? people.find((person) => normalized(person) === requestedPerson) : ticket.salesperson,
@@ -187,7 +192,7 @@ export function aggregateSalesAnalysis(tickets: SalesAnalysisTicket[], items: Sa
       quantity: round(allocated(row.quantity, partIndex, divisor, 10000)), sales: round(allocated(row.sales, partIndex, divisor)),
       cost: knownCost ? round(allocated(row.totalCost as number, partIndex, divisor)) : null,
       profit: knownCost ? round(allocated(row.totalProfit as number, partIndex, divisor)) : null,
-      costSource: knownCost ? (row.costSource || "group_report") : "unknown",
+      costSource: knownCost ? row.costSource : "unknown",
       duplicateWarning: (duplicateCounts.get(itemSignature(row)) || 0) > 1,
     };
   });

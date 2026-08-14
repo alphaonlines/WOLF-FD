@@ -26,6 +26,7 @@ const item = (overrides: Partial<SalesAnalysisItem> = {}): SalesAnalysisItem => 
   sales: 1000,
   totalCost: 600,
   totalProfit: 400,
+  costSource: "group_report",
   ...overrides,
 });
 
@@ -108,6 +109,25 @@ describe("corrected delivered Sales Analysis aggregation", () => {
       expect(beta.series[dimension][0]).toMatchObject({ sales: 5, quantity: 0.5, cost: 3, profit: 2 });
       expect(alpha.series[dimension][0].sales + beta.series[dimension][0].sales).toBe(10.01);
       expect(alpha.series[dimension][0].cost + beta.series[dimension][0].cost).toBe(6.01);
+    }
+  });
+
+  it("conserves negative odd cents for returns across exact-two salespeople", () => {
+    const tickets = [ticket({ salesperson: "Alpha and Beta", grandTotal: -10.01, financeAmount: -0.03, financeFee: -0.01 })];
+    const items = [item({ sales: -10.01, totalCost: -6.01, totalProfit: -4 })];
+    const alpha = aggregateSalesAnalysis(tickets, items, { start: "2026-07-01", endExclusive: "2026-08-01", salesperson: "Alpha", page: 1, pageSize: 100 });
+    const beta = aggregateSalesAnalysis(tickets, items, { start: "2026-07-01", endExclusive: "2026-08-01", salesperson: "Beta", page: 1, pageSize: 100 });
+    expect([alpha.summary.itemSales, beta.summary.itemSales]).toEqual([-5.01, -5]);
+    expect(alpha.summary.itemSales + beta.summary.itemSales).toBe(-10.01);
+    expect(alpha.summary.financeAmount + beta.summary.financeAmount).toBe(-0.03);
+  });
+
+  it("treats generic imported or omitted cost authority as unknown", () => {
+    for (const costSource of ["imported", undefined] as const) {
+      const result = aggregateSalesAnalysis([ticket()], [item({ costSource: costSource as any })], { start: "2026-07-01", endExclusive: "2026-08-01", page: 1, pageSize: 100 });
+      expect(result.summary).toMatchObject({ knownCostSales: 0, cost: 0, profit: 0 });
+      expect(result.missingCosts.count).toBe(1);
+      expect(result.detail.rows[0].costSource).toBe("unknown");
     }
   });
 

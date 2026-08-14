@@ -709,6 +709,26 @@ def expected_date_field_for_basis(date_basis: str) -> str:
     return "sale_date" if date_basis == "written" else "delivery_confirmed_date"
 
 
+def assert_no_group_authority_replacement(cur, sale_ids: list[str], date_basis: str) -> None:
+    if not sale_ids:
+        return
+    cur.execute(
+        """
+        SELECT COUNT(*) FROM pos_sale_items
+        WHERE sale_id = ANY(%s)
+          AND (date_basis = %s OR date_basis IS NULL)
+          AND cost_authority = 'group_report';
+        """,
+        (sale_ids, date_basis),
+    )
+    protected_count = int(cur.fetchone()[0] or 0)
+    if protected_count:
+        raise RuntimeError(
+            f"Refusing item replacement: {protected_count} Group-authoritative rows are protected. "
+            "Import a separately audited Group Report package instead."
+        )
+
+
 def reconcile_stale_items(
     cur,
     *,
@@ -742,6 +762,12 @@ def reconcile_stale_items(
         AND {coverage_field} <= %s
         AND (sale_id IS NULL OR NOT (sale_id = ANY(%s)))
     """
+    cur.execute(f"SELECT COUNT(*) FROM pos_sale_items WHERE {where_sql} AND cost_authority = 'group_report';", params)
+    protected_count = int(cur.fetchone()[0] or 0)
+    if protected_count:
+        raise RuntimeError(
+            f"Refusing item reconciliation: {protected_count} Group-authoritative rows are protected."
+        )
     cur.execute(f"SELECT COUNT(*) FROM pos_sale_items WHERE {where_sql};", params)
     prune_count = int(cur.fetchone()[0] or 0)
     print(
@@ -956,6 +982,7 @@ def main():
                         sale_ids = entry_info["sale_ids"]
                         coverage_field, coverage_start, coverage_end = compute_date_range(df2, preferred_date_field, fallback_date_field)
                         if sale_ids:
+                            assert_no_group_authority_replacement(cur, sale_ids, args.date_basis)
                             print(f"Replacing existing {args.date_basis} item data for {len(sale_ids)} sales (same basis only; legacy NULL rows are claimed)...")
                             cur.execute(
                                 """

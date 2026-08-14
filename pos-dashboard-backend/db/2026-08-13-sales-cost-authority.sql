@@ -21,6 +21,12 @@ ALTER TABLE pos_sale_items ADD CONSTRAINT pos_sale_items_cost_provenance_check C
 
 CREATE OR REPLACE FUNCTION prevent_sales_cost_provenance_mutation() RETURNS trigger AS $$
 BEGIN
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.cost_authority = 'group_report' THEN
+      RAISE EXCEPTION 'Group-authoritative sales cost rows cannot be deleted';
+    END IF;
+    RETURN OLD;
+  END IF;
   IF OLD.cost_import_batch_id IS NOT NULL AND
      (NEW.cost_import_batch_id IS DISTINCT FROM OLD.cost_import_batch_id
       OR NEW.cost_imported_at IS DISTINCT FROM OLD.cost_imported_at
@@ -32,6 +38,10 @@ END; $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS sales_cost_provenance_immutable ON pos_sale_items;
 CREATE TRIGGER sales_cost_provenance_immutable
   BEFORE UPDATE OF cost_import_batch_id,cost_imported_at,cost_source_file_sha256 ON pos_sale_items
+  FOR EACH ROW EXECUTE FUNCTION prevent_sales_cost_provenance_mutation();
+DROP TRIGGER IF EXISTS sales_cost_group_delete_protected ON pos_sale_items;
+CREATE TRIGGER sales_cost_group_delete_protected
+  BEFORE DELETE ON pos_sale_items
   FOR EACH ROW EXECUTE FUNCTION prevent_sales_cost_provenance_mutation();
 
 CREATE TABLE IF NOT EXISTS sales_cost_override_history (
@@ -71,9 +81,21 @@ CREATE TRIGGER sales_cost_override_history_immutable BEFORE UPDATE OR DELETE ON 
 CREATE OR REPLACE FUNCTION replace_sales_cost_override(
   p_store TEXT, p_sale_id TEXT, p_row_id TEXT, p_total_cost NUMERIC, p_reason TEXT, p_actor_user_id BIGINT
 ) RETURNS sales_cost_override_history AS $$
-DECLARE inserted sales_cost_override_history;
+DECLARE
+  inserted sales_cost_override_history;
+  target_authority TEXT;
 BEGIN
   PERFORM pg_advisory_xact_lock(hashtextextended(p_store || chr(31) || p_sale_id || chr(31) || p_row_id, 0));
+  SELECT cost_authority INTO target_authority
+    FROM pos_sale_items
+    WHERE location=p_store AND sale_id=p_sale_id AND row_hash=p_row_id
+    FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'sales cost override target does not exist';
+  END IF;
+  IF target_authority = 'group_report' THEN
+    RAISE EXCEPTION 'Group-authoritative sales cost cannot be overridden';
+  END IF;
   UPDATE sales_cost_override_history SET superseded_at = now()
     WHERE store=p_store AND sale_id=p_sale_id AND row_id=p_row_id AND superseded_at IS NULL;
   INSERT INTO sales_cost_override_history(store,sale_id,row_id,total_cost,reason,actor_user_id)

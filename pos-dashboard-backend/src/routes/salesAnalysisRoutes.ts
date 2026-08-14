@@ -16,10 +16,11 @@ const sameOrigin = (req: Request) => {
 };
 const round = (value: number) => Math.round((value + Number.EPSILON) * 10000) / 10000;
 
-// PostgreSQL equivalent of the canonical deterministic cent allocation. The first
-// salesperson receives the odd cent; negative remainders intentionally match JS.
-const allocated = (column: string, scale = 100) => `CASE WHEN $3::text IS NULL THEN ${column} ELSE
- (trunc(round((${column}) * ${scale})::numeric / person_count) + CASE WHEN person_index <= mod(round((${column}) * ${scale})::bigint,person_count) THEN 1 ELSE 0 END) / ${scale}.0 END`;
+// Deterministic smallest-unit allocation. The first salesperson receives the
+// odd unit for both positive sales and negative returns, conserving the total.
+const splitAllocated = (column: string, index: string, scale = 100) => `(sign(round((${column}) * ${scale})) *
+ (trunc(abs(round((${column}) * ${scale}))::numeric / person_count) + CASE WHEN ${index} <= mod(abs(round((${column}) * ${scale}))::bigint,person_count) THEN 1 ELSE 0 END) / ${scale}.0)`;
+const allocated = (column: string, scale = 100) => `CASE WHEN $3::text IS NULL THEN ${column} ELSE ${splitAllocated(column, "person_index", scale)} END`;
 
 const COST = `CASE WHEN i.cost_authority='group_report' THEN i.total_cost WHEN o.id IS NOT NULL THEN o.total_cost ELSE NULL END`;
 const PROFIT = `CASE WHEN i.cost_authority='group_report' THEN i.total_profit WHEN o.id IS NOT NULL THEN i.total_sale_price-o.total_cost ELSE NULL END`;
@@ -68,30 +69,36 @@ const SUMMARY_SQL = (where: string) => `${baseCte(where)}, tickets AS (
  FROM (SELECT filtered.*,COUNT(*) OVER (PARTITION BY sale_id,delivered_date,store,manufacturer,category,item_no,description,quantity,sales) duplicate_count FROM filtered) f`;
 
 const SERIES_SQL = (where: string) => `${baseCte(where)}, item_series AS (
- SELECT dimension,label,sum(${allocated("sales")})::numeric sales,sum(${allocated("quantity", 10000)})::numeric quantity,
+ SELECT dimension,label,series_description description,series_category category,series_manufacturer manufacturer,
+ sum(${allocated("sales")})::numeric sales,sum(${allocated("quantity", 10000)})::numeric quantity,
  sum(${allocated("total_cost")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) cost,
  sum(${allocated("sales")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) known_cost_sales,
  sum(${allocated("total_profit")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) profit,
  count(DISTINCT (store,sale_id))::numeric ticket_count
- FROM (SELECT 'item' dimension,item_no label,* FROM filtered UNION ALL SELECT 'category',category,* FROM filtered UNION ALL
- SELECT 'manufacturer',manufacturer,* FROM filtered UNION ALL SELECT 'store',store,* FROM filtered UNION ALL SELECT 'day',delivered_date,* FROM filtered) d GROUP BY dimension,label
+ FROM (
+  SELECT 'item' dimension,item_no label,description series_description,category series_category,manufacturer series_manufacturer,* FROM filtered
+  UNION ALL SELECT 'category',category,NULL::text,NULL::text,NULL::text,* FROM filtered
+  UNION ALL SELECT 'manufacturer',manufacturer,NULL::text,NULL::text,NULL::text,* FROM filtered
+  UNION ALL SELECT 'store',store,NULL::text,NULL::text,NULL::text,* FROM filtered
+  UNION ALL SELECT 'day',delivered_date,NULL::text,NULL::text,NULL::text,* FROM filtered
+ ) d GROUP BY dimension,label,series_description,series_category,series_manufacturer
 ), people AS (
  SELECT p.person label,f.*,p.ordinality person_ordinality FROM filtered f CROSS JOIN LATERAL unnest(f.people) WITH ORDINALITY p(person,ordinality)
  WHERE $3::text IS NULL OR lower(trim(p.person))=$3
 ), person_items AS (
- SELECT 'salesperson' dimension,label,sum((trunc(round(sales*100)::numeric/person_count)+CASE WHEN person_ordinality<=mod(round(sales*100)::bigint,person_count) THEN 1 ELSE 0 END)/100.0) sales,
- sum((trunc(round(quantity*10000)::numeric/person_count)+CASE WHEN person_ordinality<=mod(round(quantity*10000)::bigint,person_count) THEN 1 ELSE 0 END)/10000.0) quantity,
- sum((trunc(round(total_cost*100)::numeric/person_count)+CASE WHEN person_ordinality<=mod(round(total_cost*100)::bigint,person_count) THEN 1 ELSE 0 END)/100.0) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) cost,
- sum((trunc(round(sales*100)::numeric/person_count)+CASE WHEN person_ordinality<=mod(round(sales*100)::bigint,person_count) THEN 1 ELSE 0 END)/100.0) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) known_cost_sales,
- sum((trunc(round(total_profit*100)::numeric/person_count)+CASE WHEN person_ordinality<=mod(round(total_profit*100)::bigint,person_count) THEN 1 ELSE 0 END)/100.0) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) profit
+ SELECT 'salesperson' dimension,label,sum(${splitAllocated("sales", "person_ordinality")}) sales,
+ sum(${splitAllocated("quantity", "person_ordinality", 10000)}) quantity,
+ sum(${splitAllocated("total_cost", "person_ordinality")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) cost,
+ sum(${splitAllocated("sales", "person_ordinality")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) known_cost_sales,
+ sum(${splitAllocated("total_profit", "person_ordinality")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) profit
  FROM people GROUP BY label
 ), person_tickets AS (
- SELECT label,sum((trunc(round(finance_amount*100)::numeric/person_count)+CASE WHEN person_ordinality<=mod(round(finance_amount*100)::bigint,person_count) THEN 1 ELSE 0 END)/100.0) finance_amount,
- sum((trunc(round(finance_fee*100)::numeric/person_count)+CASE WHEN person_ordinality<=mod(round(finance_fee*100)::bigint,person_count) THEN 1 ELSE 0 END)/100.0) finance_fee,
+ SELECT label,sum(${splitAllocated("finance_amount", "person_ordinality")}) finance_amount,
+ sum(${splitAllocated("finance_fee", "person_ordinality")}) finance_fee,
  sum(1.0/person_count) ticket_count
  FROM (SELECT DISTINCT ON (store,sale_id,label) store,sale_id,label,finance_amount,finance_fee,person_count,person_ordinality FROM people ORDER BY store,sale_id,label) t GROUP BY label
-) SELECT dimension,label,sales,quantity,COALESCE(cost,0) cost,COALESCE(known_cost_sales,0) known_cost_sales,COALESCE(profit,0) profit,0::numeric finance_amount,0::numeric finance_fee,ticket_count FROM item_series
- UNION ALL SELECT p.dimension,p.label,p.sales,p.quantity,COALESCE(p.cost,0),COALESCE(p.known_cost_sales,0),COALESCE(p.profit,0),COALESCE(t.finance_amount,0),COALESCE(t.finance_fee,0),COALESCE(t.ticket_count,0) FROM person_items p LEFT JOIN person_tickets t ON t.label=p.label`;
+) SELECT dimension,label,description,category,manufacturer,sales,quantity,COALESCE(cost,0) cost,COALESCE(known_cost_sales,0) known_cost_sales,COALESCE(profit,0) profit,0::numeric finance_amount,0::numeric finance_fee,ticket_count FROM item_series
+ UNION ALL SELECT p.dimension,p.label,NULL::text,NULL::text,NULL::text,p.sales,p.quantity,COALESCE(p.cost,0),COALESCE(p.known_cost_sales,0),COALESCE(p.profit,0),COALESCE(t.finance_amount,0),COALESCE(t.finance_fee,0),COALESCE(t.ticket_count,0) FROM person_items p LEFT JOIN person_tickets t ON t.label=p.label`;
 
 const COUNT_SQL = (where: string) => `${baseCte(where)} SELECT COUNT(*)::text total FROM filtered`;
 const DETAIL_SQL = (where: string, limit: number, offset: number) => `${baseCte(where)} SELECT delivered_date,sale_id,status,store,
@@ -118,7 +125,7 @@ const mapSeries = (rows: any[]) => {
   const result: Record<string, any[]> = { item: [], category: [], manufacturer: [], salesperson: [], store: [], day: [] };
   for (const row of rows) {
     const known = num(row.known_cost_sales), profit = num(row.profit);
-    result[row.dimension]?.push({ label: String(row.label), sales: round(num(row.sales)), quantity: round(num(row.quantity)), cost: round(num(row.cost)), knownCostSales: round(known), profit: round(profit), marginPct: known ? round(profit / known * 100) : null, financeAmount: round(num(row.finance_amount)), financeFee: round(num(row.finance_fee)), ticketCount: round(num(row.ticket_count)) });
+    result[row.dimension]?.push({ label: String(row.label), description: row.description == null ? undefined : String(row.description), category: row.category == null ? undefined : String(row.category), manufacturer: row.manufacturer == null ? undefined : String(row.manufacturer), sales: round(num(row.sales)), quantity: round(num(row.quantity)), cost: round(num(row.cost)), knownCostSales: round(known), profit: round(profit), marginPct: known ? round(profit / known * 100) : null, financeAmount: round(num(row.finance_amount)), financeFee: round(num(row.finance_fee)), ticketCount: round(num(row.ticket_count)) });
   }
   Object.values(result).forEach((rows) => rows.sort((a, b) => b.sales - a.sales || a.label.localeCompare(b.label)));
   return result;
@@ -135,7 +142,7 @@ export function registerSalesAnalysisRoutes({ app, pool }: { app: Express; pool:
   const report = async (req: Request, res: any) => {
     const start = ymd(req.query.start), endExclusive = ymd(req.query.end_exclusive);
     const page = Number(req.query.page || 1), pageSize = Number(req.query.page_size || 100);
-    if (!start || !endExclusive || start >= endExclusive || !Number.isInteger(page) || page < 1 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 500) return res.status(400).json({ error: "invalid_sales_analysis_filters" });
+    if (!start || !endExclusive || start >= endExclusive || !Number.isInteger(page) || page < 1 || page > 100000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 500) return res.status(400).json({ error: "invalid_sales_analysis_filters" });
     const salesperson = typeof req.query.salesperson === "string" && req.query.salesperson.trim() ? req.query.salesperson.trim().toLowerCase() : null;
     const values: any[] = [start, endExclusive, salesperson];
     let where = "";
@@ -157,10 +164,28 @@ export function registerSalesAnalysisRoutes({ app, pool }: { app: Express; pool:
         warnings: { duplicateItemLines: num(a.duplicate_lines), openDeliveredTickets: num(a.open_tickets), twoPersonTickets: num(a.two_person_tickets), itemTicketDifference: round(itemSales - num(a.unallocated_ticket_total)) }, missingCosts: { count: num(a.missing_costs) },
         lowMargin: lowMarginResult.rows.map((row: any) => ({ deliveredDate: dateOnly(row.delivered_date), saleId: String(row.sale_id), store: String(row.store), salesperson: String(row.salesperson), grandTotal: round(num(row.grand_total)), profit: round(num(row.profit)), marginPct: nullableNum(row.margin_pct) })),
         detail: { total: num(countResult.rows[0]?.total), page, pageSize, rows: pageResult.rows.map((row: any) => ({ deliveredDate: dateOnly(row.delivered_date), saleId: String(row.sale_id), status: String(row.status), store: String(row.store), salesperson: String(row.salesperson), manufacturer: String(row.manufacturer), category: String(row.category), itemNo: String(row.item_no), description: String(row.description), quantity: round(num(row.quantity)), sales: round(num(row.sales)), ticketTotal: round(num(row.ticket_total)), cost: nullableNum(row.cost), profit: nullableNum(row.profit), isPro1st: Boolean(row.is_pro1st), costSource: row.cost == null || row.profit == null ? "unknown" : String(row.cost_source), duplicateWarning: Boolean(row.duplicate_warning) })) } });
-    } catch (error: any) { return res.status(400).json({ error: String(error?.message || "invalid_sales_analysis_filters") }); }
+    } catch { return res.status(500).json({ error: "sales_analysis_unavailable" }); }
   };
   app.get("/api/sales-analysis/report", report); app.get("/api/sales-analysis/detail", report); app.get("/api/sales-analysis/direct", report);
 
-  app.get("/api/sales-analysis/admin/cost-overrides", async (req, res) => { if (!isAdmin(req)) return res.status(403).json({ error: "forbidden" }); const page = Math.max(1, Number(req.query.page || 1)), pageSize = Math.min(100, Math.max(1, Number(req.query.page_size || 50))); const [count, result] = await Promise.all([pool.query(`SELECT COUNT(*)::text total FROM sales_cost_override_history`), pool.query(`SELECT id,store,sale_id,row_id,total_cost,reason,actor_user_id,created_at,superseded_at FROM sales_cost_override_history ORDER BY created_at DESC,id DESC LIMIT $1 OFFSET $2`, [pageSize, (page - 1) * pageSize])]); res.json({ total: Number(count.rows[0]?.total || 0), page, pageSize, rows: result.rows }); });
-  app.post("/api/sales-analysis/admin/cost-overrides", async (req, res) => { if (!isAdmin(req) || !sameOrigin(req)) return res.status(403).json({ error: "forbidden" }); const { store, saleId, rowId, totalCost, reason } = req.body || {}; if (![store, saleId, rowId, reason].every((v) => typeof v === "string" && v.trim()) || !Number.isFinite(Number(totalCost)) || Number(totalCost) < 0) return res.status(400).json({ error: "invalid_cost_override" }); const actorUserId = Number((req as any).authUser.id); if (!Number.isSafeInteger(actorUserId) || actorUserId < 1) return res.status(400).json({ error: "invalid_actor" }); const result = await pool.query(`SELECT * FROM replace_sales_cost_override($1,$2,$3,$4,$5,$6)`, [store.trim(), saleId.trim(), rowId.trim(), Number(totalCost), reason.trim(), actorUserId]); res.json(result.rows[0]); });
+  app.get("/api/sales-analysis/admin/cost-overrides", async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: "forbidden" });
+    const page = Number(req.query.page || 1), pageSize = Number(req.query.page_size || 50);
+    if (!Number.isInteger(page) || page < 1 || page > 100000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) return res.status(400).json({ error: "invalid_sales_analysis_page" });
+    const [count, result] = await Promise.all([pool.query(`SELECT COUNT(*)::text total FROM sales_cost_override_history`), pool.query(`SELECT id,store,sale_id,row_id,total_cost,reason,actor_user_id,created_at,superseded_at FROM sales_cost_override_history ORDER BY created_at DESC,id DESC LIMIT $1 OFFSET $2`, [pageSize, (page - 1) * pageSize])]);
+    res.json({ total: Number(count.rows[0]?.total || 0), page, pageSize, rows: result.rows });
+  });
+  app.post("/api/sales-analysis/admin/cost-overrides", async (req, res) => {
+    if (!isAdmin(req) || !sameOrigin(req)) return res.status(403).json({ error: "forbidden" });
+    const { store, saleId, rowId, totalCost, reason } = req.body || {};
+    const identities = [store, saleId, rowId];
+    const costText = String(totalCost ?? "");
+    if (!identities.every((v) => typeof v === "string" && v.trim() && v.trim().length <= 128) || typeof reason !== "string" || !reason.trim() || reason.trim().length > 1000 || !/^\d{1,12}(?:\.\d{1,2})?$/.test(costText)) return res.status(400).json({ error: "invalid_cost_override" });
+    const actorUserId = Number((req as any).authUser.id);
+    if (!Number.isSafeInteger(actorUserId) || actorUserId < 1) return res.status(400).json({ error: "invalid_actor" });
+    try {
+      const result = await pool.query(`SELECT * FROM replace_sales_cost_override($1,$2,$3,$4,$5,$6)`, [store.trim(), saleId.trim(), rowId.trim(), costText, reason.trim(), actorUserId]);
+      return res.json(result.rows[0]);
+    } catch { return res.status(409).json({ error: "cost_override_target_unavailable" }); }
+  });
 }

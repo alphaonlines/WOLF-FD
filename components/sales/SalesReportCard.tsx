@@ -49,6 +49,7 @@ type SalesReportCardProps = {
   onSelectSalesperson: (salesperson: string) => void;
   onSelectStore: (store: string) => void;
   canonicalMonthLabel: string;
+  canonicalRangeLabel: "Month to date" | "Latest available month";
   canonicalWarnings: { openDeliveredTickets: number; duplicateItemLines: number; twoPersonTickets: number };
   canonicalMissingCostCount: number;
   canonicalDetail: { total: number; page: number; pageSize: number; rows: any[] };
@@ -89,6 +90,7 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
   onSelectSalesperson,
   onSelectStore,
   canonicalMonthLabel,
+  canonicalRangeLabel,
   canonicalWarnings,
   canonicalMissingCostCount,
   canonicalDetail,
@@ -537,7 +539,7 @@ const SalesReportCard: React.FC<SalesReportCardProps> = ({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h4 className="font-semibold text-slate-800">Canonical diagnostics &amp; detail</h4>
-              <p className="text-xs text-slate-500">Latest available month: {canonicalMonthLabel}</p>
+              <p className="text-xs text-slate-500">{canonicalRangeLabel}: {canonicalMonthLabel}</p>
             </div>
             <div className="flex flex-wrap gap-2 text-xs text-slate-700">
               <span>Open delivered tickets: {canonicalWarnings.openDeliveredTickets}</span>

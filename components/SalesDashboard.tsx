@@ -34,6 +34,7 @@ import {
   fetchSalesAnalysisReport,
 } from "../services/posBackendApi";
 import { latestDeliveredRange } from "./salesAnalysisRange";
+import { rankCanonicalSeries } from "./salesRanking";
 import { SalesData, StoreData } from "../types";
 import {
   addDaysYmd,
@@ -401,6 +402,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   });
   const [error, setError] = useState<string | null>(null);
   const [canonicalMonthLabel, setCanonicalMonthLabel] = useState("");
+  const [canonicalRangeLabel, setCanonicalRangeLabel] = useState<"Month to date" | "Latest available month">("Latest available month");
   const [canonicalWarnings, setCanonicalWarnings] = useState({ openDeliveredTickets: 0, duplicateItemLines: 0, twoPersonTickets: 0 });
   const [canonicalMissingCostCount, setCanonicalMissingCostCount] = useState(0);
   const [canonicalDetail, setCanonicalDetail] = useState<{ total: number; page: number; pageSize: number; rows: any[] }>({ total: 0, page: 1, pageSize: 100, rows: [] });
@@ -849,6 +851,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         setCanonicalMonthLabel(new Date(`${deliveredDateMax}T00:00:00`).toLocaleDateString("en-US", { month: "long", year: "numeric" }));
         const latest = latestDeliveredRange(deliveredDateMax, new Date().toLocaleDateString("en-CA"));
         if (!latest) return;
+        setCanonicalRangeLabel(latest.label);
         setAvailableYears(Array.from(new Set([deliveredDateMin, deliveredDateMax].filter(Boolean).map((value) => Number(String(value).slice(0, 4))))).sort());
         setYearA(Number(deliveredDateMax.slice(0, 4)));
         setRangeModeA("custom");
@@ -905,12 +908,12 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
           label: row.label, ticketCount: Number(row.ticketCount || 0), totalRetail: Number(row.sales || 0),
           pro1stSales: 0, units: Number(row.quantity || 0), avgMarginPct: row.marginPct == null ? null : Number(row.marginPct),
         }));
-      const sellerRows = (payload: any): BestSellerRow[] => (payload?.series?.item || []).slice(0, 15).map((row: any) => ({
+      const sellerRows = (payload: any): BestSellerRow[] => rankCanonicalSeries(payload?.series?.item, itemSortMetric, 15).map((row: any) => ({
         itemDescription: row.description || row.label, category: row.category || "(unknown)", manufacturer: row.manufacturer || "(unknown)",
         itemNo: row.label, qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: [],
       }));
       const simpleRows = (dimension: "category" | "manufacturer", payload: any) =>
-        (payload?.series?.[dimension] || []).slice(0, 8).map((row: any) => ({ [dimension]: row.label, qty: Number(row.quantity || 0), sales: Number(row.sales || 0) }));
+        rankCanonicalSeries(payload?.series?.[dimension], itemSortMetric, 8).map((row: any) => ({ [dimension]: row.label, qty: Number(row.quantity || 0), sales: Number(row.sales || 0) }));
       const peopleRows = reportRows("salesperson", canonical);
       const storeRows = reportRows("store", canonical);
       const comparePeopleRows = reportRows("salesperson", canonicalCompare);
@@ -1448,7 +1451,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         store: selectedStore || undefined,
         salesperson: selectedSalesperson || undefined,
       });
-      const list = (payload.series?.item || []).slice(0, 10).map((row: any) => ({ itemNo: row.label, itemDescription: row.description || row.label,
+      const list = rankCanonicalSeries(payload.series?.item, itemSortMetric, 10).map((row: any) => ({ itemNo: row.label, itemDescription: row.description || row.label,
         category: row.category || "(unknown)", manufacturer: name, qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: [] }));
       setManufacturerItems((prev) => ({ ...prev, [name]: list }));
     } catch (e) {
@@ -1471,7 +1474,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
         store: selectedStore || undefined,
         salesperson: selectedSalesperson || undefined,
       });
-      const list = (payload.series?.item || []).slice(0, 10).map((row: any) => ({ itemNo: row.label, itemDescription: row.description || row.label,
+      const list = rankCanonicalSeries(payload.series?.item, itemSortMetric, 10).map((row: any) => ({ itemNo: row.label, itemDescription: row.description || row.label,
         category: name, manufacturer: row.manufacturer || "(unknown)", qty: Number(row.quantity || 0), sales: Number(row.sales || 0), saleIds: [] }));
       setCategoryItems((prev) => ({ ...prev, [name]: list }));
     } catch (e) {
@@ -1926,6 +1929,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
           onSelectSalesperson={openSalespersonDetail}
           onSelectStore={openStoreDetail}
           canonicalMonthLabel={canonicalMonthLabel}
+          canonicalRangeLabel={canonicalRangeLabel}
           canonicalWarnings={canonicalWarnings}
           canonicalMissingCostCount={canonicalMissingCostCount}
           canonicalDetail={canonicalDetail}

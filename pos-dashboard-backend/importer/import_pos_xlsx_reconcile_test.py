@@ -34,18 +34,21 @@ spec.loader.exec_module(import_pos_xlsx)
 
 
 class FakeCursor:
-    def __init__(self, count=0):
+    def __init__(self, count=0, protected_count=0):
         self.count = count
+        self.protected_count = protected_count
         self.calls = []
         self.rowcount = 0
+        self.last_sql = ""
 
     def execute(self, sql, params=None):
+        self.last_sql = sql
         self.calls.append((sql, params))
         if sql.lstrip().upper().startswith("DELETE"):
             self.rowcount = self.count
 
     def fetchone(self):
-        return (self.count,)
+        return (self.protected_count if "cost_authority" in self.last_sql else self.count,)
 
 
 class ItemReconciliationTests(unittest.TestCase):
@@ -61,6 +64,22 @@ class ItemReconciliationTests(unittest.TestCase):
     def test_expected_date_field_for_basis(self):
         self.assertEqual(import_pos_xlsx.expected_date_field_for_basis("written"), "sale_date")
         self.assertEqual(import_pos_xlsx.expected_date_field_for_basis("delivered"), "delivery_confirmed_date")
+
+    def test_replacement_refuses_group_authoritative_sales(self):
+        cur = FakeCursor(protected_count=1)
+        with self.assertRaisesRegex(RuntimeError, "Group-authoritative"):
+            import_pos_xlsx.assert_no_group_authority_replacement(cur, ["S1"], "delivered")
+        self.assertIn("cost_authority = 'group_report'", cur.calls[0][0])
+
+    def test_reconciliation_refuses_to_prune_group_authority(self):
+        cur = FakeCursor(count=1, protected_count=1)
+        with self.assertRaisesRegex(RuntimeError, "Group-authoritative"):
+            import_pos_xlsx.reconcile_stale_items(
+                cur, date_basis="delivered", coverage_field="delivery_confirmed_date",
+                range_start=date(2026, 7, 1), range_end=date(2026, 7, 2), sale_ids=["S1"],
+                incoming_row_count=10, dry_run=False, max_prune_rows=10, max_prune_ratio=1.0,
+            )
+        self.assertFalse(any(call[0].lstrip().upper().startswith("DELETE") for call in cur.calls))
 
     def test_reconciliation_refuses_unknown_date_field(self):
         cur = FakeCursor(count=0)
@@ -109,8 +128,8 @@ class ItemReconciliationTests(unittest.TestCase):
             max_prune_rows=10,
             max_prune_ratio=1.0,
         )
-        self.assertEqual(len(cur.calls), 1)
-        sql, params = cur.calls[0]
+        self.assertEqual(len(cur.calls), 2)
+        sql, params = cur.calls[1]
         self.assertIn("date_basis = %s", sql)
         self.assertIn("sale_date >= %s", sql)
         self.assertIn("sale_date <= %s", sql)
@@ -131,7 +150,7 @@ class ItemReconciliationTests(unittest.TestCase):
                 max_prune_rows=10,
                 max_prune_ratio=1.0,
             )
-        self.assertEqual(len(cur.calls), 1)
+        self.assertEqual(len(cur.calls), 2)
         self.assertFalse(any(call[0].lstrip().upper().startswith("DELETE") for call in cur.calls))
 
     def test_reconciliation_delete_is_same_basis_and_bounded(self):
@@ -148,8 +167,8 @@ class ItemReconciliationTests(unittest.TestCase):
             max_prune_rows=10,
             max_prune_ratio=1.0,
         )
-        self.assertEqual(len(cur.calls), 2)
-        delete_sql, delete_params = cur.calls[1]
+        self.assertEqual(len(cur.calls), 3)
+        delete_sql, delete_params = cur.calls[2]
         self.assertTrue(delete_sql.lstrip().upper().startswith("DELETE FROM POS_SALE_ITEMS"))
         self.assertIn("date_basis = %s", delete_sql)
         self.assertIn("delivery_confirmed_date >= %s", delete_sql)
