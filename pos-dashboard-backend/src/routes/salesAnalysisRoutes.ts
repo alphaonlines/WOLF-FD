@@ -21,10 +21,9 @@ const round = (value: number) => Math.round((value + Number.EPSILON) * 10000) / 
 const allocated = (column: string, scale = 100) => `CASE WHEN $3::text IS NULL THEN ${column} ELSE
  (trunc(round((${column}) * ${scale})::numeric / person_count) + CASE WHEN person_index <= mod(round((${column}) * ${scale})::bigint,person_count) THEN 1 ELSE 0 END) / ${scale}.0 END`;
 
-const HAS_IMPORT_PROVENANCE = `i.total_cost IS NOT NULL AND i.cost_import_batch_id IS NOT NULL AND i.cost_imported_at IS NOT NULL AND i.cost_source_file_sha256 IS NOT NULL`;
-const COST = `CASE WHEN i.cost_authority='group_report' THEN i.total_cost WHEN ${HAS_IMPORT_PROVENANCE} THEN i.total_cost WHEN o.id IS NOT NULL THEN o.total_cost ELSE NULL END`;
-const PROFIT = `CASE WHEN i.cost_authority='group_report' THEN i.total_profit WHEN ${HAS_IMPORT_PROVENANCE} THEN i.total_sale_price-i.total_cost WHEN o.id IS NOT NULL THEN i.total_sale_price-o.total_cost ELSE NULL END`;
-const COST_SOURCE = `CASE WHEN i.cost_authority='group_report' THEN 'group_report' WHEN ${HAS_IMPORT_PROVENANCE} THEN 'imported' WHEN o.id IS NOT NULL THEN 'manual_override' ELSE 'unknown' END`;
+const COST = `CASE WHEN i.cost_authority='group_report' THEN i.total_cost WHEN o.id IS NOT NULL THEN o.total_cost ELSE NULL END`;
+const PROFIT = `CASE WHEN i.cost_authority='group_report' THEN i.total_profit WHEN o.id IS NOT NULL THEN i.total_sale_price-o.total_cost ELSE NULL END`;
+const COST_SOURCE = `CASE WHEN i.cost_authority='group_report' THEN 'group_report' WHEN o.id IS NOT NULL THEN 'manual_override' ELSE 'unknown' END`;
 const PEOPLE = `regexp_split_to_array(COALESCE(NULLIF(trim(s.salesperson),''),'Unassigned'),'\\s+and\\s+','i')`;
 const PRO1ST = `concat_ws(' ',i.manufacturer,i.category,i.item_no,i.item_description) ~* '\\mpro[[:space:]]?1st\\M'`;
 const EXCLUDED = `concat_ws(' ',i.manufacturer,i.category,i.item_no,i.item_description) ~* '\\m(mattress(es)?|box[[:space:]]*springs?|foundations?|adjustable[[:space:]]*bases?|power[[:space:]]*bases?|bunkie[[:space:]]*boards?|bedding)\\M'`;

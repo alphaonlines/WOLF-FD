@@ -109,14 +109,17 @@ describe("canonical Sales Analysis routes", () => {
     expect(db.query).toHaveBeenCalledTimes(4);
   });
 
-  it("uses Group Report, immutable import provenance, override, then unknown cost precedence", async () => {
+  it("uses Group Report, override, then unknown cost and rejects provenance-only authority", async () => {
     const db = pool([]);
     db.query.mockResolvedValue({ rows: [] });
     await request(appWithUser(db, salesUser)).get("/api/sales-analysis/report?start=2026-07-01&end_exclusive=2026-08-01");
     const sql = db.query.mock.calls.map((call: any[]) => String(call[0])).join("\n");
     expect(sql).toContain("group_report");
-    expect(sql).toMatch(/CASE[\s\S]*group_report[\s\S]*cost_import_batch_id\s+IS\s+NOT\s+NULL[\s\S]*cost_source_file_sha256\s+IS\s+NOT\s+NULL[\s\S]*cost_imported_at\s+IS\s+NOT\s+NULL[\s\S]*manual_override/i);
-    expect(sql).toMatch(/['\"]imported['\"]/i);
+    expect(sql).toMatch(/CASE[\s\S]*group_report[\s\S]*manual_override[\s\S]*unknown/i);
+    expect(sql).not.toMatch(/cost_import_batch_id\s+IS\s+NOT\s+NULL/i);
+    expect(sql).not.toMatch(/cost_source_file_sha256\s+IS\s+NOT\s+NULL/i);
+    expect(sql).not.toMatch(/cost_imported_at\s+IS\s+NOT\s+NULL/i);
+    expect(sql).not.toMatch(/['\"]imported['\"]/i);
     expect(sql).not.toMatch(/top items.{0,30}(authority|authoritative)/i);
   });
 

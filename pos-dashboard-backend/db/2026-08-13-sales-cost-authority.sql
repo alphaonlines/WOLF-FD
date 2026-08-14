@@ -1,7 +1,7 @@
 -- Idempotent AlphaHS single-company Sales Analysis cost authority schema.
--- Group Report remains highest authority. Imported costs are accepted only
--- with immutable batch/timestamp/file-digest provenance; audited overrides are
--- lower precedence and fill only gaps without authoritative imported cost.
+-- Group Report is the sole automatic authority. Import provenance is retained
+-- for audit only and never makes a legacy or Top Items cost authoritative.
+-- Audited overrides are lower precedence and fill only Group-cost gaps.
 ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS cost_authority TEXT;
 ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS cost_import_batch_id BIGINT;
 ALTER TABLE pos_sale_items ADD COLUMN IF NOT EXISTS cost_imported_at TIMESTAMPTZ;
@@ -99,11 +99,11 @@ CREATE TRIGGER sales_cost_group_supersedes_override
   AFTER INSERT OR UPDATE OF cost_authority ON pos_sale_items
   FOR EACH ROW EXECUTE FUNCTION supersede_override_when_group_cost_arrives();
 
--- Backfill only the validated July imported adapter batch. Its 672 non-null
--- costs retain explicit import provenance but are not promoted to Group Report
--- authority. The eight null-cost rows intentionally remain unknown.
+-- Backfill only the validated July adapter batch whose costs were joined from
+-- the audited Group Report digest below. Its 672 non-null costs are Group
+-- authority; the eight null-cost rows intentionally remain unknown.
 UPDATE pos_sale_items
-SET cost_authority = NULL,
+SET cost_authority = 'group_report',
     cost_import_batch_id = import_batch_id,
     cost_imported_at = COALESCE(cost_imported_at, now()),
     cost_source_file_sha256 = '19960c6a1b0b8df8259854a5c63bfda11a1021882656f0a829e7be258d6d801f'

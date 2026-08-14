@@ -3,7 +3,7 @@ import path from "path";
 import { describe, expect, it } from "vitest";
 
 describe("Sales Analysis cost authority schema", () => {
-  it("ships an idempotent Group/import-provenance migration with immutable override history", () => {
+  it("ships an idempotent Group-only authority migration with immutable override history", () => {
     const sql = fs.readFileSync(path.resolve(__dirname, "../db/2026-08-13-sales-cost-authority.sql"), "utf8");
     expect(sql).toMatch(/ADD COLUMN IF NOT EXISTS cost_authority/i);
     expect(sql).toMatch(/ADD COLUMN IF NOT EXISTS cost_import_batch_id/i);
@@ -24,7 +24,10 @@ describe("Sales Analysis cost authority schema", () => {
     expect(sql).not.toMatch(/REFERENCES\s+users/i);
     expect(sql).toMatch(/import_batch_id\s*=\s*586/i);
     expect(sql).toMatch(/WHERE import_batch_id\s*=\s*586[\s\S]*total_cost IS NOT NULL/i);
-    expect(sql).toMatch(/SET cost_authority\s*=\s*NULL/i);
+    expect(sql).toMatch(/SET cost_authority\s*=\s*'group_report'/i);
+    expect(sql).toContain("19960c6a1b0b8df8259854a5c63bfda11a1021882656f0a829e7be258d6d801f");
+    expect(sql).not.toContain("6729a6530fa1194d2bb404afa3dd9bc4ab2dd91a4bfd9fc988fb10655de7ec40");
+    expect(sql).not.toMatch(/SET cost_authority\s*=\s*NULL/i);
   });
 
   it("populates immutable provenance only for imported rows that have cost", () => {
