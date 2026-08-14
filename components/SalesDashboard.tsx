@@ -30,9 +30,7 @@ import {
 import { Database, Loader2, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
 import {
   getPosApiBaseUrl,
-  fetchLowMargin,
   fetchPro1stTrend,
-  fetchSalesReport,
   fetchSalespeopleBySaleIds,
   setActivePosDateBasis,
   fetchSalesAnalysisRange,
@@ -759,7 +757,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
   }, [reportData.availableCategories, activeReportCategories]);
 
   const reportManufacturerOptions = useMemo(() => {
-    const values = [...reportData.availableManufacturers, reportManufacturer].filter((v) => v && String(v).trim());
+    const values = [...reportData.availableManufacturers, reportManufacturer]
+      .filter((v) => v && String(v).trim() && v !== "ALL");
     return ["ALL", ...Array.from(new Set(values))];
   }, [reportData.availableManufacturers, reportManufacturer]);
 
@@ -1058,102 +1057,55 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({
       const salesperson = selectedSalesperson ? selectedSalesperson : undefined;
       const location = selectedStore ? selectedStore : undefined;
 
-      const [storeSummary, salespersonSummary, storeOverallSummary, salespersonOverallSummary, lowMarginSummary] = await Promise.all([
-        fetchSalesReport({
-          start: currentRange.start,
-          end: currentRange.endExclusive,
-          dimension: "store",
-          salesperson,
-          location,
-          categories: activeReportCategories.length ? activeReportCategories : undefined,
+      const canonicalRows = (payload: any, dimension: "store" | "salesperson"): ReportSummaryRow[] =>
+        (payload?.series?.[dimension] || []).map((row: any) => ({
+          label: row.label,
+          ticketCount: Number(row.ticketCount || 0),
+          totalRetail: Number(row.sales || 0),
+          pro1stSales: 0,
+          units: Number(row.quantity || 0),
+          avgMarginPct: row.marginPct == null ? null : Number(row.marginPct),
+        }));
+      const canonicalRequest = (extra: Record<string, unknown> = {}) => fetchSalesAnalysisReport({
+        start: currentRange.start,
+        endInclusive: addDaysYmd(currentRange.endExclusive, -1),
+        page: 1,
+        pageSize: 500,
+        salesperson,
+        store: location,
+        ...extra,
+      });
+      const [filteredReport, overallReport] = await Promise.all([
+        canonicalRequest({
           manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
+          category: activeReportCategories.length === 1 ? activeReportCategories[0] : undefined,
         }),
-        fetchSalesReport({
-          start: currentRange.start,
-          end: currentRange.endExclusive,
-          dimension: "salesperson",
-          salesperson,
-          location,
-          categories: activeReportCategories.length ? activeReportCategories : undefined,
-          manufacturer: reportManufacturer !== "ALL" ? reportManufacturer : undefined,
-        }),
-        fetchSalesReport({
-          start: currentRange.start,
-          end: currentRange.endExclusive,
-          dimension: "store",
-          salesperson,
-          location,
-        }),
-        fetchSalesReport({
-          start: currentRange.start,
-          end: currentRange.endExclusive,
-          dimension: "salesperson",
-          salesperson,
-          location,
-        }),
-        fetchLowMargin({
-          start: currentRange.start,
-          end: currentRange.endExclusive,
-          limitPer: 10,
-          limitTotal: 200,
-          salesperson,
-          location,
-        }),
+        canonicalRequest(),
       ]);
+      const storeSummary = { rows: canonicalRows(filteredReport, "store"), distinctTicketCount: Number(filteredReport.summary?.ticketCount || 0) };
+      const salespersonSummary = { rows: canonicalRows(filteredReport, "salesperson"), distinctTicketCount: Number(filteredReport.summary?.ticketCount || 0) };
+      const storeOverallSummary = { rows: canonicalRows(overallReport, "store"), distinctTicketCount: Number(overallReport.summary?.ticketCount || 0) };
+      const salespersonOverallSummary = { rows: canonicalRows(overallReport, "salesperson"), distinctTicketCount: Number(overallReport.summary?.ticketCount || 0) };
+      const lowMarginSummary = { rows: (filteredReport.detail?.rows || [])
+        .filter((row: any) => row.profit != null && row.sales)
+        .map((row: any) => ({ saleId: row.saleId, saleDate: row.deliveredDate, salesperson: row.salesperson,
+          grandTotal: Number(row.sales || 0), profit: Number(row.profit || 0), marginPct: Number(row.profit || 0) / Number(row.sales || 1) * 100 })) };
 
       const manufacturers = reportManufacturerOptions.filter((m) => m && m !== "ALL");
       const categories = reportCategoryOptions.filter((c) => c && c !== "ALL");
 
       const manufacturerBreakdowns = printIncludeManufacturer
-        ? await Promise.all(
-            manufacturers.map(async (m) => {
-              const [storeRows, salespersonRows] = await Promise.all([
-                fetchSalesReport({
-                  start: currentRange.start,
-                  end: currentRange.endExclusive,
-                  dimension: "store",
-                  salesperson,
-                  location,
-                  manufacturer: m,
-                }),
-                fetchSalesReport({
-                  start: currentRange.start,
-                  end: currentRange.endExclusive,
-                  dimension: "salesperson",
-                  salesperson,
-                  location,
-                  manufacturer: m,
-                }),
-              ]);
-              return { label: m, storeRows: storeRows.rows, salespersonRows: salespersonRows.rows };
-            })
-          )
+        ? await Promise.all(manufacturers.map(async (m) => {
+            const payload = await canonicalRequest({ manufacturer: m });
+            return { label: m, storeRows: canonicalRows(payload, "store"), salespersonRows: canonicalRows(payload, "salesperson") };
+          }))
         : [];
 
       const categoryBreakdowns = printIncludeCategory
-        ? await Promise.all(
-            categories.map(async (c) => {
-              const [storeRows, salespersonRows] = await Promise.all([
-                fetchSalesReport({
-                  start: currentRange.start,
-                  end: currentRange.endExclusive,
-                  dimension: "store",
-                  salesperson,
-                  location,
-                  category: c,
-                }),
-                fetchSalesReport({
-                  start: currentRange.start,
-                  end: currentRange.endExclusive,
-                  dimension: "salesperson",
-                  salesperson,
-                  location,
-                  category: c,
-                }),
-              ]);
-              return { label: c, storeRows: storeRows.rows, salespersonRows: salespersonRows.rows };
-            })
-          )
+        ? await Promise.all(categories.map(async (c) => {
+            const payload = await canonicalRequest({ category: c });
+            return { label: c, storeRows: canonicalRows(payload, "store"), salespersonRows: canonicalRows(payload, "salesperson") };
+          }))
         : [];
 
       setPrintData({

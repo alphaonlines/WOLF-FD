@@ -84,4 +84,22 @@ describe("SalesDashboard canonical acceptance", () => {
     expect(await screen.findByText("Print Options")).toBeInTheDocument();
     expect(mocks.legacy).not.toHaveBeenCalled();
   });
+
+  it("generates print data from canonical reports without legacy calls", async () => {
+    vi.spyOn(window, "open").mockReturnValue(null);
+    render(<SalesDashboard itemSortMetric="sales" enableTourAutoStart={false} />);
+    await screen.findByText("Sales Overview");
+    window.dispatchEvent(new Event("fd-print-request"));
+    fireEvent.click(await screen.findByRole("button", { name: "Print" }));
+    await waitFor(() => expect(screen.queryByText("Preparing...")).not.toBeInTheDocument());
+    expect(mocks.legacy).not.toHaveBeenCalled();
+    expect(mocks.report).toHaveBeenCalled();
+  });
+
+  it("renders each manufacturer filter option exactly once", async () => {
+    render(<SalesDashboard itemSortMetric="sales" enableTourAutoStart={false} />);
+    await screen.findByText("Sales Overview");
+    expect(screen.getAllByRole("option", { name: "All Manufacturers" })).toHaveLength(1);
+    expect(screen.getAllByRole("option", { name: "Acme" })).toHaveLength(1);
+  });
 });
