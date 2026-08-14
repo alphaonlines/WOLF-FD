@@ -133,6 +133,7 @@ describe("canonical Sales Analysis routes", () => {
     expect(itemSeries).toMatch(/sum\s*\(\s*CASE WHEN \$3::text IS NULL THEN quantity ELSE/i);
     expect(itemSeries).toMatch(/sum\s*\(\s*CASE WHEN \$3::text IS NULL THEN total_cost ELSE/i);
     expect(itemSeries).toMatch(/sum\s*\(\s*CASE WHEN \$3::text IS NULL THEN total_profit ELSE/i);
+    expect(itemSeries).toMatch(/count\s*\(\s*distinct\s*\(\s*store\s*,\s*sale_id\s*\)\s*\)\s*::numeric\s+ticket_count/i);
   });
 
   it("restricts audited override mutation to Admin/Owner and same origin", async () => {

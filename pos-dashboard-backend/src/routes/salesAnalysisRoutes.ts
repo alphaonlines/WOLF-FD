@@ -70,7 +70,8 @@ const SERIES_SQL = (where: string) => `${baseCte(where)}, item_series AS (
  SELECT dimension,label,sum(${allocated("sales")})::numeric sales,sum(${allocated("quantity", 10000)})::numeric quantity,
  sum(${allocated("total_cost")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) cost,
  sum(${allocated("sales")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) known_cost_sales,
- sum(${allocated("total_profit")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) profit
+ sum(${allocated("total_profit")}) FILTER (WHERE total_cost IS NOT NULL AND total_profit IS NOT NULL) profit,
+ count(DISTINCT (store,sale_id))::numeric ticket_count
  FROM (SELECT 'item' dimension,item_no label,* FROM filtered UNION ALL SELECT 'category',category,* FROM filtered UNION ALL
  SELECT 'manufacturer',manufacturer,* FROM filtered UNION ALL SELECT 'store',store,* FROM filtered UNION ALL SELECT 'day',delivered_date,* FROM filtered) d GROUP BY dimension,label
 ), people AS (
@@ -88,7 +89,7 @@ const SERIES_SQL = (where: string) => `${baseCte(where)}, item_series AS (
  sum((trunc(round(finance_fee*100)::numeric/person_count)+CASE WHEN person_ordinality<=mod(round(finance_fee*100)::bigint,person_count) THEN 1 ELSE 0 END)/100.0) finance_fee,
  sum(1.0/person_count) ticket_count
  FROM (SELECT DISTINCT ON (store,sale_id,label) store,sale_id,label,finance_amount,finance_fee,person_count,person_ordinality FROM people ORDER BY store,sale_id,label) t GROUP BY label
-) SELECT dimension,label,sales,quantity,COALESCE(cost,0) cost,COALESCE(known_cost_sales,0) known_cost_sales,COALESCE(profit,0) profit,0::numeric finance_amount,0::numeric finance_fee,0::numeric ticket_count FROM item_series
+) SELECT dimension,label,sales,quantity,COALESCE(cost,0) cost,COALESCE(known_cost_sales,0) known_cost_sales,COALESCE(profit,0) profit,0::numeric finance_amount,0::numeric finance_fee,ticket_count FROM item_series
  UNION ALL SELECT p.dimension,p.label,p.sales,p.quantity,COALESCE(p.cost,0),COALESCE(p.known_cost_sales,0),COALESCE(p.profit,0),COALESCE(t.finance_amount,0),COALESCE(t.finance_fee,0),COALESCE(t.ticket_count,0) FROM person_items p LEFT JOIN person_tickets t ON t.label=p.label`;
 
 const COUNT_SQL = (where: string) => `${baseCte(where)} SELECT COUNT(*)::text total FROM filtered`;
